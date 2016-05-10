@@ -29,12 +29,23 @@
 
 namespace Solr;
 
+use Zend\ServiceManager\ServiceLocatorInterface;
 use Omeka\Module\AbstractModule;
+use Omeka\Module\Exception\ModuleCannotInstallException;
 
 class Module extends AbstractModule
 {
     public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';
+    }
+
+    public function install(ServiceLocatorInterface $serviceLocator)
+    {
+        $translator = $serviceLocator->get('MvcTranslator');
+        if (!extension_loaded('solr')) {
+            $message = $translator->translate("Solr module requires PHP Solr extension, which is not loaded.");
+            throw new ModuleCannotInstallException($message);
+        }
     }
 }
