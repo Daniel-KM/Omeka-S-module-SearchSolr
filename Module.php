@@ -47,5 +47,46 @@ class Module extends AbstractModule
             $message = $translator->translate("Solr module requires PHP Solr extension, which is not loaded.");
             throw new ModuleCannotInstallException($message);
         }
+
+        $connection = $serviceLocator->get('Omeka\Connection');
+        $sql = '
+            CREATE TABLE IF NOT EXISTS `solr_field` (
+                `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                `name` varchar(255) NOT NULL,
+                `label` varchar(255) NOT NULL,
+                `property_id` int(11) NOT NULL,
+                `is_indexed` tinyint(1) NOT NULL DEFAULT 1,
+                `is_multivalued` tinyint(1) NOT NULL DEFAULT 1,
+                `created` datetime NOT NULL,
+                `modified` datetime DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                FOREIGN KEY (`property_id`) REFERENCES `property` (`id`)
+                    ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+        ';
+        $connection->exec($sql);
+
+        $api = $serviceLocator->get('Omeka\ApiManager');
+        $titleProperties = $api->search('properties', [
+            'term' => 'dcterms:title',
+            'limit' => 1,
+        ])->getContent();
+        $titlePropertyId = $titleProperties[0]->id();
+        $sql = '
+            INSERT INTO `solr_field`
+            (`name`, `label`, `property_id`, `is_multivalued`, `created`)
+            VALUES
+                ("title_t", "Title", ?, 1, NOW()),
+                ("title_s", "Title", ?, 0, NOW())
+        ';
+        $params = [$titlePropertyId, $titlePropertyId];
+        $connection->executeQuery($sql, $params);
+    }
+
+    public function uninstall(ServiceLocatorInterface $serviceLocator)
+    {
+        $connection = $serviceLocator->get('Omeka\Connection');
+        $sql = 'DROP TABLE IF EXISTS `solr_field`';
+        $connection->exec($sql);
     }
 }

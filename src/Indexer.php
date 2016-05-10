@@ -31,6 +31,7 @@ namespace Solr;
 
 use SolrClient;
 use SolrInputDocument;
+use SolrServerException;
 use Omeka\Api\Representation\ItemRepresentation;
 use Search\Indexer\AbstractIndexer;
 
@@ -47,23 +48,40 @@ class Indexer extends AbstractIndexer
 
     public function indexItem(ItemRepresentation $item)
     {
+        $serviceLocator = $this->getServiceLocator();
+        $api = $serviceLocator->get('Omeka\ApiManager');
+
         $client = $this->getClient();
 
         $document = new SolrInputDocument;
         $document->addField('id', $item->id());
-        foreach ($item->values() as $term => $v) {
-            $fieldName = preg_replace('/[^a-zA-Z_]/', '_', $term) . '_t';
-            foreach ($v['values'] as $value) {
+        $fields = $api->search('solr_fields', ['is_indexed' => 1])->getContent();
+        foreach ($fields as $field) {
+            $values = $item->value($field->property()->term(), ['all' => true]);
+
+            // TODO: Provide something to be able to index all types of value
+            $values = array_values(array_filter($values, function($value) {
                 $type = $value->type();
-                if ($type == 'literal' || $type == 'uri') {
-                    $document->addField($fieldName, $value);
-                }
+                return ($type == 'literal' || $type == 'uri');
+            }));
+
+            if (!$field->isMultivalued()) {
+                $values = array_slice($values, 0, 1);
+            }
+
+            foreach ($values as $value) {
+                $document->addField($field->name(), $value);
             }
         }
         $this->getLogger()->info('Indexing item ' . $item->id());
 
-        $client->addDocument($document);
-        $client->commit();
+        try {
+            $client->addDocument($document);
+            $client->commit();
+        } catch (SolrServerException $e) {
+            $this->getLogger()->err($e);
+            $this->getLogger()->err(sprintf('Indexing of item %s failed', $item->id()));
+        }
     }
 
     protected function getClient()
