@@ -29,20 +29,19 @@
 
 namespace Solr;
 
-use Zend\ServiceManager\ServiceLocatorInterface;
-use Search\Adapter\AdapterInterface;
+use Search\Adapter\AbstractAdapter;
 use Solr\Form\ConfigForm;
 
-class Adapter implements AdapterInterface
+class Adapter extends AbstractAdapter
 {
     public function getLabel()
     {
         return 'Solr';
     }
 
-    public function getConfigForm(ServiceLocatorInterface $serviceLocator)
+    public function getConfigForm()
     {
-        return new ConfigForm($serviceLocator);
+        return new ConfigForm($this->getServiceLocator());
     }
 
     public function getIndexerClass()
@@ -53,5 +52,41 @@ class Adapter implements AdapterInterface
     public function getQuerierClass()
     {
         return 'Solr\Querier';
+    }
+
+    public function getAvailableFacetFields()
+    {
+        $serviceLocator = $this->getServiceLocator();
+        $api = $serviceLocator->get('Omeka\ApiManager');
+
+        $response = $api->search('solr_fields', ['is_indexed' => 1]);
+        $fields = $response->getContent();
+        $facetFields = [];
+        foreach ($fields as $field) {
+            $facetFields[] = [
+                'name' => $field->name(),
+                'label' => $field->label(),
+            ];
+        }
+
+        return $facetFields;
+    }
+
+    public function getAvailableSortFields()
+    {
+        $serviceLocator = $this->getServiceLocator();
+        $api = $serviceLocator->get('Omeka\ApiManager');
+
+        $response = $api->search('solr_fields', ['is_indexed' => 1, 'is_multivalued' => 0]);
+        $fields = $response->getContent();
+        $sortFields = [];
+        foreach ($fields as $field) {
+            $sortFields[] = [
+                'name' => $field->name(),
+                'label' => $field->label(),
+            ];
+        }
+
+        return $sortFields;
     }
 }

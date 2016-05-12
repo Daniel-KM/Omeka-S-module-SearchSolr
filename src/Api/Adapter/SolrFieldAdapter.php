@@ -122,4 +122,23 @@ class SolrFieldAdapter extends AbstractEntityAdapter
         }
         $entity->setProperty($property);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function buildQuery(QueryBuilder $qb, array $query)
+    {
+        if (isset($query['is_indexed'])) {
+            $qb->andWhere($qb->expr()->eq(
+                $this->getEntityClass() . ".isIndexed",
+                $this->createNamedParameter($qb, $query['is_indexed']))
+            );
+        }
+        if (isset($query['is_multivalued'])) {
+            $qb->andWhere($qb->expr()->eq(
+                $this->getEntityClass() . ".isMultivalued",
+                $this->createNamedParameter($qb, $query['is_multivalued']))
+            );
+        }
+    }
 }
