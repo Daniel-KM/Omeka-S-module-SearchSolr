@@ -63,7 +63,7 @@ class Adapter extends AbstractAdapter
         $fields = $response->getContent();
         $facetFields = [];
         foreach ($fields as $field) {
-            $facetFields[] = [
+            $facetFields[$field->name()] = [
                 'name' => $field->name(),
                 'label' => $field->label(),
             ];

@@ -48,6 +48,23 @@ class Querier extends AbstractQuerier
         }
         $solrQuery->addField('id');
 
+        $facetFields = $query->getFacetFields();
+        if (!empty($facetFields)) {
+            $solrQuery->setFacet(true);
+            foreach ($facetFields as $facetField) {
+                $solrQuery->addFacetField($facetField);
+            }
+        }
+
+        $filters = $query->getFilters();
+        if (!empty($filters)) {
+            foreach ($filters as $name => $values) {
+                foreach ($values as $value) {
+                    $solrQuery->addFilterQuery("$name:$value");
+                }
+            }
+        }
+
         $solrQueryResponse = $client->query($solrQuery);
         $solrResponse = $solrQueryResponse->getResponse();
 
@@ -55,6 +72,14 @@ class Querier extends AbstractQuerier
         $response->setTotalResults($solrResponse['response']['numFound']);
         foreach ($solrResponse['response']['docs'] as $doc) {
             $response->addResult(['id' => $doc['id']]);
+        }
+
+        foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
+            foreach ($values as $value => $count) {
+                if ($count > 0) {
+                    $response->addFacetCount($name, $value, $count);
+                }
+            }
         }
 
         return $response;
