@@ -30,8 +30,10 @@
 namespace Solr;
 
 use SolrClient;
+use SolrClientException;
 use SolrQuery;
 use Search\Querier\AbstractQuerier;
+use Search\Querier\Exception\QuerierException;
 use Search\Query;
 use Search\Response;
 
@@ -65,7 +67,11 @@ class Querier extends AbstractQuerier
             }
         }
 
-        $solrQueryResponse = $client->query($solrQuery);
+        try {
+            $solrQueryResponse = $client->query($solrQuery);
+        } catch (SolrClientException $e) {
+            throw new QuerierException($e->getMessage(), $e->getCode(), $e);
+        }
         $solrResponse = $solrQueryResponse->getResponse();
 
         $response = new Response;
