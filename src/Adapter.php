@@ -76,15 +76,30 @@ class Adapter extends AbstractAdapter
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
+        $translator = $serviceLocator->get('MvcTranslator');
+
+        $sortFields = [
+            'score desc' => [
+                'name' => 'score desc',
+                'label' => $translator->translate('Relevance'),
+            ],
+        ];
+
+        $directionLabel = [
+            'asc' => $translator->translate('Asc'),
+            'desc' => $translator->translate('Desc'),
+        ];
 
         $response = $api->search('solr_fields', ['is_indexed' => 1, 'is_multivalued' => 0]);
         $fields = $response->getContent();
-        $sortFields = [];
         foreach ($fields as $field) {
-            $sortFields[] = [
-                'name' => $field->name(),
-                'label' => $field->label(),
-            ];
+            foreach (['asc', 'desc'] as $direction) {
+                $name = $field->name() . ' ' . $direction;
+                $sortFields[$name] = [
+                    'name' => $name,
+                    'label' => $field->label() . ' ' . $directionLabel[$direction],
+                ];
+            }
         }
 
         return $sortFields;

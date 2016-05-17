@@ -67,6 +67,13 @@ class Querier extends AbstractQuerier
             }
         }
 
+        $sort = $query->getSort();
+        if (isset($sort)) {
+            list($sortField, $sortOrder) = explode(' ', $sort);
+            $sortOrder = $sortOrder == 'asc' ? SolrQuery::ORDER_ASC : SolrQuery::ORDER_DESC;
+            $solrQuery->addSortField($sortField, $sortOrder);
+        }
+
         try {
             $solrQueryResponse = $client->query($solrQuery);
         } catch (SolrClientException $e) {
