@@ -17,7 +17,7 @@ return [
         ],
     ],
     'navigation' => [
-        'admin' => [
+        'AdminGlobal' => [
             [
                 'label' => 'Solr',
                 'route' => 'admin/solr',
