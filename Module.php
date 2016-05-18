@@ -29,10 +29,13 @@
 
 namespace Solr;
 
+use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
+use Zend\View\Renderer\PhpRenderer;
 use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
+use Solr\Form\ModuleConfigForm;
 
 class Module extends AbstractModule
 {
@@ -97,5 +100,30 @@ class Module extends AbstractModule
         $connection = $serviceLocator->get('Omeka\Connection');
         $sql = 'DROP TABLE IF EXISTS `solr_field`';
         $connection->exec($sql);
+    }
+
+    public function getConfigForm(PhpRenderer $renderer)
+    {
+        $serviceLocator = $this->getServiceLocator();
+        $settings = $serviceLocator->get('Omeka\Settings');
+
+        $form = new ModuleConfigForm($this->getServiceLocator());
+        $data = [
+            'solr_resource_name_field' => $settings->get('solr_resource_name_field'),
+        ];
+        $form->setData(array_filter($data));
+
+        return $renderer->render('solr/config-form', ['form' => $form]);
+    }
+
+    public function handleConfigForm(AbstractController $controller)
+    {
+        $serviceLocator = $this->getServiceLocator();
+        $settings = $serviceLocator->get('Omeka\Settings');
+
+        $params = $controller->getRequest()->getPost();
+        foreach ($params as $name => $value) {
+            $settings->set($name, $value);
+        }
     }
 }

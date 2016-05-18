@@ -41,7 +41,12 @@ class Querier extends AbstractQuerier
 {
     public function query(Query $query)
     {
+        $serviceLocator = $this->getServiceLocator();
+        $settings = $serviceLocator->get('Omeka\Settings');
+
         $client = $this->getClient();
+
+        $resource_name_field = $settings->get('solr_resource_name_field');
 
         $solrQuery = new SolrQuery;
         $q = $query->getQuery();
@@ -49,6 +54,13 @@ class Querier extends AbstractQuerier
             $solrQuery->setQuery($q);
         }
         $solrQuery->addField('id');
+
+        $solrQuery->setGroup(true);
+        $solrQuery->addGroupField($resource_name_field);
+
+        $resources = $query->getResources();
+        $fq = $resource_name_field . ':' . implode(' OR ', $resources);
+        $solrQuery->addFilterQuery($fq);
 
         $facetFields = $query->getFacetFields();
         if (!empty($facetFields)) {
@@ -62,7 +74,7 @@ class Querier extends AbstractQuerier
         if (!empty($filters)) {
             foreach ($filters as $name => $values) {
                 foreach ($values as $value) {
-                    $solrQuery->addFilterQuery("$name:$value");
+                    $solrQuery->addFilterQuery("$name:\"$value\"");
                 }
             }
         }
@@ -74,14 +86,15 @@ class Querier extends AbstractQuerier
             $solrQuery->addSortField($sortField, $sortOrder);
         }
 
-        if ($limit = $query->getLimit())
-            $solrQuery->setRows($limit);
+        if ($limit = $query->getLimit()) {
+            $solrQuery->setGroupLimit($limit);
+        }
 
-        if ($offset = $query->getOffset())
-            $solrQuery->setStart($offset);
+        if ($offset = $query->getOffset()) {
+            $solrQuery->setGroupOffset($offset);
+        }
 
         try {
-
             $solrQueryResponse = $client->query($solrQuery);
         } catch (SolrClientException $e) {
             throw new QuerierException($e->getMessage(), $e->getCode(), $e);
@@ -89,9 +102,12 @@ class Querier extends AbstractQuerier
         $solrResponse = $solrQueryResponse->getResponse();
 
         $response = new Response;
-        $response->setTotalResults($solrResponse['response']['numFound']);
-        foreach ($solrResponse['response']['docs'] as $doc) {
-            $response->addResult(['id' => $doc['id']]);
+        $response->setTotalResults($solrResponse['grouped'][$resource_name_field]['matches']);
+        foreach ($solrResponse['grouped'][$resource_name_field]['groups'] as $group) {
+            $response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
+            foreach ($group['doclist']['docs'] as $doc) {
+                $response->addResult($group['groupValue'], ['id' => $doc['id']]);
+            }
         }
 
         foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
@@ -108,9 +124,9 @@ class Querier extends AbstractQuerier
     protected function getClient()
     {
         return new SolrClient([
-            'hostname' => $this->getSetting('hostname'),
-            'port' => $this->getSetting('port'),
-            'path' => $this->getSetting('path'),
+            'hostname' => $this->getAdapterSetting('hostname'),
+            'port' => $this->getAdapterSetting('port'),
+            'path' => $this->getAdapterSetting('path'),
         ]);
     }
 }

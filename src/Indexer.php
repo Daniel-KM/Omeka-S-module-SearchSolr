@@ -32,7 +32,9 @@ namespace Solr;
 use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
+use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
+use Omeka\Api\Representation\ItemSetRepresentation;
 use Search\Indexer\AbstractIndexer;
 
 class Indexer extends AbstractIndexer
@@ -48,16 +50,48 @@ class Indexer extends AbstractIndexer
 
     public function indexItem(ItemRepresentation $item)
     {
+        $this->indexResource($item);
+        $this->commit();
+    }
+
+    public function indexItems(array $items)
+    {
+        foreach ($items as $item) {
+            $this->indexResource($item);
+        }
+        $this->commit();
+    }
+
+    public function indexItemSet(ItemSetRepresentation $itemSet)
+    {
+        $this->indexResource($itemSet);
+        $this->commit();
+    }
+
+    public function indexItemSets(array $itemSets)
+    {
+        foreach ($itemSets as $itemSet) {
+            $this->indexResource($itemSet);
+        }
+        $this->commit();
+    }
+
+    protected function indexResource(AbstractResourceEntityRepresentation $resource)
+    {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
+        $settings = $serviceLocator->get('Omeka\Settings');
 
         $client = $this->getClient();
+        $resource_name_field = $settings->get('solr_resource_name_field');
 
         $document = new SolrInputDocument;
-        $document->addField('id', $item->id());
+        $document->addField('id', $resource->id());
+        $document->addField($resource_name_field, $resource->resourceName());
+
         $fields = $api->search('solr_fields', ['is_indexed' => 1])->getContent();
         foreach ($fields as $field) {
-            $values = $item->value($field->property()->term(), ['all' => true]);
+            $values = $resource->value($field->property()->term(), ['all' => true, 'default' => []]);
 
             // TODO: Provide something to be able to index all types of value
             $values = array_values(array_filter($values, function($value) {
@@ -73,24 +107,29 @@ class Indexer extends AbstractIndexer
                 $document->addField($field->name(), $value);
             }
         }
-        $this->getLogger()->info('Indexing item ' . $item->id());
+        $this->getLogger()->info(sprintf('Indexing resource %1$s (%2$s)', $resource->id(), $resource->resourceName()));
 
         try {
             $client->addDocument($document);
-            $client->commit();
         } catch (SolrServerException $e) {
             $this->getLogger()->err($e);
-            $this->getLogger()->err(sprintf('Indexing of item %s failed', $item->id()));
+            $this->getLogger()->err(sprintf('Indexing of resource %s failed', $resource->id()));
         }
+    }
+
+    protected function commit()
+    {
+        $this->getLogger()->info('Commit');
+        $this->getClient()->commit();
     }
 
     protected function getClient()
     {
         if (!isset($this->client)) {
             $this->client = new SolrClient([
-                'hostname' => $this->getSetting('hostname'),
-                'port' => $this->getSetting('port'),
-                'path' => $this->getSetting('path'),
+                'hostname' => $this->getAdapterSetting('hostname'),
+                'port' => $this->getAdapterSetting('port'),
+                'path' => $this->getAdapterSetting('path'),
             ]);
         }
 

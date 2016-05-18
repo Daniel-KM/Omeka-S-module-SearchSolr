@@ -30,7 +30,7 @@
 namespace Solr;
 
 use Search\Adapter\AbstractAdapter;
-use Solr\Form\ConfigForm;
+use Solr\Form\ConfigFieldset;
 
 class Adapter extends AbstractAdapter
 {
@@ -39,9 +39,9 @@ class Adapter extends AbstractAdapter
         return 'Solr';
     }
 
-    public function getConfigForm()
+    public function getConfigFieldset()
     {
-        return new ConfigForm($this->getServiceLocator());
+        return new ConfigFieldset();
     }
 
     public function getIndexerClass()
