@@ -74,7 +74,14 @@ class Querier extends AbstractQuerier
             $solrQuery->addSortField($sortField, $sortOrder);
         }
 
+        if ($limit = $query->getLimit())
+            $solrQuery->setRows($limit);
+
+        if ($offset = $query->getOffset())
+            $solrQuery->setStart($offset);
+
         try {
+
             $solrQueryResponse = $client->query($solrQuery);
         } catch (SolrClientException $e) {
             throw new QuerierException($e->getMessage(), $e->getCode(), $e);
