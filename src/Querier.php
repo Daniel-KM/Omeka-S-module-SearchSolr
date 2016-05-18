@@ -46,7 +46,7 @@ class Querier extends AbstractQuerier
 
         $client = $this->getClient();
 
-        $resource_name_field = $settings->get('solr_resource_name_field');
+        $resource_name_field = $settings->get('solr_resource_name_field', Module::DEFAULT_RESOURCE_NAME_FIELD);
 
         $solrQuery = new SolrQuery;
         $q = $query->getQuery();

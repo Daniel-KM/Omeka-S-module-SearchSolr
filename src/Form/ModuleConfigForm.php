@@ -30,6 +30,7 @@
 namespace Solr\Form;
 
 use Omeka\Form\AbstractForm;
+use Solr\Module;
 
 class ModuleConfigForm extends AbstractForm
 {
@@ -47,7 +48,7 @@ class ModuleConfigForm extends AbstractForm
             ],
             'attributes' => [
                 'required' => true,
-                'value' => 'resource_name_s',
+                'value' => Module::DEFAULT_RESOURCE_NAME_FIELD,
             ],
         ]);
     }

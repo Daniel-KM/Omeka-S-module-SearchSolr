@@ -39,6 +39,8 @@ use Solr\Form\ModuleConfigForm;
 
 class Module extends AbstractModule
 {
+    const DEFAULT_RESOURCE_NAME_FIELD = 'resource_name_s';
+
     public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';

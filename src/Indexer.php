@@ -83,7 +83,7 @@ class Indexer extends AbstractIndexer
         $settings = $serviceLocator->get('Omeka\Settings');
 
         $client = $this->getClient();
-        $resource_name_field = $settings->get('solr_resource_name_field');
+        $resource_name_field = $settings->get('solr_resource_name_field', Module::DEFAULT_RESOURCE_NAME_FIELD);
 
         $document = new SolrInputDocument;
         $document->addField('id', $resource->id());
