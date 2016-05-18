@@ -48,35 +48,27 @@ class Indexer extends AbstractIndexer
         $client->commit();
     }
 
-    public function indexItem(ItemRepresentation $item)
+    public function indexResource(AbstractResourceEntityRepresentation $resource)
     {
-        $this->indexResource($item);
+        $this->addResource($resource);
         $this->commit();
     }
 
-    public function indexItems(array $items)
+    public function indexResources(array $resources)
     {
-        foreach ($items as $item) {
-            $this->indexResource($item);
+        foreach ($resources as $resource) {
+            $this->addResource($resource);
         }
         $this->commit();
     }
 
-    public function indexItemSet(ItemSetRepresentation $itemSet)
+    public function deleteResource($id)
     {
-        $this->indexResource($itemSet);
+        $this->getClient()->deleteById($id);
         $this->commit();
     }
 
-    public function indexItemSets(array $itemSets)
-    {
-        foreach ($itemSets as $itemSet) {
-            $this->indexResource($itemSet);
-        }
-        $this->commit();
-    }
-
-    protected function indexResource(AbstractResourceEntityRepresentation $resource)
+    protected function addResource(AbstractResourceEntityRepresentation $resource)
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
