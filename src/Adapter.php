@@ -41,7 +41,9 @@ class Adapter extends AbstractAdapter
 
     public function getConfigFieldset()
     {
-        return new ConfigFieldset();
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $solrNodes = $api->search('solr_nodes')->getContent();
+        return new ConfigFieldset(null, ['solrNodes' => $solrNodes]);
     }
 
     public function getIndexerClass()
@@ -63,9 +65,11 @@ class Adapter extends AbstractAdapter
         $fields = $response->getContent();
         $facetFields = [];
         foreach ($fields as $field) {
-            $facetFields[$field->name()] = [
-                'name' => $field->name(),
-                'label' => $field->label(),
+            $name = $field->name();
+            $description = $field->description();
+            $facetFields[$name] = [
+                'name' => $name,
+                'label' => $description ? $description : $name,
             ];
         }
 
@@ -93,11 +97,14 @@ class Adapter extends AbstractAdapter
         $response = $api->search('solr_fields', ['is_indexed' => 1, 'is_multivalued' => 0]);
         $fields = $response->getContent();
         foreach ($fields as $field) {
+            $description = $field->description();
             foreach (['asc', 'desc'] as $direction) {
                 $name = $field->name() . ' ' . $direction;
+                $label = $description ? $description : $field->name();
+                $label .= ' ' . $directionLabel[$direction];
                 $sortFields[$name] = [
                     'name' => $name,
-                    'label' => $field->label() . ' ' . $directionLabel[$direction],
+                    'label' => $label,
                 ];
             }
         }

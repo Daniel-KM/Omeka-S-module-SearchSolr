@@ -35,16 +35,14 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 
-class SolrFieldAdapter extends AbstractEntityAdapter
+class SolrProfileAdapter extends AbstractEntityAdapter
 {
     /**
      * {@inheritDoc}
      */
     protected $sortFields = [
-        'id'        => 'id',
-        'name'      => 'name',
-        'created'   => 'created',
-        'modified'  => 'modified',
+        'id'            => 'id',
+        'resource_name' => 'resourceName',
     ];
 
     /**
@@ -52,7 +50,7 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function getResourceName()
     {
-        return 'solr_fields';
+        return 'solr_profiles';
     }
 
     /**
@@ -60,7 +58,7 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function getRepresentationClass()
     {
-        return 'Solr\Api\Representation\SolrFieldRepresentation';
+        return 'Solr\Api\Representation\SolrProfileRepresentation';
     }
 
     /**
@@ -68,7 +66,7 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function getEntityClass()
     {
-        return 'Solr\Entity\SolrField';
+        return 'Solr\Entity\SolrProfile';
     }
 
     /**
@@ -77,17 +75,8 @@ class SolrFieldAdapter extends AbstractEntityAdapter
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
     ) {
-        if ($this->shouldHydrate($request, 'o:name')) {
-            $entity->setName($request->getValue('o:name'));
-        }
-        if ($this->shouldHydrate($request, 'o:description')) {
-            $entity->setDescription($request->getValue('o:description'));
-        }
-        if ($this->shouldHydrate($request, 'o:is_indexed')) {
-            $entity->setIsIndexed($request->getValue('o:is_indexed'));
-        }
-        if ($this->shouldHydrate($request, 'o:is_multivalued')) {
-            $entity->setIsMultivalued($request->getValue('o:is_multivalued'));
+        if ($this->shouldHydrate($request, 'o:resource_name')) {
+            $entity->setResourceName($request->getValue('o:resource_name'));
         }
 
         $this->hydrateSolrNode($request, $entity);
@@ -98,8 +87,8 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
     {
-        if (false == $entity->getName()) {
-            $errorStore->addError('o:name', 'The name cannot be empty.');
+        if (false == $entity->getResourceName()) {
+            $errorStore->addError('o:resource_name', 'The name cannot be empty.');
         }
     }
 
@@ -110,27 +99,21 @@ class SolrFieldAdapter extends AbstractEntityAdapter
     {
         if (isset($query['solr_node_id'])) {
             $nodeAlias = $this->createAlias();
-            $qb->innerJoin('Solr\Entity\SolrField.solrNode', $nodeAlias);
+            $qb->innerJoin('Solr\Entity\SolrProfile.solrNode', $nodeAlias);
             $qb->andWhere($qb->expr()->eq(
                 "$nodeAlias.id",
                 $this->createNamedParameter($qb, $query['solr_node_id']))
             );
         }
-        if (isset($query['is_indexed'])) {
+        if (isset($query['resource_name'])) {
             $qb->andWhere($qb->expr()->eq(
-                $this->getEntityClass() . ".isIndexed",
-                $this->createNamedParameter($qb, $query['is_indexed']))
-            );
-        }
-        if (isset($query['is_multivalued'])) {
-            $qb->andWhere($qb->expr()->eq(
-                $this->getEntityClass() . ".isMultivalued",
-                $this->createNamedParameter($qb, $query['is_multivalued']))
-            );
+                'Solr\Entity\SolrProfile.resourceName',
+                $this->createNamedParameter($qb, $query['resource_name'])
+            ));
         }
     }
 
-    protected function hydrateSolrNode(Request $request, EntityInterface $entity)
+    protected function hydrateSolrNode($request, $entity)
     {
         if ($this->shouldHydrate($request, 'o:solr_node')) {
             $data = $request->getContent();

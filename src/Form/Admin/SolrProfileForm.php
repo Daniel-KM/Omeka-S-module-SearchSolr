@@ -27,22 +27,30 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form;
+namespace Solr\Form\Admin;
 
 use Zend\Form\Fieldset;
+use Zend\Form\Form;
+use Zend\I18n\Translator\TranslatorAwareInterface;
+use Zend\I18n\Translator\TranslatorAwareTrait;
+use Solr\ValueExtractor\Manager as ValueExtractorManager;
 
-class ConfigFieldset extends Fieldset
+class SolrProfileForm extends Form implements TranslatorAwareInterface
 {
-    public function __construct($name = null, $options = array())
+    use TranslatorAwareTrait;
+
+    protected $valueExtractorManager;
+
+    public function init()
     {
-        parent::__construct($name, $options);
+        $translator = $this->getTranslator();
 
         $this->add([
-            'name' => 'solr_node_id',
+            'name' => 'o:resource_name',
             'type' => 'Select',
             'options' => [
-                'label' => 'Solr node',
-                'value_options' => $this->getSolrNodesOptions(),
+                'label' => $translator->translate('Resource name'),
+                'value_options' => $this->getDocumentBuildersOptions(),
             ],
             'attributes' => [
                 'required' => true,
@@ -50,12 +58,25 @@ class ConfigFieldset extends Fieldset
         ]);
     }
 
-    protected function getSolrNodesOptions()
+    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
     {
+        $this->valueExtractorManager = $valueExtractorManager;
+    }
+
+    public function getValueExtractorManager()
+    {
+        return $this->valueExtractorManager;
+    }
+
+    protected function getDocumentBuildersOptions()
+    {
+        $valueExtractorManager = $this->getValueExtractorManager();
+
         $options = [];
-        foreach ($this->getOption('solrNodes') as $solrNode) {
-            $options[$solrNode->id()] = $solrNode->name();
+        foreach ($valueExtractorManager->getAll() as $resourceName => $valueExtractor) {
+            $options[$resourceName] = $valueExtractor->getLabel();
         }
+
         return $options;
     }
 }

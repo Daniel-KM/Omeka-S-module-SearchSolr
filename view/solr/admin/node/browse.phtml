@@ -34,46 +34,62 @@
 <?php echo $this->pageTitle($this->translate('Solr configuration')); ?>
 
 <div id="page-actions">
-    <a class="button" href="<?php echo $this->url('admin/solr/field', ['action' => 'add']); ?>">Add new field</a>
+    <a class="button" href="<?php echo $this->url('admin/solr/node', ['action' => 'add']); ?>">Add new node</a>
 </div>
 
-<h2>Fields</h2>
-<?php if (count($fields) > 0): ?>
+<h2>Nodes</h2>
+<?php if (count($nodes) > 0): ?>
     <table class="tablesaw">
         <thead>
             <tr>
-                <th><?php echo $this->translate('Name (Label)'); ?></th>
-                <th><?php echo $this->translate('Property'); ?></th>
-                <th><?php echo $this->translate('Indexed'); ?></th>
-                <th><?php echo $this->translate('Multi-valued'); ?></th>
+                <th><?php echo $this->translate('Name'); ?></th>
+                <th><?php echo $this->translate('URL'); ?></th>
+                <th><?php echo $this->translate('Status'); ?></th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($fields as $field): ?>
+            <?php foreach ($nodes as $node): ?>
                 <tr>
                     <td>
                         <ul class="actions">
                             <li>
                                 <?php
-                                    echo $field->link('', 'edit', [
+                                    echo $node->link('', 'edit', [
                                         'class' => 'o-icon-edit',
                                         'title' => $this->translate('Edit'),
                                     ]);
                                 ?>
                             </li>
                             <li>
+                                <?php
+                                    $href = $node->fieldUrl();
+                                    echo $this->hyperlink('', $href, [
+                                        'class' => 'o-icon- fa fa-database',
+                                        'title' => $this->translate('Fields'),
+                                    ]);
+                                ?>
+                            </li>
+                            <li>
+                                <?php
+                                    $href = $node->profileUrl();
+                                    echo $this->hyperlink('', $href, [
+                                        'class' => 'o-icon- fa fa-sliders',
+                                        'title' => $this->translate('Profiles'),
+                                    ]);
+                                ?>
+                            </li>
+                            <li>
                                 <a href="#"
-                                data-sidebar-content-url="<?php echo $escape($field->url('delete-confirm')); ?>"
+                                data-sidebar-content-url="<?php echo $escape($node->url('delete-confirm')); ?>"
                                 class="o-icon-delete sidebar-content"
                                 aria-label="<?php echo $escape($this->translate('Delete')); ?>"
                                 title="<?php echo $escape($this->translate('Delete')); ?>"></a>
                             </li>
                         </ul>
-                        <?php echo $field->name(); ?> (<?php echo $field->label(); ?>)
+                        <?php echo $node->name(); ?>
                     </td>
-                    <td><?php echo $field->property()->term(); ?></td>
-                    <td><?php echo $field->isIndexed() ? $this->translate('Yes') : $this->translate('No'); ?></td>
-                    <td><?php echo $field->isMultivalued() ? $this->translate('Yes') : $this->translate('No'); ?></td>
+                    <td><?php echo $node->clientUrl(); ?></td>
+                    <td><?php echo $node->status(); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

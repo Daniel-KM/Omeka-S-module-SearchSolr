@@ -32,24 +32,20 @@ namespace Solr\Controller\Admin;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
-use Solr\Form\Admin\SolrFieldForm;
+use Solr\Form\Admin\SolrNodeForm;
 
-class FieldController extends AbstractActionController
+class NodeController extends AbstractActionController
 {
     public function browseAction()
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
 
-        $solrNodeId = $this->params('id');
-        $solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
-
-        $response = $api->search('solr_fields', ['solr_node_id' => $solrNodeId]);
-        $solrFields = $response->getContent();
+        $response = $api->search('solr_nodes');
+        $nodes = $response->getContent();
 
         $view = new ViewModel;
-        $view->setVariable('solrNode', $solrNode);
-        $view->setVariable('solrFields', $solrFields);
+        $view->setVariable('nodes', $nodes);
         return $view;
     }
 
@@ -57,20 +53,18 @@ class FieldController extends AbstractActionController
     {
         $serviceLocator = $this->getServiceLocator();
 
-        $form = $this->getForm(SolrFieldForm::class);
-        $solrNodeId = $this->params('id');
+        $form = $this->getForm(SolrNodeForm::class);
 
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
             if ($form->isValid()) {
                 $data = $form->getData();
-                $data['o:solr_node']['o:id'] = $solrNodeId;
-                $response = $this->api()->create('solr_fields', $data);
+                $response = $this->api()->create('solr_nodes', $data);
                 if ($response->isError()) {
                     $form->setMessages($response->getErrors());
                 } else {
-                    $this->messenger()->addSuccess('Solr field created.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-field', ['action' => 'browse'], true);
+                    $this->messenger()->addSuccess('Solr node created.');
+                    return $this->redirect()->toRoute('admin/solr');
                 }
             } else {
                 $this->messenger()->addError('There was an error during validation');
@@ -88,25 +82,22 @@ class FieldController extends AbstractActionController
         $api = $serviceLocator->get('Omeka\ApiManager');
 
         $id = $this->params('id');
-        $field = $api->read('solr_fields', $id)->getContent();
+        $node = $api->read('solr_nodes', $id)->getContent();
 
-        $form = $this->getForm(SolrFieldForm::class);
-        $data = $field->jsonSerialize();
+        $form = $this->getForm(SolrNodeForm::class);
+        $data = $node->jsonSerialize();
         $form->setData($data);
 
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
             if ($form->isValid()) {
                 $formData = $form->getData();
-                $response = $this->api()->update('solr_fields', $id, $formData, [], true);
+                $response = $this->api()->update('solr_nodes', $id, $formData);
                 if ($response->isError()) {
                     $form->setMessages($response->getErrors());
                 } else {
-                    $this->messenger()->addSuccess('Solr field updated.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-field', [
-                        'action' => 'browse',
-                        'id' => $field->solrNode()->id(),
-                    ]);
+                    $this->messenger()->addSuccess('Solr node updated.');
+                    return $this->redirect()->toRoute('admin/solr');
                 }
             } else {
                 $this->messenger()->addError('There was an error during validation');
@@ -123,40 +114,33 @@ class FieldController extends AbstractActionController
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
         $id = $this->params('id');
-        $response = $api->read('solr_fields', $id);
-        $field = $response->getContent();
+        $response = $api->read('solr_nodes', $id);
+        $node = $response->getContent();
 
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'solr field');
-        $view->setVariable('resource', $field);
+        $view->setVariable('resourceLabel', 'solr node');
+        $view->setVariable('resource', $node);
         return $view;
     }
 
     public function deleteAction()
     {
-        $id = $this->params('id');
-        $field = $this->api()->read('solr_fields', $id)->getContent();
-
         if ($this->getRequest()->isPost()) {
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $response = $this->api()->delete('solr_fields', $id);
+                $response = $this->api()->delete('solr_nodes', $this->params('id'));
                 if ($response->isError()) {
-                    $this->messenger()->addError('Solr field could not be deleted');
+                    $this->messenger()->addError('Solr node could not be deleted');
                 } else {
-                    $this->messenger()->addSuccess('Solr field successfully deleted');
+                    $this->messenger()->addSuccess('Solr node successfully deleted');
                 }
             } else {
-                $this->messenger()->addError('Solr field could not be deleted');
+                $this->messenger()->addError('Solr node could not be deleted');
             }
         }
-
-        return $this->redirect()->toRoute('admin/solr/node-id-field', [
-            'action' => 'browse',
-            'id' => $field->solrNode()->id(),
-        ]);
+        return $this->redirect()->toRoute('admin/solr');
     }
 }

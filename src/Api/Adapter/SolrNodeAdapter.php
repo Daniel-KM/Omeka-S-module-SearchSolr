@@ -27,35 +27,69 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form;
+namespace Solr\Api\Adapter;
 
-use Zend\Form\Fieldset;
+use Doctrine\ORM\QueryBuilder;
+use Omeka\Api\Adapter\AbstractEntityAdapter;
+use Omeka\Api\Request;
+use Omeka\Entity\EntityInterface;
+use Omeka\Stdlib\ErrorStore;
 
-class ConfigFieldset extends Fieldset
+class SolrNodeAdapter extends AbstractEntityAdapter
 {
-    public function __construct($name = null, $options = array())
-    {
-        parent::__construct($name, $options);
+    /**
+     * {@inheritDoc}
+     */
+    protected $sortFields = [
+        'id'        => 'id',
+        'name'      => 'name',
+    ];
 
-        $this->add([
-            'name' => 'solr_node_id',
-            'type' => 'Select',
-            'options' => [
-                'label' => 'Solr node',
-                'value_options' => $this->getSolrNodesOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
+    /**
+     * {@inheritDoc}
+     */
+    public function getResourceName()
+    {
+        return 'solr_nodes';
     }
 
-    protected function getSolrNodesOptions()
+    /**
+     * {@inheritDoc}
+     */
+    public function getRepresentationClass()
     {
-        $options = [];
-        foreach ($this->getOption('solrNodes') as $solrNode) {
-            $options[$solrNode->id()] = $solrNode->name();
+        return 'Solr\Api\Representation\SolrNodeRepresentation';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getEntityClass()
+    {
+        return 'Solr\Entity\SolrNode';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function hydrate(Request $request, EntityInterface $entity,
+        ErrorStore $errorStore
+    ) {
+        if ($this->shouldHydrate($request, 'o:name')) {
+            $entity->setName($request->getValue('o:name'));
         }
-        return $options;
+        if ($this->shouldHydrate($request, 'o:settings')) {
+            $entity->setSettings($request->getValue('o:settings'));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
+    {
+        if (false == $entity->getName()) {
+            $errorStore->addError('o:name', 'The name cannot be empty.');
+        }
     }
 }

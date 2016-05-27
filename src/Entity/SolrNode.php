@@ -27,35 +27,58 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form;
+namespace Solr\Entity;
 
-use Zend\Form\Fieldset;
+use DateTime;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Omeka\Entity\AbstractEntity;
+use Omeka\Entity\Property;
 
-class ConfigFieldset extends Fieldset
+/**
+ * @Entity
+ */
+class SolrNode extends AbstractEntity
 {
-    public function __construct($name = null, $options = array())
-    {
-        parent::__construct($name, $options);
+    /**
+     * @Id
+     * @Column(type="integer")
+     * @GeneratedValue
+     */
+    protected $id;
 
-        $this->add([
-            'name' => 'solr_node_id',
-            'type' => 'Select',
-            'options' => [
-                'label' => 'Solr node',
-                'value_options' => $this->getSolrNodesOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
+    /**
+     * @Column(type="string", length=255)
+     */
+    protected $name;
+
+    /**
+     * @Column(type="json_array")
+     */
+    protected $settings;
+
+    public function getId()
+    {
+        return $this->id;
     }
 
-    protected function getSolrNodesOptions()
+    public function setName($name)
     {
-        $options = [];
-        foreach ($this->getOption('solrNodes') as $solrNode) {
-            $options[$solrNode->id()] = $solrNode->name();
-        }
-        return $options;
+        $this->name = $name;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function setSettings($settings)
+    {
+        $this->settings = $settings;
+    }
+
+    public function getSettings()
+    {
+        return $this->settings;
     }
 }

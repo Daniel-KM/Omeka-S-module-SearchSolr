@@ -35,7 +35,7 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 
-class SolrFieldAdapter extends AbstractEntityAdapter
+class SolrProfileRuleAdapter extends AbstractEntityAdapter
 {
     /**
      * {@inheritDoc}
@@ -43,8 +43,6 @@ class SolrFieldAdapter extends AbstractEntityAdapter
     protected $sortFields = [
         'id'        => 'id',
         'name'      => 'name',
-        'created'   => 'created',
-        'modified'  => 'modified',
     ];
 
     /**
@@ -52,7 +50,7 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function getResourceName()
     {
-        return 'solr_fields';
+        return 'solr_profile_rules';
     }
 
     /**
@@ -60,7 +58,7 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function getRepresentationClass()
     {
-        return 'Solr\Api\Representation\SolrFieldRepresentation';
+        return 'Solr\Api\Representation\SolrProfileRuleRepresentation';
     }
 
     /**
@@ -68,7 +66,7 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function getEntityClass()
     {
-        return 'Solr\Entity\SolrField';
+        return 'Solr\Entity\SolrProfileRule';
     }
 
     /**
@@ -77,30 +75,15 @@ class SolrFieldAdapter extends AbstractEntityAdapter
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
     ) {
-        if ($this->shouldHydrate($request, 'o:name')) {
-            $entity->setName($request->getValue('o:name'));
+        if ($this->shouldHydrate($request, 'o:source')) {
+            $entity->setSource($request->getValue('o:source'));
         }
-        if ($this->shouldHydrate($request, 'o:description')) {
-            $entity->setDescription($request->getValue('o:description'));
-        }
-        if ($this->shouldHydrate($request, 'o:is_indexed')) {
-            $entity->setIsIndexed($request->getValue('o:is_indexed'));
-        }
-        if ($this->shouldHydrate($request, 'o:is_multivalued')) {
-            $entity->setIsMultivalued($request->getValue('o:is_multivalued'));
+        if ($this->shouldHydrate($request, 'o:settings')) {
+            $entity->setSettings($request->getValue('o:settings'));
         }
 
-        $this->hydrateSolrNode($request, $entity);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
-    {
-        if (false == $entity->getName()) {
-            $errorStore->addError('o:name', 'The name cannot be empty.');
-        }
+        $this->hydrateSolrProfile($request, $entity);
+        $this->hydrateSolrField($request, $entity);
     }
 
     /**
@@ -108,41 +91,53 @@ class SolrFieldAdapter extends AbstractEntityAdapter
      */
     public function buildQuery(QueryBuilder $qb, array $query)
     {
-        if (isset($query['solr_node_id'])) {
-            $nodeAlias = $this->createAlias();
-            $qb->innerJoin('Solr\Entity\SolrField.solrNode', $nodeAlias);
+        if (isset($query['solr_profile_id'])) {
+            $solrProfileAlias = $this->createAlias();
+            $qb->innerJoin('Solr\Entity\SolrProfileRule.solrProfile', $solrProfileAlias);
             $qb->andWhere($qb->expr()->eq(
-                "$nodeAlias.id",
-                $this->createNamedParameter($qb, $query['solr_node_id']))
+                "$solrProfileAlias.id",
+                $this->createNamedParameter($qb, $query['solr_profile_id']))
             );
         }
-        if (isset($query['is_indexed'])) {
+        if (isset($query['solr_field_id'])) {
+            $solrFieldAlias = $this->createAlias();
+            $qb->innerJoin('Solr\Entity\SolrProfileRule.solrField', $solrFieldAlias);
             $qb->andWhere($qb->expr()->eq(
-                $this->getEntityClass() . ".isIndexed",
-                $this->createNamedParameter($qb, $query['is_indexed']))
-            );
-        }
-        if (isset($query['is_multivalued'])) {
-            $qb->andWhere($qb->expr()->eq(
-                $this->getEntityClass() . ".isMultivalued",
-                $this->createNamedParameter($qb, $query['is_multivalued']))
+                "$solrFieldAlias.id",
+                $this->createNamedParameter($qb, $query['solr_field_id']))
             );
         }
     }
 
-    protected function hydrateSolrNode(Request $request, EntityInterface $entity)
+    protected function hydrateSolrProfile(Request $request, EntityInterface $entity)
     {
-        if ($this->shouldHydrate($request, 'o:solr_node')) {
+        if ($this->shouldHydrate($request, 'o:solr_profile')) {
             $data = $request->getContent();
-            if (isset($data['o:solr_node']['o:id'])
-                && is_numeric($data['o:solr_node']['o:id'])
+            if (isset($data['o:solr_profile']['o:id'])
+                && is_numeric($data['o:solr_profile']['o:id'])
             ) {
-                $node = $this->getAdapter('solr_nodes')
-                    ->findEntity($data['o:solr_node']['o:id']);
+                $profile = $this->getAdapter('solr_profiles')
+                    ->findEntity($data['o:solr_profile']['o:id']);
             } else {
-                $node = null;
+                $profile = null;
             }
-            $entity->setSolrNode($node);
+            $entity->setSolrProfile($profile);
+        }
+    }
+
+    protected function hydrateSolrField(Request $request, EntityInterface $entity)
+    {
+        if ($this->shouldHydrate($request, 'o:solr_field')) {
+            $data = $request->getContent();
+            if (isset($data['o:solr_field']['o:id'])
+                && is_numeric($data['o:solr_field']['o:id'])
+            ) {
+                $field = $this->getAdapter('solr_fields')
+                    ->findEntity($data['o:solr_field']['o:id']);
+            } else {
+                $field = null;
+            }
+            $entity->setSolrField($field);
         }
     }
 }

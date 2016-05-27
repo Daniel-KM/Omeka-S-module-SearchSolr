@@ -32,24 +32,26 @@ namespace Solr\Controller\Admin;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
-use Solr\Form\Admin\SolrFieldForm;
+use Solr\Form\Admin\SolrProfileRuleForm;
 
-class FieldController extends AbstractActionController
+class ProfileRuleController extends AbstractActionController
 {
     public function browseAction()
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
 
-        $solrNodeId = $this->params('id');
-        $solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
+        $solrProfileId = $this->params('id');
+        $solrProfile = $api->read('solr_profiles', $solrProfileId)->getContent();
 
-        $response = $api->search('solr_fields', ['solr_node_id' => $solrNodeId]);
-        $solrFields = $response->getContent();
+        $response = $api->search('solr_profile_rules', [
+            'solr_profile_id' => $solrProfileId,
+        ]);
+        $solrProfileRules = $response->getContent();
 
         $view = new ViewModel;
-        $view->setVariable('solrNode', $solrNode);
-        $view->setVariable('solrFields', $solrFields);
+        $view->setVariable('solrProfile', $solrProfile);
+        $view->setVariable('solrProfileRules', $solrProfileRules);
         return $view;
     }
 
@@ -57,20 +59,28 @@ class FieldController extends AbstractActionController
     {
         $serviceLocator = $this->getServiceLocator();
 
-        $form = $this->getForm(SolrFieldForm::class);
-        $solrNodeId = $this->params('id');
+        $solrProfileId = $this->params('id');
+        $form = $this->getForm(SolrProfileRuleForm::class, [
+            'solr_profile_id' => $solrProfileId,
+        ]);
 
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
             if ($form->isValid()) {
                 $data = $form->getData();
-                $data['o:solr_node']['o:id'] = $solrNodeId;
-                $response = $this->api()->create('solr_fields', $data);
+                $data['o:solr_profile']['o:id'] = $solrProfileId;
+                $response = $this->api()->create('solr_profile_rules', $data);
                 if ($response->isError()) {
                     $form->setMessages($response->getErrors());
                 } else {
-                    $this->messenger()->addSuccess('Solr field created.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-field', ['action' => 'browse'], true);
+                    $this->messenger()->addSuccess('Solr profile rule created.');
+                    return $this->redirect()->toRoute(
+                        'admin/solr/profile-id-rule',
+                        [
+                            'id' => $solrProfileId,
+                            'action' => 'browse',
+                        ]
+                    );
                 }
             } else {
                 $this->messenger()->addError('There was an error during validation');
@@ -87,25 +97,29 @@ class FieldController extends AbstractActionController
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
 
-        $id = $this->params('id');
-        $field = $api->read('solr_fields', $id)->getContent();
+        $solrProfileRuleId = $this->params('id');
+        $response = $api->read('solr_profile_rules', $solrProfileRuleId);
+        $solrProfileRule = $response->getContent();
+        $form = $this->getForm(SolrProfileRuleForm::class, [
+            'solr_profile_id' => $solrProfileRule->solrProfile()->id(),
+        ]);
 
-        $form = $this->getForm(SolrFieldForm::class);
-        $data = $field->jsonSerialize();
+        $data = $solrProfileRule->jsonSerialize();
+        $data['o:solr_field'] = $data['o:solr_field']->jsonSerialize();
         $form->setData($data);
 
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
             if ($form->isValid()) {
                 $formData = $form->getData();
-                $response = $this->api()->update('solr_fields', $id, $formData, [], true);
+                $response = $this->api()->update('solr_profile_rules', $solrProfileRuleId, $formData, [], true);
                 if ($response->isError()) {
                     $form->setMessages($response->getErrors());
                 } else {
-                    $this->messenger()->addSuccess('Solr field updated.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-field', [
+                    $this->messenger()->addSuccess('Solr profile rule updated.');
+                    return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
+                        'id' => $solrProfileRule->solrProfile()->id(),
                         'action' => 'browse',
-                        'id' => $field->solrNode()->id(),
                     ]);
                 }
             } else {
@@ -122,41 +136,42 @@ class FieldController extends AbstractActionController
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
-        $id = $this->params('id');
-        $response = $api->read('solr_fields', $id);
-        $field = $response->getContent();
+        $solrProfileRuleId = $this->params('id');
+        $response = $api->read('solr_profile_rules', $solrProfileRuleId);
+        $solrProfileRule = $response->getContent();
 
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'solr field');
-        $view->setVariable('resource', $field);
+        $view->setVariable('resourceLabel', 'solr profile rule');
+        $view->setVariable('resource', $solrProfileRule);
         return $view;
     }
 
     public function deleteAction()
     {
-        $id = $this->params('id');
-        $field = $this->api()->read('solr_fields', $id)->getContent();
+        $solrProfileRuleId = $this->params('id');
+        $response = $this->api()->read('solr_profile_rules', $solrProfileRuleId);
+        $solrProfileRule = $response->getContent();
 
         if ($this->getRequest()->isPost()) {
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $response = $this->api()->delete('solr_fields', $id);
+                $response = $this->api()->delete('solr_profile_rules', $solrProfileRuleId);
                 if ($response->isError()) {
-                    $this->messenger()->addError('Solr field could not be deleted');
+                    $this->messenger()->addError('Solr profile rule could not be deleted');
                 } else {
-                    $this->messenger()->addSuccess('Solr field successfully deleted');
+                    $this->messenger()->addSuccess('Solr profile rule successfully deleted');
                 }
             } else {
-                $this->messenger()->addError('Solr field could not be deleted');
+                $this->messenger()->addError('Solr profile rule could not be deleted');
             }
         }
 
-        return $this->redirect()->toRoute('admin/solr/node-id-field', [
+        return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
+            'id' => $solrProfileRule->solrProfile()->id(),
             'action' => 'browse',
-            'id' => $field->solrNode()->id(),
         ]);
     }
 }

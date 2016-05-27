@@ -29,27 +29,25 @@
 
 namespace Solr\Api\Representation;
 
+use SolrClient;
+use SolrClientException;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
-class SolrFieldRepresentation extends AbstractEntityRepresentation
+class SolrProfileRepresentation extends AbstractEntityRepresentation
 {
     /**
      * {@inheritDoc}
      */
     public function getJsonLdType()
     {
-        return 'o:SolrField';
+        return 'o:SolrProfile';
     }
 
     public function getJsonLd()
     {
         $entity = $this->resource;
         return [
-            'o:name' => $entity->getName(),
-            'o:description' => $entity->getDescription(),
-            'o:is_indexed' => $entity->isIndexed(),
-            'o:is_multivalued' => $entity->isMultivalued(),
-            'o:created' => $this->getDateTime($entity->getCreated()),
+            'o:resource_name' => $entity->getResourceName(),
         ];
     }
 
@@ -64,47 +62,38 @@ class SolrFieldRepresentation extends AbstractEntityRepresentation
             'force_canonical' => $canonical
         ];
 
-        return $url('admin/solr/field-id', $params, $options);
+        return $url('admin/solr/profile-id', $params, $options);
     }
 
     public function solrNode()
     {
-        $node = $this->resource->getSolrNode();
-        return $this->getAdapter('solr_nodes')->getRepresentation($node);
+        $solrNode = $this->resource->getSolrNode();
+        return $this->getAdapter('solr_nodes')->getRepresentation($solrNode);
     }
 
-    public function name()
+    public function resourceName()
     {
-        return $this->resource->getName();
+        return $this->resource->getResourceName();
     }
 
-    public function description()
+    public function label()
     {
-        return $this->resource->getDescription();
+        $valueExtractorManager = $this->getServiceLocator()->get('Solr\ValueExtractorManager');
+        $extractor = $valueExtractorManager->get($this->resourceName());
+        return $extractor ? $extractor->getLabel() : $this->resourceName();
     }
 
-    public function isIndexed()
+    public function ruleUrl($action = null, $canonical = false)
     {
-        return $this->resource->isIndexed();
-    }
+        $url = $this->getViewHelper('Url');
+        $params = [
+            'action' => $action,
+            'id' => $this->id(),
+        ];
+        $options = [
+            'force_canonical' => $canonical
+        ];
 
-    public function isMultivalued()
-    {
-        return $this->resource->isMultivalued();
-    }
-
-    public function created()
-    {
-        return $this->resource->getCreated();
-    }
-
-    public function modified()
-    {
-        return $this->resource->getModified();
-    }
-
-    public function getEntity()
-    {
-        return $this->resource;
+        return $url('admin/solr/profile-id-rule', $params, $options);
     }
 }

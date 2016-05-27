@@ -2,8 +2,10 @@
 return [
     'controllers' => [
         'invokables' => [
-            'Solr\Controller\Admin\Index' => 'Solr\Controller\Admin\IndexController',
+            'Solr\Controller\Admin\Node' => 'Solr\Controller\Admin\NodeController',
             'Solr\Controller\Admin\Field' => 'Solr\Controller\Admin\FieldController',
+            'Solr\Controller\Admin\Profile' => 'Solr\Controller\Admin\ProfileController',
+            'Solr\Controller\Admin\ProfileRule' => 'Solr\Controller\Admin\ProfileRuleController',
         ],
     ],
     'entity_manager' => [
@@ -14,6 +16,9 @@ return [
     'api_adapters' => [
         'invokables' => [
             'solr_fields' => 'Solr\Api\Adapter\SolrFieldAdapter',
+            'solr_nodes' => 'Solr\Api\Adapter\SolrNodeAdapter',
+            'solr_profiles' => 'Solr\Api\Adapter\SolrProfileAdapter',
+            'solr_profile_rules' => 'Solr\Api\Adapter\SolrProfileRuleAdapter',
         ],
     ],
     'navigation' => [
@@ -21,10 +26,18 @@ return [
             [
                 'label' => 'Solr',
                 'route' => 'admin/solr',
-                'resource' => 'Solr\Controller\Admin\Index',
+                'resource' => 'Solr\Controller\Admin\Node',
                 'privilege' => 'browse',
                 'class' => 'o-icon-search',
             ],
+        ],
+    ],
+    'form_elements' => [
+        'factories' => [
+            'Solr\Form\Admin\SolrFieldForm' => 'Solr\Service\Form\SolrFieldFormFactory',
+            'Solr\Form\Admin\SolrNodeForm' => 'Solr\Service\Form\SolrNodeFormFactory',
+            'Solr\Form\Admin\SolrProfileForm' => 'Solr\Service\Form\SolrProfileFormFactory',
+            'Solr\Form\Admin\SolrProfileRuleForm' => 'Solr\Service\Form\SolrProfileRuleFormFactory',
         ],
     ],
     'router' =>[
@@ -37,19 +50,48 @@ return [
                             'route' => '/solr',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                'controller' => 'Index',
+                                'controller' => 'Node',
                                 'action' => 'browse',
                             ],
                         ],
                         'may_terminate' => true,
                         'child_routes' => [
-                            'field' => [
+                            'node' => [
                                 'type' => 'Segment',
                                 'options' => [
-                                    'route' => '/field/:action',
+                                    'route' => '/node[/:action]',
+                                    'defaults' => [
+                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                        'controller' => 'Node',
+                                        'action' => 'browse',
+                                    ],
+                                ],
+                            ],
+                            'node-id' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/node/:id[/:action]',
+                                    'defaults' => [
+                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                        'controller' => 'Node',
+                                        'action' => 'show',
+                                    ],
+                                    'constraints' => [
+                                        'id' => '\d+',
+                                    ],
+                                ],
+                            ],
+                            'node-id-field' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/node/:id/field[/:action]',
                                     'defaults' => [
                                         '__NAMESPACE__' => 'Solr\Controller\Admin',
                                         'controller' => 'Field',
+                                        'action' => 'browse',
+                                    ],
+                                    'constraints' => [
+                                        'id' => '\d+',
                                     ],
                                 ],
                             ],
@@ -67,10 +109,71 @@ return [
                                     ],
                                 ],
                             ],
+                            'node-id-profile' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/node/:id/profile[/:action]',
+                                    'defaults' => [
+                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                        'controller' => 'Profile',
+                                        'action' => 'browse',
+                                    ],
+                                    'constraints' => [
+                                        'id' => '\d+',
+                                    ],
+                                ],
+                            ],
+                            'profile-id' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/profile/:id[/:action]',
+                                    'defaults' => [
+                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                        'controller' => 'Profile',
+                                        'action' => 'show',
+                                    ],
+                                    'constraints' => [
+                                        'id' => '\d+',
+                                    ],
+                                ],
+                            ],
+                            'profile-id-rule' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/profile/:id/rule[/:action]',
+                                    'defaults' => [
+                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                        'controller' => 'ProfileRule',
+                                        'action' => 'browse',
+                                    ],
+                                    'constraints' => [
+                                        'id' => '\d+',
+                                    ],
+                                ],
+                            ],
+                            'rule-id' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/rule/:id[/:action]',
+                                    'defaults' => [
+                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                        'controller' => 'ProfileRule',
+                                        'action' => 'show',
+                                    ],
+                                    'constraints' => [
+                                        'id' => '\d+',
+                                    ],
+                                ],
+                            ],
                         ],
                     ],
                 ],
             ],
+        ],
+    ],
+    'service_manager' => [
+        'factories' => [
+            'Solr\ValueExtractorManager' => 'Solr\Service\ValueExtractorManagerFactory',
         ],
     ],
     'view_manager' => [
@@ -81,6 +184,12 @@ return [
     'search' => [
         'adapters' => [
             'solr' => 'Solr\Adapter',
+        ],
+    ],
+    'solr' => [
+        'value_extractors' => [
+            'items' => 'Solr\ValueExtractor\ItemValueExtractor',
+            'item_sets' => 'Solr\ValueExtractor\ItemSetValueExtractor',
         ],
     ],
 ];

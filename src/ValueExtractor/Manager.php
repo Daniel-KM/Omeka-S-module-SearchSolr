@@ -27,35 +27,56 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form;
+namespace Solr\ValueExtractor;
 
-use Zend\Form\Fieldset;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
-class ConfigFieldset extends Fieldset
+class Manager implements ServiceLocatorAwareInterface
 {
-    public function __construct($name = null, $options = array())
-    {
-        parent::__construct($name, $options);
+    use ServiceLocatorAwareTrait;
 
-        $this->add([
-            'name' => 'solr_node_id',
-            'type' => 'Select',
-            'options' => [
-                'label' => 'Solr node',
-                'value_options' => $this->getSolrNodesOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
+    protected $config;
+    protected $extractors = [];
+
+    public function __construct($config)
+    {
+        $this->config = $config;
     }
 
-    protected function getSolrNodesOptions()
+    public function get($resourceName)
     {
-        $options = [];
-        foreach ($this->getOption('solrNodes') as $solrNode) {
-            $options[$solrNode->id()] = $solrNode->name();
+        if (isset($this->extractors[$resourceName])) {
+            return $this->extractors[$resourceName];
         }
-        return $options;
+
+        if (!isset($this->config[$resourceName])) {
+            return null;
+        }
+
+        $class = $this->config[$resourceName];
+        if (!class_exists($class)) {
+            return null;
+        }
+
+        if (!in_array('Solr\ValueExtractor\ValueExtractorInterface', class_implements($class))) {
+            return null;
+        }
+
+        $this->extractors[$resourceName] = new $class;
+        $this->extractors[$resourceName]->setServiceLocator($this->getServiceLocator());
+        return $this->extractors[$resourceName];
+    }
+
+    public function getAll()
+    {
+        $extractors = [];
+        foreach ($this->config as $resourceName => $class) {
+            $extractor = $this->get($resourceName);
+            if ($extractor !== null) {
+                $extractors[$resourceName] = $extractor;
+            }
+        }
+        return $extractors;
     }
 }

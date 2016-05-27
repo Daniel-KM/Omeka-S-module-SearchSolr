@@ -34,7 +34,7 @@ use Zend\Form\Form;
 use Zend\I18n\Translator\TranslatorAwareInterface;
 use Zend\I18n\Translator\TranslatorAwareTrait;
 
-class SolrFieldForm extends Form implements TranslatorAwareInterface
+class SolrNodeForm extends Form implements TranslatorAwareInterface
 {
     use TranslatorAwareTrait;
 
@@ -53,34 +53,56 @@ class SolrFieldForm extends Form implements TranslatorAwareInterface
             ],
         ]);
 
-        $this->add([
-            'name' => 'o:description',
+        $settingsFieldset = new Fieldset('o:settings');
+        $clientSettingsFieldset = new Fieldset('client');
+
+        $clientSettingsFieldset->add([
+            'name' => 'hostname',
             'type' => 'Text',
             'options' => [
-                'label' => $translator->translate('Description'),
+                'label' => $translator->translate('Hostname'),
+            ],
+            'attributes' => [
+                'required' => true,
             ],
         ]);
 
-        $this->add([
-            'name' => 'o:is_indexed',
-            'type' => 'Checkbox',
+        $clientSettingsFieldset->add([
+            'name' => 'port',
+            'type' => 'Text',
             'options' => [
-                'label' => $translator->translate('Indexed'),
+                'label' => $translator->translate('Port'),
             ],
             'attributes' => [
-                'value' => '1',
+                'required' => true,
             ],
         ]);
 
-        $this->add([
-            'name' => 'o:is_multivalued',
-            'type' => 'Checkbox',
+        $clientSettingsFieldset->add([
+            'name' => 'path',
+            'type' => 'Text',
             'options' => [
-                'label' => $translator->translate('Multi-valued'),
+                'label' => $translator->translate('Path'),
             ],
             'attributes' => [
-                'value' => '1',
+                'required' => true,
             ],
         ]);
+
+        $settingsFieldset->add($clientSettingsFieldset);
+
+        $settingsFieldset->add([
+            'name' => 'resource_name_field',
+            'type' => 'Text',
+            'options' => [
+                'label' => $translator->translate('Resource name field'),
+                'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets", ...). It must be a single-valued, string-based field. WARNING: Changing this will require a complete reindexation.'),
+            ],
+            'attributes' => [
+                'required' => true,
+            ],
+        ]);
+
+        $this->add($settingsFieldset);
     }
 }

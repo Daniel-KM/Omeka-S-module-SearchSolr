@@ -27,35 +27,57 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form;
+namespace Solr\Entity;
 
-use Zend\Form\Fieldset;
+use DateTime;
+use Omeka\Entity\AbstractEntity;
+use Omeka\Entity\Property;
 
-class ConfigFieldset extends Fieldset
+/**
+ * @Entity
+ */
+class SolrProfile extends AbstractEntity
 {
-    public function __construct($name = null, $options = array())
-    {
-        parent::__construct($name, $options);
+    /**
+     * @Id
+     * @Column(type="integer")
+     * @GeneratedValue
+     */
+    protected $id;
 
-        $this->add([
-            'name' => 'solr_node_id',
-            'type' => 'Select',
-            'options' => [
-                'label' => 'Solr node',
-                'value_options' => $this->getSolrNodesOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
+    /**
+     * @ManyToOne(targetEntity="Solr\Entity\SolrNode")
+     * @JoinColumn(nullable=false)
+     */
+    protected $solrNode;
+
+    /**
+     * @Column(type="string", length=255)
+     */
+    protected $resourceName;
+
+    public function getId()
+    {
+        return $this->id;
     }
 
-    protected function getSolrNodesOptions()
+    public function setSolrNode(SolrNode $solrNode)
     {
-        $options = [];
-        foreach ($this->getOption('solrNodes') as $solrNode) {
-            $options[$solrNode->id()] = $solrNode->name();
-        }
-        return $options;
+        $this->solrNode = $solrNode;
+    }
+
+    public function getSolrNode()
+    {
+        return $this->solrNode;
+    }
+
+    public function setResourceName($resourceName)
+    {
+        $this->resourceName = $resourceName;
+    }
+
+    public function getResourceName()
+    {
+        return $this->resourceName;
     }
 }

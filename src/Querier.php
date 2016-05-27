@@ -39,6 +39,9 @@ use Search\Response;
 
 class Querier extends AbstractQuerier
 {
+    protected $client;
+    protected $solrNode;
+
     public function query(Query $query)
     {
         $serviceLocator = $this->getServiceLocator();
@@ -46,7 +49,9 @@ class Querier extends AbstractQuerier
 
         $client = $this->getClient();
 
-        $resource_name_field = $settings->get('solr_resource_name_field', Module::DEFAULT_RESOURCE_NAME_FIELD);
+        $solrNode = $this->getSolrNode();
+        $solrNodeSettings = $solrNode->settings();
+        $resource_name_field = $solrNodeSettings['resource_name_field'];
 
         $solrQuery = new SolrQuery;
         $q = $query->getQuery();
@@ -106,7 +111,8 @@ class Querier extends AbstractQuerier
         foreach ($solrResponse['grouped'][$resource_name_field]['groups'] as $group) {
             $response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
             foreach ($group['doclist']['docs'] as $doc) {
-                $response->addResult($group['groupValue'], ['id' => $doc['id']]);
+                list(,$resourceId) = explode(':', $doc['id']);
+                $response->addResult($group['groupValue'], ['id' => $resourceId]);
             }
         }
 
@@ -123,10 +129,26 @@ class Querier extends AbstractQuerier
 
     protected function getClient()
     {
-        return new SolrClient([
-            'hostname' => $this->getAdapterSetting('hostname'),
-            'port' => $this->getAdapterSetting('port'),
-            'path' => $this->getAdapterSetting('path'),
-        ]);
+        if (!isset($this->client)) {
+            $solrNode = $this->getSolrNode();
+            $this->client = new SolrClient($solrNode->clientSettings());
+        }
+
+        return $this->client;
+    }
+
+    protected function getSolrNode()
+    {
+        if (!isset($this->solrNode)) {
+            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+
+            $solrNodeId = $this->getAdapterSetting('solr_node_id');
+            if ($solrNodeId) {
+                $response = $api->read('solr_nodes', $solrNodeId);
+                $this->solrNode = $response->getContent();
+            }
+        }
+
+        return $this->solrNode;
     }
 }

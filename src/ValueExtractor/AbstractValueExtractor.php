@@ -27,35 +27,16 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form;
+namespace Solr\ValueExtractor;
 
-use Zend\Form\Fieldset;
+use Zend\ServiceManager\ServiceLocatorAwareTrait;
 
-class ConfigFieldset extends Fieldset
+abstract class AbstractValueExtractor implements ValueExtractorInterface
 {
-    public function __construct($name = null, $options = array())
-    {
-        parent::__construct($name, $options);
+    use ServiceLocatorAwareTrait;
 
-        $this->add([
-            'name' => 'solr_node_id',
-            'type' => 'Select',
-            'options' => [
-                'label' => 'Solr node',
-                'value_options' => $this->getSolrNodesOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
-    }
-
-    protected function getSolrNodesOptions()
+    protected function api()
     {
-        $options = [];
-        foreach ($this->getOption('solrNodes') as $solrNode) {
-            $options[$solrNode->id()] = $solrNode->name();
-        }
-        return $options;
+        return $this->getServiceLocator()->get('Omeka\ApiManager');
     }
 }

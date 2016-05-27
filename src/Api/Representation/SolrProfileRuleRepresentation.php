@@ -31,25 +31,24 @@ namespace Solr\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
-class SolrFieldRepresentation extends AbstractEntityRepresentation
+class SolrProfileRuleRepresentation extends AbstractEntityRepresentation
 {
     /**
      * {@inheritDoc}
      */
     public function getJsonLdType()
     {
-        return 'o:SolrField';
+        return 'o:SolrProfileRule';
     }
 
     public function getJsonLd()
     {
         $entity = $this->resource;
         return [
-            'o:name' => $entity->getName(),
-            'o:description' => $entity->getDescription(),
-            'o:is_indexed' => $entity->isIndexed(),
-            'o:is_multivalued' => $entity->isMultivalued(),
-            'o:created' => $this->getDateTime($entity->getCreated()),
+            'o:solr_profile' => $this->solrProfile()->getReference(),
+            'o:solr_field' => $this->solrField()->getReference(),
+            'o:source' => $entity->getSource(),
+            'o:settings' => $entity->getSettings(),
         ];
     }
 
@@ -64,47 +63,28 @@ class SolrFieldRepresentation extends AbstractEntityRepresentation
             'force_canonical' => $canonical
         ];
 
-        return $url('admin/solr/field-id', $params, $options);
+        return $url('admin/solr/rule-id', $params, $options);
     }
 
-    public function solrNode()
+    public function solrProfile()
     {
-        $node = $this->resource->getSolrNode();
-        return $this->getAdapter('solr_nodes')->getRepresentation($node);
+        $solrProfile = $this->resource->getSolrProfile();
+        return $this->getAdapter('solr_profiles')->getRepresentation($solrProfile);
     }
 
-    public function name()
+    public function solrField()
     {
-        return $this->resource->getName();
+        $solrField = $this->resource->getSolrField();
+        return $this->getAdapter('solr_fields')->getRepresentation($solrField);
     }
 
-    public function description()
+    public function source()
     {
-        return $this->resource->getDescription();
+        return $this->resource->getSource();
     }
 
-    public function isIndexed()
+    public function settings()
     {
-        return $this->resource->isIndexed();
-    }
-
-    public function isMultivalued()
-    {
-        return $this->resource->isMultivalued();
-    }
-
-    public function created()
-    {
-        return $this->resource->getCreated();
-    }
-
-    public function modified()
-    {
-        return $this->resource->getModified();
-    }
-
-    public function getEntity()
-    {
-        return $this->resource;
+        return $this->resource->getSettings();
     }
 }

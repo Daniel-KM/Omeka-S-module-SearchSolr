@@ -49,6 +49,12 @@ class SolrField extends AbstractEntity
     protected $id;
 
     /**
+     * @ManyToOne(targetEntity="Solr\Entity\SolrNode")
+     * @JoinColumn(nullable=false)
+     */
+    protected $solrNode;
+
+    /**
      * @Column(type="string", length=255)
      */
     protected $name;
@@ -56,13 +62,7 @@ class SolrField extends AbstractEntity
     /**
      * @Column(type="string", length=255)
      */
-    protected $label;
-
-    /**
-     * @ManyToOne(targetEntity="Omeka\Entity\Property")
-     * @JoinColumn(nullable=false)
-     */
-    protected $property;
+    protected $description;
 
     /**
      * @Column(type="boolean")
@@ -99,24 +99,24 @@ class SolrField extends AbstractEntity
         return $this->name;
     }
 
-    public function setLabel($label)
+    public function setDescription($description)
     {
-        $this->label = $label;
+        $this->description = $description;
     }
 
-    public function getLabel()
+    public function getDescription()
     {
-        return $this->label;
+        return $this->description;
     }
 
-    public function setProperty(Property $property)
+    public function setSolrNode(SolrNode $solrNode)
     {
-        $this->property = $property;
+        $this->solrNode = $solrNode;
     }
 
-    public function getProperty()
+    public function getSolrNode()
     {
-        return $this->property;
+        return $this->solrNode;
     }
 
     public function setIsIndexed($isIndexed)

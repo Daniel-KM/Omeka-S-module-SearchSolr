@@ -29,10 +29,11 @@
 
 namespace Solr;
 
+use Exception;
 use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
-use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
+use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
 use Omeka\Api\Representation\ItemSetRepresentation;
 use Search\Indexer\AbstractIndexer;
@@ -40,6 +41,20 @@ use Search\Indexer\AbstractIndexer;
 class Indexer extends AbstractIndexer
 {
     protected $client;
+    protected $solrNode;
+    protected $solrProfiles;
+
+    public function canIndex($resourceName)
+    {
+        $apiAdapterManager = $this->getServiceLocator()->get('Omeka\ApiAdapterManager');
+
+        $solrProfile = $this->getSolrProfile($resourceName);
+        if ($solrProfile) {
+            return true;
+        }
+
+        return false;
+    }
 
     public function clearIndex()
     {
@@ -48,7 +63,7 @@ class Indexer extends AbstractIndexer
         $client->commit();
     }
 
-    public function indexResource(AbstractResourceEntityRepresentation $resource)
+    public function indexResource(AbstractResourceRepresentation $resource)
     {
         $this->addResource($resource);
         $this->commit();
@@ -62,41 +77,59 @@ class Indexer extends AbstractIndexer
         $this->commit();
     }
 
-    public function deleteResource($id)
+    public function deleteResource($resourceName, $resourceId)
     {
+        $id = $this->getDocumentId($resourceName, $resourceId);
         $this->getClient()->deleteById($id);
         $this->commit();
     }
 
-    protected function addResource(AbstractResourceEntityRepresentation $resource)
+    protected function getDocumentId($resourceName, $resourceId)
+    {
+        return sprintf('%s:%s', $resourceName, $resourceId);
+    }
+
+    protected function addResource(AbstractResourceRepresentation $resource)
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
         $settings = $serviceLocator->get('Omeka\Settings');
+        $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
 
         $client = $this->getClient();
-        $resource_name_field = $settings->get('solr_resource_name_field', Module::DEFAULT_RESOURCE_NAME_FIELD);
+
+        $resourceName = $resource->resourceName();
+        $id = $this->getDocumentId($resourceName, $resource->id());
+
+        $solrNode = $this->getSolrNode();
+        $solrNodeSettings = $solrNode->settings();
+        $solrProfile = $this->getSolrProfile($resourceName);
 
         $document = new SolrInputDocument;
-        $document->addField('id', $resource->id());
-        $document->addField($resource_name_field, $resource->resourceName());
+        $document->addField('id', $id);
+        $resource_name_field = $solrNodeSettings['resource_name_field'];
+        $document->addField($resource_name_field, $resourceName);
 
-        $fields = $api->search('solr_fields', ['is_indexed' => 1])->getContent();
-        foreach ($fields as $field) {
-            $values = $resource->value($field->property()->term(), ['all' => true, 'default' => []]);
+        $solrProfileRules = $api->search('solr_profile_rules', [
+            'solr_profile_id' => $solrProfile->id(),
+        ])->getContent();
 
-            // TODO: Provide something to be able to index all types of value
-            $values = array_values(array_filter($values, function($value) {
-                $type = $value->type();
-                return ($type == 'literal' || $type == 'uri');
-            }));
+        $valueExtractor = $valueExtractorManager->get($resourceName);
+        foreach ($solrProfileRules as $solrProfileRule) {
+            $solrField = $solrProfileRule->solrField();
+            $source = $solrProfileRule->source();
+            $values = $valueExtractor->extractValue($resource, $source);
 
-            if (!$field->isMultivalued()) {
+            if (!is_array($values)) {
+                $values = (array) $values;
+            }
+
+            if (!$solrField->isMultivalued()) {
                 $values = array_slice($values, 0, 1);
             }
 
             foreach ($values as $value) {
-                $document->addField($field->name(), $value);
+                $document->addField($solrField->name(), $value);
             }
         }
         $this->getLogger()->info(sprintf('Indexing resource %1$s (%2$s)', $resource->id(), $resource->resourceName()));
@@ -118,13 +151,44 @@ class Indexer extends AbstractIndexer
     protected function getClient()
     {
         if (!isset($this->client)) {
-            $this->client = new SolrClient([
-                'hostname' => $this->getAdapterSetting('hostname'),
-                'port' => $this->getAdapterSetting('port'),
-                'path' => $this->getAdapterSetting('path'),
-            ]);
+            $solrNode = $this->getSolrNode();
+            $this->client = new SolrClient($solrNode->clientSettings());
         }
 
         return $this->client;
+    }
+
+    protected function getSolrNode()
+    {
+        if (!isset($this->solrNode)) {
+            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+
+            $solrNodeId = $this->getAdapterSetting('solr_node_id');
+            if ($solrNodeId) {
+                $response = $api->read('solr_nodes', $solrNodeId);
+                $this->solrNode = $response->getContent();
+            }
+        }
+
+        return $this->solrNode;
+    }
+
+    protected function getSolrProfile($resourceName)
+    {
+        if (!isset($this->solrProfiles)) {
+            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+            $solrNode = $this->getSolrNode();
+            if ($solrNode) {
+                $solrProfiles = $api->search('solr_profiles', [
+                    'solr_node_id' => $solrNode->id(),
+                ])->getContent();
+
+                foreach ($solrProfiles as $solrProfile) {
+                    $this->solrProfiles[$solrProfile->resourceName()] = $solrProfile;
+                }
+            }
+        }
+
+        return $this->solrProfiles[$resourceName];
     }
 }

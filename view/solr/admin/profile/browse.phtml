@@ -1,0 +1,92 @@
+<?php
+/*
+ * Copyright BibLibre, 2016
+ *
+ * This software is governed by the CeCILL license under French law and abiding
+ * by the rules of distribution of free software.  You can use, modify and/ or
+ * redistribute the software under the terms of the CeCILL license as circulated
+ * by CEA, CNRS and INRIA at the following URL "http://www.cecill.info".
+ *
+ * As a counterpart to the access to the source code and rights to copy, modify
+ * and redistribute granted by the license, users are provided only with a
+ * limited warranty and the software's author, the holder of the economic
+ * rights, and the successive licensors have only limited liability.
+ *
+ * In this respect, the user's attention is drawn to the risks associated with
+ * loading, using, modifying and/or developing or reproducing the software by
+ * the user in light of its specific status of free software, that may mean that
+ * it is complicated to manipulate, and that also therefore means that it is
+ * reserved for developers and experienced professionals having in-depth
+ * computer knowledge. Users are therefore encouraged to load and test the
+ * software's suitability as regards their requirements in conditions enabling
+ * the security of their systems and/or data to be ensured and, more generally,
+ * to use and operate it in the same conditions as regards security.
+ *
+ * The fact that you are presently reading this means that you have had
+ * knowledge of the CeCILL license and that you accept its terms.
+ */
+?>
+
+<?php $escape = $this->plugin('escapeHtml'); ?>
+
+<?php
+    $pageTitle = $this->translate('Solr profiles') . ' (' . $solrNode->name() . ')';
+    echo $this->pageTitle($pageTitle);
+?>
+
+<div id="page-actions">
+    <a class="button" href="<?php echo $this->url('admin/solr/node-id-profile', ['action' => 'add'], true); ?>">Add new profile</a>
+</div>
+
+<nav class="breadcrumbs">
+    <?php
+        $text = $this->translate('Back to node list');
+        $href = $this->url('admin/solr');
+        echo $this->hyperlink($text, $href, ['class' => 'o-icon-left']);
+    ?>
+</nav>
+
+<?php if (count($solrProfiles) > 0): ?>
+    <table class="tablesaw">
+        <thead>
+            <tr>
+                <th><?php echo $this->translate('Name'); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($solrProfiles as $solrProfile): ?>
+                <tr>
+                    <td>
+                        <ul class="actions">
+                            <li>
+                                <?php
+                                    $href = $solrProfile->ruleUrl();
+                                    echo $this->hyperlink('', $href, [
+                                        'class' => 'o-icon-settings',
+                                        'title' => $this->translate('Rules'),
+                                    ]);
+                                ?>
+                            </li>
+                            <li>
+                                <a href="#"
+                                data-sidebar-content-url="<?php echo $escape($solrProfile->url('delete-confirm')); ?>"
+                                class="o-icon-delete sidebar-content"
+                                aria-label="<?php echo $escape($this->translate('Delete')); ?>"
+                                title="<?php echo $escape($this->translate('Delete')); ?>"></a>
+                            </li>
+                        </ul>
+                        <?php echo $solrProfile->label(); ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php endif; ?>
+
+<div class="sidebar">
+    <a href="#"
+        class="sidebar-close o-icon-close"
+        aria-label="<?php echo $escape($this->translate('Close')); ?>"
+        title="<?php echo $escape($this->translate('Close')); ?>"></a>
+    <div class="sidebar-content"></div>
+</div>

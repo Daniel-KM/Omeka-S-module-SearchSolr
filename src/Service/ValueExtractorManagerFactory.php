@@ -27,22 +27,21 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Controller\Admin;
+namespace Solr\Service;
 
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Zend\ServiceManager\FactoryInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Solr\ValueExtractor\Manager;
 
-class IndexController extends AbstractActionController
+class ValueExtractorManagerFactory implements FactoryInterface
 {
-    public function browseAction()
+    public function createService(ServiceLocatorInterface $serviceLocator)
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
+        $config = $serviceLocator->get('Config');
 
-        $fields = $api->search('solr_fields')->getContent();
+        $vem = new Manager($config['solr']['value_extractors']);
+        $vem->setServiceLocator($serviceLocator);
 
-        $view = new ViewModel;
-        $view->setVariable('fields', $fields);
-        return $view;
+        return $vem;
     }
 }

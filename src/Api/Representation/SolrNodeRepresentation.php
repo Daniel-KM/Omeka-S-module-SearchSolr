@@ -29,16 +29,18 @@
 
 namespace Solr\Api\Representation;
 
+use SolrClient;
+use SolrClientException;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
-class SolrFieldRepresentation extends AbstractEntityRepresentation
+class SolrNodeRepresentation extends AbstractEntityRepresentation
 {
     /**
      * {@inheritDoc}
      */
     public function getJsonLdType()
     {
-        return 'o:SolrField';
+        return 'o:SolrNode';
     }
 
     public function getJsonLd()
@@ -46,10 +48,7 @@ class SolrFieldRepresentation extends AbstractEntityRepresentation
         $entity = $this->resource;
         return [
             'o:name' => $entity->getName(),
-            'o:description' => $entity->getDescription(),
-            'o:is_indexed' => $entity->isIndexed(),
-            'o:is_multivalued' => $entity->isMultivalued(),
-            'o:created' => $this->getDateTime($entity->getCreated()),
+            'o:settings' => $entity->getSettings(),
         ];
     }
 
@@ -64,13 +63,7 @@ class SolrFieldRepresentation extends AbstractEntityRepresentation
             'force_canonical' => $canonical
         ];
 
-        return $url('admin/solr/field-id', $params, $options);
-    }
-
-    public function solrNode()
-    {
-        $node = $this->resource->getSolrNode();
-        return $this->getAdapter('solr_nodes')->getRepresentation($node);
+        return $url('admin/solr/node-id', $params, $options);
     }
 
     public function name()
@@ -78,33 +71,65 @@ class SolrFieldRepresentation extends AbstractEntityRepresentation
         return $this->resource->getName();
     }
 
-    public function description()
+    public function settings()
     {
-        return $this->resource->getDescription();
+        return $this->resource->getSettings();
     }
 
-    public function isIndexed()
+    public function clientSettings()
     {
-        return $this->resource->isIndexed();
+        $settings = $this->settings();
+        return (array) $settings['client'];
     }
 
-    public function isMultivalued()
+    public function clientUrl()
     {
-        return $this->resource->isMultivalued();
+        $clientSettings = $this->clientSettings();
+        $hostname = $clientSettings['hostname'];
+        $port = $clientSettings['port'];
+        $path = $clientSettings['path'];
+        return sprintf('%s:%s/%s', $hostname, $port, $path);
     }
 
-    public function created()
+    public function status()
     {
-        return $this->resource->getCreated();
+        $solrClient = new SolrClient($this->clientSettings());
+
+        try {
+            $solrPingResponse = $solrClient->ping();
+        } catch (SolrClientException $e) {
+            $messages = explode("\n", $e->getMessage());
+            return reset($messages);
+        }
+
+        return 'OK';
     }
 
-    public function modified()
+    public function fieldUrl($action = null, $canonical = false)
     {
-        return $this->resource->getModified();
+        $url = $this->getViewHelper('Url');
+        $params = [
+            'action' => $action,
+            'id' => $this->id(),
+        ];
+        $options = [
+            'force_canonical' => $canonical,
+        ];
+
+        return $url('admin/solr/node-id-field', $params, $options);
     }
 
-    public function getEntity()
+    public function profileUrl($action = null, $canonical = false)
     {
-        return $this->resource;
+        $url = $this->getViewHelper('Url');
+        $params = [
+            'action' => $action,
+            'id' => $this->id(),
+        ];
+        $options = [
+            'force_canonical' => $canonical,
+        ];
+
+        return $url('admin/solr/node-id-profile', $params, $options);
     }
 }
