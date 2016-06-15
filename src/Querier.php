@@ -84,6 +84,15 @@ class Querier extends AbstractQuerier
             }
         }
 
+        $dateRangeFilters = $query->getDateRangeFilters();
+        foreach ($dateRangeFilters as $name => $filterValues) {
+            foreach ($filterValues as $filterValue) {
+                $start = $filterValue['start'] ? $filterValue['start'] : '*';
+                $end = $filterValue['end'] ? $filterValue['end'] : '*';
+                $solrQuery->addFilterQuery("$name:[$start TO $end]");
+            }
+        }
+
         $sort = $query->getSort();
         if (isset($sort)) {
             list($sortField, $sortOrder) = explode(' ', $sort);
