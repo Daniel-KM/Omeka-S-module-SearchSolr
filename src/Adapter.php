@@ -58,22 +58,7 @@ class Adapter extends AbstractAdapter
 
     public function getAvailableFacetFields()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
-        $response = $api->search('solr_fields', ['is_indexed' => 1]);
-        $fields = $response->getContent();
-        $facetFields = [];
-        foreach ($fields as $field) {
-            $name = $field->name();
-            $description = $field->description();
-            $facetFields[$name] = [
-                'name' => $name,
-                'label' => $description ? $description : $name,
-            ];
-        }
-
-        return $facetFields;
+        return $this->getAvailableFields();
     }
 
     public function getAvailableSortFields()
@@ -110,5 +95,25 @@ class Adapter extends AbstractAdapter
         }
 
         return $sortFields;
+    }
+
+    public function getAvailableFields()
+    {
+        $serviceLocator = $this->getServiceLocator();
+        $api = $serviceLocator->get('Omeka\ApiManager');
+
+        $response = $api->search('solr_fields', ['is_indexed' => 1]);
+        $fields = $response->getContent();
+        $facetFields = [];
+        foreach ($fields as $field) {
+            $name = $field->name();
+            $description = $field->description();
+            $facetFields[$name] = [
+                'name' => $name,
+                'label' => $description ? $description : $name,
+            ];
+        }
+
+        return $facetFields;
     }
 }
