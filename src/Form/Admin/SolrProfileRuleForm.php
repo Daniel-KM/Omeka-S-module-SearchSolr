@@ -34,12 +34,14 @@ use Zend\Form\Form;
 use Zend\I18n\Translator\TranslatorAwareInterface;
 use Zend\I18n\Translator\TranslatorAwareTrait;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
+use Solr\ValueFormatter\Manager as ValueFormatterManager;
 
 class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
 {
     use TranslatorAwareTrait;
 
     protected $valueExtractorManager;
+    protected $valueFormatterManager;
     protected $apiManager;
 
     public function init()
@@ -71,6 +73,17 @@ class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
                 'required' => true,
             ],
         ]);
+
+        $settingsFieldset = new Fieldset('o:settings');
+        $settingsFieldset->add([
+            'name' => 'formatter',
+            'type' => 'Select',
+            'options' => [
+                'label' => $translator->translate('Formatter'),
+                'value_options' => $this->getFormatterOptions(),
+            ],
+        ]);
+        $this->add($settingsFieldset);
     }
 
     public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
@@ -81,6 +94,16 @@ class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
     public function getValueExtractorManager()
     {
         return $this->valueExtractorManager;
+    }
+
+    public function setValueFormatterManager(ValueFormatterManager $valueFormatterManager)
+    {
+        $this->valueFormatterManager = $valueFormatterManager;
+    }
+
+    public function getValueFormatterManager()
+    {
+        return $this->valueFormatterManager;
     }
 
     public function setApiManager($apiManager)
@@ -151,5 +174,21 @@ class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
         $api = $this->getApiManager();
         $solrProfileId = $this->getOption('solr_profile_id');
         return $api->read('solr_profiles', $solrProfileId)->getContent();
+    }
+
+    protected function getFormatterOptions()
+    {
+        $valueFormatterManager = $this->getValueFormatterManager();
+
+        // TODO Find a way to tell Zend to accept empty values
+        $options = [
+            '0' => $this->getTranslator()->translate('None'),
+        ];
+        $valueFormatters = $valueFormatterManager->getAll();
+        foreach ($valueFormatters as $name => $valueFormatter) {
+            $options[$name] = $valueFormatter->getLabel();
+        }
+
+        return $options;
     }
 }

@@ -95,6 +95,7 @@ class Indexer extends AbstractIndexer
         $api = $serviceLocator->get('Omeka\ApiManager');
         $settings = $serviceLocator->get('Omeka\Settings');
         $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
+        $valueFormatterManager = $serviceLocator->get('Solr\ValueFormatterManager');
 
         $client = $this->getClient();
 
@@ -128,7 +129,13 @@ class Indexer extends AbstractIndexer
                 $values = array_slice($values, 0, 1);
             }
 
+            $solrProfileRuleSettings = $solrProfileRule->settings();
+            $formatter = $solrProfileRuleSettings['formatter'];
+            $valueFormatter = $valueFormatterManager->get($formatter);
             foreach ($values as $value) {
+                if ($valueFormatter) {
+                    $value = $valueFormatter->format($value);
+                }
                 $document->addField($solrField->name(), $value);
             }
         }

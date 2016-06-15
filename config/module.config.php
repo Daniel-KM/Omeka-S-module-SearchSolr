@@ -174,6 +174,7 @@ return [
     'service_manager' => [
         'factories' => [
             'Solr\ValueExtractorManager' => 'Solr\Service\ValueExtractorManagerFactory',
+            'Solr\ValueFormatterManager' => 'Solr\Service\ValueFormatterManagerFactory',
         ],
     ],
     'view_manager' => [
@@ -190,6 +191,9 @@ return [
         'value_extractors' => [
             'items' => 'Solr\ValueExtractor\ItemValueExtractor',
             'item_sets' => 'Solr\ValueExtractor\ItemSetValueExtractor',
+        ],
+        'value_formatters' => [
+            'date_range' => 'Solr\ValueFormatter\DateRange',
         ],
     ],
 ];
