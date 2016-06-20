@@ -66,7 +66,14 @@ class ItemValueExtractor extends AbstractValueExtractor
             $fields[$term]['label'] = $term;
         }
 
-        $fields['item_set']['label'] = 'Item set';
+        $fields['item_set'] = [
+            'label' => 'Item set',
+            'children' => [
+                'id' => [
+                    'label' => 'Internal identifier',
+                ],
+            ],
+        ];
         $fields['media']['label'] = 'Media';
 
         foreach ($properties as $property) {
@@ -132,8 +139,12 @@ class ItemValueExtractor extends AbstractValueExtractor
         $extractedValue = [];
 
         foreach ($item->itemSets() as $itemSet) {
-            $itemSetExtractedValue = $this->extractPropertyValue($itemSet, $field);
-            $extractedValue = array_merge($extractedValue, $itemSetExtractedValue);
+            if ($field == 'id') {
+                $extractedValue[] = $itemSet->id();
+            } else {
+                $itemSetExtractedValue = $this->extractPropertyValue($itemSet, $field);
+                $extractedValue = array_merge($extractedValue, $itemSetExtractedValue);
+            }
         }
 
         return $extractedValue;
