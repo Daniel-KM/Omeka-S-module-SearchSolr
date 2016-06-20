@@ -79,7 +79,12 @@ class Querier extends AbstractQuerier
         if (!empty($filters)) {
             foreach ($filters as $name => $values) {
                 foreach ($values as $value) {
-                    $solrQuery->addFilterQuery("$name:\"$value\"");
+                    if (is_array($value) && !empty($value)) {
+                        $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
+                    } else {
+                        $value = $this->enclose($value);
+                    }
+                    $solrQuery->addFilterQuery("$name:$value");
                 }
             }
         }
@@ -134,6 +139,11 @@ class Querier extends AbstractQuerier
         }
 
         return $response;
+    }
+
+    protected function enclose($value)
+    {
+        return '"' . addcslashes($value, '"') . '"';
     }
 
     protected function getClient()
