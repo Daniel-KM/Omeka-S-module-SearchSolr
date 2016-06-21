@@ -53,33 +53,42 @@ class FieldController extends AbstractActionController
         return $view;
     }
 
+    protected function checkPostAndValidForm($form) {
+        if (!$this->getRequest()->isPost())
+            return false;
+
+        $form->setData($this->params()->fromPost());
+        if (!$form->isValid()) {
+            $this->messenger()->addError('There was an error during validation');
+            return false;
+        }
+        return true;
+    }
+
+
     public function addAction()
     {
         $serviceLocator = $this->getServiceLocator();
 
         $form = $this->getForm(SolrFieldForm::class);
         $solrNodeId = $this->params('id');
-
-        if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
-            if ($form->isValid()) {
-                $data = $form->getData();
-                $data['o:solr_node']['o:id'] = $solrNodeId;
-                $response = $this->api()->create('solr_fields', $data);
-                if ($response->isError()) {
-                    $form->setMessages($response->getErrors());
-                } else {
-                    $this->messenger()->addSuccess('Solr field created.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-field', ['action' => 'browse'], true);
-                }
-            } else {
-                $this->messenger()->addError('There was an error during validation');
-            }
-        }
-
         $view = new ViewModel;
         $view->setVariable('form', $form);
-        return $view;
+        if (!$this->checkPostAndValidForm($form))
+            return $view;
+
+
+        $data = $form->getData();
+        $data['o:solr_node']['o:id'] = $solrNodeId;
+        $response = $this->api()->create('solr_fields', $data);
+        if ($response->isError()) {
+            $form->setMessages($response->getErrors());
+            return $view;
+        }
+
+        $this->messenger()->addSuccess('Solr field created.');
+        return $this->redirect()->toRoute('admin/solr/node-id-field', ['action' => 'browse'], true);
+
     }
 
     public function editAction()
@@ -93,28 +102,23 @@ class FieldController extends AbstractActionController
         $form = $this->getForm(SolrFieldForm::class);
         $data = $field->jsonSerialize();
         $form->setData($data);
+        $view = new ViewModel;
+        $view->setVariable('form', $form);
 
-        if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
-            if ($form->isValid()) {
-                $formData = $form->getData();
-                $response = $this->api()->update('solr_fields', $id, $formData, [], true);
-                if ($response->isError()) {
-                    $form->setMessages($response->getErrors());
-                } else {
-                    $this->messenger()->addSuccess('Solr field updated.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-field', [
+        if (!$this->checkPostAndValidForm($form))
+            return $view;
+
+        $formData = $form->getData();
+        $response = $this->api()->update('solr_fields', $id, $formData, [], true);
+        if ($response->isError()) {
+            $form->setMessages($response->getErrors());
+            return $view;
+        }
+        $this->messenger()->addSuccess('Solr field updated.');
+        return $this->redirect()->toRoute('admin/solr/node-id-field', [
                         'action' => 'browse',
                         'id' => $field->solrNode()->id(),
                     ]);
-                }
-            } else {
-                $this->messenger()->addError('There was an error during validation');
-            }
-        }
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
         return $view;
     }
 

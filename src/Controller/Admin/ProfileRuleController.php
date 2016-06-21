@@ -55,6 +55,19 @@ class ProfileRuleController extends AbstractActionController
         return $view;
     }
 
+
+    protected function checkPostAndValidForm($form) {
+        if (!$this->getRequest()->isPost())
+            return false;
+
+        $form->setData($this->params()->fromPost());
+        if (!$form->isValid()) {
+            $this->messenger()->addError('There was an error during validation');
+            return false;
+        }
+        return true;
+    }
+
     public function addAction()
     {
         $serviceLocator = $this->getServiceLocator();
@@ -64,32 +77,28 @@ class ProfileRuleController extends AbstractActionController
             'solr_profile_id' => $solrProfileId,
         ]);
 
-        if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
-            if ($form->isValid()) {
-                $data = $form->getData();
-                $data['o:solr_profile']['o:id'] = $solrProfileId;
-                $response = $this->api()->create('solr_profile_rules', $data);
-                if ($response->isError()) {
+        $view = new ViewModel;
+        $view->setVariable('form', $form);
+
+        if (!$this->checkPostAndValidForm($form))
+            return $view;
+
+        $data = $form->getData();
+        $data['o:solr_profile']['o:id'] = $solrProfileId;
+        $response = $this->api()->create('solr_profile_rules', $data);
+        if ($response->isError()) {
                     $form->setMessages($response->getErrors());
-                } else {
-                    $this->messenger()->addSuccess('Solr profile rule created.');
-                    return $this->redirect()->toRoute(
+                    return $view;
+        }
+
+        $this->messenger()->addSuccess('Solr profile rule created.');
+        return $this->redirect()->toRoute(
                         'admin/solr/profile-id-rule',
                         [
                             'id' => $solrProfileId,
                             'action' => 'browse',
                         ]
                     );
-                }
-            } else {
-                $this->messenger()->addError('There was an error during validation');
-            }
-        }
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        return $view;
     }
 
     public function editAction()
@@ -107,29 +116,24 @@ class ProfileRuleController extends AbstractActionController
         $data = $solrProfileRule->jsonSerialize();
         $data['o:solr_field'] = $data['o:solr_field']->jsonSerialize();
         $form->setData($data);
+        $view = new ViewModel;
+        $view->setVariable('form', $form);
 
-        if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
-            if ($form->isValid()) {
-                $formData = $form->getData();
-                $response = $this->api()->update('solr_profile_rules', $solrProfileRuleId, $formData, [], true);
-                if ($response->isError()) {
+        if (!$this->checkPostAndValidForm($form))
+            return $view;
+
+        $formData = $form->getData();
+        $response = $this->api()->update('solr_profile_rules', $solrProfileRuleId, $formData, [], true);
+        if ($response->isError()) {
                     $form->setMessages($response->getErrors());
-                } else {
-                    $this->messenger()->addSuccess('Solr profile rule updated.');
-                    return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
+                    return $view;
+        }
+
+        $this->messenger()->addSuccess('Solr profile rule updated.');
+        return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
                         'id' => $solrProfileRule->solrProfile()->id(),
                         'action' => 'browse',
                     ]);
-                }
-            } else {
-                $this->messenger()->addError('There was an error during validation');
-            }
-        }
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        return $view;
     }
 
     public function deleteConfirmAction()

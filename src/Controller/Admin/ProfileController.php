@@ -60,29 +60,37 @@ class ProfileController extends AbstractActionController
         $form = $this->getForm(SolrProfileForm::class);
         $solrNodeId = $this->params('id');
 
-        if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
-            if ($form->isValid()) {
-                $data = $form->getData();
-                $data['o:solr_node']['o:id'] = $solrNodeId;
-                $response = $this->api()->create('solr_profiles', $data);
-                if ($response->isError()) {
-                    $form->setMessages($response->getErrors());
-                } else {
-                    $this->messenger()->addSuccess('Solr profile created.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-profile', [
+        $view = new ViewModel;
+        $view->setVariable('form', $form);
+
+        if (!$this->checkPostAndValidForm($form))
+            return $view;
+
+        $data = $form->getData();
+        $data['o:solr_node']['o:id'] = $solrNodeId;
+        $response = $this->api()->create('solr_profiles', $data);
+        if ($response->isError()) {
+            $form->setMessages($response->getErrors());
+            return $view;
+        }
+        $this->messenger()->addSuccess('Solr profile created.');
+        return $this->redirect()->toRoute('admin/solr/node-id-profile', [
                         'action' => 'browse',
                         'id' => $solrNodeId,
                     ]);
-                }
-            } else {
-                $this->messenger()->addError('There was an error during validation');
-            }
-        }
+    }
 
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        return $view;
+
+    protected function checkPostAndValidForm($form) {
+        if (!$this->getRequest()->isPost())
+            return false;
+
+        $form->setData($this->params()->fromPost());
+        if (!$form->isValid()) {
+            $this->messenger()->addError('There was an error during validation');
+            return false;
+        }
+        return true;
     }
 
     public function editAction()
@@ -97,28 +105,24 @@ class ProfileController extends AbstractActionController
         $data = $profile->jsonSerialize();
         $form->setData($data);
 
-        if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
-            if ($form->isValid()) {
-                $formData = $form->getData();
-                $response = $this->api()->update('solr_profiles', $id, $formData, [], true);
-                if ($response->isError()) {
-                    $form->setMessages($response->getErrors());
-                } else {
-                    $this->messenger()->addSuccess('Solr profile updated.');
-                    return $this->redirect()->toRoute('admin/solr/node-id-profile', [
+        $view = new ViewModel;
+        $view->setVariable('form', $form);
+
+        if (!$this->checkPostAndValidForm($form))
+            return $view;
+
+        $formData = $form->getData();
+        $response = $this->api()->update('solr_profiles', $id, $formData, [], true);
+        if ($response->isError()) {
+            $form->setMessages($response->getErrors());
+            return $view;
+        }
+
+        $this->messenger()->addSuccess('Solr profile updated.');
+        return $this->redirect()->toRoute('admin/solr/node-id-profile', [
                         'action' => 'browse',
                         'id' => $profile->solrNode()->id(),
                     ]);
-                }
-            } else {
-                $this->messenger()->addError('There was an error during validation');
-            }
-        }
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        return $view;
     }
 
     public function deleteConfirmAction()

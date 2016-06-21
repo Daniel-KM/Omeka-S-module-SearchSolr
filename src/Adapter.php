@@ -82,11 +82,10 @@ class Adapter extends AbstractAdapter
         $response = $api->search('solr_fields', ['is_indexed' => 1, 'is_multivalued' => 0]);
         $fields = $response->getContent();
         foreach ($fields as $field) {
-            $description = $field->description();
+            $description = $field->description() ? $field->description() : $field->name();
             foreach (['asc', 'desc'] as $direction) {
                 $name = $field->name() . ' ' . $direction;
-                $label = $description ? $description : $field->name();
-                $label .= ' ' . $directionLabel[$direction];
+                $label = $description. ' ' . $directionLabel[$direction];
                 $sortFields[$name] = [
                     'name' => $name,
                     'label' => $label,
