@@ -55,9 +55,10 @@ class Querier extends AbstractQuerier
 
         $solrQuery = new SolrQuery;
         $q = $query->getQuery();
-        if (!empty($q)) {
-            $solrQuery->setQuery($q);
+        if (empty($q)) {
+            $q = '*:*';
         }
+        $solrQuery->setQuery($q);
         $solrQuery->addField('id');
 
         $solrQuery->setGroup(true);
