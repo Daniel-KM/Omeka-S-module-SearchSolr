@@ -1,6 +1,9 @@
 <?php
 require __DIR__ . '/../../../bootstrap.php';
 
+$classLoader = require __DIR__ . '/../../../vendor/autoload.php';
+$classLoader->addPsr4('SolrTest\\', __DIR__ . '/SolrTest');
+
 //make sure error reporting is on for testing
 error_reporting(E_ALL);
 ini_set('display_errors', 1);

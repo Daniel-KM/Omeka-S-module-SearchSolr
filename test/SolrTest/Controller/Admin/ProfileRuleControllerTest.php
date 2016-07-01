@@ -2,8 +2,6 @@
 
 namespace SolrTest\Controller\Admin;
 
-require_once __DIR__ . '/../SolrControllerTestCase.php';
-
 use SolrTest\Controller\SolrControllerTestCase;
 
 class ProfileRuleControllerTest extends SolrControllerTestCase
