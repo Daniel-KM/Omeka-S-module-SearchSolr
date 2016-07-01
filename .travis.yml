@@ -1,0 +1,30 @@
+language: php
+
+php:
+  - 5.5
+  - 5.6
+  - 7.0
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+install:
+  - sudo apt-get install -y --force-yes php-pear
+  - yes '' | sudo pecl install solr
+  - echo "extension=solr.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - cd ../..
+  - git clone --depth 1 https://github.com/omeka/omeka-s.git
+  - git clone --depth 1 https://github.com/biblibre/omeka-s-module-Search.git omeka-s/modules/Search
+  - cp -a $(readlink -e $(cd -)) omeka-s/modules/Solr
+  - cd omeka-s
+  - ant init
+
+before_script:
+  - mysql -e "create database IF NOT EXISTS omeka_test;" -uroot
+  - sed -i 's/^host.*/host = "localhost"/' application/test/config/database.ini
+  - sed -i 's/^user.*/user = "root"/' application/test/config/database.ini
+  - sed -i 's/^dbname.*/dbname = "omeka_test"/' application/test/config/database.ini
+  - cd modules/Solr/test
+
+script: phpunit
