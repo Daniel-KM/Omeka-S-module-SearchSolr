@@ -38,10 +38,7 @@ class NodeController extends AbstractActionController
 {
     public function browseAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
-        $response = $api->search('solr_nodes');
+        $response = $this->api()->search('solr_nodes');
         $nodes = $response->getContent();
 
         $view = new ViewModel;
@@ -63,8 +60,6 @@ class NodeController extends AbstractActionController
 
     public function addAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-
         $form = $this->getForm(SolrNodeForm::class);
 
         $view = new ViewModel;
@@ -86,11 +81,8 @@ class NodeController extends AbstractActionController
 
     public function editAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
         $id = $this->params('id');
-        $node = $api->read('solr_nodes', $id)->getContent();
+        $node = $this->api()->read('solr_nodes', $id)->getContent();
 
         $form = $this->getForm(SolrNodeForm::class);
         $data = $node->jsonSerialize();
@@ -111,15 +103,12 @@ class NodeController extends AbstractActionController
 
         $this->messenger()->addSuccess('Solr node updated.');
         return $this->redirect()->toRoute('admin/solr');
-
     }
 
     public function deleteConfirmAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
         $id = $this->params('id');
-        $response = $api->read('solr_nodes', $id);
+        $response = $this->api()->read('solr_nodes', $id);
         $node = $response->getContent();
 
         $view = new ViewModel;

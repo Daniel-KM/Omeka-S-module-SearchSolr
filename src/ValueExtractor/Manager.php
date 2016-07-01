@@ -29,15 +29,12 @@
 
 namespace Solr\ValueExtractor;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorAwareTrait;
-
-class Manager implements ServiceLocatorAwareInterface
+class Manager
 {
-    use ServiceLocatorAwareTrait;
-
     protected $config;
     protected $extractors = [];
+
+    protected $serviceLocator;
 
     public function __construct($config)
     {
@@ -79,4 +76,15 @@ class Manager implements ServiceLocatorAwareInterface
         }
         return $extractors;
     }
+
+    public function setServiceLocator($serviceLocator)
+    {
+        $this->serviceLocator = $serviceLocator;
+    }
+
+    public function getServiceLocator()
+    {
+        return $this->serviceLocator;
+    }
+
 }

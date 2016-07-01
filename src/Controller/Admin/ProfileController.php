@@ -38,13 +38,10 @@ class ProfileController extends AbstractActionController
 {
     public function browseAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
         $solrNodeId = $this->params('id');
-        $solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
+        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
 
-        $response = $api->search('solr_profiles', ['solr_node_id' => $solrNodeId]);
+        $response = $this->api()->search('solr_profiles', ['solr_node_id' => $solrNodeId]);
         $solrProfiles = $response->getContent();
 
         $view = new ViewModel;
@@ -55,16 +52,15 @@ class ProfileController extends AbstractActionController
 
     public function addAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-
         $form = $this->getForm(SolrProfileForm::class);
         $solrNodeId = $this->params('id');
 
         $view = new ViewModel;
         $view->setVariable('form', $form);
 
-        if (!$this->checkPostAndValidForm($form))
+        if (!$this->checkPostAndValidForm($form)) {
             return $view;
+        }
 
         $data = $form->getData();
         $data['o:solr_node']['o:id'] = $solrNodeId;
@@ -73,11 +69,12 @@ class ProfileController extends AbstractActionController
             $form->setMessages($response->getErrors());
             return $view;
         }
+
         $this->messenger()->addSuccess('Solr profile created.');
         return $this->redirect()->toRoute('admin/solr/node-id-profile', [
-                        'action' => 'browse',
-                        'id' => $solrNodeId,
-                    ]);
+            'action' => 'browse',
+            'id' => $solrNodeId,
+        ]);
     }
 
 
@@ -93,44 +90,10 @@ class ProfileController extends AbstractActionController
         return true;
     }
 
-    public function editAction()
-    {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
-        $id = $this->params('id');
-        $profile = $api->read('solr_profiles', $id)->getContent();
-
-        $form = new SolrProfileForm($serviceLocator);
-        $data = $profile->jsonSerialize();
-        $form->setData($data);
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-
-        if (!$this->checkPostAndValidForm($form))
-            return $view;
-
-        $formData = $form->getData();
-        $response = $this->api()->update('solr_profiles', $id, $formData, [], true);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
-
-        $this->messenger()->addSuccess('Solr profile updated.');
-        return $this->redirect()->toRoute('admin/solr/node-id-profile', [
-                        'action' => 'browse',
-                        'id' => $profile->solrNode()->id(),
-                    ]);
-    }
-
     public function deleteConfirmAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
         $id = $this->params('id');
-        $response = $api->read('solr_profiles', $id);
+        $response = $this->api()->read('solr_profiles', $id);
         $profile = $response->getContent();
 
         $view = new ViewModel;
@@ -148,7 +111,7 @@ class ProfileController extends AbstractActionController
         $solrNode = $profile->solrNode();
 
         if ($this->getRequest()->isPost()) {
-            $form = new ConfirmForm($this->getServiceLocator());
+            $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
                 $response = $this->api()->delete('solr_profiles', $id);

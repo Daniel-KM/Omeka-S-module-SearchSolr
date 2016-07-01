@@ -38,13 +38,11 @@ class ProfileRuleController extends AbstractActionController
 {
     public function browseAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
         $solrProfileId = $this->params('id');
-        $solrProfile = $api->read('solr_profiles', $solrProfileId)->getContent();
+        $response = $this->api()->read('solr_profiles', $solrProfileId);
+        $solrProfile = $response->getContent();
 
-        $response = $api->search('solr_profile_rules', [
+        $response = $this->api()->search('solr_profile_rules', [
             'solr_profile_id' => $solrProfileId,
         ]);
         $solrProfileRules = $response->getContent();
@@ -70,8 +68,6 @@ class ProfileRuleController extends AbstractActionController
 
     public function addAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-
         $solrProfileId = $this->params('id');
         $form = $this->getForm(SolrProfileRuleForm::class, [
             'solr_profile_id' => $solrProfileId,
@@ -80,34 +76,29 @@ class ProfileRuleController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('form', $form);
 
-        if (!$this->checkPostAndValidForm($form))
+        if (!$this->checkPostAndValidForm($form)) {
             return $view;
+        }
 
         $data = $form->getData();
         $data['o:solr_profile']['o:id'] = $solrProfileId;
         $response = $this->api()->create('solr_profile_rules', $data);
         if ($response->isError()) {
-                    $form->setMessages($response->getErrors());
-                    return $view;
+            $form->setMessages($response->getErrors());
+            return $view;
         }
 
         $this->messenger()->addSuccess('Solr profile rule created.');
-        return $this->redirect()->toRoute(
-                        'admin/solr/profile-id-rule',
-                        [
-                            'id' => $solrProfileId,
-                            'action' => 'browse',
-                        ]
-                    );
+        return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
+            'id' => $solrProfileId,
+            'action' => 'browse',
+        ]);
     }
 
     public function editAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
         $solrProfileRuleId = $this->params('id');
-        $response = $api->read('solr_profile_rules', $solrProfileRuleId);
+        $response = $this->api()->read('solr_profile_rules', $solrProfileRuleId);
         $solrProfileRule = $response->getContent();
         $form = $this->getForm(SolrProfileRuleForm::class, [
             'solr_profile_id' => $solrProfileRule->solrProfile()->id(),
@@ -119,29 +110,28 @@ class ProfileRuleController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('form', $form);
 
-        if (!$this->checkPostAndValidForm($form))
+        if (!$this->checkPostAndValidForm($form)) {
             return $view;
+        }
 
         $formData = $form->getData();
         $response = $this->api()->update('solr_profile_rules', $solrProfileRuleId, $formData, [], true);
         if ($response->isError()) {
-                    $form->setMessages($response->getErrors());
-                    return $view;
+            $form->setMessages($response->getErrors());
+            return $view;
         }
 
         $this->messenger()->addSuccess('Solr profile rule updated.');
         return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
-                        'id' => $solrProfileRule->solrProfile()->id(),
-                        'action' => 'browse',
-                    ]);
+            'id' => $solrProfileRule->solrProfile()->id(),
+            'action' => 'browse',
+        ]);
     }
 
     public function deleteConfirmAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
         $solrProfileRuleId = $this->params('id');
-        $response = $api->read('solr_profile_rules', $solrProfileRuleId);
+        $response = $this->api()->read('solr_profile_rules', $solrProfileRuleId);
         $solrProfileRule = $response->getContent();
 
         $view = new ViewModel;

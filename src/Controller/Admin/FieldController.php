@@ -38,13 +38,10 @@ class FieldController extends AbstractActionController
 {
     public function browseAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
         $solrNodeId = $this->params('id');
-        $solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
+        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
 
-        $response = $api->search('solr_fields', ['solr_node_id' => $solrNodeId]);
+        $response = $this->api()->search('solr_fields', ['solr_node_id' => $solrNodeId]);
         $solrFields = $response->getContent();
 
         $view = new ViewModel;
@@ -65,11 +62,8 @@ class FieldController extends AbstractActionController
         return true;
     }
 
-
     public function addAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-
         $form = $this->getForm(SolrFieldForm::class);
         $solrNodeId = $this->params('id');
         $view = new ViewModel;
@@ -88,16 +82,12 @@ class FieldController extends AbstractActionController
 
         $this->messenger()->addSuccess('Solr field created.');
         return $this->redirect()->toRoute('admin/solr/node-id-field', ['action' => 'browse'], true);
-
     }
 
     public function editAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
         $id = $this->params('id');
-        $field = $api->read('solr_fields', $id)->getContent();
+        $field = $this->api()->read('solr_fields', $id)->getContent();
 
         $form = $this->getForm(SolrFieldForm::class);
         $data = $field->jsonSerialize();
@@ -105,8 +95,9 @@ class FieldController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('form', $form);
 
-        if (!$this->checkPostAndValidForm($form))
+        if (!$this->checkPostAndValidForm($form)) {
             return $view;
+        }
 
         $formData = $form->getData();
         $response = $this->api()->update('solr_fields', $id, $formData, [], true);
@@ -114,20 +105,18 @@ class FieldController extends AbstractActionController
             $form->setMessages($response->getErrors());
             return $view;
         }
+
         $this->messenger()->addSuccess('Solr field updated.');
         return $this->redirect()->toRoute('admin/solr/node-id-field', [
-                        'action' => 'browse',
-                        'id' => $field->solrNode()->id(),
-                    ]);
-        return $view;
+            'action' => 'browse',
+            'id' => $field->solrNode()->id(),
+        ]);
     }
 
     public function deleteConfirmAction()
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
         $id = $this->params('id');
-        $response = $api->read('solr_fields', $id);
+        $response = $this->api()->read('solr_fields', $id);
         $field = $response->getContent();
 
         $view = new ViewModel;
