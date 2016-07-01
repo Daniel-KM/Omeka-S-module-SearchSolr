@@ -20,3 +20,7 @@ This module provides a [Search](https://github.com/biblibre/omeka-s-module-Searc
 4. In your site configuration, add a navigation link to the search page
 5. Go to your site, then click on the navigation link you just added.
 6. The search form should appear. Type some text then submit the form to display the results.
+
+## Build status
+
+[![Build Status](https://travis-ci.org/biblibre/omeka-s-module-Solr.svg?branch=master)](https://travis-ci.org/biblibre/omeka-s-module-Solr)
