@@ -2,9 +2,9 @@
 
 namespace SolrTest\Controller;
 
-use Omeka\Test\AbstractHttpControllerTestCase;
+use OmekaTestHelper\Controller\OmekaControllerTestCase;
 
-abstract class SolrControllerTestCase extends AbstractHttpControllerTestCase
+abstract class SolrControllerTestCase extends OmekaControllerTestCase
 {
     protected $solrNode;
     protected $solrField;
@@ -107,31 +107,5 @@ abstract class SolrControllerTestCase extends AbstractHttpControllerTestCase
         $this->api()->delete('solr_profiles', $this->solrProfile->id());
         $this->api()->delete('solr_fields', $this->solrField->id());
         $this->api()->delete('solr_nodes', $this->solrNode->id());
-    }
-
-    protected function loginAsAdmin()
-    {
-        $application = $this->getApplication();
-        $serviceLocator = $application->getServiceManager();
-        $auth = $serviceLocator->get('Omeka\AuthenticationService');
-        $adapter = $auth->getAdapter();
-        $adapter->setIdentity('admin@example.com');
-        $adapter->setCredential('root');
-        $auth->authenticate();
-    }
-
-    protected function getServiceLocator()
-    {
-        return $this->getApplication()->getServiceManager();
-    }
-
-    protected function api()
-    {
-        return $this->getServiceLocator()->get('Omeka\ApiManager');
-    }
-
-    protected function resetApplication()
-    {
-        $this->application = null;
     }
 }
