@@ -76,6 +76,11 @@ class Querier extends AbstractQuerier
             }
         }
 
+        $facetLimit = $query->getFacetLimit();
+        if ($facetLimit) {
+            $solrQuery->setFacetLimit($facetLimit);
+        }
+
         $filters = $query->getFilters();
         if (!empty($filters)) {
             foreach ($filters as $name => $values) {
