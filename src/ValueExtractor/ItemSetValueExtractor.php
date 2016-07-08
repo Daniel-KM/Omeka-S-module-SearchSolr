@@ -29,7 +29,6 @@
 
 namespace Solr\ValueExtractor;
 
-use Omeka\Api\Representation\ItemSetRepresentation;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 

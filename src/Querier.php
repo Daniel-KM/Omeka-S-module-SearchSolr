@@ -131,7 +131,7 @@ class Querier extends AbstractQuerier
         foreach ($solrResponse['grouped'][$resource_name_field]['groups'] as $group) {
             $response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
             foreach ($group['doclist']['docs'] as $doc) {
-                list(,$resourceId) = explode(':', $doc['id']);
+                list(, $resourceId) = explode(':', $doc['id']);
                 $response->addResult($group['groupValue'], ['id' => $resourceId]);
             }
         }

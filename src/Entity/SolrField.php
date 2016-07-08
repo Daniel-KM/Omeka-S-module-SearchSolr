@@ -33,7 +33,6 @@ use DateTime;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Omeka\Entity\AbstractEntity;
-use Omeka\Entity\Property;
 
 /**
  * @Entity

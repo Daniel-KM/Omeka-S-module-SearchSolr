@@ -29,13 +29,10 @@
 
 namespace Solr;
 
-use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
-use Zend\View\Renderer\PhpRenderer;
 use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
-use Solr\Form\ModuleConfigForm;
 
 class Module extends AbstractModule
 {

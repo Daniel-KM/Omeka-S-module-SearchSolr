@@ -29,9 +29,7 @@
 
 namespace Solr\Entity;
 
-use DateTime;
 use Omeka\Entity\AbstractEntity;
-use Omeka\Entity\Property;
 
 /**
  * @Entity

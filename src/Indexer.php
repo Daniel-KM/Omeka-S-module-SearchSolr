@@ -29,13 +29,10 @@
 
 namespace Solr;
 
-use Exception;
 use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
-use Omeka\Api\Representation\ItemRepresentation;
-use Omeka\Api\Representation\ItemSetRepresentation;
 use Search\Indexer\AbstractIndexer;
 
 class Indexer extends AbstractIndexer

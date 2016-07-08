@@ -29,7 +29,6 @@
 
 namespace Solr\Api\Adapter;
 
-use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;

@@ -38,7 +38,7 @@ class DateRange extends AbstractValueFormatter
 
     public function format($value)
     {
-        if (FALSE === strpos($value, '-')) {
+        if (false === strpos($value, '-')) {
             return null;
         }
 

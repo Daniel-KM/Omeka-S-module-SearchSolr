@@ -29,8 +29,6 @@
 
 namespace Solr\Api\Representation;
 
-use SolrClient;
-use SolrClientException;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
 class SolrProfileRepresentation extends AbstractEntityRepresentation
