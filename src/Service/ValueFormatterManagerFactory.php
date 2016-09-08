@@ -29,18 +29,18 @@
 
 namespace Solr\Service;
 
-use Zend\ServiceManager\FactoryInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
 use Solr\ValueFormatter\Manager;
 
 class ValueFormatterManagerFactory implements FactoryInterface
 {
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $config = $serviceLocator->get('Config');
+        $config = $services->get('Config');
 
         $vfm = new Manager($config['solr']['value_formatters']);
-        $vfm->setServiceLocator($serviceLocator);
+        $vfm->setServiceLocator($services);
 
         return $vfm;
     }

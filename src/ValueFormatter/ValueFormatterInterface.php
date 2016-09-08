@@ -29,10 +29,13 @@
 
 namespace Solr\ValueFormatter;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
 
-interface ValueFormatterInterface extends ServiceLocatorAwareInterface
+interface ValueFormatterInterface
 {
+    public function setServiceLocator(ServiceLocatorInterface $serviceLocator);
+    public function getServiceLocator();
+
     public function getLabel();
     public function format($value);
 }

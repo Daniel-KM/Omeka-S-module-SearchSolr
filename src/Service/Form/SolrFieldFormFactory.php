@@ -1,18 +1,16 @@
 <?php
 namespace Solr\Service\Form;
 
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
 use Solr\Form\Admin\SolrFieldForm;
-use Zend\ServiceManager\FactoryInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
 
 class SolrFieldFormFactory implements FactoryInterface
 {
-    public function createService(ServiceLocatorInterface $elements)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $serviceLocator = $elements->getServiceLocator();
-
         $form = new SolrFieldForm;
-        $form->setTranslator($serviceLocator->get('MvcTranslator'));
+        $form->setTranslator($services->get('MvcTranslator'));
 
         return $form;
     }

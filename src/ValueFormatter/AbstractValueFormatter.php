@@ -29,9 +29,19 @@
 
 namespace Solr\ValueFormatter;
 
-use Zend\ServiceManager\ServiceLocatorAwareTrait;
+use Zend\ServiceManager\ServiceLocatorInterface;
 
 abstract class AbstractValueFormatter implements ValueFormatterInterface
 {
-    use ServiceLocatorAwareTrait;
+    protected $serviceLocator;
+
+    public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+    {
+        $this->serviceLocator = $serviceLocator;
+    }
+
+    public function getServiceLocator()
+    {
+        return $this->serviceLocator;
+    }
 }

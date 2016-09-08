@@ -70,7 +70,7 @@ class NodeControllerTest extends SolrControllerTestCase
         $forms = $this->getServiceLocator()->get('FormElementManager');
         $form = $forms->get(\Omeka\Form\ConfirmForm::class);
         $this->dispatch($solrNode3->adminUrl('delete'), 'POST', [
-            'confirmform_csrf' => $form->get('confirmform_csrf')->getValue(),
+            'csrf' => $form->get('csrf')->getValue(),
         ]);
         $this->assertRedirectTo('/admin/solr');
     }

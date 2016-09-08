@@ -29,11 +29,13 @@
 
 namespace Solr\ValueExtractor;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 
-interface ValueExtractorInterface extends ServiceLocatorAwareInterface
+interface ValueExtractorInterface
 {
+    public function setServiceLocator(ServiceLocatorInterface $serviceLocator);
+    public function getServiceLocator();
     public function getLabel();
     public function getAvailableFields();
     public function extractValue(AbstractResourceRepresentation $resource, $field);

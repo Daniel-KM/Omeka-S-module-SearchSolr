@@ -29,11 +29,21 @@
 
 namespace Solr\ValueExtractor;
 
-use Zend\ServiceManager\ServiceLocatorAwareTrait;
+use Zend\ServiceManager\ServiceLocatorInterface;
 
 abstract class AbstractValueExtractor implements ValueExtractorInterface
 {
-    use ServiceLocatorAwareTrait;
+    protected $serviceLocator;
+
+    public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+    {
+        $this->serviceLocator = $serviceLocator;
+    }
+
+    public function getServiceLocator()
+    {
+        return $this->serviceLocator;
+    }
 
     protected function api()
     {

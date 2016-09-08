@@ -1,19 +1,19 @@
 <?php
 namespace Solr\Service\Form;
 
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
 use Solr\Form\Admin\SolrProfileForm;
-use Zend\ServiceManager\FactoryInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
 
 class SolrProfileFormFactory implements FactoryInterface
 {
-    public function createService(ServiceLocatorInterface $elements)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $serviceLocator = $elements->getServiceLocator();
-        $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
+        $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
+        $translator = $services->get('MvcTranslator');
 
         $form = new SolrProfileForm;
-        $form->setTranslator($serviceLocator->get('MvcTranslator'));
+        $form->setTranslator($translator);
         $form->setValueExtractorManager($valueExtractorManager);
 
         return $form;

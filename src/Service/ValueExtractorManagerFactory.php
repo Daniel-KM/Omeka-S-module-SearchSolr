@@ -29,18 +29,18 @@
 
 namespace Solr\Service;
 
-use Zend\ServiceManager\FactoryInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
 use Solr\ValueExtractor\Manager;
 
 class ValueExtractorManagerFactory implements FactoryInterface
 {
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $config = $serviceLocator->get('Config');
+        $config = $services->get('Config');
 
         $vem = new Manager($config['solr']['value_extractors']);
-        $vem->setServiceLocator($serviceLocator);
+        $vem->setServiceLocator($services);
 
         return $vem;
     }
