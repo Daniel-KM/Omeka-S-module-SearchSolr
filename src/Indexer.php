@@ -33,6 +33,7 @@ use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
+use Omeka\Api\Representation\ResourceReference;
 use Search\Indexer\AbstractIndexer;
 
 class Indexer extends AbstractIndexer
@@ -93,6 +94,10 @@ class Indexer extends AbstractIndexer
         $settings = $serviceLocator->get('Omeka\Settings');
         $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
         $valueFormatterManager = $serviceLocator->get('Solr\ValueFormatterManager');
+
+        if ($resource instanceof ResourceReference) {
+            $resource = $resource->getRepresentation();
+        }
 
         $client = $this->getClient();
 
