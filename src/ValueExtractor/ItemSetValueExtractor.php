@@ -102,7 +102,7 @@ class ItemSetValueExtractor extends AbstractValueExtractor
         return $this->extractPropertyValue($itemSet, $field);
     }
 
-    protected function extractPropertyValue(AbstractResourceEntityRepresentation $representation)
+    protected function extractPropertyValue(AbstractResourceEntityRepresentation $representation, $field)
     {
         $extractedValue = [];
         $values = $representation->value($field, ['all' => true, 'default' => []]);
