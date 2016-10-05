@@ -38,11 +38,16 @@ class DateRange extends AbstractValueFormatter
 
     public function format($value)
     {
-        if (false === strpos($value, '-')) {
+        $matches = [];
+        if (preg_match('|^\s*(\d+)\s*[-/]\s*(\d+)\s*$|', $value, $matches)) {
+            $start = $matches[1];
+            $end = $matches[2];
+        }
+
+        if (!isset($start) || !isset($end)) {
             return null;
         }
 
-        list($start, $end) = explode('-', $value);
         return "[$start TO $end]";
     }
 }
