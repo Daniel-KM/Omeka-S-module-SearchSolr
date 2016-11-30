@@ -98,7 +98,7 @@ msgstr "Formateur"
 
 #: src/Form/Admin/SolrProfileRuleForm.php:185
 msgid "None"
-msgstr "Aucucn"
+msgstr "Aucun"
 
 #: view/solr/admin/field/add.phtml:32
 msgid "Add Solr field"
