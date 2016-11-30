@@ -1,0 +1,217 @@
+# Translation template for module Solr.
+# Copyright (C) 2016 BibLibre
+# This file is distributed under the same license as the Solr package.
+# Julian Maurice <julian.maurice@biblibre.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Solr\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-29 15:13+0100\n"
+"PO-Revision-Date: 2016-11-30 10:00+0100\n"
+"Last-Translator: Julian Maurice <julian.maurice@biblibre.com>\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: Module.php:61
+msgid "Solr module requires PHP Solr extension, which is not loaded."
+msgstr "Le module Solr nécessite l'extension Solr pour PHP, qui n'est pas chargée."
+
+#: src/Adapter.php:73
+msgid "Relevance"
+msgstr "Pertinence"
+
+#: src/Adapter.php:78
+msgid "Asc"
+msgstr "Asc"
+
+#: src/Adapter.php:79
+msgid "Desc"
+msgstr "Desc"
+
+#: src/Form/Admin/SolrFieldForm.php:48 src/Form/Admin/SolrNodeForm.php:49
+#: view/solr/admin/node/browse.phtml:45
+#: view/solr/admin/profile/browse.phtml:53
+msgid "Name"
+msgstr "Nom"
+
+#: src/Form/Admin/SolrFieldForm.php:59
+msgid "Description"
+msgstr "Description"
+
+#: src/Form/Admin/SolrFieldForm.php:67 view/solr/admin/field/browse.phtml:56
+msgid "Indexed"
+msgstr "Indexé"
+
+#: src/Form/Admin/SolrFieldForm.php:78 view/solr/admin/field/browse.phtml:57
+msgid "Multi-valued"
+msgstr "Multi-valué"
+
+#: src/Form/Admin/SolrNodeForm.php:63
+msgid "Hostname"
+msgstr "Nom d'ĥôte"
+
+#: src/Form/Admin/SolrNodeForm.php:74
+msgid "Port"
+msgstr "Port"
+
+#: src/Form/Admin/SolrNodeForm.php:85
+msgid "Path"
+msgstr "Chemin"
+
+#: src/Form/Admin/SolrNodeForm.php:98
+msgid "Resource name field"
+msgstr "Champ 'nom de la ressource'"
+
+#: src/Form/Admin/SolrNodeForm.php:99
+msgid ""
+"Name of Solr field that will contain the resource name (or resource type, e."
+"g. \"items\", \"item_sets\", ...). It must be a single-valued, string-based "
+"field. WARNING: Changing this will require a complete reindexation."
+msgstr ""
+"Le nom du champ Solr qui contiendra le nom de la ressource (ou son type, "
+"par exemple \"items\", \"item_sets\", ...). Ce doit être un champ non "
+"multi-valué, de type chaîne de caractères (string). ATTENTION: Modifier ce "
+"paramètre nécessitera une réindexation complète."
+
+#: src/Form/Admin/SolrProfileForm.php:51
+msgid "Resource name"
+msgstr "Nom de la ressource"
+
+#: src/Form/Admin/SolrProfileRuleForm.php:56
+#: view/solr/admin/profile-rule/browse.phtml:53
+msgid "Solr field"
+msgstr "Champ Solr"
+
+#: src/Form/Admin/SolrProfileRuleForm.php:69
+#: view/solr/admin/profile-rule/browse.phtml:54
+msgid "Source"
+msgstr "Source"
+
+#: src/Form/Admin/SolrProfileRuleForm.php:82
+msgid "Formatter"
+msgstr "Formateur"
+
+#: src/Form/Admin/SolrProfileRuleForm.php:185
+msgid "None"
+msgstr "Aucucn"
+
+#: view/solr/admin/field/add.phtml:32
+msgid "Add Solr field"
+msgstr "Ajouter un champ Solr"
+
+#: view/solr/admin/field/add.phtml:36 view/solr/admin/node/add.phtml:36
+#: view/solr/admin/profile-rule/add.phtml:36
+#: view/solr/admin/profile/add.phtml:36
+msgid "Add"
+msgstr "Ajouter"
+
+#: view/solr/admin/field/browse.phtml:35
+msgid "Solr fields"
+msgstr "Champs Solr"
+
+#: view/solr/admin/field/browse.phtml:45
+#: view/solr/admin/profile/browse.phtml:43
+msgid "Back to node list"
+msgstr "Retour à la liste des noeuds"
+
+#: view/solr/admin/field/browse.phtml:55
+msgid "Name (Description)"
+msgstr "Nom (Description)"
+
+#: view/solr/admin/field/browse.phtml:69 view/solr/admin/field/edit.phtml:36
+#: view/solr/admin/node/browse.phtml:59 view/solr/admin/node/edit.phtml:36
+#: view/solr/admin/profile-rule/browse.phtml:66
+#: view/solr/admin/profile-rule/edit.phtml:36
+msgid "Edit"
+msgstr "Modifier"
+
+#: view/solr/admin/field/browse.phtml:77 view/solr/admin/field/browse.phtml:78
+#: view/solr/admin/node/browse.phtml:85 view/solr/admin/node/browse.phtml:86
+#: view/solr/admin/profile-rule/browse.phtml:74
+#: view/solr/admin/profile-rule/browse.phtml:75
+#: view/solr/admin/profile/browse.phtml:74
+#: view/solr/admin/profile/browse.phtml:75
+msgid "Delete"
+msgstr "Supprimer"
+
+#: view/solr/admin/field/browse.phtml:86 view/solr/admin/field/browse.phtml:87
+msgid "Yes"
+msgstr "Oui"
+
+#: view/solr/admin/field/browse.phtml:86 view/solr/admin/field/browse.phtml:87
+msgid "No"
+msgstr "Non"
+
+#: view/solr/admin/field/browse.phtml:97 view/solr/admin/field/browse.phtml:98
+#: view/solr/admin/node/browse.phtml:102 view/solr/admin/node/browse.phtml:103
+#: view/solr/admin/profile-rule/browse.phtml:90
+#: view/solr/admin/profile-rule/browse.phtml:91
+#: view/solr/admin/profile/browse.phtml:89
+#: view/solr/admin/profile/browse.phtml:90
+msgid "Close"
+msgstr "Fermer"
+
+#: view/solr/admin/field/edit.phtml:32
+msgid "Edit Solr field"
+msgstr "Modifier le champ Solr"
+
+#: view/solr/admin/node/add.phtml:32
+msgid "Add Solr node"
+msgstr "Ajouter un noeud Solr"
+
+#: view/solr/admin/node/browse.phtml:34
+msgid "Solr configuration"
+msgstr "Configuration de Solr"
+
+#: view/solr/admin/node/browse.phtml:46
+msgid "URL"
+msgstr "URL"
+
+#: view/solr/admin/node/browse.phtml:47
+msgid "Status"
+msgstr "Statut"
+
+#: view/solr/admin/node/browse.phtml:68
+msgid "Fields"
+msgstr "Champs"
+
+#: view/solr/admin/node/browse.phtml:77
+msgid "Profiles"
+msgstr "Profils"
+
+#: view/solr/admin/node/edit.phtml:32
+msgid "Edit Solr node"
+msgstr "Modifier le noeud Solr"
+
+#: view/solr/admin/profile-rule/add.phtml:32
+msgid "Add Solr profile rule"
+msgstr "Ajouter une règle de profil Solr"
+
+#: view/solr/admin/profile-rule/browse.phtml:33
+msgid "Solr profile rules"
+msgstr "Règles de profil Solr"
+
+#: view/solr/admin/profile-rule/browse.phtml:43
+msgid "Back to profile list"
+msgstr "Retour à la liste de profils"
+
+#: view/solr/admin/profile-rule/edit.phtml:32
+msgid "Edit Solr profile rule"
+msgstr "Modifier la règle de profil Solr"
+
+#: view/solr/admin/profile/add.phtml:32
+msgid "Add Solr profile"
+msgstr "Ajouter un profil Solr"
+
+#: view/solr/admin/profile/browse.phtml:33
+msgid "Solr profiles"
+msgstr "Profils Solr"
+
+#: view/solr/admin/profile/browse.phtml:66
+msgid "Rules"
+msgstr "Règles"

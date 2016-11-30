@@ -199,4 +199,14 @@ return [
             'date_range' => 'Solr\ValueFormatter\DateRange',
         ],
     ],
+    'translator' => [
+        'translation_file_patterns' => [
+            [
+                'type'        => 'gettext',
+                'base_dir'    => __DIR__ . '/../language',
+                'pattern'     => '%s.mo',
+                'text_domain' => null,
+            ],
+        ],
+    ],
 ];
