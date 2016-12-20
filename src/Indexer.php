@@ -33,6 +33,7 @@ use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
+use Omeka\Api\Representation\AbstractRepresentation;
 use Omeka\Api\Representation\ResourceReference;
 use Search\Indexer\AbstractIndexer;
 
@@ -61,7 +62,7 @@ class Indexer extends AbstractIndexer
         $client->commit();
     }
 
-    public function indexResource(AbstractResourceRepresentation $resource)
+    public function indexResource(AbstractRepresentation $resource)
     {
         $this->addResource($resource);
         $this->commit();
@@ -87,7 +88,7 @@ class Indexer extends AbstractIndexer
         return sprintf('%s:%s', $resourceName, $resourceId);
     }
 
-    protected function addResource(AbstractResourceRepresentation $resource)
+    protected function addResource(AbstractRepresentation $resource)
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
@@ -96,7 +97,7 @@ class Indexer extends AbstractIndexer
         $valueFormatterManager = $serviceLocator->get('Solr\ValueFormatterManager');
 
         if ($resource instanceof ResourceReference) {
-            $resource = $resource->getRepresentation();
+            $resource = $api->read($resource->resourceName(), $resource->id())->getContent();
         }
 
         $client = $this->getClient();
