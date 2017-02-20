@@ -48,6 +48,8 @@ class Module extends AbstractModule
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $acl->allow(null, 'Solr\Api\Adapter\SolrFieldAdapter');
         $acl->allow(null, 'Solr\Api\Adapter\SolrNodeAdapter');
+        $acl->allow(null, 'Solr\Api\Adapter\SolrProfileAdapter');
+        $acl->allow(null, 'Solr\Api\Adapter\SolrProfileRuleAdapter');
         $acl->allow(null, 'Solr\Entity\SolrNode', 'read');
     }
 
