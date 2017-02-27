@@ -50,9 +50,11 @@ class FieldController extends AbstractActionController
         return $view;
     }
 
-    protected function checkPostAndValidForm($form) {
-        if (!$this->getRequest()->isPost())
+    protected function checkPostAndValidForm($form)
+    {
+        if (!$this->getRequest()->isPost()) {
             return false;
+        }
 
         $form->setData($this->params()->fromPost());
         if (!$form->isValid()) {
@@ -68,9 +70,9 @@ class FieldController extends AbstractActionController
         $solrNodeId = $this->params('id');
         $view = new ViewModel;
         $view->setVariable('form', $form);
-        if (!$this->checkPostAndValidForm($form))
+        if (!$this->checkPostAndValidForm($form)) {
             return $view;
-
+        }
 
         $data = $form->getData();
         $data['o:solr_node']['o:id'] = $solrNodeId;

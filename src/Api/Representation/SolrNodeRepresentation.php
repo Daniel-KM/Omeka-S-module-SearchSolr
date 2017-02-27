@@ -60,7 +60,7 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
             'id' => $this->id(),
         ];
         $options = [
-            'force_canonical' => $canonical
+            'force_canonical' => $canonical,
         ];
 
         return $url('admin/solr/node-id', $params, $options);

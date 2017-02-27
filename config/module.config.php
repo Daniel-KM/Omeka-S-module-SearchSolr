@@ -43,7 +43,7 @@ return [
             'Solr\Form\Admin\SolrProfileRuleForm' => 'Solr\Service\Form\SolrProfileRuleFormFactory',
         ],
     ],
-    'router' =>[
+    'router' => [
         'routes' => [
             'admin' => [
                 'child_routes' => [
@@ -202,9 +202,9 @@ return [
     'translator' => [
         'translation_file_patterns' => [
             [
-                'type'        => 'gettext',
-                'base_dir'    => __DIR__ . '/../language',
-                'pattern'     => '%s.mo',
+                'type' => 'gettext',
+                'base_dir' => __DIR__ . '/../language',
+                'pattern' => '%s.mo',
                 'text_domain' => null,
             ],
         ],

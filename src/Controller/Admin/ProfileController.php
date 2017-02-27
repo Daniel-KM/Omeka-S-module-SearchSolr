@@ -77,10 +77,11 @@ class ProfileController extends AbstractActionController
         ]);
     }
 
-
-    protected function checkPostAndValidForm($form) {
-        if (!$this->getRequest()->isPost())
+    protected function checkPostAndValidForm($form)
+    {
+        if (!$this->getRequest()->isPost()) {
             return false;
+        }
 
         $form->setData($this->params()->fromPost());
         if (!$form->isValid()) {

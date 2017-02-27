@@ -41,7 +41,7 @@ class SolrProfileAdapter extends AbstractEntityAdapter
      * {@inheritDoc}
      */
     protected $sortFields = [
-        'id'            => 'id',
+        'id' => 'id',
         'resource_name' => 'resourceName',
     ];
 

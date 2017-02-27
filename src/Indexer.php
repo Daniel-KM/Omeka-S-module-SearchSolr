@@ -32,7 +32,6 @@ namespace Solr;
 use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
-use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\AbstractRepresentation;
 use Omeka\Api\Representation\ResourceReference;
 use Search\Indexer\AbstractIndexer;

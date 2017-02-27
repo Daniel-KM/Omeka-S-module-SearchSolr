@@ -61,7 +61,7 @@ class SolrFieldRepresentation extends AbstractEntityRepresentation
             'id' => $this->id(),
         ];
         $options = [
-            'force_canonical' => $canonical
+            'force_canonical' => $canonical,
         ];
 
         return $url('admin/solr/field-id', $params, $options);

@@ -57,7 +57,7 @@ class SolrProfileRepresentation extends AbstractEntityRepresentation
             'id' => $this->id(),
         ];
         $options = [
-            'force_canonical' => $canonical
+            'force_canonical' => $canonical,
         ];
 
         return $url('admin/solr/profile-id', $params, $options);
@@ -89,7 +89,7 @@ class SolrProfileRepresentation extends AbstractEntityRepresentation
             'id' => $this->id(),
         ];
         $options = [
-            'force_canonical' => $canonical
+            'force_canonical' => $canonical,
         ];
 
         return $url('admin/solr/profile-id-rule', $params, $options);

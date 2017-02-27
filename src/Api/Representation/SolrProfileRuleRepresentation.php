@@ -60,7 +60,7 @@ class SolrProfileRuleRepresentation extends AbstractEntityRepresentation
             'id' => $this->id(),
         ];
         $options = [
-            'force_canonical' => $canonical
+            'force_canonical' => $canonical,
         ];
 
         return $url('admin/solr/rule-id', $params, $options);

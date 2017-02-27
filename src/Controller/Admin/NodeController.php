@@ -46,9 +46,11 @@ class NodeController extends AbstractActionController
         return $view;
     }
 
-    protected function checkPostAndValidForm($form) {
-        if (!$this->getRequest()->isPost())
+    protected function checkPostAndValidForm($form)
+    {
+        if (!$this->getRequest()->isPost()) {
             return false;
+        }
 
         $form->setData($this->params()->fromPost());
         if (!$form->isValid()) {
@@ -65,8 +67,9 @@ class NodeController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('form', $form);
 
-        if (!$this->checkPostAndValidForm($form))
+        if (!$this->checkPostAndValidForm($form)) {
             return $view;
+        }
 
         $data = $form->getData();
         $response = $this->api()->create('solr_nodes', $data);
@@ -76,7 +79,6 @@ class NodeController extends AbstractActionController
         }
         $this->messenger()->addSuccess('Solr node created.');
         return $this->redirect()->toRoute('admin/solr');
-
     }
 
     public function editAction()
@@ -91,8 +93,9 @@ class NodeController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('form', $form);
 
-        if (!$this->checkPostAndValidForm($form))
+        if (!$this->checkPostAndValidForm($form)) {
             return $view;
+        }
 
         $formData = $form->getData();
         $response = $this->api()->update('solr_nodes', $id, $formData);
