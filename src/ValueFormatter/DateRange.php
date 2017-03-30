@@ -42,6 +42,8 @@ class DateRange extends AbstractValueFormatter
         if (preg_match('|^\s*(\d+)\s*[-/]\s*(\d+)\s*$|', $value, $matches)) {
             $start = $matches[1];
             $end = $matches[2];
+        } elseif (preg_match('|^\s*(\d+)\s*$|', $value, $matches)) {
+            $start = $end = $matches[1];
         }
 
         if (!isset($start) || !isset($end)) {
