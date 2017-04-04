@@ -76,11 +76,7 @@ class FieldController extends AbstractActionController
 
         $data = $form->getData();
         $data['o:solr_node']['o:id'] = $solrNodeId;
-        $response = $this->api()->create('solr_fields', $data);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
+        $this->api()->create('solr_fields', $data);
 
         $this->messenger()->addSuccess('Solr field created.');
         return $this->redirect()->toRoute('admin/solr/node-id-field', ['action' => 'browse'], true);
@@ -102,11 +98,7 @@ class FieldController extends AbstractActionController
         }
 
         $formData = $form->getData();
-        $response = $this->api()->update('solr_fields', $id, $formData, [], true);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
+        $this->api()->update('solr_fields', $id, $formData, [], ['isPartial' => true]);
 
         $this->messenger()->addSuccess('Solr field updated.');
         return $this->redirect()->toRoute('admin/solr/node-id-field', [
@@ -138,12 +130,8 @@ class FieldController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $response = $this->api()->delete('solr_fields', $id);
-                if ($response->isError()) {
-                    $this->messenger()->addError('Solr field could not be deleted');
-                } else {
-                    $this->messenger()->addSuccess('Solr field successfully deleted');
-                }
+                $this->api()->delete('solr_fields', $id);
+                $this->messenger()->addSuccess('Solr field successfully deleted');
             } else {
                 $this->messenger()->addError('Solr field could not be deleted');
             }

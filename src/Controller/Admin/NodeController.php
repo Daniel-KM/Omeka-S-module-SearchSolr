@@ -73,10 +73,6 @@ class NodeController extends AbstractActionController
 
         $data = $form->getData();
         $response = $this->api()->create('solr_nodes', $data);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
         $this->messenger()->addSuccess('Solr node created.');
         return $this->redirect()->toRoute('admin/solr');
     }
@@ -99,10 +95,6 @@ class NodeController extends AbstractActionController
 
         $formData = $form->getData();
         $response = $this->api()->update('solr_nodes', $id, $formData);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
 
         $this->messenger()->addSuccess('Solr node updated.');
         return $this->redirect()->toRoute('admin/solr');
@@ -128,12 +120,8 @@ class NodeController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $response = $this->api()->delete('solr_nodes', $this->params('id'));
-                if ($response->isError()) {
-                    $this->messenger()->addError('Solr node could not be deleted');
-                } else {
-                    $this->messenger()->addSuccess('Solr node successfully deleted');
-                }
+                $this->api()->delete('solr_nodes', $this->params('id'));
+                $this->messenger()->addSuccess('Solr node successfully deleted');
             } else {
                 $this->messenger()->addError('Solr node could not be deleted');
             }

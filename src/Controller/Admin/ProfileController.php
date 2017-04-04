@@ -64,11 +64,7 @@ class ProfileController extends AbstractActionController
 
         $data = $form->getData();
         $data['o:solr_node']['o:id'] = $solrNodeId;
-        $response = $this->api()->create('solr_profiles', $data);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
+        $this->api()->create('solr_profiles', $data);
 
         $this->messenger()->addSuccess('Solr profile created.');
         return $this->redirect()->toRoute('admin/solr/node-id-profile', [
@@ -115,12 +111,8 @@ class ProfileController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $response = $this->api()->delete('solr_profiles', $id);
-                if ($response->isError()) {
-                    $this->messenger()->addError('Solr profile could not be deleted');
-                } else {
-                    $this->messenger()->addSuccess('Solr profile successfully deleted');
-                }
+                $this->api()->delete('solr_profiles', $id);
+                $this->messenger()->addSuccess('Solr profile successfully deleted');
             } else {
                 $this->messenger()->addError('Solr profile could not be deleted');
             }

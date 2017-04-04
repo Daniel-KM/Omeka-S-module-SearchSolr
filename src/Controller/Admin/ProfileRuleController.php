@@ -83,11 +83,7 @@ class ProfileRuleController extends AbstractActionController
 
         $data = $form->getData();
         $data['o:solr_profile']['o:id'] = $solrProfileId;
-        $response = $this->api()->create('solr_profile_rules', $data);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
+        $this->api()->create('solr_profile_rules', $data);
 
         $this->messenger()->addSuccess('Solr profile rule created.');
         return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
@@ -116,11 +112,7 @@ class ProfileRuleController extends AbstractActionController
         }
 
         $formData = $form->getData();
-        $response = $this->api()->update('solr_profile_rules', $solrProfileRuleId, $formData, [], true);
-        if ($response->isError()) {
-            $form->setMessages($response->getErrors());
-            return $view;
-        }
+        $this->api()->update('solr_profile_rules', $solrProfileRuleId, $formData, [], ['isPartial' => true]);
 
         $this->messenger()->addSuccess('Solr profile rule updated.');
         return $this->redirect()->toRoute('admin/solr/profile-id-rule', [
@@ -153,12 +145,8 @@ class ProfileRuleController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $response = $this->api()->delete('solr_profile_rules', $solrProfileRuleId);
-                if ($response->isError()) {
-                    $this->messenger()->addError('Solr profile rule could not be deleted');
-                } else {
-                    $this->messenger()->addSuccess('Solr profile rule successfully deleted');
-                }
+                $this->api()->delete('solr_profile_rules', $solrProfileRuleId);
+                $this->messenger()->addSuccess('Solr profile rule successfully deleted');
             } else {
                 $this->messenger()->addError('Solr profile rule could not be deleted');
             }
