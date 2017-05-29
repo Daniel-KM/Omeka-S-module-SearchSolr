@@ -14,7 +14,7 @@ class NodeControllerTest extends SolrControllerTestCase
         $this->assertXpathQueryContentRegex('//table//td[1]', '/default/');
     }
 
-    public function testAddAction()
+    public function testAddGetAction()
     {
         $this->dispatch('/admin/solr/node/add');
         $this->assertResponseStatusCode(200);
@@ -24,7 +24,10 @@ class NodeControllerTest extends SolrControllerTestCase
         $this->assertQuery('input[name="o:settings[client][port]"]');
         $this->assertQuery('input[name="o:settings[client][path]"]');
         $this->assertQuery('input[name="o:settings[resource_name_field]"]');
+    }
 
+    public function testAddPostAction()
+    {
         $forms = $this->getServiceLocator()->get('FormElementManager');
         $form = $forms->get('Solr\Form\Admin\SolrNodeForm');
         $this->dispatch('/admin/solr/node/add', 'POST', [
@@ -70,7 +73,7 @@ class NodeControllerTest extends SolrControllerTestCase
         $forms = $this->getServiceLocator()->get('FormElementManager');
         $form = $forms->get(\Omeka\Form\ConfirmForm::class);
         $this->dispatch($solrNode3->adminUrl('delete'), 'POST', [
-            'csrf' => $form->get('csrf')->getValue(),
+            'confirmform_csrf' => $form->get('confirmform_csrf')->getValue(),
         ]);
         $this->assertRedirectTo('/admin/solr');
     }
