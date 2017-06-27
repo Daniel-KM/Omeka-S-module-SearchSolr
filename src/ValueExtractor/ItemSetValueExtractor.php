@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2016-2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,11 +29,19 @@
 
 namespace Solr\ValueExtractor;
 
+use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 
-class ItemSetValueExtractor extends AbstractValueExtractor
+class ItemSetValueExtractor implements ValueExtractorInterface
 {
+    protected $api;
+
+    public function setApiManager(ApiManager $api)
+    {
+        $this->api = $api;
+    }
+
     public function getLabel()
     {
         return 'Item Set';
@@ -62,7 +70,7 @@ class ItemSetValueExtractor extends AbstractValueExtractor
             ],
         ];
 
-        $properties = $this->api()->search('properties')->getContent();
+        $properties = $this->api->search('properties')->getContent();
         foreach ($properties as $property) {
             $term = $property->term();
             $fields[$term]['label'] = $term;

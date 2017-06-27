@@ -190,12 +190,14 @@ return [
             'solr' => 'Solr\Adapter',
         ],
     ],
-    'solr' => [
-        'value_extractors' => [
-            'items' => 'Solr\ValueExtractor\ItemValueExtractor',
-            'item_sets' => 'Solr\ValueExtractor\ItemSetValueExtractor',
+    'solr_value_extractors' => [
+        'factories' => [
+            'items' => 'Solr\Service\ValueExtractor\ItemValueExtractorFactory',
+            'item_sets' => 'Solr\Service\ValueExtractor\ItemSetValueExtractorFactory',
         ],
-        'value_formatters' => [
+    ],
+    'solr_value_formatters' => [
+        'invokables' => [
             'date_range' => 'Solr\ValueFormatter\DateRange',
         ],
     ],

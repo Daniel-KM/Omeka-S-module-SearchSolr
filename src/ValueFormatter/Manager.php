@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2016-2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,61 +29,9 @@
 
 namespace Solr\ValueFormatter;
 
-class Manager
+use Omeka\ServiceManager\AbstractPluginManager;
+
+class Manager extends AbstractPluginManager
 {
-    protected $config;
-    protected $formatters = [];
-
-    protected $serviceLocator;
-
-    public function __construct($config)
-    {
-        $this->config = $config;
-    }
-
-    public function get($name)
-    {
-        if (isset($this->formatters[$name])) {
-            return $this->formatters[$name];
-        }
-
-        if (!isset($this->config[$name])) {
-            return null;
-        }
-
-        $class = $this->config[$name];
-        if (!class_exists($class)) {
-            return null;
-        }
-
-        if (!in_array('Solr\ValueFormatter\ValueFormatterInterface', class_implements($class))) {
-            return null;
-        }
-
-        $this->formatters[$name] = new $class;
-        $this->formatters[$name]->setServiceLocator($this->getServiceLocator());
-        return $this->formatters[$name];
-    }
-
-    public function getAll()
-    {
-        $formatters = [];
-        foreach ($this->config as $name => $class) {
-            $formatter = $this->get($name);
-            if ($formatter !== null) {
-                $formatters[$name] = $formatter;
-            }
-        }
-        return $formatters;
-    }
-
-    public function setServiceLocator($serviceLocator)
-    {
-        $this->serviceLocator = $serviceLocator;
-    }
-
-    public function getServiceLocator()
-    {
-        return $this->serviceLocator;
-    }
+    protected $instanceOf = ValueFormatterInterface::class;
 }

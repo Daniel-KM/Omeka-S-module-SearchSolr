@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016-2017
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -27,12 +27,21 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Service;
+namespace Solr\Service\ValueExtractor;
 
-use Zend\Mvc\Service\AbstractPluginManagerFactory;
-use Solr\ValueFormatter\Manager;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
+use Solr\ValueExtractor\ItemValueExtractor;
 
-class ValueFormatterManagerFactory extends AbstractPluginManagerFactory
+class ItemValueExtractorFactory implements FactoryInterface
 {
-    const PLUGIN_MANAGER_CLASS = Manager::class;
+    public function __invoke (ContainerInterface $container, $requestedName, array $options = null)
+    {
+        $api = $container->get('Omeka\ApiManager');
+
+        $itemValueExtractor = new ItemValueExtractor;
+        $itemValueExtractor->setApiManager($api);
+
+        return $itemValueExtractor;
+    }
 }

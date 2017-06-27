@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2016-2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,61 +29,9 @@
 
 namespace Solr\ValueExtractor;
 
-class Manager
+use Omeka\ServiceManager\AbstractPluginManager;
+
+class Manager extends AbstractPluginManager
 {
-    protected $config;
-    protected $extractors = [];
-
-    protected $serviceLocator;
-
-    public function __construct($config)
-    {
-        $this->config = $config;
-    }
-
-    public function get($resourceName)
-    {
-        if (isset($this->extractors[$resourceName])) {
-            return $this->extractors[$resourceName];
-        }
-
-        if (!isset($this->config[$resourceName])) {
-            return null;
-        }
-
-        $class = $this->config[$resourceName];
-        if (!class_exists($class)) {
-            return null;
-        }
-
-        if (!in_array('Solr\ValueExtractor\ValueExtractorInterface', class_implements($class))) {
-            return null;
-        }
-
-        $this->extractors[$resourceName] = new $class;
-        $this->extractors[$resourceName]->setServiceLocator($this->getServiceLocator());
-        return $this->extractors[$resourceName];
-    }
-
-    public function getAll()
-    {
-        $extractors = [];
-        foreach ($this->config as $resourceName => $class) {
-            $extractor = $this->get($resourceName);
-            if ($extractor !== null) {
-                $extractors[$resourceName] = $extractor;
-            }
-        }
-        return $extractors;
-    }
-
-    public function setServiceLocator($serviceLocator)
-    {
-        $this->serviceLocator = $serviceLocator;
-    }
-
-    public function getServiceLocator()
-    {
-        return $this->serviceLocator;
-    }
+    protected $instanceOf = ValueExtractorInterface::class;
 }

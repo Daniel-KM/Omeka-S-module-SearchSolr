@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2016-2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,19 +29,10 @@
 
 namespace Solr\Service;
 
-use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Zend\Mvc\Service\AbstractPluginManagerFactory;
 use Solr\ValueExtractor\Manager;
 
-class ValueExtractorManagerFactory implements FactoryInterface
+class ValueExtractorManagerFactory extends AbstractPluginManagerFactory
 {
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
-    {
-        $config = $services->get('Config');
-
-        $vem = new Manager($config['solr']['value_extractors']);
-        $vem->setServiceLocator($services);
-
-        return $vem;
-    }
+    const PLUGIN_MANAGER_CLASS = Manager::class;
 }

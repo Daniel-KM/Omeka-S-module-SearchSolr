@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2016-2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,6 +29,7 @@
 
 namespace Solr;
 
+use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Omeka\Module\AbstractModule;
@@ -36,6 +37,26 @@ use Omeka\Module\Exception\ModuleCannotInstallException;
 
 class Module extends AbstractModule
 {
+    public function init(ModuleManager $moduleManager)
+    {
+        $event = $moduleManager->getEvent();
+        $container = $event->getParam('ServiceManager');
+        $serviceListener = $container->get('ServiceListener');
+
+        $serviceListener->addServiceManager(
+            'Solr\ValueExtractorManager',
+            'solr_value_extractors',
+            'Solr\Feature\ValueExtractorProviderInterface',
+            'getSolrValueExtractorConfig'
+        );
+        $serviceListener->addServiceManager(
+            'Solr\ValueFormatterManager',
+            'solr_value_formatters',
+            'Solr\Feature\ValueFormatterProviderInterface',
+            'getSolrValueFormatterConfig'
+        );
+    }
+
     public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';

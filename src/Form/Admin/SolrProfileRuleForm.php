@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2016-2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -184,8 +184,9 @@ class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
         $options = [
             '0' => $this->getTranslator()->translate('None'),
         ];
-        $valueFormatters = $valueFormatterManager->getAll();
-        foreach ($valueFormatters as $name => $valueFormatter) {
+
+        foreach ($valueFormatterManager->getRegisteredNames() as $name) {
+            $valueFormatter = $valueFormatterManager->get($name);
             $options[$name] = $valueFormatter->getLabel();
         }
 

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -27,26 +27,9 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\ValueExtractor;
+namespace Solr\Feature;
 
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-abstract class AbstractValueExtractor implements ValueExtractorInterface
+interface ValueFormatterProviderInterface
 {
-    protected $serviceLocator;
-
-    public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-    {
-        $this->serviceLocator = $serviceLocator;
-    }
-
-    public function getServiceLocator()
-    {
-        return $this->serviceLocator;
-    }
-
-    protected function api()
-    {
-        return $this->getServiceLocator()->get('Omeka\ApiManager');
-    }
+    public function getSolrValueFormatterConfig();
 }
