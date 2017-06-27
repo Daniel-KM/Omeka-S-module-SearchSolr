@@ -27,9 +27,8 @@
  */
 ?>
 
-<?php
-    $escape = $this->plugin('escapeHtml');
-?>
+<?php $this->htmlElement('body')->appendAttribute('class', 'solr-node browse'); ?>
+<?php $escape = $this->plugin('escapeHtml'); ?>
 
 <?php echo $this->pageTitle($this->translate('Solr configuration')); ?>
 
@@ -39,7 +38,7 @@
 
 <h2>Nodes</h2>
 <?php if (count($nodes) > 0): ?>
-    <table class="tablesaw">
+    <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
                 <th><?php echo $this->translate('Name'); ?></th>
@@ -86,7 +85,7 @@
                                 title="<?php echo $escape($this->translate('Delete')); ?>"></a>
                             </li>
                         </ul>
-                        <?php echo $node->name(); ?>
+                        <span><?php echo $node->name(); ?></span>
                     </td>
                     <td><?php echo $node->clientUrl(); ?></td>
                     <td><?php echo $node->status(); ?></td>

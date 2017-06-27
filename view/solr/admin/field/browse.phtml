@@ -27,9 +27,8 @@
  */
 ?>
 
-<?php
-    $escape = $this->plugin('escapeHtml');
-?>
+<?php $this->htmlElement('body')->appendAttribute('class', 'solr-field browse'); ?>
+<?php $escape = $this->plugin('escapeHtml'); ?>
 
 <?php
     $pageTitle = $this->translate('Solr fields') . ' (' . $solrNode->name() . ')';
@@ -49,7 +48,7 @@
 </nav>
 
 <?php if (count($solrFields) > 0): ?>
-    <table class="tablesaw">
+    <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
                 <th><?php echo $this->translate('Name (Description)'); ?></th>
@@ -78,10 +77,12 @@
                                 title="<?php echo $escape($this->translate('Delete')); ?>"></a>
                             </li>
                         </ul>
-                        <?php echo $solrField->name(); ?>
-                        <?php if ($solrField->description()): ?>
-                            (<?php echo $solrField->description(); ?>)
-                        <?php endif; ?>
+                        <span>
+                            <?php echo $solrField->name(); ?>
+                            <?php if ($solrField->description()): ?>
+                                (<?php echo $solrField->description(); ?>)
+                            <?php endif; ?>
+                        </span>
                     </td>
                     <td><?php echo $solrField->isIndexed() ? $this->translate('Yes') : $this->translate('No'); ?></td>
                     <td><?php echo $solrField->isMultivalued() ? $this->translate('Yes') : $this->translate('No'); ?></td>

@@ -27,6 +27,7 @@
  */
 ?>
 
+<?php $this->htmlElement('body')->appendAttribute('class', 'solr-profile browse'); ?>
 <?php $escape = $this->plugin('escapeHtml'); ?>
 
 <?php
@@ -47,7 +48,7 @@
 </nav>
 
 <?php if (count($solrProfiles) > 0): ?>
-    <table class="tablesaw">
+    <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
                 <th><?php echo $this->translate('Name'); ?></th>
@@ -75,7 +76,7 @@
                                 title="<?php echo $escape($this->translate('Delete')); ?>"></a>
                             </li>
                         </ul>
-                        <?php echo $solrProfile->label(); ?>
+                        <span><?php echo $solrProfile->label(); ?></span>
                     </td>
                 </tr>
             <?php endforeach; ?>
