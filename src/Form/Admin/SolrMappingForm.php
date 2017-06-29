@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016-2017
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -36,7 +36,7 @@ use Zend\I18n\Translator\TranslatorAwareTrait;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
 use Solr\ValueFormatter\Manager as ValueFormatterManager;
 
-class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
+class SolrMappingForm extends Form implements TranslatorAwareInterface
 {
     use TranslatorAwareTrait;
 
@@ -48,26 +48,23 @@ class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
     {
         $translator = $this->getTranslator();
 
-        $solrFieldFieldset = new Fieldset('o:solr_field');
-        $solrFieldFieldset->add([
-            'name' => 'o:id',
-            'type' => 'Select',
-            'options' => [
-                'label' => $translator->translate('Solr field'),
-                'value_options' => $this->getSolrFieldsOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
-        $this->add($solrFieldFieldset);
-
         $this->add([
             'name' => 'o:source',
             'type' => 'Select',
             'options' => [
                 'label' => $translator->translate('Source'),
                 'value_options' => $this->getSourceOptions(),
+            ],
+            'attributes' => [
+                'required' => true,
+            ],
+        ]);
+
+        $this->add([
+            'name' => 'o:field_name',
+            'type' => 'Text',
+            'options' => [
+                'label' => $translator->translate('Solr field'),
             ],
             'attributes' => [
                 'required' => true,
@@ -116,29 +113,12 @@ class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
         return $this->apiManager;
     }
 
-    protected function getSolrFieldsOptions()
-    {
-        $api = $this->getApiManager();
-
-        $solrProfile = $this->getSolrProfile();
-        $response = $api->search('solr_fields', [
-            'solr_node_id' => $solrProfile->solrNode()->id(),
-        ]);
-        $solrFields = $response->getContent();
-
-        $options = [];
-        foreach ($solrFields as $solrField) {
-            $options[$solrField->id()] = $solrField->name();
-        }
-        return $options;
-    }
-
     protected function getSourceOptions()
     {
         $valueExtractorManager = $this->getValueExtractorManager();
 
-        $solrProfile = $this->getSolrProfile();
-        $valueExtractor = $valueExtractorManager->get($solrProfile->resourceName());
+        $resourceName = $this->getOption('resource_name');
+        $valueExtractor = $valueExtractorManager->get($resourceName);
         if (!isset($valueExtractor)) {
             return null;
         }
@@ -161,19 +141,18 @@ class SolrProfileRuleForm extends Form implements TranslatorAwareInterface
                 $options = array_merge($options, $childrenOptions);
             } else {
                 $value = $valuePrefix ? "$valuePrefix/$value" : $value;
-                $label = $labelPrefix ? "$labelPrefix / $label" : $label;
-                $options[$value] = $label;
+                if ($labelPrefix) {
+                    if (!isset($options[$labelPrefix])) {
+                        $options[$labelPrefix] = ['label' => $labelPrefix];
+                    }
+                    $options[$labelPrefix]['options'][$value] = $label;
+                } else {
+                    $options[$value] = $label;
+                }
             }
         }
 
         return $options;
-    }
-
-    protected function getSolrProfile()
-    {
-        $api = $this->getApiManager();
-        $solrProfileId = $this->getOption('solr_profile_id');
-        return $api->read('solr_profiles', $solrProfileId)->getContent();
     }
 
     protected function getFormatterOptions()

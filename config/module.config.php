@@ -3,9 +3,9 @@ return [
     'controllers' => [
         'invokables' => [
             'Solr\Controller\Admin\Node' => 'Solr\Controller\Admin\NodeController',
-            'Solr\Controller\Admin\Field' => 'Solr\Controller\Admin\FieldController',
-            'Solr\Controller\Admin\Profile' => 'Solr\Controller\Admin\ProfileController',
-            'Solr\Controller\Admin\ProfileRule' => 'Solr\Controller\Admin\ProfileRuleController',
+        ],
+        'factories' => [
+            'Solr\Controller\Admin\Mapping' => 'Solr\Service\Controller\MappingControllerFactory',
         ],
     ],
     'entity_manager' => [
@@ -18,10 +18,8 @@ return [
     ],
     'api_adapters' => [
         'invokables' => [
-            'solr_fields' => 'Solr\Api\Adapter\SolrFieldAdapter',
             'solr_nodes' => 'Solr\Api\Adapter\SolrNodeAdapter',
-            'solr_profiles' => 'Solr\Api\Adapter\SolrProfileAdapter',
-            'solr_profile_rules' => 'Solr\Api\Adapter\SolrProfileRuleAdapter',
+            'solr_mappings' => 'Solr\Api\Adapter\SolrMappingAdapter',
         ],
     ],
     'navigation' => [
@@ -37,10 +35,8 @@ return [
     ],
     'form_elements' => [
         'factories' => [
-            'Solr\Form\Admin\SolrFieldForm' => 'Solr\Service\Form\SolrFieldFormFactory',
             'Solr\Form\Admin\SolrNodeForm' => 'Solr\Service\Form\SolrNodeFormFactory',
-            'Solr\Form\Admin\SolrProfileForm' => 'Solr\Service\Form\SolrProfileFormFactory',
-            'Solr\Form\Admin\SolrProfileRuleForm' => 'Solr\Service\Form\SolrProfileRuleFormFactory',
+            'Solr\Form\Admin\SolrMappingForm' => 'Solr\Service\Form\SolrMappingFormFactory',
         ],
     ],
     'router' => [
@@ -84,83 +80,35 @@ return [
                                     ],
                                 ],
                             ],
-                            'node-id-field' => [
+                            'node-id-mapping' => [
                                 'type' => 'Segment',
                                 'options' => [
-                                    'route' => '/node/:id/field[/:action]',
+                                    'route' => '/node/:nodeId/mapping',
                                     'defaults' => [
                                         '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Field',
+                                        'controller' => 'Mapping',
                                         'action' => 'browse',
                                     ],
-                                    'constraints' => [
-                                        'id' => '\d+',
+                                ],
+                            ],
+                            'node-id-mapping-resource' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/node/:nodeId/mapping/:resourceName[/:action]',
+                                    'defaults' => [
+                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                        'controller' => 'Mapping',
+                                        'action' => 'browseResource',
                                     ],
                                 ],
                             ],
-                            'field-id' => [
+                            'node-id-mapping-resource-id' => [
                                 'type' => 'Segment',
                                 'options' => [
-                                    'route' => '/field/:id[/:action]',
+                                    'route' => '/node/:nodeId/mapping/:resourceName/:id[/:action]',
                                     'defaults' => [
                                         '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Field',
-                                        'action' => 'show',
-                                    ],
-                                    'constraints' => [
-                                        'id' => '\d+',
-                                    ],
-                                ],
-                            ],
-                            'node-id-profile' => [
-                                'type' => 'Segment',
-                                'options' => [
-                                    'route' => '/node/:id/profile[/:action]',
-                                    'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Profile',
-                                        'action' => 'browse',
-                                    ],
-                                    'constraints' => [
-                                        'id' => '\d+',
-                                    ],
-                                ],
-                            ],
-                            'profile-id' => [
-                                'type' => 'Segment',
-                                'options' => [
-                                    'route' => '/profile/:id[/:action]',
-                                    'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Profile',
-                                        'action' => 'show',
-                                    ],
-                                    'constraints' => [
-                                        'id' => '\d+',
-                                    ],
-                                ],
-                            ],
-                            'profile-id-rule' => [
-                                'type' => 'Segment',
-                                'options' => [
-                                    'route' => '/profile/:id/rule[/:action]',
-                                    'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'ProfileRule',
-                                        'action' => 'browse',
-                                    ],
-                                    'constraints' => [
-                                        'id' => '\d+',
-                                    ],
-                                ],
-                            ],
-                            'rule-id' => [
-                                'type' => 'Segment',
-                                'options' => [
-                                    'route' => '/rule/:id[/:action]',
-                                    'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'ProfileRule',
+                                        'controller' => 'Mapping',
                                         'action' => 'show',
                                     ],
                                     'constraints' => [
@@ -178,6 +126,7 @@ return [
         'factories' => [
             'Solr\ValueExtractorManager' => 'Solr\Service\ValueExtractorManagerFactory',
             'Solr\ValueFormatterManager' => 'Solr\Service\ValueFormatterManagerFactory',
+            'Solr\Schema' => 'Solr\Service\SchemaFactory',
         ],
     ],
     'view_manager' => [

@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -27,28 +27,34 @@
  */
 ?>
 
-
-<?php $this->htmlElement('body')->appendAttribute('class', 'solr-profile-rule browse'); ?>
+<?php $this->htmlElement('body')->appendAttribute('class', 'solr-mapping browse'); ?>
 <?php $escape = $this->plugin('escapeHtml'); ?>
 
 <?php
-    $pageTitle = $this->translate('Solr profile rules') . ' (' . $solrProfile->label() . ')';
+    $pageTitle = sprintf($this->translate('Solr mapping for %s'), $resourceName) . ' (' . $solrNode->name() . ')';
     echo $this->pageTitle($pageTitle);
 ?>
 
 <div id="page-actions">
-    <a class="button" href="<?php echo $solrProfile->ruleUrl('add'); ?>">Add new rule</a>
+    <?php $addUrl = $this->url('admin/solr/node-id-mapping-resource', [
+        'nodeId' => $solrNode->id(),
+        'resourceName' => $resourceName,
+        'action' => 'add',
+    ]); ?>
+    <a class="button" href="<?php echo $addUrl ?>">Add new mapping</a>
 </div>
 
 <nav class="breadcrumbs">
     <?php
-        $text = $this->translate('Back to profile list');
-        $href = $solrProfile->solrNode()->profileUrl();
+        $text = $this->translate('Back to resources list');
+        $href = $this->url('admin/solr/node-id-mapping', [
+            'nodeId' => $solrNode->id(),
+        ]);
         echo $this->hyperlink($text, $href, ['class' => 'o-icon-left']);
     ?>
 </nav>
 
-<?php if (count($solrProfileRules) > 0): ?>
+<?php if (count($mappings) > 0): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
@@ -57,13 +63,14 @@
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($solrProfileRules as $solrProfileRule): ?>
+            <?php foreach ($mappings as $mapping): ?>
                 <tr>
                     <td>
                         <ul class="actions">
                             <li>
                                 <?php
-                                    echo $solrProfileRule->link('', 'edit', [
+                                    $href = $mapping->adminUrl('edit');
+                                    echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon-edit',
                                         'title' => $this->translate('Edit'),
                                     ]);
@@ -71,19 +78,24 @@
                             </li>
                             <li>
                                 <a href="#"
-                                data-sidebar-content-url="<?php echo $escape($solrProfileRule->url('delete-confirm')); ?>"
+                                data-sidebar-content-url="<?php echo $escape($mapping->url('delete-confirm')); ?>"
                                 class="o-icon-delete sidebar-content"
                                 aria-label="<?php echo $escape($this->translate('Delete')); ?>"
                                 title="<?php echo $escape($this->translate('Delete')); ?>"></a>
                             </li>
                         </ul>
-                        <span><?php echo $solrProfileRule->solrField()->name(); ?></span>
+                        <span><?php echo $mapping->fieldName(); ?></span>
                     </td>
-                    <td><?php echo $solrProfileRule->source(); ?></td>
+                    <td><?php echo $mapping->source(); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
+<?php else: ?>
+    <p>
+        <?php echo $this->translate('There is no mappings defined yet.'); ?>
+        <a href="<?php echo $escape($addUrl); ?>">Add a new mapping</a>
+    </p>
 <?php endif; ?>
 
 <div class="sidebar">

@@ -67,10 +67,8 @@ class Module extends AbstractModule
         parent::onBootstrap($event);
 
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(null, 'Solr\Api\Adapter\SolrFieldAdapter');
         $acl->allow(null, 'Solr\Api\Adapter\SolrNodeAdapter');
-        $acl->allow(null, 'Solr\Api\Adapter\SolrProfileAdapter');
-        $acl->allow(null, 'Solr\Api\Adapter\SolrProfileRuleAdapter');
+        $acl->allow(null, 'Solr\Api\Adapter\SolrMappingAdapter');
         $acl->allow(null, 'Solr\Entity\SolrNode', 'read');
     }
 
@@ -99,85 +97,21 @@ class Module extends AbstractModule
         ';
         $defaultSettings = $this->getSolrNodeDefaultSettings();
         $connection->executeQuery($sql, [json_encode($defaultSettings)]);
-        $solrNodeId = $connection->lastInsertId();
 
         $connection->exec('
-            CREATE TABLE IF NOT EXISTS `solr_field` (
-                `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-                `solr_node_id` int(11) unsigned NOT NULL,
-                `name` varchar(255) NOT NULL,
-                `description` varchar(255) NULL DEFAULT NULL,
-                `is_indexed` tinyint(1) NOT NULL DEFAULT 1,
-                `is_multivalued` tinyint(1) NOT NULL DEFAULT 1,
-                `created` datetime NOT NULL,
-                `modified` datetime DEFAULT NULL,
-                PRIMARY KEY (`id`),
-                CONSTRAINT `solr_field_fk_solr_node_id`
-                    FOREIGN KEY (`solr_node_id`) REFERENCES `solr_node` (`id`)
-                    ON DELETE RESTRICT ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-        ');
-
-        $connection->exec('
-            CREATE TABLE IF NOT EXISTS `solr_profile` (
+            CREATE TABLE IF NOT EXISTS `solr_mapping` (
                 `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
                 `solr_node_id` int(11) unsigned NOT NULL,
                 `resource_name` varchar(255) NOT NULL,
+                `field_name` varchar(255) NOT NULL,
+                `source` varchar(255) NOT NULL,
+                `settings` text,
                 PRIMARY KEY (`id`),
-                CONSTRAINT `solr_profile_fk_solr_node_id`
+                CONSTRAINT `solr_mapping_fk_solr_node_id`
                     FOREIGN KEY (`solr_node_id`) REFERENCES `solr_node` (`id`)
                     ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
         ');
-
-        $connection->exec('
-            CREATE TABLE IF NOT EXISTS `solr_profile_rule` (
-                `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-                `solr_profile_id` int(11) unsigned NOT NULL,
-                `solr_field_id` int(11) unsigned NOT NULL,
-                `source` varchar(255) NOT NULL,
-                `settings` text,
-                PRIMARY KEY (`id`),
-                CONSTRAINT `solr_profile_rule_fk_solr_profile_id`
-                    FOREIGN KEY (`solr_profile_id`) REFERENCES `solr_profile` (`id`)
-                    ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `solr_profile_rule_fk_solr_field_id`
-                    FOREIGN KEY (`solr_field_id`) REFERENCES `solr_field` (`id`)
-                    ON DELETE CASCADE ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-        ');
-
-        $titleProperties = $api->search('properties', [
-            'term' => 'dcterms:title',
-            'limit' => 1,
-        ])->getContent();
-        $titlePropertyId = $titleProperties[0]->id();
-
-        $solrFields = [
-            [
-                'name' => 'title_t',
-                'description' => 'Title',
-                'is_multivalued' => 1,
-            ],
-            [
-                'name' => 'title_s',
-                'description' => 'Title',
-                'is_multivalued' => 0,
-            ],
-        ];
-        $stmt = $connection->prepare('
-            INSERT INTO `solr_field`
-            (`solr_node_id`, `name`, `description`, `is_multivalued`, `created`)
-            VALUES (?, ?, ?, ?, NOW());
-        ');
-        foreach ($solrFields as $solrField) {
-            $stmt->execute([
-                $solrNodeId,
-                $solrField['name'],
-                $solrField['description'],
-                $solrField['is_multivalued'],
-            ]);
-        }
     }
 
     public function upgrade($oldVersion, $newVersion,
@@ -276,14 +210,42 @@ class Module extends AbstractModule
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
             ');
         }
+
+        if (version_compare($oldVersion, '0.2.0', '<')) {
+            $connection->exec('
+                CREATE TABLE IF NOT EXISTS `solr_mapping` (
+                    `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+                    `solr_node_id` int(11) unsigned NOT NULL,
+                    `resource_name` varchar(255) NOT NULL,
+                    `field_name` varchar(255) NOT NULL,
+                    `source` varchar(255) NOT NULL,
+                    `settings` text,
+                    PRIMARY KEY (`id`),
+                    CONSTRAINT `solr_mapping_fk_solr_node_id`
+                        FOREIGN KEY (`solr_node_id`) REFERENCES `solr_node` (`id`)
+                        ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+            ');
+
+            $connection->exec('
+                INSERT INTO `solr_mapping` (`solr_node_id`, `resource_name`, `field_name`, `source`, `settings`)
+                SELECT solr_node.id, solr_profile.resource_name, solr_field.name, solr_profile_rule.source, solr_profile_rule.settings
+                FROM solr_profile_rule
+                    LEFT JOIN solr_profile ON (solr_profile_rule.solr_profile_id = solr_profile.id)
+                    LEFT JOIN solr_node ON (solr_profile.solr_node_id = solr_node.id)
+                    LEFT JOIN solr_field ON (solr_profile_rule.solr_field_id = solr_field.id)
+            ');
+
+            $connection->exec('DROP TABLE IF EXISTS `solr_profile_rule`');
+            $connection->exec('DROP TABLE IF EXISTS `solr_profile`');
+            $connection->exec('DROP TABLE IF EXISTS `solr_field`');
+        }
     }
 
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
         $connection = $serviceLocator->get('Omeka\Connection');
-        $connection->exec('DROP TABLE IF EXISTS `solr_profile_rule`');
-        $connection->exec('DROP TABLE IF EXISTS `solr_profile`');
-        $connection->exec('DROP TABLE IF EXISTS `solr_field`');
+        $connection->exec('DROP TABLE IF EXISTS `solr_mapping`');
         $connection->exec('DROP TABLE IF EXISTS `solr_node`');
     }
 

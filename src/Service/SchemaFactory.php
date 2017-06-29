@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016-2017
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -27,56 +27,29 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form\Admin;
+namespace Solr\Service;
 
-use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
-use Solr\ValueExtractor\Manager as ValueExtractorManager;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
+use Solr\Schema;
 
-class SolrProfileForm extends Form implements TranslatorAwareInterface
+class SchemaFactory implements FactoryInterface
 {
-    use TranslatorAwareTrait;
+    protected $schemas = [];
 
-    protected $valueExtractorManager;
-
-    public function init()
+    public function __invoke (ContainerInterface $container, $requestedName, array $options=null)
     {
-        $translator = $this->getTranslator();
+        $solr_node = $options['solr_node'];
 
-        $this->add([
-            'name' => 'o:resource_name',
-            'type' => 'Select',
-            'options' => [
-                'label' => $translator->translate('Resource name'),
-                'value_options' => $this->getDocumentBuildersOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
-    }
-
-    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
-    {
-        $this->valueExtractorManager = $valueExtractorManager;
-    }
-
-    public function getValueExtractorManager()
-    {
-        return $this->valueExtractorManager;
-    }
-
-    protected function getDocumentBuildersOptions()
-    {
-        $valueExtractorManager = $this->getValueExtractorManager();
-
-        $options = [];
-        foreach ($valueExtractorManager->getRegisteredNames() as $resourceName) {
-            $valueExtractor = $valueExtractorManager->get($resourceName);
-            $options[$resourceName] = $valueExtractor->getLabel();
+        if (!isset($this->schemas[$solr_node->id()])) {
+            $settings = $solr_node->clientSettings();
+            $this->schemas[$solr_node->id()] = new Schema(
+                $settings['hostname'],
+                $settings['port'],
+                $settings['path']
+            );
         }
 
-        return $options;
+        return $this->schemas[$solr_node->id()];
     }
 }

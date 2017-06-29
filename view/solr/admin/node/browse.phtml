@@ -61,19 +61,10 @@
                             </li>
                             <li>
                                 <?php
-                                    $href = $node->fieldUrl();
-                                    echo $this->hyperlink('', $href, [
-                                        'class' => 'o-icon- fa fa-database',
-                                        'title' => $this->translate('Fields'),
-                                    ]);
-                                ?>
-                            </li>
-                            <li>
-                                <?php
-                                    $href = $node->profileUrl();
+                                    $href = $node->mappingUrl();
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon- fa fa-sliders',
-                                        'title' => $this->translate('Profiles'),
+                                        'title' => $this->translate('Mapping'),
                                     ]);
                                 ?>
                             </li>

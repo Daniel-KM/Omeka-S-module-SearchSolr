@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -27,59 +27,21 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form\Admin;
+namespace Solr\Service\Controller;
 
-use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
+use Solr\Controller\Admin\MappingController;
 
-class SolrFieldForm extends Form implements TranslatorAwareInterface
+class MappingControllerFactory implements FactoryInterface
 {
-    use TranslatorAwareTrait;
-
-    public function init()
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $translator = $this->getTranslator();
+        $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
 
-        $this->add([
-            'name' => 'o:name',
-            'type' => 'Text',
-            'options' => [
-                'label' => $translator->translate('Name'),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
+        $controller = new MappingController;
+        $controller->setValueExtractorManager($valueExtractorManager);
 
-        $this->add([
-            'name' => 'o:description',
-            'type' => 'Text',
-            'options' => [
-                'label' => $translator->translate('Description'),
-            ],
-        ]);
-
-        $this->add([
-            'name' => 'o:is_indexed',
-            'type' => 'Checkbox',
-            'options' => [
-                'label' => $translator->translate('Indexed'),
-            ],
-            'attributes' => [
-                'value' => '1',
-            ],
-        ]);
-
-        $this->add([
-            'name' => 'o:is_multivalued',
-            'type' => 'Checkbox',
-            'options' => [
-                'label' => $translator->translate('Multi-valued'),
-            ],
-            'attributes' => [
-                'value' => '1',
-            ],
-        ]);
+        return $controller;
     }
 }

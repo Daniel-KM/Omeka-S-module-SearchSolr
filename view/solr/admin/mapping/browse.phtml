@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -27,27 +27,23 @@
  */
 ?>
 
-<?php $this->htmlElement('body')->appendAttribute('class', 'solr-profile browse'); ?>
+<?php $this->htmlElement('body')->appendAttribute('class', 'solr-mapping browse'); ?>
 <?php $escape = $this->plugin('escapeHtml'); ?>
 
 <?php
-    $pageTitle = $this->translate('Solr profiles') . ' (' . $solrNode->name() . ')';
+    $pageTitle = $this->translate('Solr mapping') . ' (' . $solrNode->name() . ')';
     echo $this->pageTitle($pageTitle);
 ?>
 
-<div id="page-actions">
-    <a class="button" href="<?php echo $solrNode->profileUrl('add'); ?>">Add new profile</a>
-</div>
-
 <nav class="breadcrumbs">
     <?php
-        $text = $this->translate('Back to node list');
+        $text = $this->translate('Back to nodes list');
         $href = $this->url('admin/solr');
         echo $this->hyperlink($text, $href, ['class' => 'o-icon-left']);
     ?>
 </nav>
 
-<?php if (count($solrProfiles) > 0): ?>
+<?php if (count($valueExtractors) > 0): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
@@ -55,39 +51,24 @@
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($solrProfiles as $solrProfile): ?>
+            <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
                 <tr>
                     <td>
                         <ul class="actions">
                             <li>
                                 <?php
-                                    $href = $solrProfile->ruleUrl();
+                                    $href = $this->url('admin/solr/node-id-mapping-resource', ['resourceName' => $name, 'nodeId' => $solrNode->id()]);
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon-settings',
                                         'title' => $this->translate('Rules'),
                                     ]);
                                 ?>
                             </li>
-                            <li>
-                                <a href="#"
-                                data-sidebar-content-url="<?php echo $escape($solrProfile->url('delete-confirm')); ?>"
-                                class="o-icon-delete sidebar-content"
-                                aria-label="<?php echo $escape($this->translate('Delete')); ?>"
-                                title="<?php echo $escape($this->translate('Delete')); ?>"></a>
-                            </li>
                         </ul>
-                        <span><?php echo $solrProfile->label(); ?></span>
+                        <span><?php echo $valueExtractor->getLabel(); ?></span>
                     </td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 <?php endif; ?>
-
-<div class="sidebar">
-    <a href="#"
-        class="sidebar-close o-icon-close"
-        aria-label="<?php echo $escape($this->translate('Close')); ?>"
-        title="<?php echo $escape($this->translate('Close')); ?>"></a>
-    <div class="sidebar-content"></div>
-</div>

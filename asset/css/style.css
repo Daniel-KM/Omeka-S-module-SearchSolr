@@ -1,0 +1,23 @@
+#field-info {
+    line-height: initial;
+    font-size: 80%;
+    color: #999999;
+}
+
+#field-info-link::after {
+    margin-left: 1em;
+    font-family: FontAwesome;
+    content: '\f0da';
+}
+
+#field-info-link.show::after {
+    content: '\f0d7';
+}
+
+#field-info-contents {
+    padding-top: 1ex;
+}
+
+#field-info-contents ul {
+    margin: 0;
+}

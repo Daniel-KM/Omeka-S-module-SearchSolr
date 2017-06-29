@@ -30,6 +30,7 @@
 namespace Solr;
 
 use Search\Adapter\AbstractAdapter;
+use Search\Api\Representation\SearchIndexRepresentation;
 use Solr\Form\ConfigFieldset;
 
 class Adapter extends AbstractAdapter
@@ -56,16 +57,22 @@ class Adapter extends AbstractAdapter
         return 'Solr\Querier';
     }
 
-    public function getAvailableFacetFields()
+    public function getAvailableFacetFields(SearchIndexRepresentation $index)
     {
-        return $this->getAvailableFields();
+        return $this->getAvailableFields($index);
     }
 
-    public function getAvailableSortFields()
+    public function getAvailableSortFields(SearchIndexRepresentation $index)
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
         $translator = $serviceLocator->get('MvcTranslator');
+
+        $settings = $index->settings();
+        $solrNodeId = $settings['adapter']['solr_node_id'];
+        if (!$solrNodeId) {
+            return [];
+        }
 
         $sortFields = [
             'score desc' => [
@@ -79,37 +86,44 @@ class Adapter extends AbstractAdapter
             'desc' => $translator->translate('Desc'),
         ];
 
-        $response = $api->search('solr_fields', ['is_indexed' => 1, 'is_multivalued' => 0]);
-        $fields = $response->getContent();
-        foreach ($fields as $field) {
-            $description = $field->description() ? $field->description() : $field->name();
-            foreach (['asc', 'desc'] as $direction) {
-                $name = $field->name() . ' ' . $direction;
-                $label = $description. ' ' . $directionLabel[$direction];
-                $sortFields[$name] = [
-                    'name' => $name,
-                    'label' => $label,
-                ];
+        $solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();;
+        $schema = $solrNode->schema();
+        $response = $api->search('solr_mappings', [
+            'solr_node_id' => $solrNode->id(),
+        ]);
+        $mappings = $response->getContent();
+        foreach ($mappings as $mapping) {
+            $fieldName = $mapping->fieldName();
+            $schemaField = $schema->getField($fieldName);
+            if ($schemaField && !$schemaField->isMultivalued()) {
+                foreach (['asc', 'desc'] as $direction) {
+                    $name = $fieldName . ' ' . $direction;
+                    $sortFields[$name] = [
+                        'name' => $name,
+                    ];
+                }
             }
         }
 
         return $sortFields;
     }
 
-    public function getAvailableFields()
+    public function getAvailableFields(SearchIndexRepresentation $index)
     {
         $serviceLocator = $this->getServiceLocator();
         $api = $serviceLocator->get('Omeka\ApiManager');
 
-        $response = $api->search('solr_fields', ['is_indexed' => 1]);
-        $fields = $response->getContent();
-        $facetFields = [];
-        foreach ($fields as $field) {
-            $name = $field->name();
-            $description = $field->description();
+        $settings = $index->settings();
+        $solrNodeId = $settings['adapter']['solr_node_id'];
+        $response = $api->search('solr_mappings', [
+            'solr_node_id' => $solrNodeId,
+        ]);
+        $mappings = $response->getContent();
+        $fields = [];
+        foreach ($mappings as $mapping) {
+            $name = $mapping->fieldName();
             $facetFields[$name] = [
                 'name' => $name,
-                'label' => $description ? $description : $name,
             ];
         }
 

@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -31,21 +31,25 @@ namespace Solr\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
-class SolrProfileRepresentation extends AbstractEntityRepresentation
+class SolrMappingRepresentation extends AbstractEntityRepresentation
 {
     /**
      * {@inheritDoc}
      */
     public function getJsonLdType()
     {
-        return 'o:SolrProfile';
+        return 'o:SolrMapping';
     }
 
     public function getJsonLd()
     {
         $entity = $this->resource;
         return [
+            'o:solr_node' => $this->solrNode()->getReference(),
             'o:resource_name' => $entity->getResourceName(),
+            'o:field_name' => $entity->getFieldName(),
+            'o:source' => $entity->getSource(),
+            'o:settings' => $entity->getSettings(),
         ];
     }
 
@@ -55,12 +59,14 @@ class SolrProfileRepresentation extends AbstractEntityRepresentation
         $params = [
             'action' => $action,
             'id' => $this->id(),
+            'resourceName' => $this->resourceName(),
+            'nodeId' => $this->solrNode()->id(),
         ];
         $options = [
             'force_canonical' => $canonical,
         ];
 
-        return $url('admin/solr/profile-id', $params, $options);
+        return $url('admin/solr/node-id-mapping-resource-id', $params, $options);
     }
 
     public function solrNode()
@@ -74,24 +80,18 @@ class SolrProfileRepresentation extends AbstractEntityRepresentation
         return $this->resource->getResourceName();
     }
 
-    public function label()
+    public function fieldName()
     {
-        $valueExtractorManager = $this->getServiceLocator()->get('Solr\ValueExtractorManager');
-        $extractor = $valueExtractorManager->get($this->resourceName());
-        return $extractor ? $extractor->getLabel() : $this->resourceName();
+        return $this->resource->getFieldName();
     }
 
-    public function ruleUrl($action = null, $canonical = false)
+    public function source()
     {
-        $url = $this->getViewHelper('Url');
-        $params = [
-            'action' => $action,
-            'id' => $this->id(),
-        ];
-        $options = [
-            'force_canonical' => $canonical,
-        ];
+        return $this->resource->getSource();
+    }
 
-        return $url('admin/solr/profile-id-rule', $params, $options);
+    public function settings()
+    {
+        return $this->resource->getSettings();
     }
 }

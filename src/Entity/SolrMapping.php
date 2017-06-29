@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -34,7 +34,7 @@ use Omeka\Entity\AbstractEntity;
 /**
  * @Entity
  */
-class SolrProfileRule extends AbstractEntity
+class SolrMapping extends AbstractEntity
 {
     /**
      * @Id
@@ -44,16 +44,20 @@ class SolrProfileRule extends AbstractEntity
     protected $id;
 
     /**
-     * @ManyToOne(targetEntity="Solr\Entity\SolrProfile")
+     * @ManyToOne(targetEntity="Solr\Entity\SolrNode")
      * @JoinColumn(nullable=false)
      */
-    protected $solrProfile;
+    protected $solrNode;
 
     /**
-     * @ManyToOne(targetEntity="Solr\Entity\SolrField")
-     * @JoinColumn(nullable=false)
+     * @Column(type="string", length=255)
      */
-    protected $solrField;
+    protected $resourceName;
+
+    /**
+     * @Column(type="string", length=255)
+     */
+    protected $fieldName;
 
     /**
      * @Column(type="string", length=255)
@@ -70,24 +74,34 @@ class SolrProfileRule extends AbstractEntity
         return $this->id;
     }
 
-    public function setSolrProfile(SolrProfile $solrProfile)
+    public function setSolrNode(SolrNode $solrNode)
     {
-        $this->solrProfile = $solrProfile;
+        $this->solrNode = $solrNode;
     }
 
-    public function getSolrProfile()
+    public function getSolrNode()
     {
-        return $this->solrProfile;
+        return $this->solrNode;
     }
 
-    public function setSolrField(SolrField $solrField)
+    public function setResourceName($resourceName)
     {
-        $this->solrField = $solrField;
+        $this->resourceName = $resourceName;
     }
 
-    public function getSolrField()
+    public function getResourceName()
     {
-        return $this->solrField;
+        return $this->resourceName;
+    }
+
+    public function setFieldName($fieldName)
+    {
+        $this->fieldName = $fieldName;
+    }
+
+    public function getFieldName()
+    {
+        return $this->fieldName;
     }
 
     public function setSource($source)

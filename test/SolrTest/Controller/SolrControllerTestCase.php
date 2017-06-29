@@ -7,9 +7,7 @@ use OmekaTestHelper\Controller\OmekaControllerTestCase;
 abstract class SolrControllerTestCase extends OmekaControllerTestCase
 {
     protected $solrNode;
-    protected $solrField;
-    protected $solrProfile;
-    protected $solrProfileRule;
+    protected $solrMapping;
     protected $searchIndex;
     protected $searchPage;
 
@@ -32,38 +30,18 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
         ]);
         $solrNode = $response->getContent();
 
-        $response = $this->api()->create('solr_fields', [
-            'o:name' => 'solr_field_t',
-            'o:description' => 'SolrField',
-            'o:is_indexed' => '1',
-            'o:is_multivalued' => '1',
+        $response = $this->api()->create('solr_mappings', [
             'o:solr_node' => [
                 'o:id' => $solrNode->id(),
             ],
-        ]);
-        $solrField = $response->getContent();
-
-        $response = $this->api()->create('solr_profiles', [
             'o:resource_name' => 'items',
-            'o:solr_node' => [
-                'o:id' => $solrNode->id(),
-            ],
-        ]);
-        $solrProfile = $response->getContent();
-
-        $response = $this->api()->create('solr_profile_rules', [
-            'o:solr_field' => [
-                'o:id' => $solrField->id(),
-            ],
+            'o:field_name' => 'dc_terms_title_t',
             'o:source' => 'dcterms:title',
             'o:settings' => [
                 'formatter' => '',
             ],
-            'o:solr_profile' => [
-                'o:id' => $solrProfile->id(),
-            ],
         ]);
-        $solrProfileRule = $response->getContent();
+        $solrMapping = $response->getContent();
 
         $response = $this->api()->create('search_indexes', [
             'o:name' => 'TestIndex',
@@ -92,9 +70,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
         $searchPage = $response->getContent();
 
         $this->solrNode = $solrNode;
-        $this->solrField = $solrField;
-        $this->solrProfile = $solrProfile;
-        $this->solrProfileRule = $solrProfileRule;
+        $this->solrMapping = $solrMapping;
         $this->searchIndex = $searchIndex;
         $this->searchPage = $searchPage;
     }
@@ -103,9 +79,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
     {
         $this->api()->delete('search_pages', $this->searchPage->id());
         $this->api()->delete('search_indexes', $this->searchIndex->id());
-        $this->api()->delete('solr_profile_rules', $this->solrProfileRule->id());
-        $this->api()->delete('solr_profiles', $this->solrProfile->id());
-        $this->api()->delete('solr_fields', $this->solrField->id());
+        $this->api()->delete('solr_mappings', $this->solrMapping->id());
         $this->api()->delete('solr_nodes', $this->solrNode->id());
     }
 }

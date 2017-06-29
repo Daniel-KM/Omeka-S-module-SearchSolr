@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2017
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -35,14 +35,13 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 
-class SolrProfileRuleAdapter extends AbstractEntityAdapter
+class SolrMappingAdapter extends AbstractEntityAdapter
 {
     /**
      * {@inheritDoc}
      */
     protected $sortFields = [
         'id' => 'id',
-        'name' => 'name',
     ];
 
     /**
@@ -50,7 +49,7 @@ class SolrProfileRuleAdapter extends AbstractEntityAdapter
      */
     public function getResourceName()
     {
-        return 'solr_profile_rules';
+        return 'solr_mappings';
     }
 
     /**
@@ -58,7 +57,7 @@ class SolrProfileRuleAdapter extends AbstractEntityAdapter
      */
     public function getRepresentationClass()
     {
-        return 'Solr\Api\Representation\SolrProfileRuleRepresentation';
+        return 'Solr\Api\Representation\SolrMappingRepresentation';
     }
 
     /**
@@ -66,7 +65,7 @@ class SolrProfileRuleAdapter extends AbstractEntityAdapter
      */
     public function getEntityClass()
     {
-        return 'Solr\Entity\SolrProfileRule';
+        return 'Solr\Entity\SolrMapping';
     }
 
     /**
@@ -75,6 +74,12 @@ class SolrProfileRuleAdapter extends AbstractEntityAdapter
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
     ) {
+        if ($this->shouldHydrate($request, 'o:resource_name')) {
+            $entity->setResourceName($request->getValue('o:resource_name'));
+        }
+        if ($this->shouldHydrate($request, 'o:field_name')) {
+            $entity->setFieldName($request->getValue('o:field_name'));
+        }
         if ($this->shouldHydrate($request, 'o:source')) {
             $entity->setSource($request->getValue('o:source'));
         }
@@ -82,8 +87,7 @@ class SolrProfileRuleAdapter extends AbstractEntityAdapter
             $entity->setSettings($request->getValue('o:settings'));
         }
 
-        $this->hydrateSolrProfile($request, $entity);
-        $this->hydrateSolrField($request, $entity);
+        $this->hydrateSolrNode($request, $entity);
     }
 
     /**
@@ -91,53 +95,35 @@ class SolrProfileRuleAdapter extends AbstractEntityAdapter
      */
     public function buildQuery(QueryBuilder $qb, array $query)
     {
-        if (isset($query['solr_profile_id'])) {
-            $solrProfileAlias = $this->createAlias();
-            $qb->innerJoin('Solr\Entity\SolrProfileRule.solrProfile', $solrProfileAlias);
+        if (isset($query['solr_node_id'])) {
+            $solrNodeAlias = $this->createAlias();
+            $qb->innerJoin('Solr\Entity\SolrMapping.solrNode', $solrNodeAlias);
             $qb->andWhere($qb->expr()->eq(
-                "$solrProfileAlias.id",
-                $this->createNamedParameter($qb, $query['solr_profile_id']))
-            );
+                "$solrNodeAlias.id",
+                $this->createNamedParameter($qb, $query['solr_node_id'])
+            ));
         }
-        if (isset($query['solr_field_id'])) {
-            $solrFieldAlias = $this->createAlias();
-            $qb->innerJoin('Solr\Entity\SolrProfileRule.solrField', $solrFieldAlias);
+        if (isset($query['resource_name'])) {
             $qb->andWhere($qb->expr()->eq(
-                "$solrFieldAlias.id",
-                $this->createNamedParameter($qb, $query['solr_field_id']))
-            );
+                $this->getEntityClass() . '.resourceName',
+                $this->createNamedParameter($qb, $query['resource_name'])
+            ));
         }
     }
 
-    protected function hydrateSolrProfile(Request $request, EntityInterface $entity)
+    protected function hydrateSolrNode(Request $request, EntityInterface $entity)
     {
-        if ($this->shouldHydrate($request, 'o:solr_profile')) {
+        if ($this->shouldHydrate($request, 'o:solr_node')) {
             $data = $request->getContent();
-            if (isset($data['o:solr_profile']['o:id'])
-                && is_numeric($data['o:solr_profile']['o:id'])
+            if (isset($data['o:solr_node']['o:id'])
+                && is_numeric($data['o:solr_node']['o:id'])
             ) {
-                $profile = $this->getAdapter('solr_profiles')
-                    ->findEntity($data['o:solr_profile']['o:id']);
+                $node = $this->getAdapter('solr_nodes')
+                    ->findEntity($data['o:solr_node']['o:id']);
             } else {
-                $profile = null;
+                $node = null;
             }
-            $entity->setSolrProfile($profile);
-        }
-    }
-
-    protected function hydrateSolrField(Request $request, EntityInterface $entity)
-    {
-        if ($this->shouldHydrate($request, 'o:solr_field')) {
-            $data = $request->getContent();
-            if (isset($data['o:solr_field']['o:id'])
-                && is_numeric($data['o:solr_field']['o:id'])
-            ) {
-                $field = $this->getAdapter('solr_fields')
-                    ->findEntity($data['o:solr_field']['o:id']);
-            } else {
-                $field = null;
-            }
-            $entity->setSolrField($field);
+            $entity->setSolrNode($node);
         }
     }
 }
