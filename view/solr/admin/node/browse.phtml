@@ -50,6 +50,7 @@
             <?php foreach ($nodes as $node): ?>
                 <tr>
                     <td>
+                        <span><?php echo $node->name(); ?></span>
                         <ul class="actions">
                             <li>
                                 <?php
@@ -76,7 +77,6 @@
                                 title="<?php echo $escape($this->translate('Delete')); ?>"></a>
                             </li>
                         </ul>
-                        <span><?php echo $node->name(); ?></span>
                     </td>
                     <td><?php echo $node->clientUrl(); ?></td>
                     <td><?php echo $node->status(); ?></td>
