@@ -52,6 +52,7 @@ class Querier extends AbstractQuerier
         $solrNode = $this->getSolrNode();
         $solrNodeSettings = $solrNode->settings();
         $resource_name_field = $solrNodeSettings['resource_name_field'];
+        $sites_field = $solrNodeSettings['sites_field'];
 
         $solrQuery = new SolrQuery;
         $q = $query->getQuery();
@@ -67,6 +68,12 @@ class Querier extends AbstractQuerier
         $resources = $query->getResources();
         $fq = $resource_name_field . ':' . implode(' OR ', $resources);
         $solrQuery->addFilterQuery($fq);
+
+        $site = $query->getSite();
+        if (isset($site)) {
+            $fq = $sites_field . ':' . $site->id();
+            $solrQuery->addFilterQuery($fq);
+        }
 
         $facetFields = $query->getFacetFields();
         if (!empty($facetFields)) {

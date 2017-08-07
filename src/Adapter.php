@@ -29,12 +29,23 @@
 
 namespace Solr;
 
+use Zend\I18n\Translator\TranslatorInterface;
+use Omeka\Api\Manager as ApiManager;
 use Search\Adapter\AbstractAdapter;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Solr\Form\ConfigFieldset;
 
 class Adapter extends AbstractAdapter
 {
+    protected $api;
+    protected $translator;
+
+    public function __construct(ApiManager $api, TranslatorInterface $translator)
+    {
+        $this->api = $api;
+        $this->translator = $translator;
+    }
+
     public function getLabel()
     {
         return 'Solr';
@@ -42,8 +53,8 @@ class Adapter extends AbstractAdapter
 
     public function getConfigFieldset()
     {
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $solrNodes = $api->search('solr_nodes')->getContent();
+        $solrNodes = $this->api->search('solr_nodes')->getContent();
+
         return new ConfigFieldset(null, ['solrNodes' => $solrNodes]);
     }
 
@@ -64,10 +75,6 @@ class Adapter extends AbstractAdapter
 
     public function getAvailableSortFields(SearchIndexRepresentation $index)
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-        $translator = $serviceLocator->get('MvcTranslator');
-
         $settings = $index->settings();
         $solrNodeId = $settings['adapter']['solr_node_id'];
         if (!$solrNodeId) {
@@ -77,18 +84,18 @@ class Adapter extends AbstractAdapter
         $sortFields = [
             'score desc' => [
                 'name' => 'score desc',
-                'label' => $translator->translate('Relevance'),
+                'label' => $this->translator->translate('Relevance'),
             ],
         ];
 
         $directionLabel = [
-            'asc' => $translator->translate('Asc'),
-            'desc' => $translator->translate('Desc'),
+            'asc' => $this->translator->translate('Asc'),
+            'desc' => $this->translator->translate('Desc'),
         ];
 
-        $solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();;
+        $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();;
         $schema = $solrNode->schema();
-        $response = $api->search('solr_mappings', [
+        $response = $this->api->search('solr_mappings', [
             'solr_node_id' => $solrNode->id(),
         ]);
         $mappings = $response->getContent();
@@ -110,12 +117,9 @@ class Adapter extends AbstractAdapter
 
     public function getAvailableFields(SearchIndexRepresentation $index)
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-
         $settings = $index->settings();
         $solrNodeId = $settings['adapter']['solr_node_id'];
-        $response = $api->search('solr_mappings', [
+        $response = $this->api->search('solr_mappings', [
             'solr_node_id' => $solrNodeId,
         ]);
         $mappings = $response->getContent();

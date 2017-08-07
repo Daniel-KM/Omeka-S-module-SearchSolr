@@ -103,6 +103,18 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             ],
         ]);
 
+        $settingsFieldset->add([
+            'name' => 'sites_field',
+            'type' => 'Text',
+            'options' => [
+                'label' => $translator->translate('Sites field'),
+                'info' => $translator->translate('Name of Solr field that will contain the sites ids. It must be a single-valued, integer-based field. WARNING: Changing this will require a complete reindexation.'),
+            ],
+            'attributes' => [
+                'required' => true,
+            ],
+        ]);
+
         $this->add($settingsFieldset);
     }
 }

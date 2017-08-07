@@ -90,8 +90,11 @@ class Indexer extends AbstractIndexer
         $settings = $serviceLocator->get('Omeka\Settings');
         $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
         $valueFormatterManager = $serviceLocator->get('Solr\ValueFormatterManager');
+        $entityManager = $serviceLocator->get('Omeka\EntityManager');
 
         $resource = $api->read($resource->getResourceName(), $resource->getId())->getContent();
+
+        $this->getLogger()->info(sprintf('Indexing resource %1$s (%2$s)', $resource->id(), $resource->resourceName()));
 
         $client = $this->getClient();
 
@@ -106,9 +109,33 @@ class Indexer extends AbstractIndexer
         $resource_name_field = $solrNodeSettings['resource_name_field'];
         $document->addField($resource_name_field, $resourceName);
 
+        $sites_field = $solrNodeSettings['sites_field'];
+        if ($sites_field) {
+            if ($resourceName === 'items') {
+                $sites = $api->search('sites')->getContent();
+                foreach ($sites as $site) {
+                    $query = ['id' => $resource->id(), 'site_id' => $site->id()];
+                    $res = $api->search('items', $query)->getContent();
+                    if (!empty($res)) {
+                        $document->addField($sites_field, $site->id());
+                    }
+                }
+            } elseif ($resourceName === 'item_sets') {
+                $qb = $entityManager->createQueryBuilder();
+                $qb->select('siteItemSet')
+                    ->from('Omeka\Entity\SiteItemSet', 'siteItemSet')
+                    ->innerJoin('siteItemSet.itemSet', 'itemSet')
+                    ->where($qb->expr()->eq('itemSet.id', $resource->id()));
+                $siteItemSets = $qb->getQuery()->getResult();
+                foreach ($siteItemSets as $siteItemSet) {
+                    $document->addField($sites_field, $siteItemSet->getSite()->getId());
+                }
+            }
+        }
+
         $solrMappings = $api->search('solr_mappings', [
             'resource_name' => $resourceName,
-            'sole_node_id' => $solrNode->id(),
+            'solr_node_id' => $solrNode->id(),
         ])->getContent();
 
         $schema = $solrNode->schema();
@@ -140,7 +167,6 @@ class Indexer extends AbstractIndexer
                 $document->addField($solrField, $value);
             }
         }
-        $this->getLogger()->info(sprintf('Indexing resource %1$s (%2$s)', $resource->id(), $resource->resourceName()));
 
         try {
             $client->addDocument($document);

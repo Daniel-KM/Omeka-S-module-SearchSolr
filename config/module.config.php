@@ -134,9 +134,9 @@ return [
             __DIR__ . '/../view',
         ],
     ],
-    'search' => [
-        'adapters' => [
-            'solr' => 'Solr\Adapter',
+    'search_adapters' => [
+        'factories' => [
+            'solr' => 'Solr\Service\AdapterFactory',
         ],
     ],
     'solr_value_extractors' => [
