@@ -93,7 +93,7 @@ class Adapter extends AbstractAdapter
             'desc' => $this->translator->translate('Desc'),
         ];
 
-        $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();;
+        $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();
         $schema = $solrNode->schema();
         $response = $this->api->search('solr_mappings', [
             'solr_node_id' => $solrNode->id(),

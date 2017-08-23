@@ -37,7 +37,7 @@ class SchemaFactory implements FactoryInterface
 {
     protected $schemas = [];
 
-    public function __invoke (ContainerInterface $container, $requestedName, array $options=null)
+    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
         $solr_node = $options['solr_node'];
 
