@@ -37,40 +37,25 @@ use Omeka\Stdlib\ErrorStore;
 
 class SolrMappingAdapter extends AbstractEntityAdapter
 {
-    /**
-     * {@inheritDoc}
-     */
     protected $sortFields = [
         'id' => 'id',
     ];
 
-    /**
-     * {@inheritDoc}
-     */
     public function getResourceName()
     {
         return 'solr_mappings';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getRepresentationClass()
     {
         return 'Solr\Api\Representation\SolrMappingRepresentation';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getEntityClass()
     {
         return 'Solr\Entity\SolrMapping';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
     ) {
@@ -90,9 +75,6 @@ class SolrMappingAdapter extends AbstractEntityAdapter
         $this->hydrateSolrNode($request, $entity);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function buildQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['solr_node_id'])) {

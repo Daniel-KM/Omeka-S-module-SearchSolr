@@ -79,7 +79,7 @@ class Module extends AbstractModule
 
         if (!extension_loaded('solr')) {
             $translator = $serviceLocator->get('MvcTranslator');
-            $message = $translator->translate("Solr module requires PHP Solr extension, which is not loaded.");
+            $message = $translator->translate('Solr module requires PHP Solr extension, which is not loaded.');
             throw new ModuleCannotInstallException($message);
         }
 

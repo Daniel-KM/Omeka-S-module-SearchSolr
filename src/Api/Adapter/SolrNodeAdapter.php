@@ -36,41 +36,26 @@ use Omeka\Stdlib\ErrorStore;
 
 class SolrNodeAdapter extends AbstractEntityAdapter
 {
-    /**
-     * {@inheritDoc}
-     */
     protected $sortFields = [
         'id' => 'id',
         'name' => 'name',
     ];
 
-    /**
-     * {@inheritDoc}
-     */
     public function getResourceName()
     {
         return 'solr_nodes';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getRepresentationClass()
     {
         return 'Solr\Api\Representation\SolrNodeRepresentation';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getEntityClass()
     {
         return 'Solr\Entity\SolrNode';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
     ) {
@@ -82,9 +67,6 @@ class SolrNodeAdapter extends AbstractEntityAdapter
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
     {
         if (false == $entity->getName()) {
