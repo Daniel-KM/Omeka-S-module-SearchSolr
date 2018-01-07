@@ -31,10 +31,14 @@
 namespace Solr\Controller\Admin;
 
 use Omeka\Form\ConfirmForm;
+use Search\Api\Representation\SearchIndexRepresentation;
+use Search\Api\Representation\SearchPageRepresentation;
+use Solr\Api\Representation\SolrNodeRepresentation;
 use Solr\Form\Admin\SolrMappingForm;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Solr\Api\Representation\SolrMappingRepresentation;
 
 class MappingController extends AbstractActionController
 {
@@ -165,11 +169,22 @@ class MappingController extends AbstractActionController
         $response = $this->api()->read('solr_mappings', $id);
         $mapping = $response->getContent();
 
+        $searchPages = $this->searchSearchPages($mapping->solrNode());
+        $searchPagesUsingMapping = [];
+        foreach ($searchPages as $searchPage) {
+            if ($this->doesSearchPageUseMapping($searchPage, $mapping)) {
+                $searchPagesUsingMapping[] = $searchPage;
+            }
+        }
+
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
         $view->setVariable('resourceLabel', 'Solr mapping'); // translate
         $view->setVariable('resource', $mapping);
+        $view->setVariable('partialPath', 'common/solr-mapping-delete-confirm-details');
+        $view->setVariable('totalSearchPages', count($searchPages));
+        $view->setVariable('totalSearchPagesUsingMapping', count($searchPagesUsingMapping));
         return $view;
     }
 
@@ -200,5 +215,75 @@ class MappingController extends AbstractActionController
     {
         $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
         return $solrNode->schema()->getSchema();
+    }
+
+
+    /**
+     * Find all search indexes related to a specific solr node.
+     *
+     * @todo Factorize with NodeController::searchSearchIndexes()
+     * @param SolrNodeRepresentation $solrNode
+     * @return SearchIndexRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchIndexes(SolrNodeRepresentation $solrNode)
+    {
+        $result = [];
+        $api = $this->api();
+        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
+        foreach ($searchIndexes as $searchIndex) {
+            $searchIndexSettings = $searchIndex->settings();
+            if ($solrNode->id() == $searchIndexSettings['adapter']['solr_node_id']) {
+                $result[$searchIndex->id()] = $searchIndex;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Find all search pages related to a specific solr node.
+     *
+     * @todo Factorize with NodeController::searchSearchPages()
+     * @param SolrNodeRepresentation $solrNode
+     * @return SearchPageRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchPages(SolrNodeRepresentation $solrNode)
+    {
+        // TODO Use entity manager to simplify search of pages from node.
+        $result = [];
+        $api = $this->api();
+        $searchIndexes = $this->searchSearchIndexes($solrNode);
+        foreach ($searchIndexes as $searchIndex) {
+            $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
+            foreach ($searchPages as $searchPage) {
+                $result[$searchPage->id()] = $searchPage;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Check if a search page use a mapping enabled as facet or sort field.
+     *
+     * @param SearchPageRepresentation $searchPage
+     * @param SolrMappingRepresentation $solrMapping
+     * @return bool
+     */
+    protected function doesSearchPageUseMapping(
+        SearchPageRepresentation $searchPage,
+        SolrMappingRepresentation $solrMapping
+    ) {
+        $searchPageSettings = $searchPage->settings();
+        $fieldName = $solrMapping->fieldName();
+        foreach ($searchPageSettings as $value) {
+            if (is_array($value)) {
+                if (!empty($value[$fieldName]['enabled'])
+                    || !empty($value[$fieldName . ' asc']['enabled'])
+                    || !empty($value[$fieldName . ' desc']['enabled'])
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -32,6 +32,10 @@ namespace Solr;
 
 use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
+use Search\Api\Representation\SearchIndexRepresentation;
+use Search\Api\Representation\SearchPageRepresentation;
+use Zend\EventManager\Event;
+use Zend\EventManager\SharedEventManagerInterface;
 use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -303,6 +307,126 @@ SQL;
         $acl->allow(null, \Solr\Api\Adapter\SolrNodeAdapter::class);
         $acl->allow(null, \Solr\Api\Adapter\SolrMappingAdapter::class);
         $acl->allow(null, \Solr\Entity\SolrNode::class, 'read');
+    }
+
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager)
+    {
+        $sharedEventManager->attach(
+            Api\Adapter\SolrNodeAdapter::class,
+            'api.delete.post',
+            [$this, 'deletePostSolrNode']
+        );
+        $sharedEventManager->attach(
+            Api\Adapter\SolrMappingAdapter::class,
+            'api.delete.pre',
+            [$this, 'deletePreSolrMapping']
+        );
+        $sharedEventManager->attach(
+            Api\Adapter\SolrMappingAdapter::class,
+            'api.delete.post',
+            [$this, 'deletePostSolrMapping']
+        );
+    }
+
+    public function deletePostSolrNode(Event $event)
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $request = $event->getParam('request');
+        $id = $request->getId();
+        $searchIndexes = $this->searchSearchIndexesByNodeId($id);
+        if (empty($searchIndexes)) {
+            return;
+        }
+        $api->batchDelete('search_indexes', array_keys($searchIndexes), [], ['continueOnError' => true]);
+    }
+
+    public function deletePreSolrMapping(Event $event)
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $request = $event->getParam('request');
+        $solrMapping = $api->read('solr_mappings', $request->getId())->getContent();
+        $data = $request->getContent();
+        $data['solrMapping'] = [
+            'solr_node_id' => $solrMapping->solrNode()->id(),
+            'resource_name' => $solrMapping->resourceName(),
+            'field_name' => $solrMapping->fieldName(),
+            'source' => $solrMapping->source(),
+            'settings' => $solrMapping->settings(),
+        ];
+        $request->setContent($data);
+    }
+
+    public function deletePostSolrMapping(Event $event)
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $request = $event->getParam('request');
+        $solrMappingValues = $request->getValue('solrMapping');
+        $searchPages = $this->searchSearchPagesByNodeId($solrMappingValues['solr_node_id']);
+        if (empty($searchPages)) {
+            return;
+        }
+
+        $fieldName = $solrMappingValues['field_name'];
+        foreach ($searchPages as $searchPage) {
+            $searchPageSettings = $searchPage->settings();
+            foreach ($searchPageSettings as $key => $value) {
+                if (is_array($value)) {
+                    unset($searchPageSettings[$key][$fieldName]);
+                    unset($searchPageSettings[$key][$fieldName . ' asc']);
+                    unset($searchPageSettings[$key][$fieldName . ' desc']);
+                }
+            }
+            $api->update(
+                'search_pages',
+                $searchPage->id(),
+                ['o:settings' => $searchPageSettings],
+                [],
+                ['isPartial' => true]
+            );
+        }
+    }
+
+    /**
+     * Find all search indexes related to a specific solr node.
+     *
+     * @todo Factorize searchSearchIndexes() from node with NodeController.
+     * @param int $solrNodeId
+     * @return SearchIndexRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchIndexesByNodeId($solrNodeId)
+    {
+        $result = [];
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
+        foreach ($searchIndexes as $searchIndex) {
+            $searchIndexSettings = $searchIndex->settings();
+            if ($solrNodeId == $searchIndexSettings['adapter']['solr_node_id']) {
+                $result[$searchIndex->id()] = $searchIndex;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Find all search pages that use a specific solr node id.
+     *
+     * @todo Factorize searchSearchPages() from node with NodeController.
+     * @param int $solrNodeId
+     * @return SearchPageRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchPagesByNodeId($solrNodeId)
+    {
+        // TODO Use entity manager to simplify search of pages from node.
+        $result = [];
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $searchIndexes = $this->searchSearchIndexesByNodeId($solrNodeId);
+        foreach ($searchIndexes as $searchIndex) {
+            $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
+            foreach ($searchPages as $searchPage) {
+                $result[$searchPage->id()] = $searchPage;
+            }
+        }
+        return $result;
     }
 
     protected function getSolrNodeDefaultSettings()

@@ -68,7 +68,19 @@ So the theme should be updated. Anyway, a navigation link can be added easily.
     3. The search form should appear. Type some text then submit the form to
        display the results as grid or as list. The page can be themed.
 
-Don’t forget to reindex the fields each time the Solr config is updated.
+**IMPORTANT**
+
+Don’t forget to check Search facets and sort fields of each search page each
+time that the list of node fields is modified : the fields that don’t exist
+anymore are removed, but the new ones or the renamed ones are not added.
+
+Furthermore, a check should be done when a field has the same name for items and
+item sets.
+
+Don’t forget to reindex the fields each time the Solr config is updated too.
+
+The update of the index should be done regularly too, so add a cron task on the
+server.
 
 
 Solr install on Debian <a name="solr-install"></a>

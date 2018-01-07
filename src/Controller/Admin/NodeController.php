@@ -30,10 +30,13 @@
 
 namespace Solr\Controller\Admin;
 
+use Omeka\Form\ConfirmForm;
+use Search\Api\Representation\SearchIndexRepresentation;
+use Search\Api\Representation\SearchPageRepresentation;
+use Solr\Form\Admin\SolrNodeForm;
+use Solr\Api\Representation\SolrNodeRepresentation;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Omeka\Form\ConfirmForm;
-use Solr\Form\Admin\SolrNodeForm;
 
 class NodeController extends AbstractActionController
 {
@@ -109,11 +112,19 @@ class NodeController extends AbstractActionController
         $response = $this->api()->read('solr_nodes', $id);
         $node = $response->getContent();
 
+        $searchIndexes = $this->searchSearchIndexes($node);
+        $searchPages = $this->searchSearchPages($node);
+        $solrMappings = $this->api()->search('solr_mappings', ['solr_node_id' => $node->id()])->getContent();
+
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
         $view->setVariable('resourceLabel', 'Solr node'); // @translate
         $view->setVariable('resource', $node);
+        $view->setVariable('partialPath', 'common/solr-node-delete-confirm-details');
+        $view->setVariable('totalSearchIndexes', count($searchIndexes));
+        $view->setVariable('totalSearchPages', count($searchPages));
+        $view->setVariable('totalSolrMappings', count($solrMappings));
         return $view;
     }
 
@@ -130,5 +141,48 @@ class NodeController extends AbstractActionController
             }
         }
         return $this->redirect()->toRoute('admin/solr');
+    }
+
+    /**
+     * Find all search indexes related to a specific solr node.
+     *
+     * @todo Factorize with MappingController::searchSearchIndexes()
+     * @param SolrNodeRepresentation $solrNode
+     * @return SearchIndexRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchIndexes(SolrNodeRepresentation $solrNode)
+    {
+        $result = [];
+        $api = $this->api();
+        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
+        foreach ($searchIndexes as $searchIndex) {
+            $searchIndexSettings = $searchIndex->settings();
+            if ($solrNode->id() == $searchIndexSettings['adapter']['solr_node_id']) {
+                $result[$searchIndex->id()] = $searchIndex;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Find all search pages related to a specific solr node.
+     *
+     * @todo Factorize with MappingController::searchSearchPages()
+     * @param SolrNodeRepresentation $solrNode
+     * @return SearchPageRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchPages(SolrNodeRepresentation $solrNode)
+    {
+        // TODO Use entity manager to simplify search of pages from node.
+        $result = [];
+        $api = $this->api();
+        $searchIndexes = $this->searchSearchIndexes($solrNode);
+        foreach ($searchIndexes as $searchIndex) {
+            $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
+            foreach ($searchPages as $searchPage) {
+                $result[$searchPage->id()] = $searchPage;
+            }
+        }
+        return $result;
     }
 }
