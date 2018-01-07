@@ -100,9 +100,9 @@
             var type = fieldTypesByName[field.type];
 
             fieldInfo.find('#field-info-contents').empty()
-                .append('<h4>Field</h4>')
+                .append('<h4>' + Omeka.jsTranslate('Field') + '</h4>')
                 .append(objectToUL(field))
-                .append('<h4>Type</h4>')
+                .append('<h4>' + Omeka.jsTranslate('Type') + '</h4>')
                 .append(objectToUL(type));
 
             fieldInfo.show();
@@ -124,7 +124,7 @@
 
         var select = $('<select>')
             .attr('id', 'field-selector')
-            .attr('data-placeholder', 'Choose a field...');
+            .attr('data-placeholder', Omeka.jsTranslate('Choose a field...'));
 
         var emptyOption = $('<option>').val('');
         select.append(emptyOption);
@@ -147,7 +147,7 @@
 
         if (fields.length) {
             var fieldsOptGroup = $('<optgroup>')
-                .attr('label', 'Field');
+                .attr('label', Omeka.jsTranslate('Field'));
             for (i in fields) {
                 var field = fields[i];
                 if (field.name.startsWith('_') && field.name.endsWith('_'))
@@ -171,7 +171,7 @@
 
         if (dynamicFields.length) {
             var dynamicFieldsOptGroup = $('<optgroup>')
-                .attr('label', 'Dynamic field');
+                .attr('label', Omeka.jsTranslate('Dynamic field'));
             for (i in dynamicFields) {
                 var field = dynamicFields[i];
                 var option = $('<option>')
