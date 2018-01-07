@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -30,10 +31,7 @@
 <?php $this->htmlElement('body')->appendAttribute('class', 'solr-mapping browse'); ?>
 <?php $escape = $this->plugin('escapeHtml'); ?>
 
-<?php
-    $pageTitle = sprintf($this->translate('Solr mapping for %s'), $resourceName) . ' (' . $solrNode->name() . ')';
-    echo $this->pageTitle($pageTitle);
-?>
+<?php echo $this->pageTitle(sprintf($this->translate('Solr mappings for "%s"'), $resourceName)); ?>
 
 <div id="page-actions">
     <?php $addUrl = $this->url('admin/solr/node-id-mapping-resource', [
@@ -41,17 +39,16 @@
         'resourceName' => $resourceName,
         'action' => 'add',
     ]); ?>
-    <a class="button" href="<?php echo $addUrl ?>">Add new mapping</a>
+    <a class="button" href="<?php echo $addUrl ?>"><?php echo $this->translate('Add new mapping'); ?></a>
 </div>
 
 <nav class="breadcrumbs">
     <?php
-        $text = $this->translate('Back to resources list');
-        $href = $this->url('admin/solr/node-id-mapping', [
-            'nodeId' => $solrNode->id(),
-        ]);
-        echo $this->hyperlink($text, $href, ['class' => 'o-icon-left']);
-    ?>
+    echo $this->hyperlink($this->translate('Solr nodes'), $this->url('admin/solr'));
+    echo $this->hyperlink(sprintf($this->translate('Resources list for node "%s"'), $solrNode->name()), $this->url('admin/solr/node-id-mapping', [], true));
+    ?><span><?php
+    echo sprintf($this->translate('Mappings for "%s"'), $resourceName);
+    ?></span>
 </nav>
 
 <?php if (count($mappings) > 0): ?>

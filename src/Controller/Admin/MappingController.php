@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,11 +30,11 @@
 
 namespace Solr\Controller\Admin;
 
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
 use Solr\Form\Admin\SolrMappingForm;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
+use Zend\Mvc\Controller\AbstractActionController;
+use Zend\View\Model\ViewModel;
 
 class MappingController extends AbstractActionController
 {
@@ -76,7 +77,6 @@ class MappingController extends AbstractActionController
         $view->setVariable('solrNode', $solrNode);
         $view->setVariable('resourceName', $resourceName);
         $view->setVariable('mappings', $mappings);
-
         return $view;
     }
 
@@ -85,14 +85,12 @@ class MappingController extends AbstractActionController
         $solrNodeId = $this->params('nodeId');
         $resourceName = $this->params('resourceName');
 
+        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+
         $form = $this->getForm(SolrMappingForm::class, [
             'solr_node_id' => $solrNodeId,
             'resource_name' => $resourceName,
         ]);
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
 
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
@@ -113,6 +111,10 @@ class MappingController extends AbstractActionController
             }
         }
 
+        $view = new ViewModel;
+        $view->setVariable('solrNode', $solrNode);
+        $view->setVariable('form', $form);
+        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
         return $view;
     }
 
@@ -129,10 +131,6 @@ class MappingController extends AbstractActionController
             'resource_name' => $resourceName,
         ]);
         $form->setData($mapping->jsonSerialize());
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
 
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
@@ -154,6 +152,10 @@ class MappingController extends AbstractActionController
             }
         }
 
+        $view = new ViewModel;
+        $view->setVariable('mapping', $mapping);
+        $view->setVariable('form', $form);
+        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
         return $view;
     }
 
@@ -168,7 +170,6 @@ class MappingController extends AbstractActionController
         $view->setTemplate('common/delete-confirm-details');
         $view->setVariable('resourceLabel', 'Solr mapping'); // translate
         $view->setVariable('resource', $mapping);
-
         return $view;
     }
 
