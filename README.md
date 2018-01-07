@@ -71,8 +71,9 @@ So the theme should be updated. Anyway, a navigation link can be added easily.
 **IMPORTANT**
 
 Don’t forget to check Search facets and sort fields of each search page each
-time that the list of node fields is modified : the fields that don’t exist
-anymore are removed, but the new ones or the renamed ones are not added.
+time that the list of node fields is modified: the fields that don’t exist
+anymore are removed; the new ones are not added; the renamed ones are updated,
+but issues may occur in case of duplicate names.
 
 Furthermore, a check should be done when a field has the same name for items and
 item sets.

@@ -318,8 +318,18 @@ SQL;
         );
         $sharedEventManager->attach(
             Api\Adapter\SolrMappingAdapter::class,
+            'api.update.pre',
+            [$this, 'preSolrMapping']
+        );
+        $sharedEventManager->attach(
+            Api\Adapter\SolrMappingAdapter::class,
             'api.delete.pre',
-            [$this, 'deletePreSolrMapping']
+            [$this, 'preSolrMapping']
+        );
+        $sharedEventManager->attach(
+            Api\Adapter\SolrMappingAdapter::class,
+            'api.update.post',
+            [$this, 'updatePostSolrMapping']
         );
         $sharedEventManager->attach(
             Api\Adapter\SolrMappingAdapter::class,
@@ -340,7 +350,7 @@ SQL;
         $api->batchDelete('search_indexes', array_keys($searchIndexes), [], ['continueOnError' => true]);
     }
 
-    public function deletePreSolrMapping(Event $event)
+    public function preSolrMapping(Event $event)
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
@@ -354,6 +364,54 @@ SQL;
             'settings' => $solrMapping->settings(),
         ];
         $request->setContent($data);
+    }
+
+    public function updatePostSolrMapping(Event $event)
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $request = $event->getParam('request');
+        $response = $event->getParam('response');
+        $solrMapping = $response->getContent();
+        $oldSolrMappingValues = $request->getValue('solrMapping');
+
+        // Quick check if the Solr field name is unchanged.
+        $fieldName = $solrMapping->getFieldName();
+        $oldFieldName = $oldSolrMappingValues['field_name'];
+        if ($fieldName === $oldFieldName) {
+            return;
+        }
+
+        $searchPages = $this->searchSearchPagesByNodeId($solrMapping->getSolrNode()->getId());
+        if (empty($searchPages)) {
+            return;
+        }
+
+        foreach ($searchPages as $searchPage) {
+            $searchPageSettings = $searchPage->settings();
+            foreach ($searchPageSettings as $key => $value) {
+                if (is_array($value)) {
+                    if (isset($searchPageSettings[$key][$oldFieldName])) {
+                        $searchPageSettings[$key][$fieldName] = $searchPageSettings[$key][$oldFieldName];
+                        unset($searchPageSettings[$key][$oldFieldName]);
+                    }
+                    if (isset($searchPageSettings[$key][$oldFieldName . ' asc'])) {
+                        $searchPageSettings[$key][$fieldName . ' asc'] = $searchPageSettings[$key][$oldFieldName . ' asc'];
+                        unset($searchPageSettings[$key][$oldFieldName]);
+                    }
+                    if (isset($searchPageSettings[$key][$oldFieldName . ' desc'])) {
+                        $searchPageSettings[$key][$fieldName . ' desc'] = $searchPageSettings[$key][$oldFieldName . ' desc'];
+                        unset($searchPageSettings[$key][$oldFieldName]);
+                    }
+                }
+            }
+            $api->update(
+                'search_pages',
+                $searchPage->id(),
+                ['o:settings' => $searchPageSettings],
+                [],
+                ['isPartial' => true]
+            );
+        }
     }
 
     public function deletePostSolrMapping(Event $event)
