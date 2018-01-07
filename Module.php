@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,11 +30,11 @@
 
 namespace Solr;
 
+use Omeka\Module\AbstractModule;
+use Omeka\Module\Exception\ModuleCannotInstallException;
 use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
-use Omeka\Module\AbstractModule;
-use Omeka\Module\Exception\ModuleCannotInstallException;
 
 class Module extends AbstractModule
 {
@@ -46,13 +47,13 @@ class Module extends AbstractModule
         $serviceListener->addServiceManager(
             'Solr\ValueExtractorManager',
             'solr_value_extractors',
-            'Solr\Feature\ValueExtractorProviderInterface',
+            Feature\ValueExtractorProviderInterface::class,
             'getSolrValueExtractorConfig'
         );
         $serviceListener->addServiceManager(
             'Solr\ValueFormatterManager',
             'solr_value_formatters',
-            'Solr\Feature\ValueFormatterProviderInterface',
+            Feature\ValueFormatterProviderInterface::class,
             'getSolrValueFormatterConfig'
         );
     }
@@ -67,9 +68,9 @@ class Module extends AbstractModule
         parent::onBootstrap($event);
 
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(null, 'Solr\Api\Adapter\SolrNodeAdapter');
-        $acl->allow(null, 'Solr\Api\Adapter\SolrMappingAdapter');
-        $acl->allow(null, 'Solr\Entity\SolrNode', 'read');
+        $acl->allow(null, \Solr\Api\Adapter\SolrNodeAdapter::class);
+        $acl->allow(null, \Solr\Api\Adapter\SolrMappingAdapter::class);
+        $acl->allow(null, \Solr\Entity\SolrNode::class, 'read');
     }
 
     public function install(ServiceLocatorInterface $serviceLocator)

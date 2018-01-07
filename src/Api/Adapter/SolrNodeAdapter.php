@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -48,12 +49,12 @@ class SolrNodeAdapter extends AbstractEntityAdapter
 
     public function getRepresentationClass()
     {
-        return 'Solr\Api\Representation\SolrNodeRepresentation';
+        return \Solr\Api\Representation\SolrNodeRepresentation::class;
     }
 
     public function getEntityClass()
     {
-        return 'Solr\Entity\SolrNode';
+        return \Solr\Entity\SolrNode::class;
     }
 
     public function hydrate(Request $request, EntityInterface $entity,
