@@ -59,20 +59,20 @@ Quick start
     5. Edit the name of the label that will be used for facets and sort fields
        in the same page. The string will be automatically translated if it
        exists in Omeka.
+4. In admin or site settings
+    1. To access to the Solr search form, enable it in the settings, so it will
+       be available in the specified path: `https://example.com/s/my-site/search`
+       or `https://example.com/admin/search` in this example.
+    2. Optionally, add a custom navigation link to the search page in the
+       navigation settings of the site.
 
-The search page is available in the specified path for each site, even if there
-is no link in the menu. In this example, it’s `https://example.com/s/my-site/search`.
-It does not replace the default search page neither the default search engine.
-So the theme should be updated. Anyway, a navigation link can be added easily.
-
-4. Access to the Solr search form
-    1. In the configuration of the site, add a custom navigation link to the
-       search page.
-    2. Go to the site, then click on the navigation link you just added.
-    3. The search form should appear. Type some text then submit the form to
-       display the results as grid or as list. The page can be themed.
+The search form should appear. Type some text then submit the form to display
+the results as grid or as list. The page can be themed.
 
 **IMPORTANT**
+
+The Search module  does not replace the default search page neither the default
+search engine. So the theme should be updated.
 
 Don’t forget to check Search facets and sort fields of each search page each
 time that the list of node fields is modified: the fields that don’t exist
@@ -83,9 +83,6 @@ Furthermore, a check should be done when a field has the same name for items and
 item sets.
 
 Don’t forget to reindex the fields each time the Solr config is updated too.
-
-The update of the index should be done regularly too, so add a cron task on the
-server.
 
 
 Solr install on Debian <a name="solr-install"></a>
