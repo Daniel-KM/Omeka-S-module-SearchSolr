@@ -34,7 +34,8 @@ Quick start
     4. Install this module.
 2. In Solr admin
     1. A default node `default` is automatically added, and it is linked to the
-       default install of Solr with the path `solr/omeka`.
+       default install of Solr with the path `solr/omeka`. It contains a default
+       list of mappings for Dublin Core elements too.
     2. Check if this node is working, or configure it correctly (host, port, and
        path of the Solr instance): the status should be `OK`.
 3. In Search admin
@@ -46,8 +47,14 @@ Quick start
        page, for example `search`, the created index (`Default (Solr)` here, and
        a form (`Basic`).
     4. In the page configuration, you can enable/disable facet and sort fields
-       by drag-drop. By default, there is no facets and only one sort field,
-       `relevance`.
+       by drag-drop. The order of the fields will be the one that will be used
+       for display. Note that some fields seem duplicated, but they aren't. Some
+       of them allow to prepare search indexes and some other facets or sort
+       indexes. Some of them may be used for all uses.
+       For example, you can use `dcterms_type_ss`, `dcterms_subject_ss`, `resource_class_s`,
+       `dcterms_creator_ss`, `dcterms_date_s`, `dcterms_spatial_ss `, `dcterms_language_ss`
+       and `dcterms_rights_ss` as facets, and `Relevance`, `dcterms_title_s`,
+       `dcterms_date_s`, and `dcterms_creator_s` for sort fields.
 
 The search page is available in the specified path for each site, even if there
 is no link in the menu. In this example, it’s `https://example.com/s/my-site/search`.

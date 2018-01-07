@@ -38,6 +38,11 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class Module extends AbstractModule
 {
+    public function getConfig()
+    {
+        return include __DIR__ . '/config/module.config.php';
+    }
+
     public function init(ModuleManager $moduleManager)
     {
         $event = $moduleManager->getEvent();
@@ -58,19 +63,10 @@ class Module extends AbstractModule
         );
     }
 
-    public function getConfig()
-    {
-        return include __DIR__ . '/config/module.config.php';
-    }
-
     public function onBootstrap(MvcEvent $event)
     {
         parent::onBootstrap($event);
-
-        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(null, \Solr\Api\Adapter\SolrNodeAdapter::class);
-        $acl->allow(null, \Solr\Api\Adapter\SolrMappingAdapter::class);
-        $acl->allow(null, \Solr\Entity\SolrNode::class, 'read');
+        $this->addAclRules();
     }
 
     public function install(ServiceLocatorInterface $serviceLocator)
@@ -91,17 +87,6 @@ CREATE TABLE solr_node (
     settings LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)',
     PRIMARY KEY(id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
-SQL;
-        $connection->exec($sql);
-
-        $sql = <<<'SQL'
-INSERT INTO `solr_node` (`name`, `settings`)
-VALUES ("default", ?);
-SQL;
-        $defaultSettings = $this->getSolrNodeDefaultSettings();
-        $connection->executeQuery($sql, [json_encode($defaultSettings)]);
-
-        $sql = <<<'SQL'
 CREATE TABLE solr_mapping (
     id INT AUTO_INCREMENT NOT NULL,
     solr_node_id INT NOT NULL,
@@ -117,6 +102,27 @@ SQL;
         $sqls = array_filter(array_map('trim', explode(';', $sql)));
         foreach ($sqls as $sql) {
             $connection->exec($sql);
+        }
+
+        $sql = <<<'SQL'
+INSERT INTO `solr_node` (`name`, `settings`)
+VALUES ("default", ?);
+SQL;
+        $defaultSettings = $this->getSolrNodeDefaultSettings();
+        $connection->executeQuery($sql, [json_encode($defaultSettings)]);
+
+        $sql = <<<'SQL'
+INSERT INTO `solr_mapping` (`solr_node_id`, `resource_name`, `field_name`, `source`, `settings`)
+VALUES (1, ?, ?, ?, ?);
+SQL;
+        $defaultMappings = $this->getDefaultSolrMappings();
+        foreach ($defaultMappings as $mapping) {
+            $connection->executeQuery($sql, [
+                $mapping['resource_name'],
+                $mapping['field_name'],
+                $mapping['source'],
+                json_encode($mapping['settings']),
+            ]);
         }
     }
 
@@ -276,6 +282,18 @@ SQL;
         }
     }
 
+    /**
+     * Add ACL rules for this module.
+     */
+    protected function addAclRules()
+    {
+        $services = $this->getServiceLocator();
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+        $acl->allow(null, \Solr\Api\Adapter\SolrNodeAdapter::class);
+        $acl->allow(null, \Solr\Api\Adapter\SolrMappingAdapter::class);
+        $acl->allow(null, \Solr\Entity\SolrNode::class, 'read');
+    }
+
     protected function getSolrNodeDefaultSettings()
     {
         return [
@@ -287,5 +305,10 @@ SQL;
             'resource_name_field' => 'resource_name_s',
             'sites_field' => 'site_id_is',
         ];
+    }
+
+    protected function getDefaultSolrMappings()
+    {
+        return include __DIR__ . '/config/default_mappings.php';
     }
 }
