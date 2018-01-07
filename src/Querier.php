@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -153,10 +154,12 @@ class Querier extends AbstractQuerier
             }
         }
 
-        foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
-            foreach ($values as $value => $count) {
-                if ($count > 0) {
-                    $response->addFacetCount($name, $value, $count);
+        if (!empty($solrResponse['facet_counts']['facet_fields'])) {
+            foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
+                foreach ($values as $value => $count) {
+                    if ($count > 0) {
+                        $response->addFacetCount($name, $value, $count);
+                    }
                 }
             }
         }
