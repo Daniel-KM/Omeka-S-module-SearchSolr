@@ -180,6 +180,12 @@ return [
         'source' => 'dcterms:rights',
         'settings' => ['formatter' => ''],
     ],
+    [
+        'resource_name' => 'items',
+        'field_name' => 'item_set_dcterms_title_ss',
+        'source' => 'item_set/dcterms:title',
+        'settings' => ['formatter' => ''],
+    ],
 
     // Fields to sort.
     [
