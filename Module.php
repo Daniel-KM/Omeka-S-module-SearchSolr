@@ -286,7 +286,19 @@ SQL;
 
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
-        $sql = <<<'SQL'
+        $sql = '';
+        $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
+        $module = $moduleManager->getModule('Search');
+        if ($module && in_array($module->getState(), [
+            \Omeka\Module\Manager::STATE_ACTIVE,
+            \Omeka\Module\Manager::STATE_NOT_ACTIVE,
+        ])) {
+            $sql = <<<'SQL'
+DELETE FROM `search_index` WHERE `adapter` = 'solr';
+SQL;
+        }
+
+        $sql .= <<<'SQL'
 DROP TABLE IF EXISTS `solr_mapping`;
 DROP TABLE IF EXISTS `solr_node`;
 SQL;
