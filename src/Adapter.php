@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,11 +30,11 @@
 
 namespace Solr;
 
-use Zend\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
 use Search\Adapter\AbstractAdapter;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Solr\Form\ConfigFieldset;
+use Zend\I18n\Translator\TranslatorInterface;
 
 class Adapter extends AbstractAdapter
 {
@@ -60,12 +61,12 @@ class Adapter extends AbstractAdapter
 
     public function getIndexerClass()
     {
-        return 'Solr\Indexer';
+        return \Solr\Indexer::class;
     }
 
     public function getQuerierClass()
     {
-        return 'Solr\Querier';
+        return \Solr\Querier::class;
     }
 
     public function getAvailableFacetFields(SearchIndexRepresentation $index)
@@ -123,7 +124,7 @@ class Adapter extends AbstractAdapter
             'solr_node_id' => $solrNodeId,
         ]);
         $mappings = $response->getContent();
-        $fields = [];
+        $facetFields = [];
         foreach ($mappings as $mapping) {
             $name = $mapping->fieldName();
             $facetFields[$name] = [
