@@ -119,6 +119,7 @@ class MappingController extends AbstractActionController
         $view->setVariable('solrNode', $solrNode);
         $view->setVariable('form', $form);
         $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
+        $view->setVariable('sourceLabels', $this->getSourceLabels());
         return $view;
     }
 
@@ -160,6 +161,7 @@ class MappingController extends AbstractActionController
         $view->setVariable('mapping', $mapping);
         $view->setVariable('form', $form);
         $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
+        $view->setVariable('sourceLabels', $this->getSourceLabels());
         return $view;
     }
 
@@ -217,6 +219,30 @@ class MappingController extends AbstractActionController
         return $solrNode->schema()->getSchema();
     }
 
+    protected function getSourceLabels()
+    {
+        $sourceLabels = [
+            'id' => 'Internal identifier',
+            'is_public' => 'Public', // @translate
+            'is_open' => 'Is open', // @translate
+            'created' => 'Created', // @translate
+            'modified' => 'Modified', // @translate
+            'resource_class' => 'Resource class', // @translate
+            'resource_template' => 'Resource template', // @translate
+            'item_set' => 'Item set', // @translate
+            'item' => 'Item', // @translate
+            'media' => 'Media', // @translate
+        ];
+
+        $propertyLabels = [];
+        $result = $this->api()->search('properties')->getContent();
+        foreach ($result as $property) {
+            $propertyLabels[$property->term()] = ucfirst($property->label());
+        }
+
+        $sourceLabels += $propertyLabels;
+        return $sourceLabels;
+    }
 
     /**
      * Find all search indexes related to a specific solr node.

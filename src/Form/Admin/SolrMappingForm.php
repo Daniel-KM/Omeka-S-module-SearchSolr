@@ -30,15 +30,15 @@
 
 namespace Solr\Form\Admin;
 
+use Omeka\Api\Manager as ApiManager;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
 use Solr\ValueFormatter\Manager as ValueFormatterManager;
-use Zend\Form\Fieldset;
-use Zend\Form\Form;
 use Zend\Form\Element\Select;
 use Zend\Form\Element\Text;
+use Zend\Form\Fieldset;
+use Zend\Form\Form;
 use Zend\I18n\Translator\TranslatorAwareInterface;
 use Zend\I18n\Translator\TranslatorAwareTrait;
-use Omeka\Api\Manager as ApiManager;
 
 class SolrMappingForm extends Form implements TranslatorAwareInterface
 {
@@ -67,7 +67,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
             'name' => 'o:source',
             'type' => Select::class,
             'options' => [
-                'label' => $translator->translate('Source'),
+                'label' => 'Source', // @translate
                 'value_options' => $this->getSourceOptions(),
             ],
             'attributes' => [
@@ -79,7 +79,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
             'name' => 'o:field_name',
             'type' => Text::class,
             'options' => [
-                'label' => $translator->translate('Solr field'),
+                'label' => 'Solr field', // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -94,6 +94,14 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
                 'label' => $translator->translate('Formatter'),
                 'value_options' => $this->getFormatterOptions(),
                 'empty_option' => 'None', // @translate
+            ],
+        ]);
+        $settingsFieldset->add([
+            'name' => 'label',
+            'type' => Text::class,
+            'options' => [
+                'label' => $translator->translate('Default label'),
+                'info' => $translator->translate('The label is automatically translated if it exists in Omeka.'),
             ],
         ]);
         $this->add($settingsFieldset);

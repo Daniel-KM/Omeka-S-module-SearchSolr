@@ -57,10 +57,12 @@
             <tr>
                 <th><?php echo $this->translate('Solr field'); ?></th>
                 <th><?php echo $this->translate('Source'); ?></th>
+                <th><?php echo $this->translate('Translated default label'); ?></th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($mappings as $mapping): ?>
+                <?php $mappingSettings = $mapping->settings(); ?>
                 <tr>
                     <td>
                         <span><?php echo $mapping->fieldName(); ?></span>
@@ -84,6 +86,7 @@
                         </ul>
                     </td>
                     <td><?php echo $mapping->source(); ?></td>
+                    <td><?php if (!empty($mappingSettings['label'])) echo $this->translate($mappingSettings['label']); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

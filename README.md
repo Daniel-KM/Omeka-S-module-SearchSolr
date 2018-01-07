@@ -51,10 +51,14 @@ Quick start
        for display. Note that some fields seem duplicated, but they aren't. Some
        of them allow to prepare search indexes and some other facets or sort
        indexes. Some of them may be used for all uses.
-       For example, you can use `dcterms_type_ss`, `dcterms_subject_ss`, `resource_class_s`,
-       `dcterms_creator_ss`, `dcterms_date_s`, `dcterms_spatial_ss `, `dcterms_language_ss`
-       and `dcterms_rights_ss` as facets, and `Relevance`, `dcterms_title_s`,
-       `dcterms_date_s`, and `dcterms_creator_s` for sort fields.
+       For example, you can use `dcterms_type_ss`, `dcterms_subject_ss`,
+       `resource_class_s`, `item_set_dcterms_title_ss`, `dcterms_creator_ss`,
+       `dcterms_date_s`, `dcterms_spatial_ss `, `dcterms_language_ss` and
+       `dcterms_rights_ss` as facets, and `Relevance`, `dcterms_title_s`,
+       `dcterms_date_s`, and `dcterms_creator_s` as sort fields.
+    5. Edit the name of the label that will be used for facets and sort fields
+       in the same page. The string will be automatically translated if it
+       exists in Omeka.
 
 The search page is available in the specified path for each site, even if there
 is no link in the menu. In this example, it’s `https://example.com/s/my-site/search`.
