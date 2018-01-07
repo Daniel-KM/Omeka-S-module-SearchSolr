@@ -28,7 +28,17 @@ class Schema
     {
         if (!isset($this->schema)) {
             $url = "http://{$this->hostname}:{$this->port}/{$this->path}/schema";
-            $response = json_decode(file_get_contents($url), true);
+            try {
+                $contents = @file_get_contents($url);
+                if ($contents === false) {
+                    throw new \SolrServerException('Solr is not available: check the server.');
+                }
+            } catch (\SolrException $e) {
+                throw new \SolrClientException(sprintf('Solr is not available: check url to the schema (message: %s).',
+                    $e->getMessage()), $e->getCode(), $e);
+            }
+
+            $response = json_decode($contents, true);
             $this->schema = $response['schema'];
         }
 
