@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,19 +30,33 @@
 
 namespace Solr\Form\Admin;
 
-use Zend\Form\Fieldset;
-use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
 use Solr\ValueFormatter\Manager as ValueFormatterManager;
+use Zend\Form\Fieldset;
+use Zend\Form\Form;
+use Zend\Form\Element\Select;
+use Zend\Form\Element\Text;
+use Zend\I18n\Translator\TranslatorAwareInterface;
+use Zend\I18n\Translator\TranslatorAwareTrait;
+use Omeka\Api\Manager as ApiManager;
 
 class SolrMappingForm extends Form implements TranslatorAwareInterface
 {
     use TranslatorAwareTrait;
 
+    /**
+     * @var ValueExtractorManager
+     */
     protected $valueExtractorManager;
+
+    /**
+     * @var ValueFormatterManager
+     */
     protected $valueFormatterManager;
+
+    /**
+     * @var ApiManager
+     */
     protected $apiManager;
 
     public function init()
@@ -50,7 +65,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
 
         $this->add([
             'name' => 'o:source',
-            'type' => 'Select',
+            'type' => Select::class,
             'options' => [
                 'label' => $translator->translate('Source'),
                 'value_options' => $this->getSourceOptions(),
@@ -62,7 +77,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
 
         $this->add([
             'name' => 'o:field_name',
-            'type' => 'Text',
+            'type' => Text::class,
             'options' => [
                 'label' => $translator->translate('Solr field'),
             ],
@@ -74,45 +89,74 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
         $settingsFieldset = new Fieldset('o:settings');
         $settingsFieldset->add([
             'name' => 'formatter',
-            'type' => 'Select',
+            'type' => Select::class,
             'options' => [
                 'label' => $translator->translate('Formatter'),
                 'value_options' => $this->getFormatterOptions(),
+                'empty_option' => 'None', // @translate
             ],
         ]);
         $this->add($settingsFieldset);
+
+        $inputFilter = $this->getInputFilter();
+        $settingsFilter = $inputFilter->get('o:settings');
+        $settingsFilter->add([
+            'name' => 'formatter',
+            'required' => false,
+        ]);
     }
 
+    /**
+     * @param ValueExtractorManager $valueExtractorManager
+     */
     public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
     {
         $this->valueExtractorManager = $valueExtractorManager;
     }
 
+    /**
+     * @return \Solr\ValueExtractor\Manager
+     */
     public function getValueExtractorManager()
     {
         return $this->valueExtractorManager;
     }
 
+    /**
+     * @param ValueFormatterManager $valueFormatterManager
+     */
     public function setValueFormatterManager(ValueFormatterManager $valueFormatterManager)
     {
         $this->valueFormatterManager = $valueFormatterManager;
     }
 
+    /**
+     * @return \Solr\ValueFormatter\Manager
+     */
     public function getValueFormatterManager()
     {
         return $this->valueFormatterManager;
     }
 
-    public function setApiManager($apiManager)
+    /**
+     * @param ApiManager $apiManager
+     */
+    public function setApiManager(ApiManager $apiManager)
     {
         $this->apiManager = $apiManager;
     }
 
+    /**
+     * @return \Omeka\Api\Manager
+     */
     public function getApiManager()
     {
         return $this->apiManager;
     }
 
+    /**
+     * @return array|null
+     */
     protected function getSourceOptions()
     {
         $valueExtractorManager = $this->getValueExtractorManager();
@@ -126,6 +170,9 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
         return $this->getFieldsOptions($valueExtractor->getAvailableFields());
     }
 
+    /**
+     * @return array
+     */
     protected function getFieldsOptions($fields, $valuePrefix = '', $labelPrefix = '')
     {
         $options = [];
@@ -155,14 +202,14 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
         return $options;
     }
 
+    /**
+     * @return array
+     */
     protected function getFormatterOptions()
     {
         $valueFormatterManager = $this->getValueFormatterManager();
 
-        // TODO Find a way to tell Zend to accept empty values
-        $options = [
-            '0' => $this->getTranslator()->translate('None'),
-        ];
+        $options = [];
 
         foreach ($valueFormatterManager->getRegisteredNames() as $name) {
             $valueFormatter = $valueFormatterManager->get($name);
