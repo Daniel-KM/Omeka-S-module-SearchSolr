@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -150,7 +151,7 @@ class Indexer extends AbstractIndexer
             }
 
             $schemaField = $schema->getField($solrField);
-            if (!$schemaField->isMultivalued()) {
+            if ($schemaField && !$schemaField->isMultivalued()) {
                 $values = array_slice($values, 0, 1);
             }
 
