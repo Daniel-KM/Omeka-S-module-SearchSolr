@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -52,6 +53,13 @@
                     <td>
                         <span><?php echo $node->name(); ?></span>
                         <ul class="actions">
+                            <li><?php
+                            $clientSettings = $node->clientSettings();
+                            echo $this->hyperlink('',
+                                sprintf('//%s:%s/solr/#/%s', $clientSettings['hostname'], $clientSettings['port'], substr($clientSettings['path'], 5)),
+                                ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $this->translate('Solr admin interface, if reachable'),]
+                            );
+                            ?></li>
                             <li>
                                 <?php
                                     echo $node->link('', 'edit', [
