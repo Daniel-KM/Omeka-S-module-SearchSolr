@@ -285,6 +285,7 @@ SQL;
                 'path' => 'solr/default',
             ],
             'resource_name_field' => 'resource_name_s',
+            'sites_field' => 'site_id_is',
         ];
     }
 }
