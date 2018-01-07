@@ -102,14 +102,14 @@ class MappingController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_mappings', $data);
 
-                $this->messenger()->addSuccess('Solr mapping created.');
+                $this->messenger()->addSuccess('Solr mapping created.'); // @translate
 
                 return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
                     'nodeId' => $solrNodeId,
                     'resourceName' => $resourceName,
                 ]);
             } else {
-                $this->messenger()->addError('There was an error during validation');
+                $this->messenger()->addError('There was an error during validation'); // @translate
             }
         }
 
@@ -142,14 +142,15 @@ class MappingController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->update('solr_mappings', $id, $data);
 
-                $this->messenger()->addSuccess('Solr mapping modified.');
+                $this->messenger()->addSuccess('Solr mapping modified.'); // @translate
+                $this->messenger()->addWarning('Don’t forget to check search pages that use this mapping.'); // @translate
 
                 return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
                     'nodeId' => $solrNodeId,
                     'resourceName' => $resourceName,
                 ]);
             } else {
-                $this->messenger()->addError('There was an error during validation');
+                $this->messenger()->addError('There was an error during validation'); // @translate
             }
         }
 
@@ -165,7 +166,7 @@ class MappingController extends AbstractActionController
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'solr mapping');
+        $view->setVariable('resourceLabel', 'Solr mapping'); // translate
         $view->setVariable('resource', $mapping);
 
         return $view;
@@ -181,9 +182,10 @@ class MappingController extends AbstractActionController
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
                 $this->api()->delete('solr_mappings', $id);
-                $this->messenger()->addSuccess('Solr mapping successfully deleted');
+                $this->messenger()->addSuccess('Solr mapping successfully deleted'); // @translate
+                $this->messenger()->addWarning('Don’t forget to check search pages that used this mapping.'); // @translate
             } else {
-                $this->messenger()->addError('Solr mapping could not be deleted');
+                $this->messenger()->addError('Solr mapping could not be deleted'); // @translate
             }
         }
 

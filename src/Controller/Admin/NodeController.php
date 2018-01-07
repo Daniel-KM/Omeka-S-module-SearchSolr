@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -54,7 +55,7 @@ class NodeController extends AbstractActionController
 
         $form->setData($this->params()->fromPost());
         if (!$form->isValid()) {
-            $this->messenger()->addError('There was an error during validation');
+            $this->messenger()->addError('There was an error during validation'); // @translate
             return false;
         }
         return true;
@@ -73,7 +74,7 @@ class NodeController extends AbstractActionController
 
         $data = $form->getData();
         $response = $this->api()->create('solr_nodes', $data);
-        $this->messenger()->addSuccess('Solr node created.');
+        $this->messenger()->addSuccess('Solr node created.'); // @translate
         return $this->redirect()->toRoute('admin/solr');
     }
 
@@ -96,7 +97,9 @@ class NodeController extends AbstractActionController
         $formData = $form->getData();
         $response = $this->api()->update('solr_nodes', $id, $formData);
 
-        $this->messenger()->addSuccess('Solr node updated.');
+        $this->messenger()->addSuccess('Solr node updated.'); // @translate
+        $this->messenger()->addWarning('Don’t forget to check search pages that use this node.'); // @translate
+
         return $this->redirect()->toRoute('admin/solr');
     }
 
@@ -109,7 +112,7 @@ class NodeController extends AbstractActionController
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'solr node');
+        $view->setVariable('resourceLabel', 'Solr node'); // @translate
         $view->setVariable('resource', $node);
         return $view;
     }
@@ -121,9 +124,9 @@ class NodeController extends AbstractActionController
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
                 $this->api()->delete('solr_nodes', $this->params('id'));
-                $this->messenger()->addSuccess('Solr node successfully deleted');
+                $this->messenger()->addSuccess('Solr node successfully deleted'); // @translate
             } else {
-                $this->messenger()->addError('Solr node could not be deleted');
+                $this->messenger()->addError('Solr node could not be deleted'); // @translate
             }
         }
         return $this->redirect()->toRoute('admin/solr');
