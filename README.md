@@ -25,21 +25,102 @@ See general end user documentation for [Installing a module].
 Quick start
 -----------
 
-1. Install the [Search] module.
-2. Install this module.
-3. In Search admin pages:
-  1. add a new index using the Solr adapter,
-  2. configure correctly the host, port, and path of the Solr instance,
-  3. launch the indexation by clicking on the "reindex" button (two arrows
-     forming a circle),
-  4. then add a page using the created index,
-  5. in page configuration, you can enable/disable facet and sort fields (more
-     fields can be created by going to the Solr admin page - link in the
-     navigation menu).
-4. In your site configuration, add a navigation link to the search page.
-5. Go to your site, then click on the navigation link you just added.
-6. The search form should appear. Type some text then submit the form to display
-   the results.
+1. Installation
+    1. Install Solr (see a Solr tutorial or documentation, or [below for Debian]).
+    2. Create a Solr index (= "node", "core" or "collection") (see [below "Solr management"]),
+       that is named `omeka` or whatever you want (use it for the path in
+       point 2.1).
+    3. Install the [Search] module.
+    4. Install this module.
+2. In Solr admin
+    1. A default node `default` is automatically added, and it is linked to the
+       default install of Solr with the path `solr/omeka`.
+    2. Check if this node is working, or configure it correctly (host, port, and
+       path of the Solr instance): the status should be `OK`.
+3. In Search admin
+    1. Add a new index with name `Default` or whatever you want, using the Solr
+       adapter and the `default` node.
+    2. Launch the indexation by clicking on the "reindex" button (two arrows
+       forming a circle).
+    3. Add a page with name `Default` or whatever you want, a path to access the
+       page, for example `search`, the created index (`Default (Solr)` here, and
+       a form (`Basic`).
+    4. In the page configuration, you can enable/disable facet and sort fields
+       by drag-drop. By default, there is no facets and only one sort field,
+       `relevance`.
+
+The search page is available in the specified path for each site, even if there
+is no link in the menu. In this example, it’s `https://example.com/s/my-site/search`.
+It does not replace the default search page neither the default search engine.
+So the theme should be updated. Anyway, a navigation link can be added easily.
+
+4. Access to the Solr search form
+    1. In the configuration of the site, add a custom navigation link to the
+       search page.
+    2. Go to the site, then click on the navigation link you just added.
+    3. The search form should appear. Type some text then submit the form to
+       display the results as grid or as list. The page can be themed.
+
+Don’t forget to reindex the fields each time the Solr config is updated.
+
+
+Solr install on Debian <a name="solr-install"></a>
+----------------------
+
+The packaged release of Solr on Debian is obsolete (3.6.2), so it should be
+installed via the original sources. If you have a build or a development server,
+it’s recommended to create a Solr package outside of the server and to install
+it via `dpkg`.
+
+```bash
+# Check if java is installed.
+java -version
+# If not installed, install it (uncomment)
+#sudo apt install default-jdk
+# The certificate is currently obsolete on Apache server, so don’t check it.
+# This module was primarly designed for Solr 5. Not checked above yet.
+wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/5.5.5/solr-5.5.5.tgz
+# Extract the install script
+tar zxvf solr-5.5.5.tgz solr-5.5.5/bin/install_solr_service.sh --strip-components=2
+# Launch the install script (by default, Solr is installed in /opt; check other options if needed)
+sudo bash ./install_solr_service.sh solr-5.5.5.tgz
+# Add a symlink to simplify management.
+sudo ln -s /opt/solr-5.5.5 /opt/solr
+# Clean the sources.
+rm solr-5.5.5.tgz
+```
+
+Solr may be managed as a system service:
+
+```bash
+sudo systemctl stop solr
+sudo systemctl start solr
+sudo systemctl status solr
+```
+
+Solr is automatically launched and available in your browser at [http://localhost:8983].
+
+Solr is available via command line too at `/opt/solr/bin/solr`.
+
+
+Solr management <a name="solr-management"></a>
+---------------
+
+At least one index ("node", "collection" or "core")  should be created in Solr
+to be used with Omeka. The simpler is to create one via the command line to
+avoid permissions issues.
+
+```
+sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
+```
+
+Here, the user `solr` launches the command `solr` to create the node `omeka`,
+and it will use the default config schema `data_driven_schema_configs`. This
+schema simplifies the management of fields, because they are guessed from the
+data.
+
+You can check it via the web interface at [http://localhost:8983/solr/#/omeka].
+Here, the path to set in the config of the node in Omeka S is `solr/omeka`.
 
 
 Warning
@@ -112,6 +193,11 @@ See commits for full list of contributors.
 [Solr module]: https://github.com/biblibre/omeka-s-module-Solr
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
 [Solr PHP extension]: https://pecl.php.net/package/solr
+[below]: #manage-solr
+[below for Debian]: #solr-install
+[below "Solr management"]: #solr-management
+[http://localhost:8983]: http://localhost:8983
+[http://localhost:8983/solr/#/omeka]: http://localhost:8983/solr/#/omeka
 [module issues]: https://github.com/BibLibre/Omeka-S-module-Solr/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
