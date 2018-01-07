@@ -97,7 +97,7 @@ CREATE TABLE solr_mapping (
     INDEX IDX_A62FEAA6A9C459FB (solr_node_id),
     PRIMARY KEY(id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
-ALTER TABLE solr_mapping ADD CONSTRAINT FK_A62FEAA6A9C459FB FOREIGN KEY (solr_node_id) REFERENCES solr_node (id);
+ALTER TABLE solr_mapping ADD CONSTRAINT FK_A62FEAA6A9C459FB FOREIGN KEY (solr_node_id) REFERENCES solr_node (id) ON DELETE CASCADE;
 SQL;
         $sqls = array_filter(array_map('trim', explode(';', $sql)));
         foreach ($sqls as $sql) {
@@ -261,6 +261,17 @@ ALTER TABLE solr_mapping CHANGE id id INT AUTO_INCREMENT NOT NULL, CHANGE solr_n
 DROP INDEX solr_mapping_fk_solr_node_id ON solr_mapping;
 CREATE INDEX IDX_A62FEAA6A9C459FB ON solr_mapping (solr_node_id);
 ALTER TABLE solr_mapping ADD CONSTRAINT FK_A62FEAA6A9C459FB FOREIGN KEY (solr_node_id) REFERENCES solr_node (id);
+SQL;
+            $sqls = array_filter(array_map('trim', explode(';', $sql)));
+            foreach ($sqls as $sql) {
+                $connection->exec($sql);
+            }
+        }
+
+        if (version_compare($oldVersion, '0.5.1', '<')) {
+            $sql = <<<'SQL'
+ALTER TABLE solr_mapping DROP FOREIGN KEY FK_A62FEAA6A9C459FB;
+ALTER TABLE solr_mapping ADD CONSTRAINT FK_A62FEAA6A9C459FB FOREIGN KEY (solr_node_id) REFERENCES solr_node (id) ON DELETE CASCADE;
 SQL;
             $sqls = array_filter(array_map('trim', explode(';', $sql)));
             foreach ($sqls as $sql) {

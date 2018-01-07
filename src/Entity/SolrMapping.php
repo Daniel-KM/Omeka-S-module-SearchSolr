@@ -44,8 +44,13 @@ class SolrMapping extends AbstractEntity
     protected $id;
 
     /**
-     * @ManyToOne(targetEntity="Solr\Entity\SolrNode")
-     * @JoinColumn(nullable=false)
+     * @ManyToOne(
+     *     targetEntity="Solr\Entity\SolrNode"
+     * )
+     * @JoinColumn(
+     *     nullable=false,
+     *     onDelete="CASCADE"
+     * )
      */
     protected $solrNode;
 
