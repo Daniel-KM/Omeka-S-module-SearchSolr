@@ -139,6 +139,6 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
     {
         $services = $this->getServiceLocator();
 
-        return $services->build('Solr\Schema', ['solr_node' => $this]);
+        return $services->build(Schema::class, ['solr_node' => $this]);
     }
 }
