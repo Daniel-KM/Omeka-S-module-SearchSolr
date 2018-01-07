@@ -79,12 +79,15 @@ class SolrMappingAdapter extends AbstractEntityAdapter
     public function buildQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['solr_node_id'])) {
-            $solrNodeAlias = $this->createAlias();
-            $qb->innerJoin('Solr\Entity\SolrMapping.solrNode', $solrNodeAlias);
+            $alias = $this->createAlias();
+            $qb->innerJoin(
+                $this->getEntityClass() . '.solrNode',
+                $alias
+            );
             $qb->andWhere($qb->expr()->eq(
-                "$solrNodeAlias.id",
-                $this->createNamedParameter($qb, $query['solr_node_id'])
-            ));
+                $alias . '.id',
+                $this->createNamedParameter($qb, $query['solr_node_id']))
+            );
         }
         if (isset($query['resource_name'])) {
             $qb->andWhere($qb->expr()->eq(
