@@ -82,7 +82,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'path',
             'type' => 'Text',
             'options' => [
-                'label' => $translator->translate('Path'),
+                'label' => $translator->translate('Solr node path'),
             ],
             'attributes' => [
                 'required' => true,
