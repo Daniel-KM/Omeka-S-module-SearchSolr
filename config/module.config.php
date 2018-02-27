@@ -148,6 +148,7 @@ return [
     'solr_value_formatters' => [
         'invokables' => [
             'date_range' => 'Solr\ValueFormatter\DateRange',
+            'plain_text' => 'Solr\ValueFormatter\PlainText',
         ],
     ],
     'translator' => [

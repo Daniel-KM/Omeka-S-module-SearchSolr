@@ -83,6 +83,7 @@ class ItemValueExtractor implements ValueExtractorInterface
             ],
         ];
         $fields['media']['label'] = 'Media';
+        $fields['media']['children']['content']['label'] = 'HTML Content';
 
         foreach ($properties as $property) {
             $term = $property->term();
@@ -135,7 +136,14 @@ class ItemValueExtractor implements ValueExtractorInterface
         $extractedValue = [];
 
         foreach ($item->media() as $media) {
-            $mediaExtractedValue = $this->extractPropertyValue($media, $field);
+            if($field === 'content') {
+                if($media->ingester() !== 'html') {
+                    continue;
+                }
+                $mediaExtractedValue = [$media->mediaData()['html']];
+            } else {
+                $mediaExtractedValue = $this->extractPropertyValue($media, $field);
+            }
             $extractedValue = array_merge($extractedValue, $mediaExtractedValue);
         }
 
