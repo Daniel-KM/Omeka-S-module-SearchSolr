@@ -33,6 +33,7 @@ use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\ItemRepresentation;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
+use Omeka\Api\Representation\ValueRepresentation;
 
 class ItemValueExtractor implements ValueExtractorInterface
 {
@@ -166,15 +167,29 @@ class ItemValueExtractor implements ValueExtractorInterface
         return $extractedValue;
     }
 
+	/**
+	 * Extract the values of the given property of the given item.
+	 * If the value is a resource, then its title is used.
+	 * @param AbstractResourceEntityRepresentation $representation Item
+	 * @param string $field Property (RDF term).
+	 * @return string[] Human-readable values.
+	 */
     protected function extractPropertyValue(AbstractResourceEntityRepresentation $representation, $field)
     {
         $extractedValue = [];
+		/* @var $values ValueRepresentation[] */
         $values = $representation->value($field, ['all' => true, 'default' => []]);
         foreach ($values as $i => $value) {
             $type = $value->type();
             if ($type === 'literal' || $type == 'uri') {
                 $extractedValue[] = (string) $value;
             }
+			elseif ('resource' === explode(':', $type)[0]) {
+				$resourceTitle = $value->valueResource()->displayTitle('');
+				if(!empty($resourceTitle)) {
+					$extractedValue[] = $resourceTitle;
+				}
+			}
         }
 
         return $extractedValue;
