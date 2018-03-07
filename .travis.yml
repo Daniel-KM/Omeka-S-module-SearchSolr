@@ -32,4 +32,6 @@ before_script:
   - composer install
   - cd test
 
-script: ../../../vendor/bin/phpunit
+script:
+  - ../../../vendor/bin/phpunit
+  - ../../../vendor/bin/php-cs-fixer fix -v --dry-run --using-cache=no
