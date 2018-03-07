@@ -137,8 +137,8 @@ class ItemValueExtractor implements ValueExtractorInterface
         $extractedValue = [];
 
         foreach ($item->media() as $media) {
-            if($field === 'content') {
-                if($media->ingester() !== 'html') {
+            if ($field === 'content') {
+                if ($media->ingester() !== 'html') {
                     continue;
                 }
                 $mediaExtractedValue = [$media->mediaData()['html']];
@@ -183,10 +183,9 @@ class ItemValueExtractor implements ValueExtractorInterface
             $type = $value->type();
             if ($type === 'literal' || $type == 'uri') {
                 $extractedValue[] = (string) $value;
-            }
-            elseif ('resource' === explode(':', $type)[0]) {
+            } elseif ('resource' === explode(':', $type)[0]) {
                 $resourceTitle = $value->valueResource()->displayTitle('');
-                if(!empty($resourceTitle)) {
+                if (!empty($resourceTitle)) {
                     $extractedValue[] = $resourceTitle;
                 }
             }
