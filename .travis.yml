@@ -30,8 +30,7 @@ before_script:
   - sed -i 's/^dbname.*/dbname = "omeka_test"/' application/test/config/database.ini
   - cd modules/Solr
   - composer install
-  - cd test
 
 script:
-  - ../../../vendor/bin/phpunit
-  - ../../../vendor/bin/php-cs-fixer fix -v --dry-run --using-cache=no
+  - ../../vendor/bin/phpunit
+  - ../../vendor/bin/php-cs-fixer fix -v --dry-run --using-cache=no

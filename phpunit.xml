@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<phpunit bootstrap="./bootstrap.php" colors="true" backupGlobals="false">
+<phpunit bootstrap="./test/bootstrap.php" colors="true" backupGlobals="false">
     <testsuites>
         <testsuite name="Solr">
-            <directory>./SolrTest</directory>
+            <directory>./test/SolrTest</directory>
         </testsuite>
     </testsuites>
 </phpunit>
