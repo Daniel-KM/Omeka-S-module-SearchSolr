@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,11 +30,11 @@
 
 namespace Solr;
 
-use Zend\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
 use Search\Adapter\AbstractAdapter;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Solr\Form\ConfigFieldset;
+use Zend\I18n\Translator\TranslatorInterface;
 
 class Adapter extends AbstractAdapter
 {
@@ -60,12 +61,12 @@ class Adapter extends AbstractAdapter
 
     public function getIndexerClass()
     {
-        return 'Solr\Indexer';
+        return \Solr\Indexer::class;
     }
 
     public function getQuerierClass()
     {
-        return 'Solr\Querier';
+        return \Solr\Querier::class;
     }
 
     public function getAvailableFacetFields(SearchIndexRepresentation $index)
@@ -81,6 +82,14 @@ class Adapter extends AbstractAdapter
             return [];
         }
 
+        $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();
+        $schema = $solrNode->schema();
+
+        $response = $this->api->search('solr_mappings', [
+            'solr_node_id' => $solrNodeId,
+        ]);
+        $mappings = $response->getContent();
+
         $sortFields = [
             'score desc' => [
                 'name' => 'score desc',
@@ -93,22 +102,20 @@ class Adapter extends AbstractAdapter
             'desc' => $this->translator->translate('Desc'),
         ];
 
-        $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();
-        $schema = $solrNode->schema();
-        $response = $this->api->search('solr_mappings', [
-            'solr_node_id' => $solrNode->id(),
-        ]);
-        $mappings = $response->getContent();
         foreach ($mappings as $mapping) {
             $fieldName = $mapping->fieldName();
             $schemaField = $schema->getField($fieldName);
-            if ($schemaField && !$schemaField->isMultivalued()) {
-                foreach (['asc', 'desc'] as $direction) {
-                    $name = $fieldName . ' ' . $direction;
-                    $sortFields[$name] = [
-                        'name' => $name,
-                    ];
-                }
+            if (!$schemaField || $schemaField->isMultivalued()) {
+                continue;
+            }
+            $mappingSettings = $mapping->settings();
+            $label = isset($mappingSettings['label']) ? $mappingSettings['label'] : '';
+            foreach (['asc' => 'Asc', 'desc' => 'Desc'] as $direction => $labelDirection) {
+                $name = $fieldName . ' ' . $direction;
+                $sortFields[$name] = [
+                    'name' => $name,
+                    'label' => $label ? $label . ' ' . $labelDirection : '',
+                ];
             }
         }
 
@@ -119,15 +126,23 @@ class Adapter extends AbstractAdapter
     {
         $settings = $index->settings();
         $solrNodeId = $settings['adapter']['solr_node_id'];
+        if (!$solrNodeId) {
+            return [];
+        }
+
         $response = $this->api->search('solr_mappings', [
             'solr_node_id' => $solrNodeId,
         ]);
         $mappings = $response->getContent();
-        $fields = [];
+
+        $facetFields = [];
         foreach ($mappings as $mapping) {
             $name = $mapping->fieldName();
+            $mappingSettings = $mapping->settings();
+            $label = isset($mappingSettings['label']) ? $mappingSettings['label'] : '';
             $facetFields[$name] = [
                 'name' => $name,
+                'label' => $label,
             ];
         }
 

@@ -29,10 +29,9 @@
 
 namespace Solr\Api\Representation;
 
-use SolrClient;
-use SolrClientException;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 use Solr\Schema;
+use SolrClient;
 
 class SolrNodeRepresentation extends AbstractEntityRepresentation
 {
@@ -97,8 +96,10 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         $solrClient = new SolrClient($this->clientSettings());
 
         try {
-            $solrPingResponse = $solrClient->ping();
-        } catch (SolrClientException $e) {
+            $solrPingResponse = @$solrClient->ping();
+        } catch (\SolrException $e) {
+            $logger = $this->getServiceLocator()->get('Omeka\Logger');
+            $logger->err($e);
             $messages = explode("\n", $e->getMessage());
             return reset($messages);
         }
@@ -139,6 +140,6 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
     {
         $services = $this->getServiceLocator();
 
-        return $services->build('Solr\Schema', ['solr_node' => $this]);
+        return $services->build(Schema::class, ['solr_node' => $this]);
     }
 }

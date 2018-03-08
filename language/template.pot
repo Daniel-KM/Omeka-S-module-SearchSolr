@@ -1,14 +1,14 @@
-# Translation template for module Solr.
-# Copyright (C) 2016 BibLibre
-# This file is distributed under the same license as the Solr package.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Solr\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-11-29 15:13+0100\n"
+"POT-Creation-Date: 2017-12-29 18:52+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,38 +17,37 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: Module.php:61
+#: Module.php:83
 msgid "Solr module requires PHP Solr extension, which is not loaded."
 msgstr ""
 
-#: src/Adapter.php:73
+#: src/Adapter.php:96
 msgid "Relevance"
 msgstr ""
 
-#: src/Adapter.php:78
+#: src/Adapter.php:101
 msgid "Asc"
 msgstr ""
 
-#: src/Adapter.php:79
+#: src/Adapter.php:102
 msgid "Desc"
 msgstr ""
 
-#: src/Form/Admin/SolrFieldForm.php:48 src/Form/Admin/SolrNodeForm.php:49
+#: src/Form/Admin/SolrMappingForm.php:94
+msgid "Formatter"
+msgstr ""
+
+#: src/Form/Admin/SolrMappingForm.php:103
+msgid "Default label"
+msgstr ""
+
+#: src/Form/Admin/SolrMappingForm.php:104
+msgid "The label is automatically translated if it exists in Omeka."
+msgstr ""
+
+#: src/Form/Admin/SolrNodeForm.php:49 view/solr/admin/mapping/browse.phtml:51
 #: view/solr/admin/node/browse.phtml:45
-#: view/solr/admin/profile/browse.phtml:53
 msgid "Name"
-msgstr ""
-
-#: src/Form/Admin/SolrFieldForm.php:59
-msgid "Description"
-msgstr ""
-
-#: src/Form/Admin/SolrFieldForm.php:67 view/solr/admin/field/browse.phtml:56
-msgid "Indexed"
-msgstr ""
-
-#: src/Form/Admin/SolrFieldForm.php:78 view/solr/admin/field/browse.phtml:57
-msgid "Multi-valued"
 msgstr ""
 
 #: src/Form/Admin/SolrNodeForm.php:63
@@ -60,7 +59,7 @@ msgid "Port"
 msgstr ""
 
 #: src/Form/Admin/SolrNodeForm.php:85
-msgid "Path"
+msgid "Solr node path"
 msgstr ""
 
 #: src/Form/Admin/SolrNodeForm.php:98
@@ -70,90 +69,135 @@ msgstr ""
 #: src/Form/Admin/SolrNodeForm.php:99
 msgid ""
 "Name of Solr field that will contain the resource name (or resource type, e."
-"g. \"items\", \"item_sets\", ...). It must be a single-valued, string-based "
-"field. WARNING: Changing this will require a complete reindexation."
+"g. \"items\", \"item_sets\", ...)."
 msgstr ""
 
-#: src/Form/Admin/SolrProfileForm.php:51
-msgid "Resource name"
+#: src/Form/Admin/SolrNodeForm.php:100
+msgid "It must be a single-valued, string-based field."
 msgstr ""
 
-#: src/Form/Admin/SolrProfileRuleForm.php:56
-#: view/solr/admin/profile-rule/browse.phtml:53
+#: src/Form/Admin/SolrNodeForm.php:101
+msgid "WARNING: Changing this will require a complete reindexation."
+msgstr ""
+
+#: src/Form/Admin/SolrNodeForm.php:112
+msgid "Sites field"
+msgstr ""
+
+#: src/Form/Admin/SolrNodeForm.php:113
+msgid "Name of Solr field that will contain the sites ids."
+msgstr ""
+
+#: src/Form/Admin/SolrNodeForm.php:114
+msgid "It must be a multi-valued, integer-based field (*_is)."
+msgstr ""
+
+#: src/Form/Admin/SolrNodeForm.php:115
+msgid "If empty, the search will search inside all resources."
+msgstr ""
+
+#: src/Form/Admin/SolrNodeForm.php:116
+msgid "WARNING: Changing this will require a complete reindexation"
+msgstr ""
+
+#: view/common/solr-mapping-delete-confirm-details.phtml:3
+#, php-format
+msgid "Mapping between property \"%s\" and Solr field \"%s\" for \"%s\""
+msgstr ""
+
+#: view/common/solr-mapping-delete-confirm-details.phtml:5
+#: view/common/solr-node-delete-confirm-details.phtml:2
+msgid "WARNING"
+msgstr ""
+
+#: view/common/solr-mapping-delete-confirm-details.phtml:7
+#, php-format
+msgid ""
+"This will remove all references to this Solr mapping in search pages that "
+"use it (%d, of which %d enabled it for facets or sort fields)."
+msgstr ""
+
+#: view/common/solr-mapping-delete-confirm-details.phtml:12
+msgid "There is no search pages associated with this Solr mapping."
+msgstr ""
+
+#: view/common/solr-node-delete-confirm-details.phtml:4
+#, php-format
+msgid ""
+"This will delete all search indexes (%d), all search pages (%d), and all "
+"Solr mappings (%d) that use this Solr node."
+msgstr ""
+
+#: view/common/solr-node-delete-confirm-details.phtml:8
+msgid ""
+"To keep search indexes and pages, create a new node and set it for the "
+"related indexes before deletion."
+msgstr ""
+
+#: view/common/solr-node-delete-confirm-details.phtml:13
+msgid ""
+"There is no search indexes, search pages, neither Solr mappings associated "
+"with this Solr node."
+msgstr ""
+
+#: view/solr/admin/mapping/add.phtml:31
+msgid "Add Solr mapping"
+msgstr ""
+
+#: view/solr/admin/mapping/add.phtml:34
+#: view/solr/admin/mapping/browse-resource.phtml:47
+#: view/solr/admin/mapping/browse.phtml:41
+#: view/solr/admin/mapping/edit.phtml:34
+msgid "Solr nodes"
+msgstr ""
+
+#: view/solr/admin/mapping/add.phtml:35
+#: view/solr/admin/mapping/browse-resource.phtml:48
+#: view/solr/admin/mapping/browse.phtml:43
+#: view/solr/admin/mapping/edit.phtml:35
+#, php-format
+msgid "Resources list for node \"%s\""
+msgstr ""
+
+#: view/solr/admin/mapping/add.phtml:36
+#: view/solr/admin/mapping/browse-resource.phtml:50
+#: view/solr/admin/mapping/edit.phtml:36
+#, php-format
+msgid "Mappings for \"%s\""
+msgstr ""
+
+#: view/solr/admin/mapping/browse-resource.phtml:34
+#, php-format
+msgid "Solr mappings for \"%s\""
+msgstr ""
+
+#: view/solr/admin/mapping/browse-resource.phtml:42
+msgid "Add new mapping"
+msgstr ""
+
+#: view/solr/admin/mapping/browse-resource.phtml:58
 msgid "Solr field"
 msgstr ""
 
-#: src/Form/Admin/SolrProfileRuleForm.php:69
-#: view/solr/admin/profile-rule/browse.phtml:54
-msgid "Source"
+#: view/solr/admin/mapping/browse-resource.phtml:60
+msgid "Translated default label"
 msgstr ""
 
-#: src/Form/Admin/SolrProfileRuleForm.php:82
-msgid "Formatter"
+#: view/solr/admin/mapping/browse-resource.phtml:96
+msgid "There is no mappings defined yet."
 msgstr ""
 
-#: src/Form/Admin/SolrProfileRuleForm.php:185
-msgid "None"
+#: view/solr/admin/mapping/browse.phtml:35
+#, php-format
+msgid "Solr node \"%s\""
 msgstr ""
 
-#: view/solr/admin/field/add.phtml:32
-msgid "Add Solr field"
+#: view/solr/admin/mapping/browse.phtml:65
+msgid "Rules"
 msgstr ""
 
-#: view/solr/admin/field/add.phtml:36 view/solr/admin/node/add.phtml:36
-#: view/solr/admin/profile-rule/add.phtml:36
-#: view/solr/admin/profile/add.phtml:36
-msgid "Add"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:35
-msgid "Solr fields"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:45
-#: view/solr/admin/profile/browse.phtml:43
-msgid "Back to node list"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:55
-msgid "Name (Description)"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:69 view/solr/admin/field/edit.phtml:36
-#: view/solr/admin/node/browse.phtml:59 view/solr/admin/node/edit.phtml:36
-#: view/solr/admin/profile-rule/browse.phtml:66
-#: view/solr/admin/profile-rule/edit.phtml:36
-msgid "Edit"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:77 view/solr/admin/field/browse.phtml:78
-#: view/solr/admin/node/browse.phtml:85 view/solr/admin/node/browse.phtml:86
-#: view/solr/admin/profile-rule/browse.phtml:74
-#: view/solr/admin/profile-rule/browse.phtml:75
-#: view/solr/admin/profile/browse.phtml:74
-#: view/solr/admin/profile/browse.phtml:75
-msgid "Delete"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:86 view/solr/admin/field/browse.phtml:87
-msgid "Yes"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:86 view/solr/admin/field/browse.phtml:87
-msgid "No"
-msgstr ""
-
-#: view/solr/admin/field/browse.phtml:97 view/solr/admin/field/browse.phtml:98
-#: view/solr/admin/node/browse.phtml:102 view/solr/admin/node/browse.phtml:103
-#: view/solr/admin/profile-rule/browse.phtml:90
-#: view/solr/admin/profile-rule/browse.phtml:91
-#: view/solr/admin/profile/browse.phtml:89
-#: view/solr/admin/profile/browse.phtml:90
-msgid "Close"
-msgstr ""
-
-#: view/solr/admin/field/edit.phtml:32
-msgid "Edit Solr field"
+#: view/solr/admin/mapping/edit.phtml:31
+msgid "Edit Solr mapping"
 msgstr ""
 
 #: view/solr/admin/node/add.phtml:32
@@ -164,50 +208,104 @@ msgstr ""
 msgid "Solr configuration"
 msgstr ""
 
-#: view/solr/admin/node/browse.phtml:46
-msgid "URL"
+#: view/solr/admin/node/browse.phtml:37
+msgid "Add new node"
 msgstr ""
 
-#: view/solr/admin/node/browse.phtml:47
-msgid "Status"
+#: view/solr/admin/node/browse.phtml:40
+msgid "Nodes"
 msgstr ""
 
-#: view/solr/admin/node/browse.phtml:68
-msgid "Fields"
+#: view/solr/admin/node/browse.phtml:60
+msgid "Solr admin interface, if reachable"
 msgstr ""
 
-#: view/solr/admin/node/browse.phtml:77
-msgid "Profiles"
+#: view/solr/admin/node/browse.phtml:76
+msgid "Mapping"
 msgstr ""
 
-#: view/solr/admin/node/edit.phtml:32
+#: view/solr/admin/node/edit.phtml:33
 msgid "Edit Solr node"
 msgstr ""
 
-#: view/solr/admin/profile-rule/add.phtml:32
-msgid "Add Solr profile rule"
+#: src/Controller/Admin/MappingController.php:107
+msgid "Solr mapping created."
 msgstr ""
 
-#: view/solr/admin/profile-rule/browse.phtml:33
-msgid "Solr profile rules"
+#: src/Controller/Admin/MappingController.php:114
+#: src/Controller/Admin/MappingController.php:156
+#: src/Controller/Admin/NodeController.php:61
+msgid "There was an error during validation"
 msgstr ""
 
-#: view/solr/admin/profile-rule/browse.phtml:43
-msgid "Back to profile list"
+#: src/Controller/Admin/MappingController.php:148
+msgid "Solr mapping modified."
 msgstr ""
 
-#: view/solr/admin/profile-rule/edit.phtml:32
-msgid "Edit Solr profile rule"
+#: src/Controller/Admin/MappingController.php:149
+msgid "Don’t forget to check search pages that use this mapping."
 msgstr ""
 
-#: view/solr/admin/profile/add.phtml:32
-msgid "Add Solr profile"
+#: src/Controller/Admin/MappingController.php:203
+msgid "Solr mapping successfully deleted"
 msgstr ""
 
-#: view/solr/admin/profile/browse.phtml:33
-msgid "Solr profiles"
+#: src/Controller/Admin/MappingController.php:204
+msgid "Don’t forget to check search pages that used this mapping."
 msgstr ""
 
-#: view/solr/admin/profile/browse.phtml:66
-msgid "Rules"
+#: src/Controller/Admin/MappingController.php:206
+msgid "Solr mapping could not be deleted"
+msgstr ""
+
+#: src/Controller/Admin/MappingController.php:227
+msgid "Is open"
+msgstr ""
+
+#: src/Controller/Admin/MappingController.php:228
+msgid "Created"
+msgstr ""
+
+#: src/Controller/Admin/MappingController.php:229
+msgid "Modified"
+msgstr ""
+
+#: src/Controller/Admin/NodeController.php:80
+msgid "Solr node created."
+msgstr ""
+
+#: src/Controller/Admin/NodeController.php:103
+msgid "Solr node updated."
+msgstr ""
+
+#: src/Controller/Admin/NodeController.php:104
+msgid "Don’t forget to check search pages that use this node."
+msgstr ""
+
+#: src/Controller/Admin/NodeController.php:122
+msgid "Solr node"
+msgstr ""
+
+#: src/Controller/Admin/NodeController.php:138
+msgid "Solr node successfully deleted"
+msgstr ""
+
+#: src/Controller/Admin/NodeController.php:140
+msgid "Solr node could not be deleted"
+msgstr ""
+
+#: config/module.config.php:48
+msgid "Solr"
+msgstr ""
+
+#: config/module.config.php:150
+msgid "Field"
+msgstr ""
+
+#: config/module.config.php:152
+msgid "Choose a field..."
+msgstr ""
+
+#: config/module.config.php:153
+msgid "Dynamic field"
 msgstr ""

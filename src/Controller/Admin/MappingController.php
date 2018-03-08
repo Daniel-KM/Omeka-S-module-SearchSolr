@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,11 +30,15 @@
 
 namespace Solr\Controller\Admin;
 
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
+use Search\Api\Representation\SearchIndexRepresentation;
+use Search\Api\Representation\SearchPageRepresentation;
+use Solr\Api\Representation\SolrNodeRepresentation;
 use Solr\Form\Admin\SolrMappingForm;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
+use Zend\Mvc\Controller\AbstractActionController;
+use Zend\View\Model\ViewModel;
+use Solr\Api\Representation\SolrMappingRepresentation;
 
 class MappingController extends AbstractActionController
 {
@@ -76,7 +81,6 @@ class MappingController extends AbstractActionController
         $view->setVariable('solrNode', $solrNode);
         $view->setVariable('resourceName', $resourceName);
         $view->setVariable('mappings', $mappings);
-
         return $view;
     }
 
@@ -85,14 +89,12 @@ class MappingController extends AbstractActionController
         $solrNodeId = $this->params('nodeId');
         $resourceName = $this->params('resourceName');
 
+        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+
         $form = $this->getForm(SolrMappingForm::class, [
             'solr_node_id' => $solrNodeId,
             'resource_name' => $resourceName,
         ]);
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
 
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
@@ -102,17 +104,22 @@ class MappingController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_mappings', $data);
 
-                $this->messenger()->addSuccess('Solr mapping created.');
+                $this->messenger()->addSuccess('Solr mapping created.'); // @translate
 
                 return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
                     'nodeId' => $solrNodeId,
                     'resourceName' => $resourceName,
                 ]);
             } else {
-                $this->messenger()->addError('There was an error during validation');
+                $this->messenger()->addError('There was an error during validation'); // @translate
             }
         }
 
+        $view = new ViewModel;
+        $view->setVariable('solrNode', $solrNode);
+        $view->setVariable('form', $form);
+        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
+        $view->setVariable('sourceLabels', $this->getSourceLabels());
         return $view;
     }
 
@@ -130,10 +137,6 @@ class MappingController extends AbstractActionController
         ]);
         $form->setData($mapping->jsonSerialize());
 
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
-
         if ($this->getRequest()->isPost()) {
             $form->setData($this->params()->fromPost());
             if ($form->isValid()) {
@@ -142,17 +145,23 @@ class MappingController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->update('solr_mappings', $id, $data);
 
-                $this->messenger()->addSuccess('Solr mapping modified.');
+                $this->messenger()->addSuccess('Solr mapping modified.'); // @translate
+                $this->messenger()->addWarning('Don’t forget to check search pages that use this mapping.'); // @translate
 
                 return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
                     'nodeId' => $solrNodeId,
                     'resourceName' => $resourceName,
                 ]);
             } else {
-                $this->messenger()->addError('There was an error during validation');
+                $this->messenger()->addError('There was an error during validation'); // @translate
             }
         }
 
+        $view = new ViewModel;
+        $view->setVariable('mapping', $mapping);
+        $view->setVariable('form', $form);
+        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
+        $view->setVariable('sourceLabels', $this->getSourceLabels());
         return $view;
     }
 
@@ -162,12 +171,22 @@ class MappingController extends AbstractActionController
         $response = $this->api()->read('solr_mappings', $id);
         $mapping = $response->getContent();
 
+        $searchPages = $this->searchSearchPages($mapping->solrNode());
+        $searchPagesUsingMapping = [];
+        foreach ($searchPages as $searchPage) {
+            if ($this->doesSearchPageUseMapping($searchPage, $mapping)) {
+                $searchPagesUsingMapping[] = $searchPage;
+            }
+        }
+
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'solr mapping');
+        $view->setVariable('resourceLabel', 'Solr mapping'); // translate
         $view->setVariable('resource', $mapping);
-
+        $view->setVariable('partialPath', 'common/solr-mapping-delete-confirm-details');
+        $view->setVariable('totalSearchPages', count($searchPages));
+        $view->setVariable('totalSearchPagesUsingMapping', count($searchPagesUsingMapping));
         return $view;
     }
 
@@ -181,9 +200,10 @@ class MappingController extends AbstractActionController
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
                 $this->api()->delete('solr_mappings', $id);
-                $this->messenger()->addSuccess('Solr mapping successfully deleted');
+                $this->messenger()->addSuccess('Solr mapping successfully deleted'); // @translate
+                $this->messenger()->addWarning('Don’t forget to check search pages that used this mapping.'); // @translate
             } else {
-                $this->messenger()->addError('Solr mapping could not be deleted');
+                $this->messenger()->addError('Solr mapping could not be deleted'); // @translate
             }
         }
 
@@ -197,5 +217,99 @@ class MappingController extends AbstractActionController
     {
         $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
         return $solrNode->schema()->getSchema();
+    }
+
+    protected function getSourceLabels()
+    {
+        $sourceLabels = [
+            'id' => 'Internal identifier',
+            'is_public' => 'Public', // @translate
+            'is_open' => 'Is open', // @translate
+            'created' => 'Created', // @translate
+            'modified' => 'Modified', // @translate
+            'resource_class' => 'Resource class', // @translate
+            'resource_template' => 'Resource template', // @translate
+            'item_set' => 'Item set', // @translate
+            'item' => 'Item', // @translate
+            'media' => 'Media', // @translate
+        ];
+
+        $propertyLabels = [];
+        $result = $this->api()->search('properties')->getContent();
+        foreach ($result as $property) {
+            $propertyLabels[$property->term()] = ucfirst($property->label());
+        }
+
+        $sourceLabels += $propertyLabels;
+        return $sourceLabels;
+    }
+
+    /**
+     * Find all search indexes related to a specific solr node.
+     *
+     * @todo Factorize with NodeController::searchSearchIndexes()
+     * @param SolrNodeRepresentation $solrNode
+     * @return SearchIndexRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchIndexes(SolrNodeRepresentation $solrNode)
+    {
+        $result = [];
+        $api = $this->api();
+        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
+        foreach ($searchIndexes as $searchIndex) {
+            $searchIndexSettings = $searchIndex->settings();
+            if ($solrNode->id() == $searchIndexSettings['adapter']['solr_node_id']) {
+                $result[$searchIndex->id()] = $searchIndex;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Find all search pages related to a specific solr node.
+     *
+     * @todo Factorize with NodeController::searchSearchPages()
+     * @param SolrNodeRepresentation $solrNode
+     * @return SearchPageRepresentation[] Result is indexed by id.
+     */
+    protected function searchSearchPages(SolrNodeRepresentation $solrNode)
+    {
+        // TODO Use entity manager to simplify search of pages from node.
+        $result = [];
+        $api = $this->api();
+        $searchIndexes = $this->searchSearchIndexes($solrNode);
+        foreach ($searchIndexes as $searchIndex) {
+            $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
+            foreach ($searchPages as $searchPage) {
+                $result[$searchPage->id()] = $searchPage;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Check if a search page use a mapping enabled as facet or sort field.
+     *
+     * @param SearchPageRepresentation $searchPage
+     * @param SolrMappingRepresentation $solrMapping
+     * @return bool
+     */
+    protected function doesSearchPageUseMapping(
+        SearchPageRepresentation $searchPage,
+        SolrMappingRepresentation $solrMapping
+    ) {
+        $searchPageSettings = $searchPage->settings();
+        $fieldName = $solrMapping->fieldName();
+        foreach ($searchPageSettings as $value) {
+            if (is_array($value)) {
+                if (!empty($value[$fieldName]['enabled'])
+                    || !empty($value[$fieldName . ' asc']['enabled'])
+                    || !empty($value[$fieldName . ' desc']['enabled'])
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

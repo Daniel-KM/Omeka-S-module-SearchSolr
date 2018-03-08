@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -37,40 +38,25 @@ use Omeka\Stdlib\ErrorStore;
 
 class SolrMappingAdapter extends AbstractEntityAdapter
 {
-    /**
-     * {@inheritDoc}
-     */
     protected $sortFields = [
         'id' => 'id',
     ];
 
-    /**
-     * {@inheritDoc}
-     */
     public function getResourceName()
     {
         return 'solr_mappings';
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getRepresentationClass()
     {
-        return 'Solr\Api\Representation\SolrMappingRepresentation';
+        return \Solr\Api\Representation\SolrMappingRepresentation::class;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function getEntityClass()
     {
-        return 'Solr\Entity\SolrMapping';
+        return \Solr\Entity\SolrMapping::class;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
     ) {
@@ -90,18 +76,18 @@ class SolrMappingAdapter extends AbstractEntityAdapter
         $this->hydrateSolrNode($request, $entity);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function buildQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['solr_node_id'])) {
-            $solrNodeAlias = $this->createAlias();
-            $qb->innerJoin('Solr\Entity\SolrMapping.solrNode', $solrNodeAlias);
+            $alias = $this->createAlias();
+            $qb->innerJoin(
+                $this->getEntityClass() . '.solrNode',
+                $alias
+            );
             $qb->andWhere($qb->expr()->eq(
-                "$solrNodeAlias.id",
-                $this->createNamedParameter($qb, $query['solr_node_id'])
-            ));
+                $alias . '.id',
+                $this->createNamedParameter($qb, $query['solr_node_id']))
+            );
         }
         if (isset($query['resource_name'])) {
             $qb->andWhere($qb->expr()->eq(

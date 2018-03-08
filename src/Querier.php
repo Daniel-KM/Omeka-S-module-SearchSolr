@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,17 +30,25 @@
 
 namespace Solr;
 
+use Search\Query;
+use Search\Response;
+use Search\Querier\AbstractQuerier;
+use Search\Querier\Exception\QuerierException;
+use Solr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrClientException;
 use SolrQuery;
-use Search\Querier\AbstractQuerier;
-use Search\Querier\Exception\QuerierException;
-use Search\Query;
-use Search\Response;
 
 class Querier extends AbstractQuerier
 {
+    /**
+     * @var \SolrClient
+     */
     protected $client;
+
+    /**
+     * @var SolrNodeRepresentation
+     */
     protected $solrNode;
 
     public function query(Query $query)
@@ -51,8 +60,8 @@ class Querier extends AbstractQuerier
 
         $solrNode = $this->getSolrNode();
         $solrNodeSettings = $solrNode->settings();
-        $resource_name_field = $solrNodeSettings['resource_name_field'];
-        $sites_field = $solrNodeSettings['sites_field'];
+        $resourceNameField = $solrNodeSettings['resource_name_field'];
+        $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
 
         $solrQuery = new SolrQuery;
         $q = $query->getQuery();
@@ -63,16 +72,18 @@ class Querier extends AbstractQuerier
         $solrQuery->addField('id');
 
         $solrQuery->setGroup(true);
-        $solrQuery->addGroupField($resource_name_field);
+        $solrQuery->addGroupField($resourceNameField);
 
         $resources = $query->getResources();
-        $fq = $resource_name_field . ':' . implode(' OR ', $resources);
+        $fq = $resourceNameField . ':' . implode(' OR ', $resources);
         $solrQuery->addFilterQuery($fq);
 
-        $site = $query->getSite();
-        if (isset($site)) {
-            $fq = $sites_field . ':' . $site->id();
-            $solrQuery->addFilterQuery($fq);
+        if ($sitesField) {
+            $site = $query->getSite();
+            if (isset($site)) {
+                $fq = $sitesField . ':' . $site->id();
+                $solrQuery->addFilterQuery($fq);
+            }
         }
 
         $facetFields = $query->getFacetFields();
@@ -134,8 +145,8 @@ class Querier extends AbstractQuerier
         $solrResponse = $solrQueryResponse->getResponse();
 
         $response = new Response;
-        $response->setTotalResults($solrResponse['grouped'][$resource_name_field]['matches']);
-        foreach ($solrResponse['grouped'][$resource_name_field]['groups'] as $group) {
+        $response->setTotalResults($solrResponse['grouped'][$resourceNameField]['matches']);
+        foreach ($solrResponse['grouped'][$resourceNameField]['groups'] as $group) {
             $response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
             foreach ($group['doclist']['docs'] as $doc) {
                 list(, $resourceId) = explode(':', $doc['id']);
@@ -143,10 +154,12 @@ class Querier extends AbstractQuerier
             }
         }
 
-        foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
-            foreach ($values as $value => $count) {
-                if ($count > 0) {
-                    $response->addFacetCount($name, $value, $count);
+        if (!empty($solrResponse['facet_counts']['facet_fields'])) {
+            foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
+                foreach ($values as $value => $count) {
+                    if ($count > 0) {
+                        $response->addFacetCount($name, $value, $count);
+                    }
                 }
             }
         }
@@ -154,11 +167,20 @@ class Querier extends AbstractQuerier
         return $response;
     }
 
+    /**
+     * Protect a string for Solr.
+     *
+     * @param string $value
+     * @return string
+     */
     protected function enclose($value)
     {
         return '"' . addcslashes($value, '"') . '"';
     }
 
+    /**
+     * @return \SolrClient
+     */
     protected function getClient()
     {
         if (!isset($this->client)) {
@@ -169,6 +191,9 @@ class Querier extends AbstractQuerier
         return $this->client;
     }
 
+    /**
+     * @return SolrNodeRepresentation
+     */
     protected function getSolrNode()
     {
         if (!isset($this->solrNode)) {

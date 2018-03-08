@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -31,16 +32,16 @@
 <?php $escape = $this->plugin('escapeHtml'); ?>
 
 <?php
-    $pageTitle = $this->translate('Solr mapping') . ' (' . $solrNode->name() . ')';
-    echo $this->pageTitle($pageTitle);
+$pageTitle = sprintf($this->translate('Solr node "%s"'), $solrNode->name());
+echo $this->pageTitle($pageTitle);
 ?>
 
 <nav class="breadcrumbs">
-    <?php
-        $text = $this->translate('Back to nodes list');
-        $href = $this->url('admin/solr');
-        echo $this->hyperlink($text, $href, ['class' => 'o-icon-left']);
-    ?>
+      <?php
+    echo $this->hyperlink($this->translate('Solr nodes'), $this->url('admin/solr'));
+    ?><span><?php
+    echo sprintf($this->translate('Resources list for node "%s"'), $solrNode->name());
+    ?></span>
 </nav>
 
 <?php if (count($valueExtractors) > 0): ?>

@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2017-2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,5 +29,13 @@
 ?>
 
 <?php echo $this->pageTitle($this->translate('Add Solr mapping')); ?>
-
+<nav class="breadcrumbs">
+    <?php
+    echo $this->hyperlink($this->translate('Solr nodes'), $this->url('admin/solr'));
+    echo $this->hyperlink(sprintf($this->translate('Resources list for node "%s"'), $solrNode->name()), $this->url('admin/solr/node-id-mapping', ['nodeId' => $solrNode->id()], true));
+    echo $this->hyperlink(sprintf($this->translate('Mappings for "%s"'), $form->getOption('resource_name')), $this->url('admin/solr/node-id-mapping-resource', ['nodeId' => $solrNode->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
+    ?><span><?php
+    echo $this->translate('Add');
+    ?></span>
+</nav>
 <?php echo $this->partial('solr/admin/mapping/form'); ?>
