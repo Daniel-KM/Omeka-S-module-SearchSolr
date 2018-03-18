@@ -94,6 +94,7 @@ it’s recommended to create a Solr package outside of the server and to install
 it via `dpkg`.
 
 ```bash
+cd /opt
 # Check if java is installed.
 java -version
 # If not installed, install it (uncomment)
@@ -109,6 +110,7 @@ sudo bash ./install_solr_service.sh solr-5.5.5.tgz
 sudo ln -s /opt/solr-5.5.5 /opt/solr
 # Clean the sources.
 rm solr-5.5.5.tgz
+rm install_solr_service.sh
 ```
 
 Solr may be managed as a system service:
