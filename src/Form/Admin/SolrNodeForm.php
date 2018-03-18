@@ -96,7 +96,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => 'Text',
             'options' => [
                 'label' => $translator->translate('Resource name field'),
-                'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets", ...).')
+                'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).')
                     . ' ' . $translator->translate('It must be a single-valued, string-based field.')
                     . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation.'),
             ],

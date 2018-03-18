@@ -149,7 +149,7 @@ return [
     'js_translate_strings' => [
         'Field', // @translate
         'Type', // @translate
-        'Choose a field...', // @translate
+        'Choose a field…', // @translate
         'Dynamic field', // @translate
     ],
     'search_adapters' => [
