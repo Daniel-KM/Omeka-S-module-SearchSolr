@@ -94,7 +94,7 @@ class Indexer extends AbstractIndexer
 
         $resource = $api->read($resource->getResourceName(), $resource->getId())->getContent();
 
-        $this->getLogger()->info(sprintf('Indexing resource %1$s (%2$s)', $resource->id(), $resource->resourceName()));
+        $this->getLogger()->info(sprintf('Indexing resource #%1$s (%2$s)', $resource->id(), $resource->resourceName()));
 
         $client = $this->getClient();
 
