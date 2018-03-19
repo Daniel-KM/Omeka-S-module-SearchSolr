@@ -93,24 +93,47 @@ installed via the original sources. If you have a build or a development server,
 it’s recommended to create a Solr package outside of the server and to install
 it via `dpkg`.
 
+### Install
+
+The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.3 (Java [1.8]), but
+not Solr 7.2.1 (indexing works, not the search).
+
 ```bash
 cd /opt
-# Check if java is installed.
+# Check if java is installed with the good version.
 java -version
 # If not installed, install it (uncomment)
 #sudo apt install default-jdk
 # The certificate is currently obsolete on Apache server, so don’t check it.
-# This module was primarly designed for Solr 5. Not checked above yet.
-wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/5.5.5/solr-5.5.5.tgz
+# To install another version, just change all next version numbers below.
+wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.3/solr-6.6.3.tgz
 # Extract the install script
-tar zxvf solr-5.5.5.tgz solr-5.5.5/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-6.6.3.tgz solr-6.6.3/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-5.5.5.tgz
+sudo bash ./install_solr_service.sh solr-6.6.3.tgz
 # Add a symlink to simplify management.
-sudo ln -s /opt/solr-5.5.5 /opt/solr
+sudo ln -s /opt/solr-6.6.3 /opt/solr
 # Clean the sources.
-rm solr-5.5.5.tgz
+rm solr-6.6.3.tgz
 rm install_solr_service.sh
+```
+
+### Upgrade
+
+Before upgrade, you should backup the folder `/var/solr` if you want to upgrade
+a previous config:
+
+```bash
+cd /opt
+java -version
+#sudo apt install default-jdk
+wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.3/solr-6.6.3.tgz
+tar zxvf solr-6.6.3.tgz solr-6.6.3/bin/install_solr_service.sh --strip-components=2
+# The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
+sudo bash ./install_solr_service.sh solr-6.6.3.tgz -f
+rm solr-6.6.3.tgz
+rm install_solr_service.sh
+# See below to upgrade the indexes.
 ```
 
 Solr may be managed as a system service:
@@ -129,6 +152,8 @@ Solr is available via command line too at `/opt/solr/bin/solr`.
 Solr management <a name="solr-management"></a>
 ---------------
 
+### Create a config
+
 At least one index ("node", "collection" or "core")  should be created in Solr
 to be used with Omeka. The simpler is to create one via the command line to
 avoid permissions issues.
@@ -145,6 +170,22 @@ data.
 You can check it via the web interface at [http://localhost:8983/solr/#/omeka].
 Here, the path to set in the config of the node in Omeka S is `solr/omeka`.
 
+The config files are saved in `/var/solr/data` by default.
+
+### Upgrade a config
+
+If you choose a data driven schema, you can remove it and create a new one with
+the same name.
+
+```
+sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"
+sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
+```
+
+If you have a special config, consult the [Solr documentation].
+
+After, an upgrade or any change in the config, go back to Omeka to reindex data.
+
 
 Warning
 -------
@@ -153,6 +194,8 @@ Use it at your own risk.
 
 It’s always recommended to backup your files and your databases and to check
 your archives regularly so you can roll back if needed.
+
+Note: the config of SolR is saved in `/var/solr/data` by default.
 
 
 Troubleshooting
@@ -219,8 +262,11 @@ See commits for full list of contributors.
 [below]: #manage-solr
 [below for Debian]: #solr-install
 [below "Solr management"]: #solr-management
+[1.8]: https://lucene.apache.org/solr/7_2_1/SYSTEM_REQUIREMENTS.html
+[1.7 u55]: https://lucene.apache.org/solr/5_5_5/SYSTEM_REQUIREMENTS.html
 [http://localhost:8983]: http://localhost:8983
 [http://localhost:8983/solr/#/omeka]: http://localhost:8983/solr/#/omeka
+[Solr documentation]: https://lucene.apache.org/solr/resources.html
 [module issues]: https://github.com/BibLibre/Omeka-S-module-Solr/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
