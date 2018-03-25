@@ -111,8 +111,8 @@ wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.3/sol
 tar zxvf solr-6.6.3.tgz solr-6.6.3/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
 sudo bash ./install_solr_service.sh solr-6.6.3.tgz
-# Add a symlink to simplify management.
-sudo ln -s /opt/solr-6.6.3 /opt/solr
+# Add a symlink to simplify management (if not automatically created).
+#sudo ln -s /opt/solr-6.6.3 /opt/solr
 # Clean the sources.
 rm solr-6.6.3.tgz
 rm install_solr_service.sh

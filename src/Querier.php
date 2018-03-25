@@ -37,6 +37,7 @@ use Search\Querier\Exception\QuerierException;
 use Solr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrClientException;
+use SolrServerException;
 use SolrQuery;
 
 class Querier extends AbstractQuerier
@@ -139,6 +140,39 @@ class Querier extends AbstractQuerier
 
         try {
             $solrQueryResponse = $client->query($solrQuery);
+        } catch (SolrServerException $e) {
+            // The query may be badly formatted, so try to escape all reserved
+            // characters instead of returning an exception.
+            // @link https://lucene.apache.org/core/7_2_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
+            // TODO Check before the query.
+            $reservedCharacters = [
+                // The character "\" must be escaped first.
+                '\\' => '\\\\',
+                '+' => '\+',
+                '-' => '\-' ,
+                '&&' => '\&\&',
+                '||' => '\|\|',
+                '!' => '\!',
+                '(' => '\(' ,
+                ')' => '\)',
+                '{' => '\{',
+                '}' => '\}',
+                '[' => '\[',
+                ']' => '\]',
+                '^' => '\^',
+                '"' => '\"',
+                '~' => '\~',
+                '*' => '\*',
+                '?' => '\?',
+                ':' => '\:',
+            ];
+            $escapedQ = str_replace(array_keys($reservedCharacters), array_values($reservedCharacters), $q);
+            $solrQuery->setQuery($escapedQ);
+            try {
+                $solrQueryResponse = $client->query($solrQuery);
+            } catch (SolrServerException $e) {
+                throw new QuerierException($e->getMessage(), $e->getCode(), $e);
+            }
         } catch (SolrClientException $e) {
             throw new QuerierException($e->getMessage(), $e->getCode(), $e);
         }
