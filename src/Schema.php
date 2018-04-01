@@ -91,7 +91,7 @@ class Schema
         $firstChar = $name[0];
         if (isset($dynamicFieldsMap['prefix'][$firstChar])) {
             foreach ($dynamicFieldsMap['prefix'][$firstChar] as $field) {
-                $prefix = substr($field['name'], 0, strlen($field['name'] - 1));
+                $prefix = substr($field['name'], 0, strlen($field['name']) - 1);
                 if (0 === substr_compare($name, $prefix, 0, strlen($prefix))) {
                     return $field;
                 }
