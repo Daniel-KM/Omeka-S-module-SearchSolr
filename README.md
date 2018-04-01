@@ -93,7 +93,7 @@ installed via the original sources. If you have a build or a development server,
 it’s recommended to create a Solr package outside of the server and to install
 it via `dpkg`.
 
-### Install
+### Install Solr
 
 The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.3 (Java [1.8]), but
 not Solr 7.2.1 (indexing works, not the search).
@@ -118,7 +118,7 @@ rm solr-6.6.3.tgz
 rm install_solr_service.sh
 ```
 
-### Upgrade
+### Upgrade Solr
 
 Before upgrade, you should backup the folder `/var/solr` if you want to upgrade
 a previous config:
@@ -147,6 +147,24 @@ sudo systemctl status solr
 Solr is automatically launched and available in your browser at [http://localhost:8983].
 
 Solr is available via command line too at `/opt/solr/bin/solr`.
+
+### Uninstall Solr
+
+When Solr is installed manually, there is no automatic uninstallation process.
+The next commands are dangerous, so check the commands above twice before
+executing, in particular don’t add whitespace after the slashs "/".
+
+```bash
+sudo systemctl stop solr
+sudo update-rc.d -f solr remove
+sudo rm /etc/init.d/solr
+sudo rm /etc/default/solr.in.sh
+sudo rm -r /opt/solr
+sudo rm -r /opt/solr-6.6.3
+sudo rm -r /var/solr
+sudo deluser --remove-home solr
+sudo deluser --group solr
+```
 
 
 Solr management <a name="solr-management"></a>
