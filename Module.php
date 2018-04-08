@@ -113,7 +113,7 @@ INSERT INTO `solr_node` (`name`, `settings`)
 VALUES ("default", ?);
 SQL;
         $defaultSettings = $this->getSolrNodeDefaultSettings();
-        $connection->executeQuery($sql, [json_encode($defaultSettings)]);
+        $connection->executeQuery($sql, [json_encode($defaultSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
 
         $sql = <<<'SQL'
 INSERT INTO `solr_mapping` (`solr_node_id`, `resource_name`, `field_name`, `source`, `settings`)
@@ -125,7 +125,7 @@ SQL;
                 $mapping['resource_name'],
                 $mapping['field_name'],
                 $mapping['source'],
-                json_encode($mapping['settings']),
+                json_encode($mapping['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
             ]);
         }
     }
@@ -151,7 +151,7 @@ SQL;
                 VALUES ("default", ?)
             ';
             $defaultSettings = $this->getSolrNodeDefaultSettings();
-            $connection->executeQuery($sql, [json_encode($defaultSettings)]);
+            $connection->executeQuery($sql, [json_encode($defaultSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
             $solrNodeId = $connection->lastInsertId();
 
             $sql = '
