@@ -17,8 +17,9 @@ See general end user documentation for [Installing a module].
 
 - [Solr PHP extension] (>= 2.0.0). It must be enabled for the CLI as well as the
   web server.
-- A running Solr 5 instance. It may work with other versions, but it's only
-  tested with Solr 5.
+- A running Solr 5 or 6 instance. The module works with Solr 5.5.5 (Java [1.7 u55])
+  and Solr 6.6.3 (Java [1.8]), but not Solr 7.2.1 (indexing works, not the
+  search).
 - [Search]
 
 
