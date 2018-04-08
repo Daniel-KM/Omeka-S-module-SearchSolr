@@ -50,6 +50,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             ],
             'attributes' => [
                 'required' => true,
+                'placeholder' => 'omeka',
             ],
         ]);
 
@@ -64,6 +65,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             ],
             'attributes' => [
                 'required' => true,
+                'placeholder' => 'localhost',
             ],
         ]);
 
@@ -75,6 +77,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             ],
             'attributes' => [
                 'required' => true,
+                'placeholder' => '8983',
             ],
         ]);
 
@@ -86,6 +89,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             ],
             'attributes' => [
                 'required' => true,
+                'placeholder' => 'solr/omeka',
             ],
         ]);
 
@@ -102,6 +106,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             ],
             'attributes' => [
                 'required' => true,
+                'placeholder' => 'resource_name_s',
             ],
         ]);
 
@@ -117,6 +122,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             ],
             'attributes' => [
                 'required' => false,
+                'placeholder' => 'site_id_is',
             ],
         ]);
 
