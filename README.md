@@ -86,7 +86,7 @@ item sets.
 Don’t forget to reindex the fields each time the Solr config is updated too.
 
 
-Solr install on Debian <a name="solr-install"></a>
+Solr install on Debian <a id="solr-install"></a>
 ----------------------
 
 The packaged release of Solr on Debian is obsolete (3.6.2), so it should be
@@ -168,7 +168,7 @@ sudo deluser --group solr
 ```
 
 
-Solr management <a name="solr-management"></a>
+Solr management <a id="solr-management"></a>
 ---------------
 
 ### Create a config
