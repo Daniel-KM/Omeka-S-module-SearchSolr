@@ -84,7 +84,7 @@ class ItemValueExtractor implements ValueExtractorInterface
             ],
         ];
         $fields['media']['label'] = 'Media';
-        $fields['media']['children']['content']['label'] = 'HTML Content';
+        $fields['media']['children']['content']['label'] = 'Text Content';
 
         foreach ($properties as $property) {
             $term = $property->term();
@@ -138,10 +138,14 @@ class ItemValueExtractor implements ValueExtractorInterface
 
         foreach ($item->media() as $media) {
             if ($field === 'content') {
-                if ($media->ingester() !== 'html') {
+                if ($media->ingester() === 'html') {
+                    $mediaExtractedValue = [$media->mediaData()['html']];
+                } elseif ( explode('/', $media->mediaType())[0] === 'text' ) {
+                    $filePath = __DIR__.'/../../../../files/original/'.$media->filename();
+                    $mediaExtractedValue = [file_get_contents($filePath)];
+                } else {
                     continue;
                 }
-                $mediaExtractedValue = [$media->mediaData()['html']];
             } else {
                 $mediaExtractedValue = $this->extractPropertyValue($media, $field);
             }
