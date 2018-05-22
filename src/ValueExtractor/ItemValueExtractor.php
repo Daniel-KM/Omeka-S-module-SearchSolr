@@ -140,7 +140,7 @@ class ItemValueExtractor implements ValueExtractorInterface
             if ($field === 'content') {
                 if ($media->ingester() === 'html') {
                     $mediaExtractedValue = [$media->mediaData()['html']];
-                } elseif ( explode('/', $media->mediaType())[0] === 'text' ) {
+                } elseif (explode('/', $media->mediaType())[0] === 'text') {
                     $filePath = __DIR__.'/../../../../files/original/'.$media->filename();
                     $mediaExtractedValue = [file_get_contents($filePath)];
                 } else {
