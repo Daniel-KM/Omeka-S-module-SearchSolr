@@ -314,10 +314,11 @@ SQL;
      */
     protected function addAclRules()
     {
-        $services = $this->getServiceLocator();
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(null, \Solr\Api\Adapter\SolrNodeAdapter::class);
-        $acl->allow(null, \Solr\Api\Adapter\SolrMappingAdapter::class);
+        $acl->allow(null, [
+            \Solr\Api\Adapter\SolrNodeAdapter::class,
+            \Solr\Api\Adapter\SolrMappingAdapter::class,
+        ]);
         $acl->allow(null, \Solr\Entity\SolrNode::class, 'read');
     }
 
