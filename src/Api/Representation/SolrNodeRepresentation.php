@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
+ * Copyright Daniel Berthereau 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -30,8 +31,10 @@
 namespace Solr\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use Solr\Schema;
+use Omeka\Stdlib\Message;
 use SolrClient;
+use SolrException;
+use Solr\Schema;
 
 class SolrNodeRepresentation extends AbstractEntityRepresentation
 {
@@ -91,13 +94,22 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         return sprintf('%s:%s/%s', $hostname, $port, $path);
     }
 
+    /**
+     * Check if Solr is working.
+     *
+     * @return string
+     */
     public function status()
     {
+        if (!extension_loaded('solr')) {
+            return new Message('Solr module requires PHP Solr extension, which is not loaded.'); // @translate
+        }
+
         $solrClient = new SolrClient($this->clientSettings());
 
         try {
             $solrPingResponse = @$solrClient->ping();
-        } catch (\SolrException $e) {
+        } catch (SolrException $e) {
             $logger = $this->getServiceLocator()->get('Omeka\Logger');
             $logger->err($e);
             $messages = explode("\n", $e->getMessage());
@@ -136,6 +148,11 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         return $url('admin/solr/node-id-mapping-resource', $params, $options);
     }
 
+    /**
+     * Get the schema for the node.
+     *
+     * @return Schema
+     */
     public function schema()
     {
         $services = $this->getServiceLocator();
