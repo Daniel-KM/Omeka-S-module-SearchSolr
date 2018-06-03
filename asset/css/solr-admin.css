@@ -6,7 +6,7 @@
 
 #field-info-link::after {
     margin-left: 1em;
-    font-family: FontAwesome;
+    font-family: "Font Awesome 5 Free";
     content: '\f0da';
 }
 
