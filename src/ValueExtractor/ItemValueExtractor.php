@@ -37,11 +37,30 @@ use Omeka\Api\Representation\ValueRepresentation;
 
 class ItemValueExtractor implements ValueExtractorInterface
 {
-    protected $api;
+    /**
+     * @var ApiManager
+     */
+     protected $api;
 
+    /**
+     * @var string
+     */
+    protected $baseFilepath;
+
+    /**
+     * @param ApiManager $api
+     */
     public function setApiManager(ApiManager $api)
     {
         $this->api = $api;
+    }
+
+    /**
+     * @param ApiManager $api
+     */
+    public function setBaseFilepath($baseFilepath)
+    {
+        $this->baseFilepath = $baseFilepath;
     }
 
     public function getLabel()
@@ -140,8 +159,8 @@ class ItemValueExtractor implements ValueExtractorInterface
             if ($field === 'content') {
                 if ($media->ingester() === 'html') {
                     $mediaExtractedValue = [$media->mediaData()['html']];
-                } elseif (explode('/', $media->mediaType())[0] === 'text') {
-                    $filePath = __DIR__.'/../../../../files/original/'.$media->filename();
+                } elseif (strtok($media->mediaType(), '/') === 'text') {
+                    $filePath = $this->baseFilepath . '/' . $media->filename();
                     $mediaExtractedValue = [file_get_contents($filePath)];
                 } else {
                     continue;

@@ -35,12 +35,15 @@ use Solr\ValueExtractor\ItemValueExtractor;
 
 class ItemValueExtractorFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $api = $container->get('Omeka\ApiManager');
+        $config = $services->get('Config');
+        $baseFilepath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
 
         $itemValueExtractor = new ItemValueExtractor;
         $itemValueExtractor->setApiManager($api);
+        $itemValueExtractor->setBaseFilepath($baseFilepath);
 
         return $itemValueExtractor;
     }
