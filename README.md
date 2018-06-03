@@ -40,29 +40,33 @@ Quick start
     2. Check if this node is working, or configure it correctly (host, port, and
        path of the Solr instance): the status should be `OK`.
 3. In Search admin
-    1. Add a new index with name `Default` or whatever you want, using the Solr
-       adapter and the `default` node.
-    2. Launch the indexation by clicking on the "reindex" button (two arrows
-       forming a circle).
-    3. Add a page with name `Default` or whatever you want, a path to access the
-       page, for example `search`, the created index (`Default (Solr)` here, and
-       a form (`Basic`).
-    4. In the page configuration, you can enable/disable facet and sort fields
-       by drag-drop. The order of the fields will be the one that will be used
-       for display. Note that some fields seem duplicated, but they aren't. Some
-       of them allow to prepare search indexes and some other facets or sort
-       indexes. Some of them may be used for all uses.
-       For example, you can use `dcterms_type_ss`, `dcterms_subject_ss`,
-       `resource_class_s`, `item_set_dcterms_title_ss`, `dcterms_creator_ss`,
-       `dcterms_date_s`, `dcterms_spatial_ss `, `dcterms_language_ss` and
-       `dcterms_rights_ss` as facets, and `Relevance`, `dcterms_title_s`,
-       `dcterms_date_s`, and `dcterms_creator_s` as sort fields.
-    5. Edit the name of the label that will be used for facets and sort fields
-       in the same page. The string will be automatically translated if it
-       exists in Omeka.
+    1 . Create an index
+        1. Add a new index with name `Default` or whatever you want, using the
+        Solr adapter and the `default` node.
+        2. Launch the indexation by clicking on the "reindex" button (two arrows
+        forming a circle).
+    2. Create a page
+        1. Add a page with name `Default` or whatever you want, a path to access
+        it, for example `search` or `find`, the index that was created in the
+        previous step (`Default (Solr)` here), and a form (`Basic`). Forms added
+        by modules can manage an advanced input field and/or filters.
+        2. In the page configuration, you can enable/disable facet and sort
+        fields by drag-drop. The order of the fields will be the one that will
+        be used for display. Note that some fields seem duplicated, but they
+        aren’t. Some of them allow to prepare search indexes and some other
+        facets or sort indexes. Some of them may be used for all uses.
+        For example, you can use `dcterms_type_ss`, `dcterms_subject_ss`,
+        `resource_class_s`, `item_set_dcterms_title_ss`, `dcterms_creator_ss`,
+        `dcterms_date_s`, `dcterms_spatial_ss`, `dcterms_language_ss` and
+        `dcterms_rights_ss` as facets, and `Relevance`, `dcterms_title_s`,
+        `dcterms_date_s`, and `dcterms_creator_s` as sort fields.
+        3. Edit the name of the label that will be used for facets and sort
+        fields in the same page. The string will be automatically translated if
+        it exists in Omeka.
 4. In admin or site settings
-    1. To access to the Solr search form, enable it in the settings, so it will
-       be available in the specified path: `https://example.com/s/my-site/search`
+    1. To access to the search form, enable it in the main settings (for the
+       admin board) and in the site settings (for the front-end sites). So the
+       search engine will be available in the specified path: `https://example.com/s/my-site/search`
        or `https://example.com/admin/search` in this example.
     2. Optionally, add a custom navigation link to the search page in the
        navigation settings of the site.
