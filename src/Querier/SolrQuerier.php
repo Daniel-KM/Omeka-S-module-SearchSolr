@@ -88,7 +88,7 @@ class SolrQuerier extends AbstractQuerier
         }
 
         $facetFields = $query->getFacetFields();
-        if (!empty($facetFields)) {
+        if (count($facetFields)) {
             $solrQuery->setFacet(true);
             foreach ($facetFields as $facetField) {
                 $solrQuery->addFacetField($facetField);
@@ -101,16 +101,14 @@ class SolrQuerier extends AbstractQuerier
         }
 
         $filters = $query->getFilters();
-        if (!empty($filters)) {
-            foreach ($filters as $name => $values) {
-                foreach ($values as $value) {
-                    if (is_array($value) && !empty($value)) {
-                        $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
-                    } else {
-                        $value = $this->enclose($value);
-                    }
-                    $solrQuery->addFilterQuery("$name:$value");
+        foreach ($filters as $name => $values) {
+            foreach ($values as $value) {
+                if (is_array($value) && count($value)) {
+                    $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
+                } else {
+                    $value = $this->enclose($value);
                 }
+                $solrQuery->addFilterQuery("$name:$value");
             }
         }
 
@@ -124,17 +122,19 @@ class SolrQuerier extends AbstractQuerier
         }
 
         $sort = $query->getSort();
-        if (isset($sort)) {
+        if ($sort) {
             list($sortField, $sortOrder) = explode(' ', $sort);
             $sortOrder = $sortOrder == 'asc' ? SolrQuery::ORDER_ASC : SolrQuery::ORDER_DESC;
             $solrQuery->addSortField($sortField, $sortOrder);
         }
 
-        if ($limit = $query->getLimit()) {
+        $limit = $query->getLimit();
+        if ($limit) {
             $solrQuery->setGroupLimit($limit);
         }
 
-        if ($offset = $query->getOffset()) {
+        $offset = $query->getOffset();
+        if ($offset) {
             $solrQuery->setGroupOffset($offset);
         }
 

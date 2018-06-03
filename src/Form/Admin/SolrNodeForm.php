@@ -29,6 +29,7 @@
 
 namespace Solr\Form\Admin;
 
+use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
 use Zend\I18n\Translator\TranslatorAwareInterface;
@@ -44,7 +45,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
 
         $this->add([
             'name' => 'o:name',
-            'type' => 'Text',
+            'type' => Element\Text::class,
             'options' => [
                 'label' => $translator->translate('Name'),
             ],
@@ -59,7 +60,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
 
         $clientSettingsFieldset->add([
             'name' => 'hostname',
-            'type' => 'Text',
+            'type' => Element\Text::class,
             'options' => [
                 'label' => $translator->translate('Hostname'),
             ],
@@ -71,7 +72,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
 
         $clientSettingsFieldset->add([
             'name' => 'port',
-            'type' => 'Text',
+            'type' => Element\Text::class,
             'options' => [
                 'label' => $translator->translate('Port'),
             ],
@@ -83,7 +84,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
 
         $clientSettingsFieldset->add([
             'name' => 'path',
-            'type' => 'Text',
+            'type' => Element\Text::class,
             'options' => [
                 'label' => $translator->translate('Solr node path'),
             ],
@@ -97,11 +98,11 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
 
         $settingsFieldset->add([
             'name' => 'resource_name_field',
-            'type' => 'Text',
+            'type' => Element\Text::class,
             'options' => [
                 'label' => $translator->translate('Resource name field'),
                 'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).')
-                    . ' ' . $translator->translate('It must be a single-valued, string-based field.')
+                    . ' ' . $translator->translate('It must be a single-valued, string-based field (*_s).')
                     . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation.'),
             ],
             'attributes' => [
@@ -112,7 +113,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
 
         $settingsFieldset->add([
             'name' => 'sites_field',
-            'type' => 'Text',
+            'type' => Element\Text::class,
             'options' => [
                 'label' => $translator->translate('Sites field'),
                 'info' => $translator->translate('Name of Solr field that will contain the sites ids.')

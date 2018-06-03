@@ -53,6 +53,7 @@ class SolrIndexer extends AbstractIndexer
     {
         $serviceLocator = $this->getServiceLocator();
         $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
+        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
 
         return isset($valueExtractor);
@@ -98,6 +99,7 @@ class SolrIndexer extends AbstractIndexer
         $settings = $serviceLocator->get('Omeka\Settings');
         $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
         $valueFormatterManager = $serviceLocator->get('Solr\ValueFormatterManager');
+        /** @var \Doctrine\ORM\EntityManager $entityManager */
         $entityManager = $serviceLocator->get('Omeka\EntityManager');
 
         $resource = $api->read($resource->getResourceName(), $resource->getId())->getContent();
@@ -114,8 +116,9 @@ class SolrIndexer extends AbstractIndexer
 
         $document = new SolrInputDocument;
         $document->addField('id', $id);
-        $resource_name_field = $solrNodeSettings['resource_name_field'];
-        $document->addField($resource_name_field, $resourceName);
+
+        $resourceNameField = $solrNodeSettings['resource_name_field'];
+        $document->addField($resourceNameField, $resourceName);
 
         $sites_field = $solrNodeSettings['sites_field'];
         if ($sites_field) {
@@ -148,6 +151,7 @@ class SolrIndexer extends AbstractIndexer
 
         $schema = $solrNode->schema();
 
+        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
         foreach ($solrMappings as $solrMapping) {
             $solrField = $solrMapping->fieldName();
