@@ -30,8 +30,8 @@
 namespace Solr\Service;
 
 use Interop\Container\ContainerInterface;
+use Solr\Schema\Schema;
 use Zend\ServiceManager\Factory\FactoryInterface;
-use Solr\Schema;
 
 class SchemaFactory implements FactoryInterface
 {

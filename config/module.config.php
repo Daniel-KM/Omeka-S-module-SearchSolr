@@ -39,7 +39,7 @@ return [
         'factories' => [
             'Solr\ValueExtractorManager' => Service\ValueExtractorManagerFactory::class,
             'Solr\ValueFormatterManager' => Service\ValueFormatterManagerFactory::class,
-            Schema::class => Service\SchemaFactory::class,
+            'Solr\Schema' => Service\SchemaFactory::class,
         ],
     ],
     'navigation' => [
@@ -58,7 +58,7 @@ return [
             'admin' => [
                 'child_routes' => [
                     'solr' => [
-                        'type' => 'Segment',
+                        'type' => \Zend\Router\Http\Segment::class,
                         'options' => [
                             'route' => '/solr',
                             'defaults' => [
@@ -70,7 +70,7 @@ return [
                         'may_terminate' => true,
                         'child_routes' => [
                             'node' => [
-                                'type' => 'Segment',
+                                'type' => \Zend\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/node[/:action]',
                                     'defaults' => [
@@ -81,7 +81,7 @@ return [
                                 ],
                             ],
                             'node-id' => [
-                                'type' => 'Segment',
+                                'type' => \Zend\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/node/:id[/:action]',
                                     'constraints' => [
@@ -95,7 +95,7 @@ return [
                                 ],
                             ],
                             'node-id-mapping' => [
-                                'type' => 'Segment',
+                                'type' => \Zend\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/node/:nodeId/mapping',
                                     'defaults' => [
@@ -106,7 +106,7 @@ return [
                                 ],
                             ],
                             'node-id-mapping-resource' => [
-                                'type' => 'Segment',
+                                'type' => \Zend\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/node/:nodeId/mapping/:resourceName[/:action]',
                                     'defaults' => [
@@ -117,7 +117,7 @@ return [
                                 ],
                             ],
                             'node-id-mapping-resource-id' => [
-                                'type' => 'Segment',
+                                'type' => \Zend\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/node/:nodeId/mapping/:resourceName/:id[/:action]',
                                     'constraints' => [
@@ -154,7 +154,7 @@ return [
     ],
     'search_adapters' => [
         'factories' => [
-            'solr' => Service\AdapterFactory::class,
+            'solr' => Service\Adapter\SolrAdapterFactory::class,
         ],
     ],
     'solr_value_extractors' => [

@@ -28,17 +28,25 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr;
+namespace Solr\Indexer;
 
+use Omeka\Entity\Resource;
+use Search\Indexer\AbstractIndexer;
+use Solr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
-use Omeka\Entity\Resource;
-use Search\Indexer\AbstractIndexer;
 
-class Indexer extends AbstractIndexer
+class SolrIndexer extends AbstractIndexer
 {
+    /**
+     * @var SolrClient
+     */
     protected $client;
+
+    /**
+     * @var SolrNodeRepresentation
+     */
     protected $solrNode;
 
     public function canIndex($resourceName)

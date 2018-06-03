@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -27,21 +28,19 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Service;
+namespace Solr\Service\Adapter;
 
 use Interop\Container\ContainerInterface;
+use Solr\Adapter\SolrAdapter;
 use Zend\ServiceManager\Factory\FactoryInterface;
-use Solr\Adapter;
 
-class AdapterFactory implements FactoryInterface
+class SolrAdapterFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $api = $container->get('Omeka\ApiManager');
-        $translator = $container->get('MvcTranslator');
-
-        $adapter = new Adapter($api, $translator);
-
+        $api = $services->get('Omeka\ApiManager');
+        $translator = $services->get('MvcTranslator');
+        $adapter = new SolrAdapter($api, $translator);
         return $adapter;
     }
 }

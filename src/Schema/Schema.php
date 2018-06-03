@@ -1,8 +1,6 @@
 <?php
 
-namespace Solr;
-
-use Solr\Schema\Field;
+namespace Solr\Schema;
 
 class Schema
 {

@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr;
+namespace Solr\Adapter;
 
 use Omeka\Api\Manager as ApiManager;
 use Search\Adapter\AbstractAdapter;
@@ -36,11 +36,22 @@ use Search\Api\Representation\SearchIndexRepresentation;
 use Solr\Form\ConfigFieldset;
 use Zend\I18n\Translator\TranslatorInterface;
 
-class Adapter extends AbstractAdapter
+class SolrAdapter extends AbstractAdapter
 {
+    /**
+     * @param ApiManager $api
+     */
     protected $api;
+
+    /**
+     * @param TranslatorInterface $translator
+     */
     protected $translator;
 
+    /**
+     * @param ApiManager $api
+     * @param TranslatorInterface $translator
+     */
     public function __construct(ApiManager $api, TranslatorInterface $translator)
     {
         $this->api = $api;
@@ -61,12 +72,12 @@ class Adapter extends AbstractAdapter
 
     public function getIndexerClass()
     {
-        return \Solr\Indexer::class;
+        return \Solr\Indexer\SolrIndexer::class;
     }
 
     public function getQuerierClass()
     {
-        return \Solr\Querier::class;
+        return \Solr\Querier\SolrQuerier::class;
     }
 
     public function getAvailableFacetFields(SearchIndexRepresentation $index)

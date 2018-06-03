@@ -28,19 +28,19 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr;
+namespace Solr\Querier;
 
-use Search\Query;
-use Search\Response;
 use Search\Querier\AbstractQuerier;
 use Search\Querier\Exception\QuerierException;
+use Search\Query;
+use Search\Response;
 use Solr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrClientException;
-use SolrServerException;
 use SolrQuery;
+use SolrServerException;
 
-class Querier extends AbstractQuerier
+class SolrQuerier extends AbstractQuerier
 {
     /**
      * @var \SolrClient
