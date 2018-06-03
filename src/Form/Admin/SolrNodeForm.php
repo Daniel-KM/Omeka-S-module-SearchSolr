@@ -97,6 +97,21 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
         $settingsFieldset->add($clientSettingsFieldset);
 
         $settingsFieldset->add([
+            'name' => 'is_public_field',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => $translator->translate('Is public field'),
+                'info' => $translator->translate('Name of Solr field that will be set when a resource is public.')
+                    . ' ' . $translator->translate('It must be a single-valued, boolean-based field (*_b).')
+                    . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation.'),
+            ],
+            'attributes' => [
+                'required' => true,
+                'placeholder' => 'is_public_b',
+            ],
+        ]);
+
+        $settingsFieldset->add([
             'name' => 'resource_name_field',
             'type' => Element\Text::class,
             'options' => [

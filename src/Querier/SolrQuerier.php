@@ -61,6 +61,7 @@ class SolrQuerier extends AbstractQuerier
 
         $solrNode = $this->getSolrNode();
         $solrNodeSettings = $solrNode->settings();
+        $isPublicField = $solrNodeSettings['is_public_field'];
         $resourceNameField = $solrNodeSettings['resource_name_field'];
         $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
 
@@ -71,6 +72,11 @@ class SolrQuerier extends AbstractQuerier
         }
         $solrQuery->setQuery($q);
         $solrQuery->addField('id');
+
+        $isPublic = $query->getIsPublic();
+        if ($isPublic) {
+            $solrQuery->addFilterQuery($isPublicField . ':' . 1);
+        }
 
         $solrQuery->setGroup(true);
         $solrQuery->addGroupField($resourceNameField);

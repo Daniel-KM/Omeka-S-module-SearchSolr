@@ -117,6 +117,10 @@ class SolrIndexer extends AbstractIndexer
         $document = new SolrInputDocument;
         $document->addField('id', $id);
 
+        // Force the indexation of "is_public" even if not selected in mapping.
+        $isPublicField = $solrNodeSettings['is_public_field'];
+        $document->addField($isPublicField, $resource->isPublic());
+
         $resourceNameField = $solrNodeSettings['resource_name_field'];
         $document->addField($resourceNameField, $resourceName);
 
@@ -144,6 +148,7 @@ class SolrIndexer extends AbstractIndexer
             }
         }
 
+        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $solrMappings */
         $solrMappings = $api->search('solr_mappings', [
             'resource_name' => $resourceName,
             'solr_node_id' => $solrNode->id(),
@@ -156,6 +161,11 @@ class SolrIndexer extends AbstractIndexer
         foreach ($solrMappings as $solrMapping) {
             $solrField = $solrMapping->fieldName();
             $source = $solrMapping->source();
+            // Index "is_public" one time only, except if the admin wants a
+            // different to store it iin a different field.
+            if ($source === 'is_public' && $solrField === $isPublicField) {
+                continue;
+            }
             $values = $valueExtractor->extractValue($resource, $source);
 
             if (!is_array($values)) {
