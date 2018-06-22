@@ -87,6 +87,8 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
             ],
         ]);
         $this->add($settingsFieldset);
+		
+		$this->remove('csrf');
     }
 
 	public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
