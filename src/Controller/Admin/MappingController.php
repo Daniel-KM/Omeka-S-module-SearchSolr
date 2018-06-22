@@ -129,7 +129,9 @@ class MappingController extends AbstractActionController
             'solr_node_id' => $solrNodeId,
             'resource_name' => $resourceName,
         ]);
-        $form->setData($mapping->jsonSerialize());
+        $mappingData = $mapping->jsonSerialize();
+        $mappingData['o:source'] = explode('/', $mappingData['o:source']);
+        $form->setData($mappingData);
 
         $view = new ViewModel;
         $view->setVariable('form', $form);
