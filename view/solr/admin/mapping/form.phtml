@@ -157,9 +157,9 @@ $this->trigger('view.add.form.after'); ?>
         }).on('change', function() {
             generateFieldName();
         }).parent().append(
-			'<label><input type="checkbox" id="addSubProperty0"><?=
+            '<label><input type="checkbox" id="addSubProperty0"><?=
             $this->translate('Set sub-property') ?></label>'
-		);
+        );
 
         $('#addSubProperty0').change(function() {
             subPropertyChange(this, 0);
