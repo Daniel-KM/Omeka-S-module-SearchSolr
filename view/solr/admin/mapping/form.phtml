@@ -5,8 +5,12 @@
 <div id="page-actions">
     <button><?php echo $this->translate('Save'); ?></button>
 </div>
-<?php echo $this->formCollection($form, false); ?>
-<?php $this->trigger('view.add.form.after'); ?>
+<?php $source = $form->get('o:source');
+echo $this->formRow($source),
+	$this->formRow($form->get('o:field_name')),
+	$this->formCollection($form->get('o:settings'));
+
+$this->trigger('view.add.form.after'); ?>
 <?php echo $this->form()->closeTag(); ?>
 
 <?php $this->trigger('view.add.after'); ?>
@@ -45,7 +49,7 @@
         var input = $('input[name="o:field_name"]');
         var indexOfStar = field.indexOf('*');
         if (indexOfStar != -1) {
-            var source = $('select[name="o:source"]').val();
+            var source = $('select[name="o:source[0]"]').val();
             source = source.replace(/[^a-zA-Z0-9]/g, '_');
             fieldName = field.replace('*', source);
 
@@ -123,9 +127,28 @@
             fieldInfo.hide();
         }
     }
+	
+	function subPropertyChange(checkbox, index=0) {
+		var container = $(checkbox).parent().parent(); //div.inputs
+		var template = container.children('span').attr('data-template');
+		var count = container.children('select').length;
+		if(checkbox.checked) {
+			template = template.replace(/__index__/g, count);
+			container.append(template);
+			container.append('<label><input type="checkbox" id="addSubProperty'
+					+count
+					+'"><?= $this->translate('Set sub-property') ?></label>');
+			$('#addSubProperty'+count).change(function() {
+				subPropertyChange(this, count);
+			});
+		} else {
+			container.find('input[id^="addSubProperty"]').parent().slice(index+1).remove();
+			container.children('select').slice(index+1).remove();
+		}
+	}
 
     $(document).ready(function() {
-        $('select[name="o:source"]').chosen({
+        $('select[name="o:source[0]"]').chosen({
             allow_single_deselect: true,
             disable_search_threshold: 10,
             width: '100%',
@@ -133,7 +156,12 @@
             include_group_label_in_selected: true,
         }).on('change', function() {
             generateFieldName();
-        });
+        }).parent().append('<label><input type="checkbox" id="addSubProperty0"><?=
+	$this->translate('Set sub-property') ?></label>');
+
+		$('#addSubProperty0').change(function() {
+			subPropertyChange(this, 0);
+		});
 
         var select = $('<select>')
             .attr('id', 'field-selector')
