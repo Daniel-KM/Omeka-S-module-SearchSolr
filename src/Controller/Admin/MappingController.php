@@ -98,7 +98,7 @@ class MappingController extends AbstractActionController
             $form->setData($this->params()->fromPost());
             if ($form->isValid()) {
                 $data = $form->getData();
-				$data['o:source'] = implode('/', $data['o:source']);
+                $data['o:source'] = implode('/', $data['o:source']);
                 $data['o:solr_node']['o:id'] = $solrNodeId;
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_mappings', $data);

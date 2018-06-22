@@ -50,21 +50,21 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
         $translator = $this->getTranslator();
 
         $this->add([
-			'type' => Element\Collection::class,
-			'name' => 'o:source',
-			'options' => [
-				'count' => 1,
-				'should_create_template' => true,
-				'allow_add' => true,
-				'label' => $translator->translate('Source'),
-				'target_element' => [
-					'type' => Element\Select::class,
-					'options' => [
-						'value_options' => $this->getSourceOptions(),
-					],
-				],
-			],
-		]);
+            'type' => Element\Collection::class,
+            'name' => 'o:source',
+            'options' => [
+                'count' => 1,
+                'should_create_template' => true,
+                'allow_add' => true,
+                'label' => $translator->translate('Source'),
+                'target_element' => [
+                    'type' => Element\Select::class,
+                    'options' => [
+                        'value_options' => $this->getSourceOptions(),
+                    ],
+                ],
+            ],
+        ]);
 
         $this->add([
             'name' => 'o:field_name',
@@ -87,11 +87,11 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
             ],
         ]);
         $this->add($settingsFieldset);
-		
-		$this->remove('csrf');
+
+        $this->remove('csrf');
     }
 
-	public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
+    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
     {
         $this->valueExtractorManager = $valueExtractorManager;
     }
