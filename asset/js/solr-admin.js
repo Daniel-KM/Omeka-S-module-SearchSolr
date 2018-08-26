@@ -48,22 +48,26 @@
         fieldsByName[field.name] = field;
     }
 
-    // console.log(schema);
-    // console.log(fieldTypesByName);
-    // console.log(fieldsByName);
-    // console.log(sourceLabels);
+console.log(schema);
+console.log(fieldTypesByName);
+console.log(fieldsByName);
+console.log(sourceLabels);
 
     function generateFieldName() {
         var field = $('#field-selector').val();
         if (!field) {
             return;
         }
-
+console.log(field);
         var fieldName = field;
         var input = $('input[name="o:field_name"]');
+console.log(input);        
         var indexOfStar = field.indexOf('*');
+console.log(indexOfStar);        
         if (indexOfStar != -1) {
-            var source = $('select[name="o:source"]').val();
+            var source = $('select[name="o:source[0]"]').val();
+console.log($('select[name="o:source"]'));
+console.log($('select[name="o:source[0]"]'));
             source = source.replace(/[^a-zA-Z0-9]/g, '_');
             fieldName = field.replace('*', source);
 
@@ -106,7 +110,7 @@
                 var value = obj[key];
                 var li = $('<li>');
                 li.append('<strong>' + key + ':</strong> ');
-                // console.log(typeof value);
+console.log(typeof value);
                 if (typeof value === 'string') {
                     li.append(value);
                 } else if (typeof value === 'boolean') {
