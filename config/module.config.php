@@ -149,6 +149,7 @@ return [
     'js_translate_strings' => [
         'Field', // @translate
         'Type', // @translate
+        'Set sub-property', // @translate
         'Choose a field…', // @translate
         'Dynamic field', // @translate
     ],

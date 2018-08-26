@@ -1,6 +1,7 @@
 /*
  * Copyright BibLibre, 2016
  * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Paul Sarrassat 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -164,10 +165,32 @@
         }
     }
 
+    function subPropertyChange(checkbox, index=0) {
+        var container = $(checkbox).parent().parent(); //div.inputs
+        var template = container.children('span').attr('data-template');
+        var count = container.children('select').length;
+        if (checkbox.checked) {
+            template = template.replace(/__index__/g, count);
+            container.append(template);
+            container.append('<label>'
+                + '<input type="checkbox" id="addSubProperty' + count + '">'
+                + Omeka.jsTranslate('Set sub-property')
+                + '</label>'
+            );
+            $('#addSubProperty'+count).change(function() {
+                subPropertyChange(this, count);
+            });
+        } else {
+            container.find('input[id^="addSubProperty"]').parent().slice(index+1).remove();
+            container.children('select').slice(index+1).remove();
+        }
+    }
+
     $(document).ready(function() {
-        $('select[name="o:source"]')
+        $('select[name="o:source[0]"]')
             .attr('id', 'source-selector');
-        $('select[name="o:source"]').chosen({
+
+        $('select[name="o:source[0]"]').chosen({
             allow_single_deselect: true,
             disable_search_threshold: 10,
             width: '100%',
@@ -176,6 +199,14 @@
         }).on('change', function() {
             generateFieldName();
             generateSourceLabel();
+        }).parent().append('<label>'
+            + '<input type="checkbox" id="addSubProperty' + '0' + '">'
+            + Omeka.jsTranslate('Set sub-property')
+            + '</label>'
+        );
+
+        $('#addSubProperty0').change(function() {
+            subPropertyChange(this, 0);
         });
 
         var select = $('<select>')

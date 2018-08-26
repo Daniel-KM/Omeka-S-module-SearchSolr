@@ -69,7 +69,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
                 'count' => 1,
                 'should_create_template' => true,
                 'allow_add' => true,
-                'label' => $translator->translate('Source'),
+                'label' => 'Source', // @translate
                 'target_element' => [
                     'type' => Element\Select::class,
                     'options' => [
@@ -98,7 +98,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
             'name' => 'formatter',
             'type' => Element\Select::class,
             'options' => [
-                'label' => $translator->translate('Formatter'),
+                'label' => 'Formatter', // @translate
                 'value_options' => $this->getFormatterOptions(),
                 'empty_option' => 'None', // @translate
             ],
@@ -107,8 +107,8 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
             'name' => 'label',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Default label'),
-                'info' => $translator->translate('The label is automatically translated if it exists in Omeka.'),
+                'label' => 'Default label', // @translate
+                'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
             ],
         ]);
         $this->add($settingsFieldset);

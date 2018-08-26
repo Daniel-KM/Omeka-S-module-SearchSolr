@@ -275,6 +275,7 @@ See commits for full list of contributors.
 
 * Copyright BibLibre, 2016-2017
 * Copyright Daniel Berthereau, 2017-2018
+* Copyright Paul Sarrassat, 2018
 
 
 [Solr]: https://github.com/BibLibre/Omeka-S-module-Solr
