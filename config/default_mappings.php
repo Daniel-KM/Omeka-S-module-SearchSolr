@@ -184,7 +184,7 @@ return [
         'resource_name' => 'items',
         'field_name' => 'item_set_dcterms_title_ss',
         'source' => 'item_set/dcterms:title',
-        'settings' => ['formatter' => '', 'label' => 'Item sets / Title'],
+        'settings' => ['formatter' => '', 'label' => 'Item Set'],
     ],
 
     // Fields to sort.
