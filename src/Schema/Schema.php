@@ -29,11 +29,14 @@ class Schema
             try {
                 $contents = @file_get_contents($url);
                 if ($contents === false) {
-                    throw new \SolrServerException('Solr is not available: check the server.');
+                    throw new \SolrServerException(sprintf('Solr is not available: check the server (%s).', $url)); // @translate
                 }
             } catch (\SolrException $e) {
-                throw new \SolrClientException(sprintf('Solr is not available: check url to the schema (message: %s).',
-                    $e->getMessage()), $e->getCode(), $e);
+                throw new \SolrClientException(
+                    sprintf('Solr is not available: check url %s to the schema (message: %s).', $url, $e->getMessage()), // @translate
+                    $e->getCode(),
+                    $e
+                );
             }
 
             $response = json_decode($contents, true);
