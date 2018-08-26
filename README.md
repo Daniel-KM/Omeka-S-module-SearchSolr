@@ -15,12 +15,14 @@ See general end user documentation for [Installing a module].
 
 ### Requirements
 
+- Module [Search]
 - [Solr PHP extension] (>= 2.0.0). It must be enabled for the CLI as well as the
   web server.
-- A running Solr 5 or 6 instance. The module works with Solr 5.5.5 (Java [1.7 u55])
-  and Solr 6.6.3 (Java [1.8]), but not Solr 7.2.1 (indexing works, not the
-  search).
-- [Search]
+- A running Apache Solr 5 or 6 instance. The module works with Solr 5.5.5
+  (Java [1.7 u55]) and Solr 6.6.5 (Java [1.8]), but not Solr 7.2.1 (indexing
+  works, not the search).  This instance can be installed on the same server
+  than Omeka, or provided by another server, a virtual machine, or a cloud
+  service.
 
 
 Quick start
@@ -100,7 +102,7 @@ it via `dpkg`.
 
 ### Install Solr
 
-The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.3 (Java [1.8]), but
+The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.5 (Java [1.8]), but
 not Solr 7.2.1 (indexing works, not the search).
 
 ```bash
@@ -108,18 +110,18 @@ cd /opt
 # Check if java is installed with the good version.
 java -version
 # If not installed, install it (uncomment)
-#sudo apt install default-jdk
+#sudo apt install default-jre
 # The certificate is currently obsolete on Apache server, so don’t check it.
 # To install another version, just change all next version numbers below.
-wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.3/solr-6.6.3.tgz
+wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.5/solr-6.6.5.tgz
 # Extract the install script
-tar zxvf solr-6.6.3.tgz solr-6.6.3/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-6.6.5.tgz solr-6.6.5/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-6.6.3.tgz
+sudo bash ./install_solr_service.sh solr-6.6.5.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-6.6.3 /opt/solr
-# Clean the sources.
-rm solr-6.6.3.tgz
+#sudo ln -s /opt/solr-6.6.5 /opt/solr
+# Clean the sources.sudo bash ./install_solr_service.sh solr-6.6.5.tgz
+rm solr-6.6.5.tgz
 rm install_solr_service.sh
 ```
 
@@ -131,12 +133,12 @@ a previous config:
 ```bash
 cd /opt
 java -version
-#sudo apt install default-jdk
-wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.3/solr-6.6.3.tgz
-tar zxvf solr-6.6.3.tgz solr-6.6.3/bin/install_solr_service.sh --strip-components=2
+#sudo apt install default-jre
+wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.5/solr-6.6.5.tgz
+tar zxvf solr-6.6.5.tgz solr-6.6.5/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-6.6.3.tgz -f
-rm solr-6.6.3.tgz
+sudo bash ./install_solr_service.sh solr-6.6.5.tgz -f
+rm solr-6.6.5.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -144,9 +146,9 @@ rm install_solr_service.sh
 Solr may be managed as a system service:
 
 ```bash
+sudo systemctl status solr
 sudo systemctl stop solr
 sudo systemctl start solr
-sudo systemctl status solr
 ```
 
 Solr is automatically launched and available in your browser at [http://localhost:8983].
@@ -165,7 +167,7 @@ sudo update-rc.d -f solr remove
 sudo rm /etc/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-6.6.3
+sudo rm -r /opt/solr-6.6.5
 sudo rm -r /var/solr
 sudo deluser --remove-home solr
 sudo deluser --group solr
