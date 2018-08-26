@@ -95,7 +95,7 @@ class MappingController extends AbstractActionController
         $api = $this->api();
 
         // Get all existing indexed properties.
-        $mappings = $api ->search('solr_mappings', [
+        $mappings = $api->search('solr_mappings', [
             'solr_node_id' => $solrNode->id(),
             'resource_name' => $resourceName,
         ])->getContent();
@@ -105,7 +105,7 @@ class MappingController extends AbstractActionController
         }, $mappings);
 
         // Get all properties of all vocabularies.
-        $properties = $api ->search('properties')->getContent();
+        $properties = $api->search('properties')->getContent();
         // TODO Check hidden terms of the module HIdeProperties?
 
         // Add all missing mappings.

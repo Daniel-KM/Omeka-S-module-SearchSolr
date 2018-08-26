@@ -41,7 +41,7 @@ class ItemValueExtractor implements ValueExtractorInterface
     /**
      * @var ApiManager
      */
-     protected $api;
+    protected $api;
 
     /**
      * @var string

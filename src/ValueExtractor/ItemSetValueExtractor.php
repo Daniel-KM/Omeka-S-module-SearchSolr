@@ -31,7 +31,6 @@ namespace Solr\ValueExtractor;
 
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
-use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 
 class ItemSetValueExtractor implements ValueExtractorInterface
 {
