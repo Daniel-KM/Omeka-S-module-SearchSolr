@@ -76,7 +76,6 @@ class Module extends AbstractModule
     public function install(ServiceLocatorInterface $serviceLocator)
     {
         $connection = $serviceLocator->get('Omeka\Connection');
-        $api = $serviceLocator->get('Omeka\ApiManager');
 
         if (!extension_loaded('solr')) {
             $translator = $serviceLocator->get('MvcTranslator');

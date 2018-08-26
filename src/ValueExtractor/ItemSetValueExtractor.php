@@ -114,7 +114,7 @@ class ItemSetValueExtractor implements ValueExtractorInterface
     {
         $extractedValue = [];
         $values = $representation->value($field, ['all' => true, 'default' => []]);
-        foreach ($values as $i => $value) {
+        foreach ($values as $value) {
             $type = $value->type();
             if ($type === 'literal' || $type == 'uri') {
                 $extractedValue[] = (string) $value;

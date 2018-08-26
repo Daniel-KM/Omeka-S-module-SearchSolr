@@ -121,7 +121,7 @@ class SolrAdapter extends AbstractAdapter
             }
             $mappingSettings = $mapping->settings();
             $label = isset($mappingSettings['label']) ? $mappingSettings['label'] : '';
-            foreach (['asc' => 'Asc', 'desc' => 'Desc'] as $direction => $labelDirection) {
+            foreach ($directionLabel as $direction => $labelDirection) {
                 $name = $fieldName . ' ' . $direction;
                 $sortFields[$name] = [
                     'name' => $name,
