@@ -36,13 +36,9 @@ use Solr\ValueFormatter\Manager as ValueFormatterManager;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
 
-class SolrMappingForm extends Form implements TranslatorAwareInterface
+class SolrMappingForm extends Form
 {
-    use TranslatorAwareTrait;
-
     /**
      * @var ValueExtractorManager
      */
@@ -60,8 +56,6 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
 
     public function init()
     {
-        $translator = $this->getTranslator();
-
         $this->add([
             'name' => 'o:source',
             'type' => Element\Collection::class,

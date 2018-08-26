@@ -28,19 +28,22 @@
  */
 ?>
 
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
 <?php $this->htmlElement('body')->appendAttribute('class', 'solr-mapping browse'); ?>
-<?php $escape = $this->plugin('escapeHtml'); ?>
 
 <?php
-$pageTitle = sprintf($this->translate('Solr node "%s"'), $solrNode->name());
+$pageTitle = sprintf($translate('Solr node "%s"'), $solrNode->name());
 echo $this->pageTitle($pageTitle);
 ?>
 
 <nav class="breadcrumbs">
       <?php
-    echo $this->hyperlink($this->translate('Solr nodes'), $this->url('admin/solr'));
+    echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr'));
     ?><span><?php
-    echo sprintf($this->translate('Resources list for node "%s"'), $solrNode->name());
+    echo sprintf($translate('Resources list for node "%s"'), $solrNode->name());
     ?></span>
 </nav>
 
@@ -48,7 +51,7 @@ echo $this->pageTitle($pageTitle);
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
-                <th><?php echo $this->translate('Name'); ?></th>
+                <th><?php echo $translate('Name'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -62,7 +65,7 @@ echo $this->pageTitle($pageTitle);
                                     $href = $this->url('admin/solr/node-id-mapping-resource', ['resourceName' => $name, 'nodeId' => $solrNode->id()]);
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon-settings',
-                                        'title' => $this->translate('Rules'),
+                                        'title' => $translate('Rules'),
                                     ]);
                                 ?>
                             </li>

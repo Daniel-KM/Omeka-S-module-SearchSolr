@@ -47,7 +47,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'o:name',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Name'),
+                'label' => 'Name', // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -62,7 +62,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'hostname',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Hostname'),
+                'label' => 'Hostname', // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -74,7 +74,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'port',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Port'),
+                'label' => 'Port', // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -86,7 +86,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'path',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Solr node path'),
+                'label' => 'Solr node path', // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -100,7 +100,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'is_public_field',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Is public field'),
+                'label' => 'Is public field', // @translate
                 'info' => $translator->translate('Name of Solr field that will be set when a resource is public.')
                     . ' ' . $translator->translate('It must be a single-valued, boolean-based field (*_b).')
                     . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation.'),
@@ -115,7 +115,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'resource_name_field',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Resource name field'),
+                'label' => 'Resource name field', // @translate
                 'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).')
                     . ' ' . $translator->translate('It must be a single-valued, string-based field (*_s).')
                     . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation.'),
@@ -130,7 +130,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'sites_field',
             'type' => Element\Text::class,
             'options' => [
-                'label' => $translator->translate('Sites field'),
+                'label' => 'Sites field', // @translate
                 'info' => $translator->translate('Name of Solr field that will contain the sites ids.')
                     . ' ' . $translator->translate('It must be a multi-valued, integer-based field (*_is).')
                     . ' ' . $translator->translate('If empty, the search will search inside all resources.')

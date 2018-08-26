@@ -28,10 +28,13 @@
  */
 ?>
 
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
 <?php $this->htmlElement('body')->appendAttribute('class', 'solr-mapping browse'); ?>
-<?php $escape = $this->plugin('escapeHtml'); ?>
 
-<?php echo $this->pageTitle(sprintf($this->translate('Solr mappings for "%s"'), $resourceName)); ?>
+<?php echo $this->pageTitle(sprintf($translate('Solr mappings for "%s"'), $resourceName)); ?>
 
 <div id="page-actions">
     <?php $addUrl = $this->url('admin/solr/node-id-mapping-resource', [
@@ -39,15 +42,15 @@
         'resourceName' => $resourceName,
         'action' => 'add',
     ]); ?>
-    <a class="button" href="<?php echo $addUrl ?>"><?php echo $this->translate('Add new mapping'); ?></a>
+    <a class="button" href="<?php echo $addUrl ;?>"><?php echo $translate('Add new mapping'); ?></a>
 </div>
 
 <nav class="breadcrumbs">
     <?php
-    echo $this->hyperlink($this->translate('Solr nodes'), $this->url('admin/solr'));
-    echo $this->hyperlink(sprintf($this->translate('Resources list for node "%s"'), $solrNode->name()), $this->url('admin/solr/node-id-mapping', [], true));
+    echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr'));
+    echo $this->hyperlink(sprintf($translate('Resources list for node "%s"'), $solrNode->name()), $this->url('admin/solr/node-id-mapping', [], true));
     ?><span><?php
-    echo sprintf($this->translate('Mappings for "%s"'), $resourceName);
+    echo sprintf($translate('Mappings for "%s"'), $resourceName);
     ?></span>
 </nav>
 
@@ -55,9 +58,9 @@
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
-                <th><?php echo $this->translate('Solr field'); ?></th>
-                <th><?php echo $this->translate('Source'); ?></th>
-                <th><?php echo $this->translate('Translated default label'); ?></th>
+                <th><?php echo $translate('Solr field'); ?></th>
+                <th><?php echo $translate('Source'); ?></th>
+                <th><?php echo $translate('Translated default label'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -72,7 +75,7 @@
                                     $href = $mapping->adminUrl('edit');
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon-edit',
-                                        'title' => $this->translate('Edit'),
+                                        'title' => $translate('Edit'),
                                     ]);
                                 ?>
                             </li>
@@ -80,28 +83,28 @@
                                 <a href="#"
                                 data-sidebar-content-url="<?php echo $escape($mapping->url('delete-confirm')); ?>"
                                 class="o-icon-delete sidebar-content"
-                                aria-label="<?php echo $escape($this->translate('Delete')); ?>"
-                                title="<?php echo $escape($this->translate('Delete')); ?>"></a>
+                                aria-label="<?php echo $escape($translate('Delete')); ?>"
+                                title="<?php echo $escape($translate('Delete')); ?>"></a>
                             </li>
                         </ul>
                     </td>
                     <td><?php echo $mapping->source(); ?></td>
-                    <td><?php if (!empty($mappingSettings['label'])) echo $this->translate($mappingSettings['label']); ?></td>
+                    <td><?php if (!empty($mappingSettings['label'])) echo $translate($mappingSettings['label']); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 <?php else: ?>
     <p>
-        <?php echo $this->translate('There is no mappings defined yet.'); ?>
-        <a href="<?php echo $escape($addUrl); ?>">Add a new mapping</a>
+        <?php echo $translate('There is no mappings defined yet.'); ?>
+        <a href="<?php echo $escape($addUrl); ?>"><?php echo $translate('Add a new mapping'); ?></a>
     </p>
 <?php endif; ?>
 
 <div class="sidebar">
     <a href="#"
         class="sidebar-close o-icon-close"
-        aria-label="<?php echo $escape($this->translate('Close')); ?>"
-        title="<?php echo $escape($this->translate('Close')); ?>"></a>
+        aria-label="<?php echo $escape($translate('Close')); ?>"
+        title="<?php echo $escape($translate('Close')); ?>"></a>
     <div class="sidebar-content"></div>
 </div>

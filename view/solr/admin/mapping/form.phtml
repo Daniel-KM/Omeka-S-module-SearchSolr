@@ -1,4 +1,5 @@
 <?php
+$translate = $this->plugin('translate');
 $this->headLink()->appendStylesheet($this->assetUrl('css/solr-admin.css', 'Solr'));
 $this->headScript()->appendScript(
     'var schema = ' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
@@ -10,7 +11,7 @@ $this->headScript()->appendFile($this->assetUrl('js/solr-admin.js', 'Solr'));
 <?php $form->prepare(); ?>
 <?php echo $this->form()->openTag($form); ?>
 <div id="page-actions">
-    <button><?php echo $this->translate('Save'); ?></button>
+    <button><?php echo $translate('Save'); ?></button>
 </div>
 <?php
 $source = $form->get('o:source');

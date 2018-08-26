@@ -28,23 +28,26 @@
  */
 ?>
 
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
 <?php $this->htmlElement('body')->appendAttribute('class', 'solr-node browse'); ?>
-<?php $escape = $this->plugin('escapeHtml'); ?>
 
-<?php echo $this->pageTitle($this->translate('Solr configuration')); ?>
+<?php echo $this->pageTitle($translate('Solr configuration')); ?>
 
 <div id="page-actions">
-    <a class="button" href="<?php echo $this->url('admin/solr/node', ['action' => 'add']); ?>"><?php echo $this->translate('Add new node'); ?></a>
+    <a class="button" href="<?php echo $this->url('admin/solr/node', ['action' => 'add']); ?>"><?php echo $translate('Add new node'); ?></a>
 </div>
 
-<h2><?php echo $this->translate('Nodes'); ?></h2>
+<h2><?php echo $translate('Nodes'); ?></h2>
 <?php if (count($nodes) > 0): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
-                <th><?php echo $this->translate('Name'); ?></th>
-                <th><?php echo $this->translate('URL'); ?></th>
-                <th><?php echo $this->translate('Status'); ?></th>
+                <th><?php echo $translate('Name'); ?></th>
+                <th><?php echo $translate('URL'); ?></th>
+                <th><?php echo $translate('Status'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -57,14 +60,14 @@
                             $clientSettings = $node->clientSettings();
                             echo $this->hyperlink('',
                                 sprintf('//%s:%s/solr/#/%s', $clientSettings['hostname'], $clientSettings['port'], substr($clientSettings['path'], 5)),
-                                ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $this->translate('Solr admin interface, if reachable'),]
+                                ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable'),]
                             );
                             ?></li>
                             <li>
                                 <?php
                                     echo $node->link('', 'edit', [
                                         'class' => 'o-icon-edit',
-                                        'title' => $this->translate('Edit'),
+                                        'title' => $translate('Edit'),
                                     ]);
                                 ?>
                             </li>
@@ -73,7 +76,7 @@
                                     $href = $node->mappingUrl();
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon- fa fa-sliders fa-sliders-h',
-                                        'title' => $this->translate('Mapping'),
+                                        'title' => $translate('Mapping'),
                                     ]);
                                 ?>
                             </li>
@@ -81,8 +84,8 @@
                                 <a href="#"
                                 data-sidebar-content-url="<?php echo $escape($node->url('delete-confirm')); ?>"
                                 class="o-icon-delete sidebar-content"
-                                aria-label="<?php echo $escape($this->translate('Delete')); ?>"
-                                title="<?php echo $escape($this->translate('Delete')); ?>"></a>
+                                aria-label="<?php echo $escape($translate('Delete')); ?>"
+                                title="<?php echo $escape($translate('Delete')); ?>"></a>
                             </li>
                         </ul>
                     </td>
@@ -97,7 +100,7 @@
 <div class="sidebar">
     <a href="#"
         class="sidebar-close o-icon-close"
-        aria-label="<?php echo $escape($this->translate('Close')); ?>"
-        title="<?php echo $escape($this->translate('Close')); ?>"></a>
+        aria-label="<?php echo $escape($translate('Close')); ?>"
+        title="<?php echo $escape($translate('Close')); ?>"></a>
     <div class="sidebar-content"></div>
 </div>
