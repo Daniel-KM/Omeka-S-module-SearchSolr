@@ -192,28 +192,52 @@ class ItemValueExtractor implements ValueExtractorInterface
 
     /**
      * Extract the values of the given property of the given item.
-     * If the value is a resource, then its title is used.
+     * If a value is a resource, then this method is called recursively with
+     * the source part after the slash as $source.
      * @param AbstractResourceEntityRepresentation $representation Item
-     * @param string $field Property (RDF term).
+     * @param string $source Property (RDF term).
      * @return string[] Human-readable values.
      */
-    protected function extractPropertyValue(AbstractResourceEntityRepresentation $representation, $field)
+    protected function extractPropertyValue(AbstractResourceEntityRepresentation $representation, $source)
     {
+        @list($property, $subProperty) = explode('/', $source, 2);
         $extractedValue = [];
         /* @var $values ValueRepresentation[] */
-        $values = $representation->value($field, ['all' => true, 'default' => []]);
+        $values = $representation->value($property, ['all' => true, 'default' => []]);
         foreach ($values as $value) {
             $type = $value->type();
             if ($type === 'literal' || $type == 'uri') {
                 $extractedValue[] = (string) $value;
             } elseif ('resource' === explode(':', $type)[0]) {
-                $resourceTitle = $value->valueResource()->displayTitle('');
-                if (!empty($resourceTitle)) {
-                    $extractedValue[] = $resourceTitle;
-                }
+                $this->extractPropertyResourceValue($extractedValue, $value, $subProperty);
             }
         }
 
         return $extractedValue;
+    }
+
+    /**
+     * Extracts value(s) from resource-type value and adds them to already
+     * extracted values (passed by reference).
+     * @param array $extractedValues Already extracted values.
+     * @param ValueRepresentation $value Resource-type value from which to
+     * extract searched values.
+     * @param null|string $property RDF term representing the property to
+     * extract. If null, get the displayTitle() value.
+     */
+    protected function extractPropertyResourceValue(array &$extractedValues,
+            ValueRepresentation $value, $property)
+    {
+        if (isset($property)) {
+            $extractedValues = array_merge(
+                    $extractedValues,
+                    $this->extractPropertyValue($value->valueResource(), $property)
+            );
+        } else {
+            $resourceTitle = $value->valueResource()->displayTitle('');
+            if (!empty($resourceTitle)) {
+                $extractedValues[] = $resourceTitle;
+            }
+        }
     }
 }

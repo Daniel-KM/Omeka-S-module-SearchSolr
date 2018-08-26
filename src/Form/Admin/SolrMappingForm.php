@@ -33,8 +33,7 @@ namespace Solr\Form\Admin;
 use Omeka\Api\Manager as ApiManager;
 use Solr\ValueExtractor\Manager as ValueExtractorManager;
 use Solr\ValueFormatter\Manager as ValueFormatterManager;
-use Zend\Form\Element\Select;
-use Zend\Form\Element\Text;
+use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
 use Zend\I18n\Translator\TranslatorAwareInterface;
@@ -65,10 +64,18 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
 
         $this->add([
             'name' => 'o:source',
-            'type' => Select::class,
+            'type' => Element\Collection::class,
             'options' => [
-                'label' => 'Source', // @translate
-                'value_options' => $this->getSourceOptions(),
+                'count' => 1,
+                'should_create_template' => true,
+                'allow_add' => true,
+                'label' => $translator->translate('Source'),
+                'target_element' => [
+                    'type' => Element\Select::class,
+                    'options' => [
+                        'value_options' => $this->getSourceOptions(),
+                    ],
+                ],
             ],
             'attributes' => [
                 'required' => true,
@@ -77,7 +84,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
 
         $this->add([
             'name' => 'o:field_name',
-            'type' => Text::class,
+            'type' => Element\Text::class,
             'options' => [
                 'label' => 'Solr field', // @translate
             ],
@@ -89,7 +96,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
         $settingsFieldset = new Fieldset('o:settings');
         $settingsFieldset->add([
             'name' => 'formatter',
-            'type' => Select::class,
+            'type' => Element\Select::class,
             'options' => [
                 'label' => $translator->translate('Formatter'),
                 'value_options' => $this->getFormatterOptions(),
@@ -98,7 +105,7 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
         ]);
         $settingsFieldset->add([
             'name' => 'label',
-            'type' => Text::class,
+            'type' => Element\Text::class,
             'options' => [
                 'label' => $translator->translate('Default label'),
                 'info' => $translator->translate('The label is automatically translated if it exists in Omeka.'),
@@ -112,6 +119,8 @@ class SolrMappingForm extends Form implements TranslatorAwareInterface
             'name' => 'formatter',
             'required' => false,
         ]);
+        // TODO Keep csrf in mapping form.
+        $this->remove('csrf');
     }
 
     /**
