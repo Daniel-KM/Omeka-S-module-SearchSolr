@@ -106,9 +106,8 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         }
 
         $solrClient = new SolrClient($this->clientSettings());
-
         try {
-            $solrClient->ping();
+            @$solrClient->ping();
         } catch (SolrException $e) {
             $logger = $this->getServiceLocator()->get('Omeka\Logger');
             $logger->err($e);
