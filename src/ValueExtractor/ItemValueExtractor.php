@@ -160,7 +160,7 @@ class ItemValueExtractor implements ValueExtractorInterface
                 if ($media->ingester() === 'html') {
                     $mediaExtractedValue = [$media->mediaData()['html']];
                 } elseif (strtok($media->mediaType(), '/') === 'text') {
-                    $filePath = $this->baseFilepath . '/' . $media->filename();
+                    $filePath = $this->baseFilepath . '/original/' . $media->filename();
                     $mediaExtractedValue = [file_get_contents($filePath)];
                 } else {
                     continue;
