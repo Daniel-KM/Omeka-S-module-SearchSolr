@@ -31,6 +31,7 @@
 namespace Solr\Controller\Admin;
 
 use Omeka\Form\ConfirmForm;
+use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
 use Solr\Api\Representation\SolrNodeRepresentation;
@@ -82,6 +83,62 @@ class MappingController extends AbstractActionController
         $view->setVariable('resourceName', $resourceName);
         $view->setVariable('mappings', $mappings);
         return $view;
+    }
+
+    public function completeAction()
+    {
+        $solrNodeId = $this->params('nodeId');
+        $resourceName = $this->params('resourceName');
+
+        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+
+        $api = $this->api();
+
+        // Get all existing indexed properties.
+        $mappings = $api ->search('solr_mappings', [
+            'solr_node_id' => $solrNode->id(),
+            'resource_name' => $resourceName,
+        ])->getContent();
+        // Keep only the source.
+        $mappings = array_map(function ($v) {
+            return $v->source();
+        }, $mappings);
+
+        // Get all properties of all vocabularies.
+        $properties = $api ->search('properties')->getContent();
+        // TODO Check hidden terms of the module HIdeProperties?
+
+        // Add all missing mappings.
+        $total = 0;
+        foreach ($properties as $property) {
+            $term = $property->term();
+            if (in_array($term, $mappings)) {
+                continue;
+            }
+
+            $data = [];
+            $data['o:solr_node']['o:id'] = $solrNodeId;
+            $data['o:resource_name'] = $resourceName;
+            $data['o:field_name'] = str_replace(':', '_', $term) . '_t';
+            $data['o:source'] = $term;
+            $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
+            $api->create('solr_mappings', $data);
+
+            ++$total;
+        }
+
+        if ($total) {
+            $this->messenger()->addSuccess(new Message('%d mappings successfully created.', $total)); // @translate
+            $this->messenger()->addWarning('Check all new mappings and remove useless ones.'); // @translate
+            $this->messenger()->addNotice('Don‘t forget t o run the indexation of the node.'); // @translate
+        } else {
+            $this->messenger()->addWarning('No new mappings added.'); // @translate
+        }
+
+        return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
+            'nodeId' => $solrNodeId,
+            'resourceName' => $resourceName,
+        ]);
     }
 
     public function addAction()

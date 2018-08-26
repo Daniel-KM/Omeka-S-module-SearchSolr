@@ -43,6 +43,12 @@ $escape = $this->plugin('escapeHtml');
         'action' => 'add',
     ]); ?>
     <a class="button" href="<?php echo $addUrl ;?>"><?php echo $translate('Add new mapping'); ?></a>
+    <?php $completeUrl = $this->url('admin/solr/node-id-mapping-resource', [
+        'nodeId' => $solrNode->id(),
+        'resourceName' => $resourceName,
+        'action' => 'complete',
+    ]); ?>
+    <a class="button" href="<?php echo $completeUrl; ?>" title="<?php echo $translate('Add a text index to all missing properties.'); ?>"><?php echo $translate('Map all properties'); ?></a>
 </div>
 
 <nav class="breadcrumbs">
