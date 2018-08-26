@@ -30,6 +30,7 @@
 
 <?php
 $translate = $this->plugin('translate');
+$this->htmlElement('body')->appendAttribute('class', 'solr-mapping create');
 ?>
 <?php echo $this->pageTitle($translate('Add Solr mapping')); ?>
 <nav class="breadcrumbs">

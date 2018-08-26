@@ -21,3 +21,7 @@
 #field-info-contents ul {
     margin: 0;
 }
+
+.solr-mapping.create form .field.required .inputs fieldset legend {
+    display: none;
+}
