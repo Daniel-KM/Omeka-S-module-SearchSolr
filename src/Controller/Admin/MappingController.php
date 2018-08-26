@@ -182,7 +182,7 @@ class MappingController extends AbstractActionController
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'Solr mapping'); // translate
+        $view->setVariable('resourceLabel', 'Solr mapping'); // @translate
         $view->setVariable('resource', $mapping);
         $view->setVariable('partialPath', 'common/solr-mapping-delete-confirm-details');
         $view->setVariable('totalSearchPages', count($searchPages));
