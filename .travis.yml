@@ -4,6 +4,7 @@ php:
   - 5.6
   - 7.0
   - 7.1
+  - 7.2
 
 cache:
   directories:
@@ -33,4 +34,4 @@ before_script:
 
 script:
   - ../../vendor/bin/phpunit
-  - ../../vendor/bin/php-cs-fixer fix -v --dry-run --using-cache=no
+  - ../../vendor/bin/php-cs-fixer fix -v --dry-run --using-cache=no --allow-risky=no
