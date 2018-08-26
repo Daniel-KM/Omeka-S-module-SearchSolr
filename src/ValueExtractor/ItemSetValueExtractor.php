@@ -35,6 +35,8 @@ use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 
 class ItemSetValueExtractor implements ValueExtractorInterface
 {
+    use ValueExtractorTrait;
+
     protected $api;
 
     public function setApiManager(ApiManager $api)
@@ -108,19 +110,5 @@ class ItemSetValueExtractor implements ValueExtractorInterface
         }
 
         return $this->extractPropertyValue($itemSet, $field);
-    }
-
-    protected function extractPropertyValue(AbstractResourceEntityRepresentation $representation, $field)
-    {
-        $extractedValue = [];
-        $values = $representation->value($field, ['all' => true, 'default' => []]);
-        foreach ($values as $value) {
-            $type = $value->type();
-            if ($type === 'literal' || $type == 'uri') {
-                $extractedValue[] = (string) $value;
-            }
-        }
-
-        return $extractedValue;
     }
 }
