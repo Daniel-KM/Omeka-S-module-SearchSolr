@@ -3,6 +3,7 @@
 /*
  * Copyright BibLibre, 2017
  * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Paul Sarrassat, 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -175,10 +176,11 @@ class MappingController extends AbstractActionController
         ]);
 
         if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
+            $data = $this->params()->fromPost();
+            $form->setData($data);
             if ($form->isValid()) {
                 $data = $form->getData();
-                $data['o:source'] = implode('/', $data['o:source']);
+                $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_node']['o:id'] = $solrNodeId;
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_mappings', $data);
@@ -213,6 +215,7 @@ class MappingController extends AbstractActionController
         $resourceName = $this->params('resourceName');
         $id = $this->params('id');
 
+        /** @var \Solr\Api\Representation\SolrMappingRepresentation $mapping */
         $mapping = $this->api()->read('solr_mappings', $id)->getContent();
 
         $form = $this->getForm(SolrMappingForm::class, [
@@ -220,13 +223,15 @@ class MappingController extends AbstractActionController
             'resource_name' => $resourceName,
         ]);
         $mappingData = $mapping->jsonSerialize();
-        $mappingData['o:source'] = explode('/', $mappingData['o:source']);
+        $mappingData['o:source'] = $this->sourceStringToArray($mappingData['o:source']);
         $form->setData($mappingData);
 
         if ($this->getRequest()->isPost()) {
-            $form->setData($this->params()->fromPost());
+            $data = $this->params()->fromPost();
+            $form->setData($data);
             if ($form->isValid()) {
                 $data = $form->getData();
+                $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_node']['o:id'] = $solrNodeId;
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->update('solr_mappings', $id, $data);
@@ -402,5 +407,49 @@ class MappingController extends AbstractActionController
             }
         }
         return false;
+    }
+
+    /**
+     * Convert an array of sources into a string of sources separated by "/".
+     *
+     * @example
+     * Turns:
+     * <code>
+     * [
+     *     0 => ['source' => "foo"],
+     *     1 => ['source' => "bar"],
+     * ]
+     * </code>
+     * into:
+     * <code>
+     * "foo/bar"
+     * </code>
+     *
+     * @param array $source
+     */
+    protected function sourceArrayToString($source)
+    {
+        return implode(
+            '/',
+            array_map(
+                function($v) { return $v['source']; },
+                $source
+            )
+        );
+    }
+
+    /**
+     * Convert a string of sources separated by "/" into an array of sources.
+     *
+     * @see self::sourceArrayToString()
+     *
+     * @param array $source
+     */
+    protected function sourceStringToArray($source)
+    {
+        return array_map(
+            function($v) { return ['source' => $v]; },
+            explode('/', $source)
+        );
     }
 }

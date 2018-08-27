@@ -64,12 +64,9 @@ class SolrMappingForm extends Form
                 'should_create_template' => true,
                 'allow_add' => true,
                 'label' => 'Source', // @translate
-                'target_element' => [
-                    'type' => Element\Select::class,
-                    'options' => [
-                        'value_options' => $this->getSourceOptions(),
-                    ],
-                ],
+                'target_element' => new SourceFieldset(null, [
+                    'options' => $this->getSourceOptions(),
+                ]),
             ],
             'attributes' => [
                 'required' => true,

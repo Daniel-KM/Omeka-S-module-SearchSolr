@@ -1,7 +1,7 @@
 /*
  * Copyright BibLibre, 2016
  * Copyright Daniel Berthereau, 2017-2018
- * Copyright Paul Sarrassat 2018
+ * Copyright Paul Sarrassat, 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -48,26 +48,16 @@
         fieldsByName[field.name] = field;
     }
 
-console.log(schema);
-console.log(fieldTypesByName);
-console.log(fieldsByName);
-console.log(sourceLabels);
-
     function generateFieldName() {
         var field = $('#field-selector').val();
         if (!field) {
             return;
         }
-console.log(field);
         var fieldName = field;
         var input = $('input[name="o:field_name"]');
-console.log(input);        
         var indexOfStar = field.indexOf('*');
-console.log(indexOfStar);        
         if (indexOfStar != -1) {
-            var source = $('select[name="o:source[0]"]').val();
-console.log($('select[name="o:source"]'));
-console.log($('select[name="o:source[0]"]'));
+            var source = $('select[name="o:source[0][source]"]').val();
             source = source.replace(/[^a-zA-Z0-9]/g, '_');
             fieldName = field.replace('*', source);
 
@@ -110,7 +100,6 @@ console.log($('select[name="o:source[0]"]'));
                 var value = obj[key];
                 var li = $('<li>');
                 li.append('<strong>' + key + ':</strong> ');
-console.log(typeof value);
                 if (typeof value === 'string') {
                     li.append(value);
                 } else if (typeof value === 'boolean') {
@@ -169,32 +158,25 @@ console.log(typeof value);
         }
     }
 
-    function subPropertyChange(checkbox, index=0) {
-        var container = $(checkbox).parent().parent(); //div.inputs
+    function subPropertyChange(checkbox, index) {
+        var container = $(checkbox).parent().parent().parent().parent(); //fieldset
         var template = container.children('span').attr('data-template');
-        var count = container.children('select').length;
+        var count = container.children('fieldset').length;
         if (checkbox.checked) {
             template = template.replace(/__index__/g, count);
             container.append(template);
-            container.append('<label>'
-                + '<input type="checkbox" id="addSubProperty' + count + '">'
-                + Omeka.jsTranslate('Set sub-property')
-                + '</label>'
-            );
-            $('#addSubProperty'+count).change(function() {
+            $('input[name="o:source['+count+'][set_sub]"]').change(function() {
                 subPropertyChange(this, count);
             });
         } else {
-            container.find('input[id^="addSubProperty"]').parent().slice(index+1).remove();
-            container.children('select').slice(index+1).remove();
+            container.children('fieldset').slice(index+1).remove();
         }
     }
 
     $(document).ready(function() {
-        $('select[name="o:source[0]"]')
+        $('select[name="o:source[0][source]"]')
             .attr('id', 'source-selector');
-
-        $('select[name="o:source[0]"]').chosen({
+        $('select[name="o:source[0][source]"]').chosen({
             allow_single_deselect: true,
             disable_search_threshold: 10,
             width: '100%',
@@ -203,13 +185,10 @@ console.log(typeof value);
         }).on('change', function() {
             generateFieldName();
             generateSourceLabel();
-        }).parent().append('<label>'
-            + '<input type="checkbox" id="addSubProperty' + '0' + '">'
-            + Omeka.jsTranslate('Set sub-property')
-            + '</label>'
-        );
+        });
 
-        $('#addSubProperty0').change(function() {
+        // sub-property managing
+        $('input[name="o:source[0][set_sub]"]').change(function() {
             subPropertyChange(this, 0);
         });
 
