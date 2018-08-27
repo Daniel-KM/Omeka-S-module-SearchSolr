@@ -30,6 +30,7 @@
 namespace Solr\ValueExtractor;
 
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
+use Omeka\Api\Representation\ItemRepresentation;
 use Omeka\Api\Representation\ValueRepresentation;
 
 trait ValueExtractorTrait
@@ -39,7 +40,7 @@ trait ValueExtractorTrait
      * If a value is a resource, then this method is called recursively with
      * the source part after the slash as $source.
      *
-     * @param AbstractResourceEntityRepresentation $representation Item
+     * @param AbstractResourceEntityRepresentation $representation
      * @param string $source Property (RDF term).
      * @return string[] Human-readable values.
      */
@@ -47,13 +48,38 @@ trait ValueExtractorTrait
         AbstractResourceEntityRepresentation $representation,
         $source
     ) {
-        // $subProperty may be NULL
+        // $subProperty may be NULL.
         @list($property, $subProperty) = explode('/', $source, 2);
+
+        switch($property) {
+            // If item_set or media have been used without sub-property.
+            case '':
+                return [$representation->displayTitle()];
+
+            case 'o:id':
+                return [$representation->id()];
+
+            case 'media':
+                if (!$representation instanceof ItemRepresentation) {
+                    $this->logger->warn('Tried to get media of non item resource.'); // @translate
+                    return [];
+                }
+                return $this->extractMediaValue($representation, $subProperty);
+
+            case 'item_set':
+                if (!$representation instanceof ItemRepresentation) {
+                    $this->logger->warn('Tried to get item_set of non item resource.'); // @translate
+                    return [];
+                }
+                return $this->extractItemSetValue($representation, $subProperty);
+        }
+
         $extractedValues = [];
         /* @var ValueRepresentation[] $values */
         $values = $representation->value($property, ['all' => true, 'default' => []]);
         foreach ($values as $value) {
-            // Manage standard types and modules CustomVocab and ValueSuggest.
+            // Manage standard types and special types from modules RdfDatatype,
+            // CustomVocab, ValueSuggest, etc.
             $mainType = explode(':', $value->type())[0];
             if ($mainType === 'resource') {
                 $this->extractPropertyResourceValue($extractedValues, $value, $subProperty);
@@ -83,7 +109,7 @@ trait ValueExtractorTrait
         if (isset($property)) {
             $extractedValues = array_merge(
                 $extractedValues,
-                $this->extractPropertyValue($value->valueResource(), $property)
+                $this->extractValue($value->valueResource(), $property)
             );
         } else {
             $resourceTitle = $value->valueResource()->displayTitle('');

@@ -38,10 +38,11 @@ class ItemSetValueExtractorFactory implements FactoryInterface
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $api = $services->get('Omeka\ApiManager');
+        $logger = $services->get('Omeka\Logger');
 
         $itemSetValueExtractor = new ItemSetValueExtractor;
         $itemSetValueExtractor->setApiManager($api);
-
+        $itemSetValueExtractor->setLogger($logger);
         return $itemSetValueExtractor;
     }
 }

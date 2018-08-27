@@ -40,11 +40,12 @@ class ItemValueExtractorFactory implements FactoryInterface
         $api = $services->get('Omeka\ApiManager');
         $config = $services->get('Config');
         $baseFilepath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $logger = $services->get('Omeka\Logger');
 
         $itemValueExtractor = new ItemValueExtractor;
         $itemValueExtractor->setApiManager($api);
         $itemValueExtractor->setBaseFilepath($baseFilepath);
-
+        $itemValueExtractor->setLogger($logger);
         return $itemValueExtractor;
     }
 }

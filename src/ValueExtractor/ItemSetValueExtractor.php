@@ -31,6 +31,7 @@ namespace Solr\ValueExtractor;
 
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
+use Zend\Log\LoggerInterface;
 
 class ItemSetValueExtractor implements ValueExtractorInterface
 {
@@ -41,12 +42,25 @@ class ItemSetValueExtractor implements ValueExtractorInterface
      */
     protected $api;
 
+   /**
+    * @var LoggerInterface Logger
+    */
+    protected $logger;
+
     /**
      * @param ApiManager $api
      */
     public function setApiManager(ApiManager $api)
     {
         $this->api = $api;
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
     }
 
     public function getLabel()
@@ -57,6 +71,9 @@ class ItemSetValueExtractor implements ValueExtractorInterface
     public function getAvailableFields()
     {
         $fields = [
+            'o:id' => [
+                'label' => 'Internal identifier', // @translate
+            ],
             'created' => [
                 'label' => 'Created', // @translate
             ],

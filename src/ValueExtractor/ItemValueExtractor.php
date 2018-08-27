@@ -33,6 +33,7 @@ namespace Solr\ValueExtractor;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
+use Zend\Log\LoggerInterface;
 
 class ItemValueExtractor implements ValueExtractorInterface
 {
@@ -47,6 +48,11 @@ class ItemValueExtractor implements ValueExtractorInterface
      * @var string
      */
     protected $baseFilepath;
+
+   /**
+    * @var LoggerInterface Logger
+    */
+    protected $logger;
 
     /**
      * @param ApiManager $api
@@ -64,6 +70,14 @@ class ItemValueExtractor implements ValueExtractorInterface
         $this->baseFilepath = $baseFilepath;
     }
 
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function getLabel()
     {
         return 'Item'; // @translate
@@ -72,6 +86,9 @@ class ItemValueExtractor implements ValueExtractorInterface
     public function getAvailableFields()
     {
         $fields = [
+            'o:id' => [
+                'label' => 'Internal identifier', // @translate
+            ],
             'created' => [
                 'label' => 'Created', // @translate
             ],
@@ -97,20 +114,13 @@ class ItemValueExtractor implements ValueExtractorInterface
 
         $fields['item_set'] = [
             'label' => 'Item set',
-            'children' => [
-                'id' => [
-                    'label' => 'Internal identifier', // @translate
-                ],
-            ],
         ];
-        $fields['media']['label'] = 'Media'; // @translate
-        $fields['media']['children']['content']['label'] = 'Text Content'; // @translate
-
-        foreach ($properties as $property) {
-            $term = $property->term();
-            $fields['item_set']['children'][$term]['label'] = $term;
-            $fields['media']['children'][$term]['label'] = $term;
-        }
+        $fields['media'] = [
+            'label' => 'Media', // @translate
+        ];
+        $fields['content'] = [
+            'label' => 'Media html of text content', // @translate
+        ];
 
         return $fields;
     }
@@ -140,14 +150,27 @@ class ItemValueExtractor implements ValueExtractorInterface
         }
 
         $matches = [];
-        if (preg_match('/^media\/(.*)/', $field, $matches)) {
-            $mediaField = $matches[1];
-            return $this->extractMediaValue($item, $mediaField);
-        }
+        if (preg_match('~^media/(.*)|^media$~', $field, $matches)
+            || preg_match('~^item_set/(.*)|^item_set$~', $field, $matches)
+        ) {
+            // Don’t try to index item set or media if $resource is not an item.
+            $fieldName = $matches[0];
+            if (!$item instanceof ItemRepresentation) {
+                $this->logger->warn(sprintf(
+                    'Tried to get %s of non item resource.', // @translate
+                    $fieldName)
+                );
+                return [];
+            }
 
-        if (preg_match('/^item_set\/(.*)/', $field, $matches)) {
-            $itemSetField = $matches[1];
-            return $this->extractItemSetValue($item, $itemSetField);
+            // Process media or item set indexing with or without sub-property.
+            $subFieldName = $matches[1];
+            switch ($fieldName) {
+                case 'media':
+                    return $this->extractMediaValue($item, $subFieldName);
+                case 'item_set':
+                    return $this->extractItemSetValue($item, $subFieldName);
+            }
         }
 
         return $this->extractPropertyValue($item, $field);
@@ -181,12 +204,8 @@ class ItemValueExtractor implements ValueExtractorInterface
         $extractedValue = [];
 
         foreach ($item->itemSets() as $itemSet) {
-            if ($field == 'id') {
-                $extractedValue[] = $itemSet->id();
-            } else {
-                $itemSetExtractedValue = $this->extractPropertyValue($itemSet, $field);
-                $extractedValue = array_merge($extractedValue, $itemSetExtractedValue);
-            }
+            $itemSetExtractedValue = $this->extractPropertyValue($itemSet, $field);
+            $extractedValue = array_merge($extractedValue, $itemSetExtractedValue);
         }
 
         return $extractedValue;
