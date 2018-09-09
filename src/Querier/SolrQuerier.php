@@ -90,23 +90,13 @@ class SolrQuerier extends AbstractQuerier
             }
         }
 
-        $facetFields = $query->getFacetFields();
-        if (count($facetFields)) {
-            $solrQuery->setFacet(true);
-            foreach ($facetFields as $facetField) {
-                $solrQuery->addFacetField($facetField);
-            }
-        }
-
-        $facetLimit = $query->getFacetLimit();
-        if ($facetLimit) {
-            $solrQuery->setFacetLimit($facetLimit);
-        }
-
         $filters = $query->getFilters();
         foreach ($filters as $name => $values) {
             foreach ($values as $value) {
-                if (is_array($value) && count($value)) {
+                if (is_array($value)) {
+                    if (empty($value)) {
+                        continue;
+                    }
                     $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
                 } else {
                     $value = $this->enclose($value);
@@ -139,6 +129,19 @@ class SolrQuerier extends AbstractQuerier
         $offset = $query->getOffset();
         if ($offset) {
             $solrQuery->setGroupOffset($offset);
+        }
+
+        $facetFields = $query->getFacetFields();
+        if (count($facetFields)) {
+            $solrQuery->setFacet(true);
+            foreach ($facetFields as $facetField) {
+                $solrQuery->addFacetField($facetField);
+            }
+        }
+
+        $facetLimit = $query->getFacetLimit();
+        if ($facetLimit) {
+            $solrQuery->setFacetLimit($facetLimit);
         }
 
         try {
