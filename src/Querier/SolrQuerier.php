@@ -116,8 +116,8 @@ class SolrQuerier extends AbstractQuerier
 
         $sort = $query->getSort();
         if ($sort) {
-            list($sortField, $sortOrder) = explode(' ', $sort);
-            $sortOrder = $sortOrder == 'asc' ? SolrQuery::ORDER_ASC : SolrQuery::ORDER_DESC;
+            @list($sortField, $sortOrder) = explode(' ', $sort, 2);
+            $sortOrder = $sortOrder === 'asc' ? SolrQuery::ORDER_ASC : SolrQuery::ORDER_DESC;
             $solrQuery->addSortField($sortField, $sortOrder);
         }
 
