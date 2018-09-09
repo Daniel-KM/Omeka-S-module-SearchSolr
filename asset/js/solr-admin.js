@@ -194,7 +194,7 @@
 
         var select = $('<select>')
             .attr('id', 'field-selector')
-            .attr('data-placeholder', Omeka.jsTranslate('Choose a field...'));
+            .attr('data-placeholder', Omeka.jsTranslate('Choose a field…'));
 
         var emptyOption = $('<option>').val('');
         select.append(emptyOption);

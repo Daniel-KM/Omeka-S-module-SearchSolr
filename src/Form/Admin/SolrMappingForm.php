@@ -64,6 +64,7 @@ class SolrMappingForm extends Form
                 'should_create_template' => true,
                 'allow_add' => true,
                 'label' => 'Source', // @translate
+                'info' => 'To select a sub-property allows to store a linked metadata when the property is filled with a resource. Thereby, an item can be found from the specified value of a linked item. For example an issue of a journal can be linked with the journal, so the issue can be found from the title of the journal.', // @translate
                 'target_element' => new SourceFieldset(null, [
                     'options' => $this->getSourceOptions(),
                 ]),

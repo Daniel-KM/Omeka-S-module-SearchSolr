@@ -21,7 +21,7 @@ class SourceFieldset extends Fieldset implements InputFilterProviderInterface
             'type' => Element\Select::class,
             'options' => [
                 'value_options' => $this->getOption('options'),
-                'empty_option' => 'MaSource',
+                'empty_option' => 'Select a metadata from the resource…', // @translate
             ],
         ]);
 
