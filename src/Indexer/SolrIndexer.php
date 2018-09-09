@@ -51,8 +51,8 @@ class SolrIndexer extends AbstractIndexer
 
     public function canIndex($resourceName)
     {
-        $serviceLocator = $this->getServiceLocator();
-        $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
+        $services = $this->getServiceLocator();
+        $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
         /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
 
@@ -74,6 +74,9 @@ class SolrIndexer extends AbstractIndexer
 
     public function indexResources(array $resources)
     {
+        if (empty($resources)) {
+            return;
+        }
         foreach ($resources as $resource) {
             $this->addResource($resource);
         }
@@ -94,26 +97,29 @@ class SolrIndexer extends AbstractIndexer
 
     protected function addResource(Resource $resource)
     {
-        $serviceLocator = $this->getServiceLocator();
-        $api = $serviceLocator->get('Omeka\ApiManager');
-        $valueExtractorManager = $serviceLocator->get('Solr\ValueExtractorManager');
-        $valueFormatterManager = $serviceLocator->get('Solr\ValueFormatterManager');
-        /** @var \Doctrine\ORM\EntityManager $entityManager */
-        $entityManager = $serviceLocator->get('Omeka\EntityManager');
+        // TODO Prepare the services one time outside of this method.
+        $services = $this->getServiceLocator();
+        $api = $services->get('Omeka\ApiManager');
+        $apiAdapters = $services->get('Omeka\ApiAdapterManager');
+        $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
+        $valueFormatterManager = $services->get('Solr\ValueFormatterManager');
+        $logger = $this->getLogger();
 
-        $resource = $api->read($resource->getResourceName(), $resource->getId())->getContent();
+        /** @var \Omeka\Api\Representation\AbstractResourceRepresentation $resource */
+        $resourceName = $resource->getResourceName();
+        $resourceId = $resource->getId();
+        $logger->info(sprintf('Indexing resource #%1$s (%2$s)', $resourceId, $resourceName));
 
-        $this->getLogger()->info(sprintf('Indexing resource #%1$s (%2$s)', $resource->id(), $resource->resourceName()));
+        $adapter = $apiAdapters->get($resourceName);
+        $resource = $adapter->getRepresentation($resource);
 
         $client = $this->getClient();
-
-        $resourceName = $resource->resourceName();
-        $id = $this->getDocumentId($resourceName, $resource->id());
-
         $solrNode = $this->getSolrNode();
         $solrNodeSettings = $solrNode->settings();
 
         $document = new SolrInputDocument;
+
+        $id = $this->getDocumentId($resourceName, $resourceId);
         $document->addField('id', $id);
 
         // Force the indexation of "is_public" even if not selected in mapping.
@@ -123,27 +129,34 @@ class SolrIndexer extends AbstractIndexer
         $resourceNameField = $solrNodeSettings['resource_name_field'];
         $document->addField($resourceNameField, $resourceName);
 
-        $sites_field = $solrNodeSettings['sites_field'];
-        if ($sites_field) {
-            if ($resourceName === 'items') {
-                $sites = $api->search('sites')->getContent();
-                foreach ($sites as $site) {
-                    $query = ['id' => $resource->id(), 'site_id' => $site->id()];
-                    $res = $api->search('items', $query)->getContent();
-                    if (!empty($res)) {
-                        $document->addField($sites_field, $site->id());
+        // TODO To be removed and replaced by the standard mapping.
+        $sitesField = $solrNodeSettings['sites_field'];
+        if ($sitesField) {
+            switch ($resourceName) {
+                case 'items':
+                    $sites = $api->search('sites')->getContent();
+                    foreach ($sites as $site) {
+                        $query = ['id' => $resourceId, 'site_id' => $site->id()];
+                        $res = $api->search('items', $query)->getContent();
+                        if (!empty($res)) {
+                            $document->addField($sitesField, $site->id());
+                        }
                     }
-                }
-            } elseif ($resourceName === 'item_sets') {
-                $qb = $entityManager->createQueryBuilder();
-                $qb->select('siteItemSet')
-                    ->from('Omeka\Entity\SiteItemSet', 'siteItemSet')
-                    ->innerJoin('siteItemSet.itemSet', 'itemSet')
-                    ->where($qb->expr()->eq('itemSet.id', $resource->id()));
-                $siteItemSets = $qb->getQuery()->getResult();
-                foreach ($siteItemSets as $siteItemSet) {
-                    $document->addField($sites_field, $siteItemSet->getSite()->getId());
-                }
+                    break;
+
+                case 'item_sets':
+                    /** @var \Doctrine\ORM\EntityManager $entityManager */
+                    $entityManager = $services->get('Omeka\EntityManager');
+                    $qb = $entityManager->createQueryBuilder();
+                    $qb->select('siteItemSet')
+                        ->from(\Omeka\Entity\SiteItemSet::class, 'siteItemSet')
+                        ->innerJoin('siteItemSet.itemSet', 'itemSet')
+                        ->where($qb->expr()->eq('itemSet.id', $resourceId));
+                    $siteItemSets = $qb->getQuery()->getResult();
+                    foreach ($siteItemSets as $siteItemSet) {
+                        $document->addField($sitesField, $siteItemSet->getSite()->getId());
+                    }
+                    break;
             }
         }
 
@@ -161,7 +174,7 @@ class SolrIndexer extends AbstractIndexer
             $solrField = $solrMapping->fieldName();
             $source = $solrMapping->source();
             // Index "is_public" one time only, except if the admin wants a
-            // different to store it iin a different field.
+            // different to store it in a different field.
             if ($source === 'is_public' && $solrField === $isPublicField) {
                 continue;
             }
@@ -192,14 +205,14 @@ class SolrIndexer extends AbstractIndexer
         try {
             $client->addDocument($document);
         } catch (SolrServerException $e) {
-            $this->getLogger()->err($e);
-            $this->getLogger()->err(sprintf('Indexing of resource %s failed', $resource->id()));
+            $logger->err($e);
+            $logger->err(sprintf('Indexing of resource %s failed', $resourceId));
         }
     }
 
     protected function commit()
     {
-        $this->getLogger()->info('Commit');
+        $this->getLogger()->info('Commit index in Solr.');
         $this->getClient()->commit();
     }
 
@@ -209,19 +222,16 @@ class SolrIndexer extends AbstractIndexer
             $solrNode = $this->getSolrNode();
             $this->client = new SolrClient($solrNode->clientSettings());
         }
-
         return $this->client;
     }
 
     protected function getSolrNode()
     {
         if (!isset($this->solrNode)) {
-            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-
             $solrNodeId = $this->getAdapterSetting('solr_node_id');
             if ($solrNodeId) {
-                $response = $api->read('solr_nodes', $solrNodeId);
-                $this->solrNode = $response->getContent();
+                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+                $this->solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
             }
         }
 

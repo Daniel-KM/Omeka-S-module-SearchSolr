@@ -54,9 +54,6 @@ class SolrQuerier extends AbstractQuerier
 
     public function query(Query $query)
     {
-        $serviceLocator = $this->getServiceLocator();
-        $settings = $serviceLocator->get('Omeka\Settings');
-
         $client = $this->getClient();
 
         $solrNode = $this->getSolrNode();
