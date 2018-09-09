@@ -114,6 +114,82 @@ class SolrQuerier extends AbstractQuerier
             }
         }
 
+        $filters = $query->getFilterQueries();
+        foreach ($filters as $name => $values) {
+            foreach ($values as $value) {
+                // There is no default in Omeka.
+                // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+                $type = $value['type'];
+                if (is_array($value['value'])) {
+                    if (empty($value)) {
+                        $value = '';
+                    } else {
+                        $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value['value'])) . ')';
+                    }
+                } else {
+                    $value = $this->enclose($value['value']);
+                }
+                switch ($type) {
+                    case 'neq':
+                        $solrQuery->addFilterQuery("-$name:$value");
+                        break;
+                    case 'eq':
+                        $solrQuery->addFilterQuery("$name:$value");
+                        break;
+
+                    // TODO Fixes theses Solr queries.
+                    case 'nin':
+                        $solrQuery->addFilterQuery("-$name:$value");
+                        break;
+                    case 'in':
+                        $solrQuery->addFilterQuery("$name:$value");
+                        break;
+
+                    case 'nlist':
+                        $solrQuery->addFilterQuery("-$name:$value");
+                        break;
+                    case 'list':
+                        $solrQuery->addFilterQuery("$name:$value");
+                        break;
+
+                    case 'nsw':
+                        $solrQuery->addFilterQuery("-$name:$value");
+                        break;
+                    case 'sw':
+                        $solrQuery->addFilterQuery("$name:$value");
+                        break;
+
+                    case 'new':
+                        $solrQuery->addFilterQuery("-$name:$value");
+                        break;
+                    case 'ew':
+                        $solrQuery->addFilterQuery("$name:$value");
+                        break;
+
+                    case 'nma':
+                        $solrQuery->addFilterQuery("-$name:$value");
+                        break;
+                    case 'ma':
+                        $solrQuery->addFilterQuery("$name:$value");
+                        break;
+
+                    case 'nres':
+                        $solrQuery->addFilterQuery("-$name:$value");
+                        break;
+                    case 'res':
+                        $solrQuery->addFilterQuery("$name:$value");
+                        break;
+
+                    case 'nex':
+                        $solrQuery->addFilterQuery("-$name:[* TO *]");
+                        break;
+                    case 'ex':
+                        $solrQuery->addFilterQuery("$name:[* TO *]");
+                        break;
+                }
+            }
+        }
+
         $sort = $query->getSort();
         if ($sort) {
             @list($sortField, $sortOrder) = explode(' ', $sort, 2);
