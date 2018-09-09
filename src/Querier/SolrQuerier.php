@@ -83,9 +83,9 @@ class SolrQuerier extends AbstractQuerier
         $solrQuery->addFilterQuery($fq);
 
         if ($sitesField) {
-            $site = $query->getSite();
-            if (isset($site)) {
-                $fq = $sitesField . ':' . $site->id();
+            $siteId = $query->getSiteId();
+            if (isset($siteId)) {
+                $fq = $sitesField . ':' . $siteId;
                 $solrQuery->addFilterQuery($fq);
             }
         }
