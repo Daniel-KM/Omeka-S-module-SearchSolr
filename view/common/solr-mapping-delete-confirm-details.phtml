@@ -7,7 +7,7 @@ echo sprintf($translate('Mapping between property "%s" and Solr field "%s" for "
 ?></p>
 <h4><?php echo $translate('WARNING'); ?></h4>
 <p><?php
-echo sprintf($translate('This will remove all references to this Solr mapping in search pages that use it (%d, of which %d enabled it for facets or sort fields).'),
+echo sprintf($translate('This will remove all references to this Solr mapping in search pages that use it (%d, of which %d are enabled for facets or sort fields).'),
     $totalSearchPages, $totalSearchPagesUsingMapping);
 ?></p>
 <?php else: ?>

@@ -29,6 +29,7 @@
 ?>
 
 <?php
+/** @var \Zend\View\Renderer\PhpRenderer $this */
 $translate = $this->plugin('translate');
 $this->htmlElement('body')->appendAttribute('class', 'solr-mapping create');
 ?>
@@ -38,8 +39,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-mapping create');
     echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr'));
     echo $this->hyperlink(sprintf($translate('Resources list for node "%s"'), $mapping->solrNode()->name()), $this->url('admin/solr/node-id-mapping', ['nodeId' => $mapping->solrNode()->id()], true));
     echo $this->hyperlink(sprintf($translate('Mappings for "%s"'), $form->getOption('resource_name')), $this->url('admin/solr/node-id-mapping-resource', ['nodeId' => $mapping->solrNode()->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
-    ?><span><?php
-    echo $translate('Edit');
-    ?></span>
+    ?>
+    <span><?php echo $translate('Edit'); ?></span>
 </nav>
 <?php echo $this->partial('solr/admin/mapping/form'); ?>
