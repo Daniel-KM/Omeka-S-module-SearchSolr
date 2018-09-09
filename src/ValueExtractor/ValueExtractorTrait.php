@@ -47,9 +47,10 @@ trait ValueExtractorTrait
         AbstractResourceEntityRepresentation $representation,
         $source
     ) {
+        // $subProperty may be NULL
         @list($property, $subProperty) = explode('/', $source, 2);
         $extractedValues = [];
-        /* @var $values ValueRepresentation[] */
+        /* @var ValueRepresentation[] $values */
         $values = $representation->value($property, ['all' => true, 'default' => []]);
         foreach ($values as $value) {
             // Manage standard types and modules CustomVocab and ValueSuggest.

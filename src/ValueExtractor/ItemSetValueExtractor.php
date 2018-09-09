@@ -36,8 +36,14 @@ class ItemSetValueExtractor implements ValueExtractorInterface
 {
     use ValueExtractorTrait;
 
+    /**
+     * @var ApiManager
+     */
     protected $api;
 
+    /**
+     * @param ApiManager $api
+     */
     public function setApiManager(ApiManager $api)
     {
         $this->api = $api;
@@ -45,29 +51,29 @@ class ItemSetValueExtractor implements ValueExtractorInterface
 
     public function getLabel()
     {
-        return 'Item Set';
+        return 'Item Set'; // @translate
     }
 
     public function getAvailableFields()
     {
         $fields = [
             'created' => [
-                'label' => 'Created',
+                'label' => 'Created', // @translate
             ],
             'modified' => [
-                'label' => 'Modified',
+                'label' => 'Modified', // @translate
             ],
             'is_public' => [
-                'label' => 'Is public',
+                'label' => 'Is public', // @translate
             ],
             'is_open' => [
-                'label' => 'Is open',
+                'label' => 'Is open', // @translate
             ],
             'resource_class' => [
-                'label' => 'Resource class',
+                'label' => 'Resource class', // @translate
             ],
             'resource_template' => [
-                'label' => 'Resource template',
+                'label' => 'Resource template', // @translate
             ],
         ];
 

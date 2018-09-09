@@ -31,8 +31,8 @@
 namespace Solr\ValueExtractor;
 
 use Omeka\Api\Manager as ApiManager;
-use Omeka\Api\Representation\ItemRepresentation;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
+use Omeka\Api\Representation\ItemRepresentation;
 
 class ItemValueExtractor implements ValueExtractorInterface
 {
@@ -66,26 +66,26 @@ class ItemValueExtractor implements ValueExtractorInterface
 
     public function getLabel()
     {
-        return 'Item';
+        return 'Item'; // @translate
     }
 
     public function getAvailableFields()
     {
         $fields = [
             'created' => [
-                'label' => 'Created',
+                'label' => 'Created', // @translate
             ],
             'modified' => [
-                'label' => 'Modified',
+                'label' => 'Modified', // @translate
             ],
             'is_public' => [
-                'label' => 'Is public',
+                'label' => 'Is public', // @translate
             ],
             'resource_class' => [
-                'label' => 'Resource class',
+                'label' => 'Resource class', // @translate
             ],
             'resource_template' => [
-                'label' => 'Resource template',
+                'label' => 'Resource template', // @translate
             ],
         ];
 
@@ -99,12 +99,12 @@ class ItemValueExtractor implements ValueExtractorInterface
             'label' => 'Item set',
             'children' => [
                 'id' => [
-                    'label' => 'Internal identifier',
+                    'label' => 'Internal identifier', // @translate
                 ],
             ],
         ];
-        $fields['media']['label'] = 'Media';
-        $fields['media']['children']['content']['label'] = 'Text Content';
+        $fields['media']['label'] = 'Media'; // @translate
+        $fields['media']['children']['content']['label'] = 'Text Content'; // @translate
 
         foreach ($properties as $property) {
             $term = $property->term();
@@ -139,6 +139,7 @@ class ItemValueExtractor implements ValueExtractorInterface
             return $resourceTemplate ? $resourceTemplate->label() : null;
         }
 
+        $matches = [];
         if (preg_match('/^media\/(.*)/', $field, $matches)) {
             $mediaField = $matches[1];
             return $this->extractMediaValue($item, $mediaField);
