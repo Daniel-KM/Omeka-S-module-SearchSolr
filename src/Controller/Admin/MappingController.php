@@ -30,6 +30,7 @@
 
 namespace Solr\Controller\Admin;
 
+use Doctrine\DBAL\Connection;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
@@ -43,11 +44,24 @@ use Solr\Api\Representation\SolrMappingRepresentation;
 
 class MappingController extends AbstractActionController
 {
+    /**
+     * @var ValueExtractorManager
+     */
     protected $valueExtractorManager;
+
+    /**
+     * @var Connection
+     */
+    protected $connection;
 
     public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
     {
         $this->valueExtractorManager = $valueExtractorManager;
+    }
+
+    public function setConnection(Connection $connection)
+    {
+        $this->connection = $connection;
     }
 
     public function browseAction()
@@ -95,6 +109,7 @@ class MappingController extends AbstractActionController
         $api = $this->api();
 
         // Get all existing indexed properties.
+        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $mappings */
         $mappings = $api->search('solr_mappings', [
             'solr_node_id' => $solrNode->id(),
             'resource_name' => $resourceName,
@@ -104,13 +119,19 @@ class MappingController extends AbstractActionController
             return $v->source();
         }, $mappings);
 
-        // Get all properties of all vocabularies.
+        // Get all used properties of all vocabularies.
+        $propertyIds = $this->connection
+            ->query('SELECT DISTINCT property_id FROM value')
+            ->fetchAll(\PDO::FETCH_COLUMN);
         $properties = $api->search('properties')->getContent();
         // TODO Check hidden terms of the module HIdeProperties?
 
         // Add all missing mappings.
         $total = 0;
         foreach ($properties as $property) {
+            if (!in_array($property->id(), $propertyIds)) {
+                continue;
+            }
             $term = $property->term();
             if (in_array($term, $mappings)) {
                 continue;
