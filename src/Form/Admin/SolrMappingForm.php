@@ -113,8 +113,6 @@ class SolrMappingForm extends Form
             'name' => 'formatter',
             'required' => false,
         ]);
-        // TODO Keep csrf in mapping form.
-        $this->remove('csrf');
     }
 
     /**

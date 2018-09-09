@@ -190,7 +190,12 @@ class MappingController extends AbstractActionController
                     'resourceName' => $resourceName,
                 ]);
             } else {
-                $this->messenger()->addError('There was an error during validation'); // @translate
+                $messages = $form->getMessages();
+                if (isset($messages['csrf'])) {
+                    $this->messenger()->addError('Invalid or missing CSRF token'); // @translate
+                } else {
+                    $this->messenger()->addError('There was an error during validation'); // @translate
+                }
             }
         }
 
@@ -234,7 +239,12 @@ class MappingController extends AbstractActionController
                     'resourceName' => $resourceName,
                 ]);
             } else {
-                $this->messenger()->addError('There was an error during validation'); // @translate
+                $messages = $form->getMessages();
+                if (isset($messages['csrf'])) {
+                    $this->messenger()->addError('Invalid or missing CSRF token'); // @translate
+                } else {
+                    $this->messenger()->addError('There was an error during validation'); // @translate
+                }
             }
         }
 

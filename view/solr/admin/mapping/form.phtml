@@ -14,10 +14,10 @@ $this->headScript()->appendFile($this->assetUrl('js/solr-admin.js', 'Solr'));
     <button><?php echo $translate('Save'); ?></button>
 </div>
 <?php
-$source = $form->get('o:source');
-echo $this->formRow($source),
-    $this->formRow($form->get('o:field_name')),
-    $this->formCollection($form->get('o:settings'));
+echo $this->formRow($form->get('o:source'));
+echo $this->formRow($form->get('o:field_name'));
+echo $this->formCollection($form->get('o:settings'));
+echo $this->formRow($form->get('csrf'));
 
 $this->trigger('view.add.form.after');
 ?>
