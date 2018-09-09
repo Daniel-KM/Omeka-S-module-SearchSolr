@@ -2,19 +2,55 @@
 
 namespace Solr\Schema;
 
+use Omeka\Stdlib\Message;
+
 class Schema
 {
+    /**
+     * @var string
+     */
     protected $hostname;
+
+    /**
+     * @var string
+     */
     protected $port;
+
+    /**
+     * @var string
+     */
     protected $path;
 
+    /**
+     * @var array
+     */
     protected $schema;
+
+    /**
+     * @var array
+     */
     protected $fieldsByName;
+
+    /**
+     * @var array
+     */
     protected $dynamicFieldsMap;
+
+    /**
+     * @var array
+     */
     protected $typesByName;
 
+    /**
+     * @var array
+     */
     protected $fields = [];
 
+    /**
+     * @param string $hostname
+     * @param string $port
+     * @param string $path
+     */
     public function __construct($hostname, $port, $path)
     {
         $this->hostname = $hostname;
@@ -22,6 +58,11 @@ class Schema
         $this->path = $path;
     }
 
+    /**
+     * @throws \SolrServerException
+     * @throws \SolrClientException
+     * @return array
+     */
     public function getSchema()
     {
         if (!isset($this->schema)) {
@@ -29,11 +70,18 @@ class Schema
             try {
                 $contents = @file_get_contents($url);
                 if ($contents === false) {
-                    throw new \SolrServerException(sprintf('Solr is not available: check the server (%s).', $url)); // @translate
+                    throw new \SolrServerException(new Message(
+                        'Solr is not available: check the server (%s).', // @translate
+                        $url
+                    ));
                 }
             } catch (\SolrException $e) {
                 throw new \SolrClientException(
-                    sprintf('Solr is not available: check url %s to the schema (message: %s).', $url, $e->getMessage()), // @translate
+                    new Message(
+                        'Solr is not available: check url %s to the schema (message: %s).', // @translate
+                        $url,
+                        $e->getMessage()
+                    ),
                     $e->getCode(),
                     $e
                 );
@@ -46,11 +94,18 @@ class Schema
         return $this->schema;
     }
 
+    /**
+     * @param array $schema
+     */
     public function setSchema($schema)
     {
         $this->schema = $schema;
     }
 
+    /**
+     * @param string $name
+     * @return mixed
+     */
     public function getField($name)
     {
         if (!isset($this->fields[$name])) {
@@ -72,6 +127,9 @@ class Schema
         return $this->fields[$name];
     }
 
+    /**
+     * @return array
+     */
     public function getFieldsByName()
     {
         if (!isset($this->fieldsByName)) {
@@ -85,6 +143,10 @@ class Schema
         return $this->fieldsByName;
     }
 
+    /**
+     * @param string $name
+     * @return string
+     */
     public function getDynamicFieldFor($name)
     {
         $dynamicFieldsMap = $this->getDynamicFieldsMap();
@@ -115,6 +177,9 @@ class Schema
         }
     }
 
+    /**
+     * @return array
+     */
     public function getDynamicFieldsMap()
     {
         if (!isset($this->dynamicFieldsMap)) {
@@ -136,6 +201,10 @@ class Schema
         return $this->dynamicFieldsMap;
     }
 
+    /**
+     * @param string $name
+     * @return string
+     */
     public function getType($name)
     {
         $typesByName = $this->getTypesByName();
@@ -144,6 +213,9 @@ class Schema
         }
     }
 
+    /**
+     * @return array
+     */
     public function getTypesByName()
     {
         if (!isset($this->typesByName)) {

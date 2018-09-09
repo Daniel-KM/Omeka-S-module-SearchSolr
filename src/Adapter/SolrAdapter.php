@@ -93,6 +93,7 @@ class SolrAdapter extends AbstractAdapter
             return [];
         }
 
+        /** @var \Solr\Api\Representation\SolrNodeRepresentation $solrNode */
         $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();
         $schema = $solrNode->schema();
 

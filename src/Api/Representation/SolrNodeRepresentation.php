@@ -69,22 +69,34 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         return $url('admin/solr/node-id', $params, $options);
     }
 
+    /**
+     * @return string
+     */
     public function name()
     {
         return $this->resource->getName();
     }
 
+    /**
+     * @return array
+     */
     public function settings()
     {
         return $this->resource->getSettings();
     }
 
+    /**
+     * @return array
+     */
     public function clientSettings()
     {
         $settings = $this->settings();
         return (array) $settings['client'];
     }
 
+    /**
+     * @return string
+     */
     public function clientUrl()
     {
         $clientSettings = $this->clientSettings();
@@ -118,6 +130,11 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         return 'OK';
     }
 
+    /**
+     * @param string $action
+     * @param bool $canonical
+     * @return string
+     */
     public function mappingUrl($action = null, $canonical = false)
     {
         $url = $this->getViewHelper('Url');
@@ -128,10 +145,15 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         $options = [
             'force_canonical' => $canonical,
         ];
-
         return $url('admin/solr/node-id-mapping', $params, $options);
     }
 
+    /**
+     * @param string $resourceName
+     * @param string $action
+     * @param bool $canonical
+     * @return string
+     */
     public function resourceMappingUrl($resourceName, $action = null, $canonical = false)
     {
         $url = $this->getViewHelper('Url');
@@ -143,19 +165,17 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         $options = [
             'force_canonical' => $canonical,
         ];
-
         return $url('admin/solr/node-id-mapping-resource', $params, $options);
     }
 
     /**
      * Get the schema for the node.
      *
-     * @return Schema
+     * @return \Solr\Schema\Schema
      */
     public function schema()
     {
         $services = $this->getServiceLocator();
-
         return $services->build(Schema::class, ['solr_node' => $this]);
     }
 }

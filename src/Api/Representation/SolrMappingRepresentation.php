@@ -33,9 +33,6 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 
 class SolrMappingRepresentation extends AbstractEntityRepresentation
 {
-    /**
-     * {@inheritDoc}
-     */
     public function getJsonLdType()
     {
         return 'o:SolrMapping';
@@ -69,27 +66,42 @@ class SolrMappingRepresentation extends AbstractEntityRepresentation
         return $url('admin/solr/node-id-mapping-resource-id', $params, $options);
     }
 
+    /**
+     * @return \Solr\Api\Representation\SolrNodeRepresentation
+     */
     public function solrNode()
     {
         $solrNode = $this->resource->getSolrNode();
         return $this->getAdapter('solr_nodes')->getRepresentation($solrNode);
     }
 
+    /**
+     * @return string
+     */
     public function resourceName()
     {
         return $this->resource->getResourceName();
     }
 
+    /**
+     * @return string
+     */
     public function fieldName()
     {
         return $this->resource->getFieldName();
     }
 
+    /**
+     * @return string
+     */
     public function source()
     {
         return $this->resource->getSource();
     }
 
+    /**
+     * @return array
+     */
     public function settings()
     {
         return $this->resource->getSettings();
