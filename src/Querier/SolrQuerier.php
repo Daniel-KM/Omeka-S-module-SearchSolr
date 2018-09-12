@@ -268,9 +268,13 @@ class SolrQuerier extends AbstractQuerier
         $response->setTotalResults($solrResponse['grouped'][$resourceNameField]['matches']);
         foreach ($solrResponse['grouped'][$resourceNameField]['groups'] as $group) {
             $response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
-            foreach ($group['doclist']['docs'] as $doc) {
-                list(, $resourceId) = explode(':', $doc['id']);
-                $response->addResult($group['groupValue'], ['id' => $resourceId]);
+            // In some cases, numFound can be greater than 1 and docs empty,
+            // probably related to a config issue between items/item_sets.
+            if ($group['doclist']['docs']) {
+                foreach ($group['doclist']['docs'] as $doc) {
+                    list(, $resourceId) = explode(':', $doc['id']);
+                    $response->addResult($group['groupValue'], ['id' => $resourceId]);
+                }
             }
         }
 
