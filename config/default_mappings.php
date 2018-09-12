@@ -139,7 +139,7 @@ return [
     [
         'resource_name' => 'items',
         'field_name' => 'item_set_id_is',
-        'source' => 'item_set/id',
+        'source' => 'item_set/o:id',
         'settings' => ['formatter' => '', 'label' => 'Item set / Internal identifier'],
     ],
 

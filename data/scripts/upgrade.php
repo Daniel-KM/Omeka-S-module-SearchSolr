@@ -1,11 +1,24 @@
 <?php
 namespace Solr;
 
+/**
+ * @var Module $this
+ * @var \Zend\ServiceManager\ServiceLocatorInterface $serviceLocator
+ * @var string $oldVersion
+ * @var string $newVersion
+ */
 $services = $serviceLocator;
+
+/**
+ * @var \Omeka\Settings\Settings $settings
+ * @var \Doctrine\DBAL\Connection $connection
+ * @var \Omeka\Api\Manager $api
+ * @var array $config
+ */
 $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
+$api = $services->get('Omeka\ApiManager');
 $config = require dirname(dirname(__DIR__)) . '/config/module.config.php';
-$translator = $serviceLocator->get('MvcTranslator');
 
 if (version_compare($oldVersion, '0.1.1', '<')) {
     $sql = '
@@ -159,6 +172,17 @@ if (version_compare($oldVersion, '0.5.4', '<')) {
     $sql = <<<SQL
 UPDATE solr_node
 SET settings = CONCAT('{"is_public_field":"is_public_b",', SUBSTR(settings, 2))
+;
+SQL;
+    $connection->exec($sql);
+}
+
+if (version_compare($oldVersion, '3.5.7', '<')) {
+    // Replace "item_set/id" by "item_set/o:id" .
+    $sql = <<<SQL
+UPDATE `solr_mapping`
+SET `source` = 'item_set/o:id'
+WHERE `source` = 'item_set/id'
 ;
 SQL;
     $connection->exec($sql);
