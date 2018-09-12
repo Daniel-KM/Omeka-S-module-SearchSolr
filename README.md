@@ -173,6 +173,9 @@ sudo deluser --remove-home solr
 sudo deluser --group solr
 ```
 
+The config and the data located in `/var/solr/data` by default can be removed
+too.
+
 
 Solr management <a id="solr-management"></a>
 ---------------
