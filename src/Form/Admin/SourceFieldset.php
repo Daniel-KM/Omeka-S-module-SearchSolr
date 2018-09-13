@@ -8,7 +8,7 @@ use Zend\InputFilter\InputFilterProviderInterface;
 
 class SourceFieldset extends Fieldset implements InputFilterProviderInterface
 {
-    public function __construct($name = null, $options = array())
+    public function __construct($name = null, $options = [])
     {
         parent::__construct($name, $options);
         $this->init();
@@ -42,5 +42,4 @@ class SourceFieldset extends Fieldset implements InputFilterProviderInterface
             'set_sub' => ['required' => false],
         ];
     }
-
 }

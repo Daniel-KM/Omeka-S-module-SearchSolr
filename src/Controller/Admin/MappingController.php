@@ -432,7 +432,9 @@ class MappingController extends AbstractActionController
         return implode(
             '/',
             array_map(
-                function($v) { return $v['source']; },
+                function ($v) {
+                    return $v['source'];
+                },
                 $source
             )
         );
@@ -448,7 +450,9 @@ class MappingController extends AbstractActionController
     protected function sourceStringToArray($source)
     {
         return array_map(
-            function($v) { return ['source' => $v]; },
+            function ($v) {
+                return ['source' => $v];
+            },
             explode('/', $source)
         );
     }

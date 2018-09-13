@@ -42,9 +42,9 @@ class ItemSetValueExtractor implements ValueExtractorInterface
      */
     protected $api;
 
-   /**
-    * @var LoggerInterface Logger
-    */
+    /**
+     * @var LoggerInterface Logger
+     */
     protected $logger;
 
     /**

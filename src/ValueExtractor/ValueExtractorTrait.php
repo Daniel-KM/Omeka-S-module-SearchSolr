@@ -51,7 +51,7 @@ trait ValueExtractorTrait
         // $subProperty may be NULL.
         @list($property, $subProperty) = explode('/', $source, 2);
 
-        switch($property) {
+        switch ($property) {
             // If item_set or media have been used without sub-property.
             case '':
                 return [$representation->displayTitle()];

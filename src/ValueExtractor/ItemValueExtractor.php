@@ -49,9 +49,9 @@ class ItemValueExtractor implements ValueExtractorInterface
      */
     protected $baseFilepath;
 
-   /**
-    * @var LoggerInterface Logger
-    */
+    /**
+     * @var LoggerInterface Logger
+     */
     protected $logger;
 
     /**
