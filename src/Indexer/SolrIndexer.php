@@ -40,14 +40,48 @@ use SolrServerException;
 class SolrIndexer extends AbstractIndexer
 {
     /**
+     * @var SolrNodeRepresentation
+     */
+    protected $solrNode;
+
+    /**
      * @var SolrClient
      */
     protected $client;
 
     /**
-     * @var SolrNodeRepresentation
+     * @var \Omeka\Api\Manager
      */
-    protected $solrNode;
+    protected $api;
+
+    /**
+     * @var \Omeka\Api\Adapter\Manager
+     */
+    protected $apiAdapters;
+
+    /**
+     * @var \Doctrine\ORM\EntityManager $entityManager
+     */
+    protected $entityManager;
+
+    /**
+     * @var \Solr\ValueExtractor\Manager
+     */
+    protected $valueExtractorManager;
+
+    /**
+     * @var \Solr\ValueFormatter\Manager
+     */
+    protected $valueFormatterManager;
+
+    /**
+     * @var array Array of SolrMappingRepresentation by resource name.
+     */
+    protected $solrMappings;
+    /**
+     * @var int[]
+     */
+    protected $siteIds;
 
     public function canIndex($resourceName)
     {
@@ -55,7 +89,6 @@ class SolrIndexer extends AbstractIndexer
         $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
         /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
-
         return isset($valueExtractor);
     }
 
@@ -68,6 +101,9 @@ class SolrIndexer extends AbstractIndexer
 
     public function indexResource(Resource $resource)
     {
+        if (empty($this->api)) {
+            $this->init();
+        }
         $this->addResource($resource);
         $this->commit();
     }
@@ -76,6 +112,9 @@ class SolrIndexer extends AbstractIndexer
     {
         if (empty($resources)) {
             return;
+        }
+        if (empty($this->api)) {
+            $this->init();
         }
         foreach ($resources as $resource) {
             $this->addResource($resource);
@@ -90,6 +129,22 @@ class SolrIndexer extends AbstractIndexer
         $this->commit();
     }
 
+    /**
+     * Initialize the indexer.
+     *
+     * @todo Create/use a full service manager factory.
+     */
+    protected function init()
+    {
+        $services = $this->getServiceLocator();
+        $this->api = $services->get('Omeka\ApiManager');
+        $this->apiAdapters = $services->get('Omeka\ApiAdapterManager');
+        $this->entityManager = $services->get('Omeka\EntityManager');
+        $this->valueExtractorManager = $services->get('Solr\ValueExtractorManager');
+        $this->valueFormatterManager = $services->get('Solr\ValueFormatterManager');
+        $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();
+    }
+
     protected function getDocumentId($resourceName, $resourceId)
     {
         return sprintf('%s:%s', $resourceName, $resourceId);
@@ -97,25 +152,21 @@ class SolrIndexer extends AbstractIndexer
 
     protected function addResource(Resource $resource)
     {
-        // TODO Prepare the services one time outside of this method.
-        $services = $this->getServiceLocator();
-        $api = $services->get('Omeka\ApiManager');
-        $apiAdapters = $services->get('Omeka\ApiAdapterManager');
-        $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
-        $valueFormatterManager = $services->get('Solr\ValueFormatterManager');
-        $logger = $this->getLogger();
-
-        /** @var \Omeka\Api\Representation\AbstractResourceRepresentation $resource */
         $resourceName = $resource->getResourceName();
         $resourceId = $resource->getId();
-        $logger->info(sprintf('Indexing resource #%1$s (%2$s)', $resourceId, $resourceName));
-
-        $adapter = $apiAdapters->get($resourceName);
-        $resource = $adapter->getRepresentation($resource);
+        $this->getLogger()->info(sprintf('Indexing resource #%1$s (%2$s)', $resourceId, $resourceName));
 
         $client = $this->getClient();
         $solrNode = $this->getSolrNode();
         $solrNodeSettings = $solrNode->settings();
+        $solrMappings = $this->getSolrMappings($resourceName);
+        $schema = $solrNode->schema();
+        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
+        $valueExtractor = $this->valueExtractorManager->get($resourceName);
+
+        /** @var \Omeka\Api\Representation\AbstractResourceRepresentation $representation */
+        $adapter = $this->apiAdapters->get($resourceName);
+        $representation = $adapter->getRepresentation($resource);
 
         $document = new SolrInputDocument;
 
@@ -134,20 +185,19 @@ class SolrIndexer extends AbstractIndexer
         $sitesField = $solrNodeSettings['sites_field'];
         switch ($resourceName) {
             case 'items':
-                $sites = $api->search('sites')->getContent();
-                foreach ($sites as $site) {
-                    $query = ['id' => $resourceId, 'site_id' => $site->id()];
-                    $res = $api->search('items', $query)->getContent();
+                // There is no method to get the list of sites of an item.
+                foreach ($this->siteIds as $siteId) {
+                    $query = ['id' => $resourceId, 'site_id' => $siteId];
+                    $res = $this->api->search('items', $query, ['returnScalar' => 'id'])->getContent();
                     if (!empty($res)) {
-                        $document->addField($sitesField, $site->id());
+                        $document->addField($sitesField, $siteId);
                     }
                 }
                 break;
 
             case 'item_sets':
-                /** @var \Doctrine\ORM\EntityManager $entityManager */
-                $entityManager = $services->get('Omeka\EntityManager');
-                $qb = $entityManager->createQueryBuilder();
+                // There is no method to get the list of sites of an item set.
+                $qb = $this->entityManager->createQueryBuilder();
                 $qb->select('siteItemSet')
                     ->from(\Omeka\Entity\SiteItemSet::class, 'siteItemSet')
                     ->innerJoin('siteItemSet.itemSet', 'itemSet')
@@ -159,16 +209,6 @@ class SolrIndexer extends AbstractIndexer
                 break;
         }
 
-        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $solrMappings */
-        $solrMappings = $api->search('solr_mappings', [
-            'resource_name' => $resourceName,
-            'solr_node_id' => $solrNode->id(),
-        ])->getContent();
-
-        $schema = $solrNode->schema();
-
-        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
-        $valueExtractor = $valueExtractorManager->get($resourceName);
         foreach ($solrMappings as $solrMapping) {
             $solrField = $solrMapping->fieldName();
             $source = $solrMapping->source();
@@ -187,7 +227,7 @@ class SolrIndexer extends AbstractIndexer
                 continue;
             }
 
-            $values = $valueExtractor->extractValue($resource, $source);
+            $values = $valueExtractor->extractValue($representation, $source);
 
             if (!is_array($values)) {
                 $values = (array) $values;
@@ -200,11 +240,11 @@ class SolrIndexer extends AbstractIndexer
 
             $solrMappingSettings = $solrMapping->settings();
             $formatter = $solrMappingSettings['formatter'];
-            if ($formatter) {
-                $valueFormatter = $valueFormatterManager->get($formatter);
-            }
+            $valueFormatter = $formatter
+                ? $this->valueFormatterManager->get($formatter)
+                : null;
             foreach ($values as $value) {
-                if ($formatter && $valueFormatter) {
+                if ($valueFormatter) {
                     $value = $valueFormatter->format($value);
                 }
                 $document->addField($solrField, $value);
@@ -214,8 +254,8 @@ class SolrIndexer extends AbstractIndexer
         try {
             $client->addDocument($document);
         } catch (SolrServerException $e) {
-            $logger->err($e);
-            $logger->err(sprintf('Indexing of resource %s failed', $resourceId));
+            $this->getLogger()->err(sprintf('Indexing of resource %s failed', $resourceId));
+            $this->getLogger()->err($e);
         }
     }
 
@@ -225,15 +265,9 @@ class SolrIndexer extends AbstractIndexer
         $this->getClient()->commit();
     }
 
-    protected function getClient()
-    {
-        if (!isset($this->client)) {
-            $solrNode = $this->getSolrNode();
-            $this->client = new SolrClient($solrNode->clientSettings());
-        }
-        return $this->client;
-    }
-
+    /**
+     * @return \Solr\Api\Representation\SolrNodeRepresentation
+     */
     protected function getSolrNode()
     {
         if (!isset($this->solrNode)) {
@@ -243,7 +277,37 @@ class SolrIndexer extends AbstractIndexer
                 $this->solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
             }
         }
-
         return $this->solrNode;
+    }
+
+    /**
+     * @return SolrClient
+     */
+    protected function getClient()
+    {
+        if (!isset($this->client)) {
+            $solrNode = $this->getSolrNode();
+            $this->client = new SolrClient($solrNode->clientSettings());
+        }
+        return $this->client;
+    }
+
+    /**
+     * Get the solr mappings for a resource type.
+     *
+     * @param string $resourceName
+     * @return \Solr\Api\Representation\SolrMappingRepresentation[]
+     */
+    protected function getSolrMappings($resourceName)
+    {
+        if (!isset($this->solrMappings[$resourceName])) {
+            $solrNode = $this->getSolrNode();
+            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+            $this->solrMappings[$resourceName] = $api->search('solr_mappings', [
+                'resource_name' => $resourceName,
+                'solr_node_id' => $solrNode->id(),
+            ])->getContent();
+        }
+        return $this->solrMappings[$resourceName];
     }
 }
