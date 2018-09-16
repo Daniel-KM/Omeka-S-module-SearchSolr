@@ -130,14 +130,14 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'name' => 'sites_field',
             'type' => Element\Text::class,
             'options' => [
-                'label' => 'Sites field', // @translate
+                'label' => 'Site ids field', // @translate
                 'info' => $translator->translate('Name of Solr field that will contain the sites ids.')
                     . ' ' . $translator->translate('It must be a multi-valued, integer-based field (*_is).')
                     . ' ' . $translator->translate('If empty, the search will search inside all resources.')
                     . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation'),
             ],
             'attributes' => [
-                'required' => false,
+                'required' => true,
                 'placeholder' => 'site_id_is',
             ],
         ]);

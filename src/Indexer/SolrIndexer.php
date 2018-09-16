@@ -122,42 +122,41 @@ class SolrIndexer extends AbstractIndexer
         $id = $this->getDocumentId($resourceName, $resourceId);
         $document->addField('id', $id);
 
-        // Force the indexation of "is_public" even if not selected in mapping.
+        // Force the indexation of visibility, resource type and sites, even if
+        // not selected in mapping, because they are the base of Omeka.
+
         $isPublicField = $solrNodeSettings['is_public_field'];
         $document->addField($isPublicField, $resource->isPublic());
 
         $resourceNameField = $solrNodeSettings['resource_name_field'];
         $document->addField($resourceNameField, $resourceName);
 
-        // TODO To be removed and replaced by the standard mapping.
         $sitesField = $solrNodeSettings['sites_field'];
-        if ($sitesField) {
-            switch ($resourceName) {
-                case 'items':
-                    $sites = $api->search('sites')->getContent();
-                    foreach ($sites as $site) {
-                        $query = ['id' => $resourceId, 'site_id' => $site->id()];
-                        $res = $api->search('items', $query)->getContent();
-                        if (!empty($res)) {
-                            $document->addField($sitesField, $site->id());
-                        }
+        switch ($resourceName) {
+            case 'items':
+                $sites = $api->search('sites')->getContent();
+                foreach ($sites as $site) {
+                    $query = ['id' => $resourceId, 'site_id' => $site->id()];
+                    $res = $api->search('items', $query)->getContent();
+                    if (!empty($res)) {
+                        $document->addField($sitesField, $site->id());
                     }
-                    break;
+                }
+                break;
 
-                case 'item_sets':
-                    /** @var \Doctrine\ORM\EntityManager $entityManager */
-                    $entityManager = $services->get('Omeka\EntityManager');
-                    $qb = $entityManager->createQueryBuilder();
-                    $qb->select('siteItemSet')
-                        ->from(\Omeka\Entity\SiteItemSet::class, 'siteItemSet')
-                        ->innerJoin('siteItemSet.itemSet', 'itemSet')
-                        ->where($qb->expr()->eq('itemSet.id', $resourceId));
-                    $siteItemSets = $qb->getQuery()->getResult();
-                    foreach ($siteItemSets as $siteItemSet) {
-                        $document->addField($sitesField, $siteItemSet->getSite()->getId());
-                    }
-                    break;
-            }
+            case 'item_sets':
+                /** @var \Doctrine\ORM\EntityManager $entityManager */
+                $entityManager = $services->get('Omeka\EntityManager');
+                $qb = $entityManager->createQueryBuilder();
+                $qb->select('siteItemSet')
+                    ->from(\Omeka\Entity\SiteItemSet::class, 'siteItemSet')
+                    ->innerJoin('siteItemSet.itemSet', 'itemSet')
+                    ->where($qb->expr()->eq('itemSet.id', $resourceId));
+                $siteItemSets = $qb->getQuery()->getResult();
+                foreach ($siteItemSets as $siteItemSet) {
+                    $document->addField($sitesField, $siteItemSet->getSite()->getId());
+                }
+                break;
         }
 
         /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $solrMappings */
@@ -173,11 +172,21 @@ class SolrIndexer extends AbstractIndexer
         foreach ($solrMappings as $solrMapping) {
             $solrField = $solrMapping->fieldName();
             $source = $solrMapping->source();
-            // Index "is_public" one time only, except if the admin wants a
-            // different to store it in a different field.
+
+            // Index the required fields one time only except if the admin wants
+            // to store it in a different field too.
             if ($source === 'is_public' && $solrField === $isPublicField) {
                 continue;
             }
+            // The admin can‘t modify this parameter via the standard interface.
+            if ($source === 'resource_name' && $solrField === $sitesField) {
+                continue;
+            }
+            // The admin can‘t modify this parameter via the standard interface.
+            if ($source === 'site/o:id' && $solrField === $sitesField) {
+                continue;
+            }
+
             $values = $valueExtractor->extractValue($resource, $source);
 
             if (!is_array($values)) {
