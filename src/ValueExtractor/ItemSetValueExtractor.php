@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
+ * Copyright Daniel Berthereau 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -31,6 +32,7 @@ namespace Solr\ValueExtractor;
 
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
+use Omeka\Api\Representation\ItemSetRepresentation;
 use Zend\Log\LoggerInterface;
 
 class ItemSetValueExtractor implements ValueExtractorInterface
@@ -117,8 +119,11 @@ class ItemSetValueExtractor implements ValueExtractorInterface
             return $itemSet->isPublic();
         }
 
-        if ($field === 'is_open') {
-            return $itemSet->isOpen();
+        // See ItemValueExtractor::extractValue()
+        if (!$itemSet instanceof ItemSetRepresentation) {
+            if ($field === 'is_open') {
+                return $itemSet->isOpen();
+            }
         }
 
         if ($field === 'resource_class') {

@@ -48,41 +48,41 @@ trait ValueExtractorTrait
         AbstractResourceEntityRepresentation $representation,
         $source
     ) {
-        // $subProperty may be NULL.
-        @list($property, $subProperty) = explode('/', $source, 2);
+        // $subField may be NULL.
+        @list($field, $subField) = explode('/', $source, 2);
 
-        switch ($property) {
-            // If item_set or media have been used without sub-property.
+        switch ($field) {
+            // Item_set or media may have been set without field.
             case '':
                 return [$representation->displayTitle()];
 
             case 'o:id':
                 return [$representation->id()];
 
-            case 'media':
-                if (!$representation instanceof ItemRepresentation) {
-                    $this->logger->warn('Tried to get media of non item resource.'); // @translate
-                    return [];
-                }
-                return $this->extractMediaValue($representation, $subProperty);
-
             case 'item_set':
                 if (!$representation instanceof ItemRepresentation) {
                     $this->logger->warn('Tried to get item_set of non item resource.'); // @translate
                     return [];
                 }
-                return $this->extractItemSetValue($representation, $subProperty);
+                return $this->extractItemSetValue($representation, $subField);
+
+            case 'media':
+                if (!$representation instanceof ItemRepresentation) {
+                    $this->logger->warn('Tried to get media of non item resource.'); // @translate
+                    return [];
+                }
+                return $this->extractMediaValue($representation, $subField);
         }
 
         $extractedValues = [];
         /* @var ValueRepresentation[] $values */
-        $values = $representation->value($property, ['all' => true, 'default' => []]);
+        $values = $representation->value($field, ['all' => true, 'default' => []]);
         foreach ($values as $value) {
             // Manage standard types and special types from modules RdfDatatype,
             // CustomVocab, ValueSuggest, etc.
             $mainType = explode(':', $value->type())[0];
             if ($mainType === 'resource') {
-                $this->extractPropertyResourceValue($extractedValues, $value, $subProperty);
+                $this->extractPropertyResourceValue($extractedValues, $value, $subField);
             } else {
                 $extractedValues[] = (string) $value;
             }

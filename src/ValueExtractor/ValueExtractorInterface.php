@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
+ * Copyright Daniel Berthereau 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -33,7 +34,21 @@ use Omeka\Api\Representation\AbstractResourceRepresentation;
 
 interface ValueExtractorInterface
 {
+    /**
+     * @return string
+     */
     public function getLabel();
+
+    /**
+     * @return array Associative array of fields with field name as key and an
+     * associative array as value, with at least the label of the field.
+     */
     public function getAvailableFields();
+
+    /**
+     * @param AbstractResourceRepresentation $resource
+     * @param string $field
+     * @return mixed The value or a list of values.
+     */
     public function extractValue(AbstractResourceRepresentation $resource, $field);
 }

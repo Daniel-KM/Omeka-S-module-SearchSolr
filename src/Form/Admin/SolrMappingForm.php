@@ -169,6 +169,7 @@ class SolrMappingForm extends Form
         $valueExtractorManager = $this->getValueExtractorManager();
 
         $resourceName = $this->getOption('resource_name');
+        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
         if (!isset($valueExtractor)) {
             return null;

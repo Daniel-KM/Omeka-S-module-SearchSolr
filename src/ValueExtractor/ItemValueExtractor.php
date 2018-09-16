@@ -104,6 +104,16 @@ class ItemValueExtractor implements ValueExtractorInterface
             'resource_template' => [
                 'label' => 'Resource template', // @translate
             ],
+            'item_set' => [
+                'label' => 'Item set', // @translate
+            ],
+            'media' => [
+                'label' => 'Media', // @translate
+            ],
+            // TODO Move media content to subproperty of media only.
+            'content' => [
+                'label' => 'Media content (html or extracted text)', // @translate
+            ],
         ];
 
         $properties = $this->api->search('properties')->getContent();
@@ -111,16 +121,6 @@ class ItemValueExtractor implements ValueExtractorInterface
             $term = $property->term();
             $fields[$term]['label'] = $term;
         }
-
-        $fields['item_set'] = [
-            'label' => 'Item set',
-        ];
-        $fields['media'] = [
-            'label' => 'Media', // @translate
-        ];
-        $fields['content'] = [
-            'label' => 'Media html of text content', // @translate
-        ];
 
         return $fields;
     }
@@ -149,27 +149,21 @@ class ItemValueExtractor implements ValueExtractorInterface
             return $resourceTemplate ? $resourceTemplate->label() : null;
         }
 
-        $matches = [];
-        if (preg_match('~^media/(.*)|^media$~', $field, $matches)
-            || preg_match('~^item_set/(.*)|^item_set$~', $field, $matches)
-        ) {
-            // Don’t try to index item set or media if $resource is not an item.
-            $fieldName = $matches[0];
-            if (!$item instanceof ItemRepresentation) {
-                $this->logger->warn(sprintf(
-                    'Tried to get %s of non item resource.', // @translate
-                    $fieldName)
-                );
-                return [];
-            }
+        // TODO Clarify the use of this method for subfields (may be used by media? Only?).
 
-            // Process media or item set indexing with or without sub-property.
-            $subFieldName = $matches[1];
-            switch ($fieldName) {
-                case 'media':
-                    return $this->extractMediaValue($item, $subFieldName);
-                case 'item_set':
-                    return $this->extractItemSetValue($item, $subFieldName);
+        if ($item instanceof ItemRepresentation) {
+            $matches = [];
+            if (preg_match('~^media/(.*)|^media$~', $field, $matches)
+                || preg_match('~^item_set/(.*)|^item_set$~', $field, $matches)
+            ) {
+                $fieldName = $matches[0];
+                $subFieldName = $matches[1];
+                switch ($fieldName) {
+                    case 'media':
+                        return $this->extractMediaValue($item, $subFieldName);
+                    case 'item_set':
+                        return $this->extractItemSetValue($item, $subFieldName);
+                }
             }
         }
 
