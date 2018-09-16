@@ -101,9 +101,8 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Is public field', // @translate
-                'info' => $translator->translate('Name of Solr field that will be set when a resource is public.')
-                    . ' ' . $translator->translate('It must be a single-valued, boolean-based field (*_b).')
-                    . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation.'),
+                'info' => $translator->translate('Name of Solr field that will be set when a resource is public.') // @translate
+                    . ' ' . $translator->translate('It must be a single-valued, boolean-based field (*_b).'), // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -116,9 +115,8 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Resource name field', // @translate
-                'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).')
-                    . ' ' . $translator->translate('It must be a single-valued, string-based field (*_s).')
-                    . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation.'),
+                'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).') // @translate
+                    . ' ' . $translator->translate('It must be a single-valued, string-based field (*_s).'), // @translate
             ],
             'attributes' => [
                 'required' => true,
@@ -131,10 +129,8 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Site ids field', // @translate
-                'info' => $translator->translate('Name of Solr field that will contain the sites ids.')
-                    . ' ' . $translator->translate('It must be a multi-valued, integer-based field (*_is).')
-                    . ' ' . $translator->translate('If empty, the search will search inside all resources.')
-                    . ' ' . $translator->translate('WARNING: Changing this will require a complete reindexation'),
+                'info' => $translator->translate('Name of Solr field that will contain the sites ids.') // @translate
+                    . ' ' . $translator->translate('It must be a multi-valued, integer-based field (*_is).'), // @translate
             ],
             'attributes' => [
                 'required' => true,

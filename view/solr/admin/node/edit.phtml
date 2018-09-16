@@ -43,5 +43,7 @@ $form->prepare();
 <?php echo $this->formCollection($form, false); ?>
 <?php $this->trigger('view.edit.form.after'); ?>
 <?php echo $this->form()->closeTag(); ?>
-
+<p>
+<?php echo $translate('WARNING: Changing these values will require a complete reindexation.'); ?>
+</p>
 <?php $this->trigger('view.edit.after'); ?>

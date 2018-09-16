@@ -78,6 +78,7 @@ class NodeController extends AbstractActionController
         $data = $form->getData();
         $this->api()->create('solr_nodes', $data);
         $this->messenger()->addSuccess('Solr node created.'); // @translate
+        $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
         return $this->redirect()->toRoute('admin/solr');
     }
 
@@ -101,7 +102,7 @@ class NodeController extends AbstractActionController
         $this->api()->update('solr_nodes', $id, $formData);
 
         $this->messenger()->addSuccess('Solr node updated.'); // @translate
-        $this->messenger()->addWarning('Don’t forget to check search pages that use this node.'); // @translate
+        $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this node.'); // @translate
 
         return $this->redirect()->toRoute('admin/solr');
     }

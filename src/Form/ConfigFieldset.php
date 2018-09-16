@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,6 +30,7 @@
 
 namespace Solr\Form;
 
+use Zend\Form\Element;
 use Zend\Form\Fieldset;
 
 class ConfigFieldset extends Fieldset
@@ -39,9 +41,9 @@ class ConfigFieldset extends Fieldset
 
         $this->add([
             'name' => 'solr_node_id',
-            'type' => 'Select',
+            'type' => Element\Select::class,
             'options' => [
-                'label' => 'Solr node',
+                'label' => 'Solr node', // @translate
                 'value_options' => $this->getSolrNodesOptions(),
             ],
             'attributes' => [
