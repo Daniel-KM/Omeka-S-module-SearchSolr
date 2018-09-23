@@ -120,20 +120,22 @@ class MappingController extends AbstractActionController
             return $v->source();
         }, $mappings);
 
-        // Get all used properties of all vocabularies.
+        // Get all properties and all used properties of all vocabularies.
+        $properties = $api->search('properties')->getContent();
         $propertyIds = $this->connection
             ->query('SELECT DISTINCT property_id FROM value')
             ->fetchAll(\PDO::FETCH_COLUMN);
-        $properties = $api->search('properties')->getContent();
         // TODO Check hidden terms of the module HIdeProperties?
 
         // Add all missing mappings.
-        $total = 0;
+        $result = [];
         foreach ($properties as $property) {
+            // Skip property that are not used.
             if (!in_array($property->id(), $propertyIds)) {
                 continue;
             }
             $term = $property->term();
+            // Skip property that are already mapped.
             if (in_array($term, $mappings)) {
                 continue;
             }
@@ -146,13 +148,14 @@ class MappingController extends AbstractActionController
             $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
             $api->create('solr_mappings', $data);
 
-            ++$total;
+            $result[] = $term;
         }
 
-        if ($total) {
-            $this->messenger()->addSuccess(new Message('%d mappings successfully created.', $total)); // @translate
+        if ($result) {
+            $this->messenger()->addSuccess(new Message('%d mappings successfully created: "%s".', // @translate
+                count($result), implode('", "', $result)));
             $this->messenger()->addWarning('Check all new mappings and remove useless ones.'); // @translate
-            $this->messenger()->addNotice('Don‘t forget t o run the indexation of the node.'); // @translate
+            $this->messenger()->addNotice('Don‘t forget to run the indexation of the node.'); // @translate
         } else {
             $this->messenger()->addWarning('No new mappings added.'); // @translate
         }
@@ -185,7 +188,8 @@ class MappingController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_mappings', $data);
 
-                $this->messenger()->addSuccess('Solr mapping created.'); // @translate
+                $this->messenger()->addSuccess(new Message('Solr mapping created: %s.', // @translate
+                    $data['o:field_name']));
 
                 return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
                     'nodeId' => $solrNodeId,
@@ -236,7 +240,9 @@ class MappingController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->update('solr_mappings', $id, $data);
 
-                $this->messenger()->addSuccess('Solr mapping modified.'); // @translate
+                $this->messenger()->addSuccess(new Message('Solr mapping modified: %s.', // @translate
+                    $data['o:field_name']));
+
                 $this->messenger()->addWarning('Don’t forget to check search pages that use this mapping.'); // @translate
 
                 return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
