@@ -50,6 +50,12 @@ $escape = $this->plugin('escapeHtml');
         'action' => 'complete',
     ]); ?>
     <a class="button" href="<?php echo $completeUrl; ?>" title="<?php echo $translate('Add a text index to all missing and used properties.'); ?>"><?php echo $translate('Map all used properties'); ?></a>
+    <?php $cleanUrl = $this->url('admin/solr/node-id-mapping-resource', [
+        'nodeId' => $solrNode->id(),
+        'resourceName' => $resourceName,
+        'action' => 'clean',
+    ]); ?>
+    <a class="button" href="<?php echo $cleanUrl; ?>" title="<?php echo $translate('Remove mappings of properties that are not used.'); ?>"><?php echo $translate('Remove unused properties'); ?></a>
 </div>
 
 <nav class="breadcrumbs">

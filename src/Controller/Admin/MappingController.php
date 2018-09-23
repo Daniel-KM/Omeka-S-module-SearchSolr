@@ -166,6 +166,71 @@ class MappingController extends AbstractActionController
         ]);
     }
 
+    public function cleanAction()
+    {
+        $solrNodeId = $this->params('nodeId');
+        $resourceName = $this->params('resourceName');
+
+        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+
+        $api = $this->api();
+
+        // Get all existing indexed properties.
+        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $mappings */
+        $mappings = $api->search('solr_mappings', [
+            'solr_node_id' => $solrNode->id(),
+            'resource_name' => $resourceName,
+        ])->getContent();
+        // Map as associative array by mapping id and keep only the source.
+        $mappingList = [];
+        foreach ($mappings as $mapping) {
+            $mappingList[$mapping->id()] = $mapping->source();
+        }
+        $mappings = $mappingList;
+
+        // Get all properties and all used properties of all vocabularies.
+        $properties = $api->search('properties')->getContent();
+        $propertyIds = $this->connection
+            ->query('SELECT DISTINCT property_id FROM value')
+            ->fetchAll(\PDO::FETCH_COLUMN);
+        // TODO Check hidden terms of the module HIdeProperties?
+
+        // Add all missing mappings.
+        $result = [];
+        foreach ($properties as $property) {
+            // Skip property that are used.
+            if (in_array($property->id(), $propertyIds)) {
+                continue;
+            }
+            $term = $property->term();
+            // Skip property that are not mapped.
+            if (!in_array($term, $mappings)) {
+                continue;
+            }
+
+            // There may be multiple mappings with the same term.
+            $ids = array_keys(array_filter($mappings, function($v) use ($term) {
+                return $v === $term;
+            }));
+            $api->batchDelete('solr_mappings', $ids);
+
+            $result[] = $term;
+        }
+
+        if ($result) {
+            $this->messenger()->addSuccess(new Message('%d mappings successfully deleted: "%s".', // @translate
+                count($result), implode('", "', $result)));
+            $this->messenger()->addNotice('Don‘t forget to run the indexation of the node.'); // @translate
+        } else {
+            $this->messenger()->addWarning('No mappings deleted.'); // @translate
+        }
+
+        return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
+            'nodeId' => $solrNodeId,
+            'resourceName' => $resourceName,
+        ]);
+    }
+
     public function addAction()
     {
         $solrNodeId = $this->params('nodeId');
