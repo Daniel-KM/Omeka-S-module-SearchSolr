@@ -29,7 +29,13 @@
 ?>
 
 <?php
-/** @var \Zend\View\Renderer\PhpRenderer $this */
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var \Solr\Api\Representation\SolrNodeRepresentation $solrNode
+ * @var \Solr\Api\Representation\SolrMappingRepresentation[] $mappings
+ * @var string $resourceName
+ */
+
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 ?>
@@ -67,7 +73,7 @@ $escape = $this->plugin('escapeHtml');
     ?></span>
 </nav>
 
-<?php if (count($mappings) > 0): ?>
+<?php if (count($mappings)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>

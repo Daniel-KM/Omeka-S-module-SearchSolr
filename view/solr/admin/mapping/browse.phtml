@@ -29,7 +29,12 @@
 ?>
 
 <?php
-/** @var \Zend\View\Renderer\PhpRenderer $this */
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var \Solr\Api\Representation\SolrNodeRepresentation $solrNode
+ * @var \Solr\ValueExtractor\ValueExtractorInterface[] $valueExtractors
+ */
+
 $translate = $this->plugin('translate');
 ?>
 <?php $this->htmlElement('body')->appendAttribute('class', 'solr-mapping browse'); ?>
@@ -47,7 +52,7 @@ echo $this->pageTitle($pageTitle);
     </span>
 </nav>
 
-<?php if (count($valueExtractors) > 0): ?>
+<?php if (count($valueExtractors)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>

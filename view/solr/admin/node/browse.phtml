@@ -29,7 +29,11 @@
 ?>
 
 <?php
-/** @var \Zend\View\Renderer\PhpRenderer $this */
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var \Solr\Api\Representation\SolrNodeRepresentation $nodes
+ */
+
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 ?>
@@ -48,7 +52,7 @@ $escape = $this->plugin('escapeHtml');
     <span><?php echo $translate('Solr nodes'); ?></span>
 </nav>
 <h2><?php echo $translate('Nodes'); ?></h2>
-<?php if (count($nodes) > 0): ?>
+<?php if (count($nodes)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>

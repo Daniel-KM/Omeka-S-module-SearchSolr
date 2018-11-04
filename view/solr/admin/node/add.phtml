@@ -28,11 +28,14 @@
 ?>
 
 <?php
-/** @var \Zend\View\Renderer\PhpRenderer $this */
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var \Solr\Form\Admin\SolrNodeForm $form
+ */
+
 $translate = $this->plugin('translate');
 $form->prepare();
 ?>
-
 <?php echo $this->pageTitle($translate('Add Solr node')); ?>
 
 <?php echo $this->form()->openTag($form); ?>

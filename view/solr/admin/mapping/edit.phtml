@@ -29,7 +29,12 @@
 ?>
 
 <?php
-/** @var \Zend\View\Renderer\PhpRenderer $this */
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var \Solr\Api\Representation\SolrMappingRepresentation $mapping
+ * @var \Solr\Form\Admin\SolrMappingForm $form
+ */
+
 $translate = $this->plugin('translate');
 $this->htmlElement('body')->appendAttribute('class', 'solr-mapping create');
 ?>
