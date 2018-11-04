@@ -39,6 +39,13 @@ $form->prepare();
 <div id="page-actions">
     <button><?php echo $translate('Add'); ?></button>
 </div>
+<nav class="breadcrumbs">
+    <?php
+    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
+    echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr'));
+    ?>
+    <span><?php echo $translate('Add node'); ?></span>
+</nav>
 <?php echo $this->formCollection($form, false); ?>
 <?php $this->trigger('view.add.form.after'); ?>
 <?php echo $this->form()->closeTag(); ?>

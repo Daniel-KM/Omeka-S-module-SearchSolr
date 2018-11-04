@@ -40,11 +40,11 @@ echo $this->pageTitle($pageTitle);
 ?>
 
 <nav class="breadcrumbs">
-      <?php
-    echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr'));
-    ?><span><?php
-    echo sprintf($translate('Resources list for node "%s"'), $solrNode->name());
-    ?></span>
+    <?php echo $this->hyperlink($translate('Search'), $this->url('admin/search')); ?>
+    <?php echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr')); ?>
+    <span>
+    <?php echo sprintf($translate('Resources list for node "%s"'), $solrNode->name()); ?>
+    </span>
 </nav>
 
 <?php if (count($valueExtractors) > 0): ?>

@@ -41,6 +41,12 @@ $escape = $this->plugin('escapeHtml');
     <a class="button" href="<?php echo $this->url('admin/solr/node', ['action' => 'add']); ?>"><?php echo $translate('Add new node'); ?></a>
 </div>
 
+<nav class="breadcrumbs">
+    <?php
+    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
+    ?>
+    <span><?php echo $translate('Solr nodes'); ?></span>
+</nav>
 <h2><?php echo $translate('Nodes'); ?></h2>
 <?php if (count($nodes) > 0): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">

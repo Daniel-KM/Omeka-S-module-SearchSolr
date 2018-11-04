@@ -29,10 +29,10 @@ return [
     ],
     'controllers' => [
         'invokables' => [
-            'Solr\Controller\Admin\Node' => Controller\Admin\NodeController::class,
+            Controller\Admin\NodeController::class => Controller\Admin\NodeController::class,
         ],
         'factories' => [
-            'Solr\Controller\Admin\Mapping' => Service\Controller\MappingControllerFactory::class,
+            Controller\Admin\MappingController::class => Service\Controller\MappingControllerFactory::class,
         ],
     ],
     'service_manager' => [
@@ -44,12 +44,45 @@ return [
     ],
     'navigation' => [
         'AdminGlobal' => [
-            [
-                'label' => 'Solr', // @translate
-                'route' => 'admin/solr',
-                'resource' => 'Solr\Controller\Admin\Node',
+            'search' => [
+                // Copy of the first level of navigation from the config of the module Search.
+                // It avoids an error when Search is automatically disabled for upgrading. This errors occurs one time only anyway.
+                'label' => 'Search', // @translate
+                'route' => 'admin/search',
+                'resource' => \Search\Controller\Admin\IndexController::class,
                 'privilege' => 'browse',
                 'class' => 'o-icon-search',
+                'pages' => [
+                    [
+                        'label' => 'Solr', // @translate
+                        'route' => 'admin/solr',
+                        'resource' => Controller\Admin\NodeController::class,
+                        'privilege' => 'browse',
+                        // 'class' => 'o-icon-search',
+                        'pages' => [
+                            [
+                                'route' => 'admin/solr/node',
+                                'visible' => false,
+                            ],
+                            [
+                                'route' => 'admin/solr/node-id',
+                                'visible' => false,
+                            ],
+                            [
+                                'route' => 'admin/solr/node-id-mapping',
+                                'visible' => false,
+                            ],
+                            [
+                                'route' => 'admin/solr/node-id-mapping-resource',
+                                'visible' => false,
+                            ],
+                            [
+                                'route' => 'admin/solr/node-id-mapping-resource-id',
+                                'visible' => false,
+                            ],
+                        ],
+                    ],
+                ],
             ],
         ],
     ],
@@ -63,7 +96,7 @@ return [
                             'route' => '/solr',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                'controller' => 'Node',
+                                'controller' => Controller\Admin\NodeController::class,
                                 'action' => 'browse',
                             ],
                         ],
@@ -74,8 +107,6 @@ return [
                                 'options' => [
                                     'route' => '/node[/:action]',
                                     'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Node',
                                         'action' => 'browse',
                                     ],
                                 ],
@@ -88,8 +119,6 @@ return [
                                         'id' => '\d+',
                                     ],
                                     'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Node',
                                         'action' => 'show',
                                     ],
                                 ],
@@ -99,8 +128,7 @@ return [
                                 'options' => [
                                     'route' => '/node/:nodeId/mapping',
                                     'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Mapping',
+                                        'controller' => Controller\Admin\MappingController::class,
                                         'action' => 'browse',
                                     ],
                                 ],
@@ -110,8 +138,7 @@ return [
                                 'options' => [
                                     'route' => '/node/:nodeId/mapping/:resourceName[/:action]',
                                     'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Mapping',
+                                        'controller' => Controller\Admin\MappingController::class,
                                         'action' => 'browseResource',
                                     ],
                                 ],
@@ -124,8 +151,7 @@ return [
                                         'id' => '\d+',
                                     ],
                                     'defaults' => [
-                                        '__NAMESPACE__' => 'Solr\Controller\Admin',
-                                        'controller' => 'Mapping',
+                                        'controller' => Controller\Admin\MappingController::class,
                                         'action' => 'show',
                                     ],
                                 ],
