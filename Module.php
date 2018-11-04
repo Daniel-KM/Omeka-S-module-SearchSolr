@@ -42,6 +42,8 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class Module extends AbstractModule
 {
+    protected $dependency = 'Search';
+
     public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';
@@ -49,6 +51,9 @@ class Module extends AbstractModule
 
     public function init(ModuleManager $moduleManager)
     {
+        // No need to check the dependency upon Search here.
+        // Once disabled via onBootstrap(), thiis method is no more called.
+
         $event = $moduleManager->getEvent();
         $container = $event->getParam('ServiceManager');
         $serviceListener = $container->get('ServiceListener');
@@ -70,6 +75,16 @@ class Module extends AbstractModule
     public function onBootstrap(MvcEvent $event)
     {
         parent::onBootstrap($event);
+
+        // Manage the dependency upon Search, in particular when upgrading.
+        // This simple check is the quickest way to check the Search dependency.
+        // Once disabled, this current method and other ones are no more called.
+        $services = $event->getApplication()->getServiceManager();
+        if (!$this->isModuleActive($services, $this->dependency)) {
+            $this->disableModule($services, __NAMESPACE__);
+            return;
+        }
+
         $this->addAclRules();
     }
 
@@ -158,6 +173,39 @@ SQL;
         ServiceLocatorInterface $serviceLocator)
     {
         require_once 'data/scripts/upgrade.php';
+    }
+
+    /**
+     * Check if a module is active.
+     *
+     * @param ServiceLocatorInterface $services
+     * @param string $moduleClass
+     * @return bool
+     */
+    protected function isModuleActive(ServiceLocatorInterface $services, $moduleClass)
+    {
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $module = $moduleManager->getModule($moduleClass);
+        return $module
+            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
+    }
+
+    protected function disableModule(ServiceLocatorInterface $services, $moduleClass)
+    {
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $module = $moduleManager->getModule($moduleClass);
+        $moduleManager->deactivate($module);
+
+        $translator = $services->get('MvcTranslator');
+        $message = new \Omeka\Stdlib\Message(
+            $translator->translate('The module "%s" was automatically deactivated because the dependencies are unavailable.'), // @translate
+            $moduleClass
+        );
+        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+        $messenger->addWarning($message);
+
+        $logger = $services->get('Omeka\Logger');
+        $logger->warn($message);
     }
 
     /**
