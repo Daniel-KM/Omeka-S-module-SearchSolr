@@ -37,6 +37,7 @@ use Search\Response;
 use Solr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrClientException;
+use SolrDisMaxQuery;
 use SolrQuery;
 use SolrServerException;
 
@@ -62,12 +63,36 @@ class SolrQuerier extends AbstractQuerier
         $resourceNameField = $solrNodeSettings['resource_name_field'];
         $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
 
-        $solrQuery = new SolrQuery;
-        $q = $query->getQuery();
-        if (empty($q)) {
-            $q = '*:*';
+        $q = trim($query->getQuery());
+
+        $queryConfig = array_filter($solrNodeSettings['query']);
+        if ($queryConfig) {
+            $solrQuery = new SolrDisMaxQuery;
+            if (isset($queryConfig['query_alt'])) {
+                $solrQuery->setQueryAlt($queryConfig['query_alt']);
+            } elseif (!strlen($q)) {
+                // Kept to avoid a crash when there is no query or blank query,
+                // and no alternative query.
+                $q = '*:*';
+            }
+            if (strlen($q)) {
+                $solrQuery->setQuery($q);
+            }
+            if (isset($queryConfig['minimum_match'])) {
+                $solrQuery->setMinimumMatch($queryConfig['minimum_match']);
+            }
+            if (isset($queryConfig['tie_breaker'])) {
+                $solrQuery->setTieBreaker($queryConfig['tie_breaker']);
+            }
+        } else {
+            // Kept if the class SolrDisMaxQuery is not available.
+            $solrQuery = new SolrQuery;
+            // TODO Use the value of the user.
+            if (!strlen($q)) {
+                $q = '*:*';
+            }
+            $solrQuery->setQuery($q);
         }
-        $solrQuery->setQuery($q);
         $solrQuery->addField('id');
 
         $isPublic = $query->getIsPublic();

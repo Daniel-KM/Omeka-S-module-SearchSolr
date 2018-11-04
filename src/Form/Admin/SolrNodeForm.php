@@ -139,5 +139,69 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
         ]);
 
         $this->add($settingsFieldset);
+
+        $querySettingsFieldset = new Fieldset('query');
+
+        $querySettingsFieldset->add([
+            'name' => 'query_alt',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => 'Default query', // @translate
+                'info' => $translator->translate('This alternative query is used when the user does not query anything, allowing to choose a default result.') // @translate
+                    . ' ' . $translator->translate('If empty, the config of the solr node (solrconfig.xml) will be used.'), // @translate
+                'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#q-alt-parameter',
+            ],
+            'attributes' => [
+                'required' => false,
+                'value' => '',
+                'placeholder' => '*:*',
+            ],
+        ]);
+
+        $querySettingsFieldset->add([
+            'name' => 'minimum_match',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => 'Minimum match (or/and)', // @translate
+                'info' => $translator->translate('Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.') // @translate
+                . ' ' . $translator->translate('If empty, the config of the solr node (solrconfig.xml) will be used.'), // @translate
+                'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
+            ],
+            'attributes' => [
+                'required' => false,
+                'value' => '',
+                'placeholder' => '50%',
+            ],
+        ]);
+
+        $querySettingsFieldset->add([
+            'name' => 'tie_breaker',
+            'type' => Element\Number::class,
+            'options' => [
+                'label' => 'Tie breaker', // @translate
+                'info' => $translator->translate('Increase score according to the number of matched fields.') // @translate
+                    . ' ' . $translator->translate('If empty, the config of the solr node (solrconfig.xml) will be used.'), // @translate
+                'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
+            ],
+            'attributes' => [
+                'required' => false,
+                'value' => '',
+                'placeholder' => '0.10',
+                'inclusive' => true,
+                'min' => '0.0',
+                'max' => '1.0',
+                'step' => '0.01',
+            ],
+        ]);
+
+        // TODO Other fields (boost...) requires multiple fields. See https://secure.php.net/manual/en/class.solrdismaxquery.php.
+
+        $settingsFieldset->add($querySettingsFieldset);
+
+        $inputFilter = $this->getInputFilter([]);
+        $inputFilter->get('o:settings')->get('query')->add([
+            'name' => 'tie_breaker',
+            'required' => false,
+        ]);
     }
 }

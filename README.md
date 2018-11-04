@@ -41,6 +41,8 @@ Quick start
        list of mappings for Dublin Core elements too.
     2. Check if this node is working, or configure it correctly (host, port, and
        path of the Solr instance): the status should be `OK`.
+    3. This default node can be customized if needed, for example to force the
+       queries to be a "OR" query (default) or a "AND" query (more common).
 3. In Search admin
     1 . Create an index
         1. Add a new index with name `Default` or whatever you want, using the
@@ -78,7 +80,7 @@ the results as grid or as list. The page can be themed.
 
 **IMPORTANT**
 
-The Search module  does not replace the default search page neither the default
+The Search module does not replace the default search page neither the default
 search engine. So the theme should be updated.
 
 Don’t forget to check Search facets and sort fields of each search page each
