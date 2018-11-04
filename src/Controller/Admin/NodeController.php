@@ -31,6 +31,7 @@
 namespace Solr\Controller\Admin;
 
 use Omeka\Form\ConfirmForm;
+use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
 use Solr\Form\Admin\SolrNodeForm;
@@ -76,8 +77,8 @@ class NodeController extends AbstractActionController
         }
 
         $data = $form->getData();
-        $this->api()->create('solr_nodes', $data);
-        $this->messenger()->addSuccess('Solr node created.'); // @translate
+        $node = $this->api()->create('solr_nodes', $data)->getContent();
+        $this->messenger()->addSuccess(new Message('Solr node "%s" created.', $node->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
         return $this->redirect()->toRoute('admin/solr');
     }
@@ -85,6 +86,7 @@ class NodeController extends AbstractActionController
     public function editAction()
     {
         $id = $this->params('id');
+        /** @var \Solr\Api\Representation\SolrNodeRepresentation $node */
         $node = $this->api()->read('solr_nodes', $id)->getContent();
 
         $form = $this->getForm(SolrNodeForm::class);
@@ -101,7 +103,7 @@ class NodeController extends AbstractActionController
         $formData = $form->getData();
         $this->api()->update('solr_nodes', $id, $formData);
 
-        $this->messenger()->addSuccess('Solr node updated.'); // @translate
+        $this->messenger()->addSuccess(new Message('Solr node "%s" updated.', $node->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this node.'); // @translate
 
         return $this->redirect()->toRoute('admin/solr');
