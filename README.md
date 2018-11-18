@@ -170,7 +170,8 @@ sudo rm /etc/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm -r /opt/solr
 sudo rm -r /opt/solr-6.6.5
-sudo rm -r /var/solr
+# Only if you want to remove your indexes. WARNING: this will remove your configs too.
+# sudo rm -r /var/solr
 sudo deluser --remove-home solr
 sudo deluser --group solr
 ```
