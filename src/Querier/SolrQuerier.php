@@ -66,7 +66,7 @@ class SolrQuerier extends AbstractQuerier
         $q = trim($query->getQuery());
 
         $queryConfig = array_filter($solrNodeSettings['query']);
-        if ($queryConfig) {
+        if ($queryConfig && class_exists('SolrDisMaxQuery')) {
             $solrQuery = new SolrDisMaxQuery;
             if (isset($queryConfig['query_alt'])) {
                 $solrQuery->setQueryAlt($queryConfig['query_alt']);
