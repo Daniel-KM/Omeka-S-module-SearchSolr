@@ -77,7 +77,6 @@ class Module extends AbstractModule
         parent::onBootstrap($event);
 
         // Manage the dependency upon Search, in particular when upgrading.
-        // This simple check is the quickest way to check the Search dependency.
         // Once disabled, this current method and other ones are no more called.
         $services = $event->getApplication()->getServiceManager();
         if (!$this->isModuleActive($services, $this->dependency)) {
@@ -190,8 +189,19 @@ SQL;
             && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
     }
 
+    /**
+     * Disable a module.
+     *
+     * @param ServiceLocatorInterface $services
+     * @param string $moduleClass
+     */
     protected function disableModule(ServiceLocatorInterface $services, $moduleClass)
     {
+        // Check if the module is enabled first to avoid an exception.
+        if (!$this->isModuleActive($services, $moduleClass)) {
+            return;
+        }
+        /** @var \Omeka\Module\Manager $moduleManager */
         $moduleManager = $services->get('Omeka\ModuleManager');
         $module = $moduleManager->getModule($moduleClass);
         $moduleManager->deactivate($module);
