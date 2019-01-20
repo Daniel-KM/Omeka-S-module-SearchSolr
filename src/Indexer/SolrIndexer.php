@@ -75,6 +75,11 @@ class SolrIndexer extends AbstractIndexer
     protected $valueFormatterManager;
 
     /**
+     * @var array
+     */
+    protected $formatters = [];
+
+    /**
      * @var array Array of SolrMappingRepresentation by resource name.
      */
     protected $solrMappings;
@@ -238,30 +243,36 @@ class SolrIndexer extends AbstractIndexer
                 $values = array_slice($values, 0, 1);
             }
 
-            $solrMappingSettings = $solrMapping->settings();
-            $formatter = $solrMappingSettings['formatter'];
+            $formatter = $solrMapping->settings()['formatter'];
             $valueFormatter = $formatter
-                ? $this->valueFormatterManager->get($formatter)
+                ? isset($this->formatters[$formatter])
+                    ? $this->formatters[$formatter]
+                    : $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter)
                 : null;
-            foreach ($values as $value) {
-                if ($valueFormatter) {
+
+            if ($valueFormatter) {
+                foreach ($values as $value) {
                     $value = $valueFormatter->format($value);
+                    $document->addField($solrField, $value);
                 }
-                $document->addField($solrField, $value);
+            } else {
+                foreach ($values as $value) {
+                    $document->addField($solrField, $value);
+                }
             }
         }
 
         try {
             $client->addDocument($document);
         } catch (SolrServerException $e) {
-            $this->getLogger()->err(sprintf('Indexing of resource %s failed', $resourceId));
+            $this->getLogger()->err(sprintf('Indexing of resource %s failed', $resourceId)); // @translate
             $this->getLogger()->err($e);
         }
     }
 
     protected function commit()
     {
-        $this->getLogger()->info('Commit index in Solr.');
+        $this->getLogger()->info('Commit index in Solr.'); // @translate
         $this->getClient()->commit();
     }
 
