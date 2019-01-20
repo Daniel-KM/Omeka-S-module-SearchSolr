@@ -32,17 +32,11 @@ namespace Solr\Form\Admin;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
-use Zend\I18n\Translator\TranslatorAwareInterface;
-use Zend\I18n\Translator\TranslatorAwareTrait;
 
-class SolrNodeForm extends Form implements TranslatorAwareInterface
+class SolrNodeForm extends Form
 {
-    use TranslatorAwareTrait;
-
     public function init()
     {
-        $translator = $this->getTranslator();
-
         $this->add([
             'name' => 'o:name',
             'type' => Element\Text::class,
@@ -50,6 +44,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
                 'label' => 'Name', // @translate
             ],
             'attributes' => [
+                'id' => 'o-name',
                 'required' => true,
                 'placeholder' => 'omeka',
             ],
@@ -65,6 +60,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
                 'label' => 'Hostname', // @translate
             ],
             'attributes' => [
+                'id' => 'hostname',
                 'required' => true,
                 'placeholder' => 'localhost',
             ],
@@ -77,6 +73,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
                 'label' => 'Port', // @translate
             ],
             'attributes' => [
+                'id' => 'port',
                 'required' => true,
                 'placeholder' => '8983',
             ],
@@ -89,6 +86,7 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
                 'label' => 'Solr node path', // @translate
             ],
             'attributes' => [
+                'id' => 'path',
                 'required' => true,
                 'placeholder' => 'solr/omeka',
             ],
@@ -101,10 +99,11 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Is public field', // @translate
-                'info' => $translator->translate('Name of Solr field that will be set when a resource is public.') // @translate
-                    . ' ' . $translator->translate('It must be a single-valued, boolean-based field (*_b).'), // @translate
+                'info' => 'Name of Solr field that will be set when a resource is public.
+It must be a single-valued, boolean-based field (*_b).', // @translate
             ],
             'attributes' => [
+                'id' => 'is_public_field',
                 'required' => true,
                 'placeholder' => 'is_public_b',
             ],
@@ -115,10 +114,11 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Resource name field', // @translate
-                'info' => $translator->translate('Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).') // @translate
-                    . ' ' . $translator->translate('It must be a single-valued, string-based field (*_s).'), // @translate
+                'info' => 'Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).
+It must be a single-valued, string-based field (*_s).', // @translate
             ],
             'attributes' => [
+                'id' => 'resource_name_field',
                 'required' => true,
                 'placeholder' => 'resource_name_s',
             ],
@@ -129,10 +129,11 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Site ids field', // @translate
-                'info' => $translator->translate('Name of Solr field that will contain the sites ids.') // @translate
-                    . ' ' . $translator->translate('It must be a multi-valued, integer-based field (*_is).'), // @translate
+                'info' => 'Name of Solr field that will contain the sites ids.
+It must be a multi-valued, integer-based field (*_is).', // @translate
             ],
             'attributes' => [
+                'id' => 'sites_field',
                 'required' => true,
                 'placeholder' => 'site_id_is',
             ],
@@ -147,11 +148,12 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Default query', // @translate
-                'info' => $translator->translate('This alternative query is used when the user does not query anything, allowing to choose a default result.') // @translate
-                    . ' ' . $translator->translate('If empty, the config of the solr node (solrconfig.xml) will be used.'), // @translate
+                'info' => 'This alternative query is used when the user does not query anything, allowing to choose a default result.
+If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
                 'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#q-alt-parameter',
             ],
             'attributes' => [
+                'id' => 'query_alt',
                 'required' => false,
                 'value' => '',
                 'placeholder' => '*:*',
@@ -163,8 +165,8 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Minimum match (or/and)', // @translate
-                'info' => $translator->translate('Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.') // @translate
-                . ' ' . $translator->translate('If empty, the config of the solr node (solrconfig.xml) will be used.'), // @translate
+                'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
+If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
                 'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
             ],
             'attributes' => [
@@ -179,11 +181,12 @@ class SolrNodeForm extends Form implements TranslatorAwareInterface
             'type' => Element\Number::class,
             'options' => [
                 'label' => 'Tie breaker', // @translate
-                'info' => $translator->translate('Increase score according to the number of matched fields.') // @translate
-                    . ' ' . $translator->translate('If empty, the config of the solr node (solrconfig.xml) will be used.'), // @translate
+                'info' => 'Increase score according to the number of matched fields.
+If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
                 'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
             ],
             'attributes' => [
+                'id' => 'tie_breaker',
                 'required' => false,
                 'value' => '',
                 'placeholder' => '0.10',
