@@ -128,11 +128,11 @@ class ItemValueExtractor implements ValueExtractorInterface
     public function extractValue(AbstractResourceRepresentation $item, $field)
     {
         if ($field === 'created') {
-            return $item->created();
+            return $item->created()->format('Y-m-d H:i:s');
         }
 
         if ($field === 'modified') {
-            return $item->modified();
+            return $item->modified()->format('Y-m-d H:i:s');
         }
 
         if ($field === 'is_public') {

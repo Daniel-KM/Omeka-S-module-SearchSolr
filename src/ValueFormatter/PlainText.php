@@ -9,7 +9,7 @@ class PlainText implements ValueFormatterInterface
 {
     public function getLabel()
     {
-        return 'Plain text';
+        return 'Plain text'; // @translate
     }
 
     public function format($value)

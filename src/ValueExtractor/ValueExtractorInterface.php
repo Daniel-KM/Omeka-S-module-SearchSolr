@@ -48,7 +48,8 @@ interface ValueExtractorInterface
     /**
      * @param AbstractResourceRepresentation $resource
      * @param string $field
-     * @return mixed The value or a list of values.
+     * @return mixed|array A single value or list of values, that must be
+     * stringable.
      */
     public function extractValue(AbstractResourceRepresentation $resource, $field);
 }

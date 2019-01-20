@@ -234,8 +234,15 @@ class SolrIndexer extends AbstractIndexer
 
             $values = $valueExtractor->extractValue($representation, $source);
 
+            // Simplify the loop process for single or multiple values.
             if (!is_array($values)) {
-                $values = (array) $values;
+                $values = [$values];
+            }
+
+            // Skip null (no resource class...) and empty strings (error).
+            $values = array_filter($values, [$this, 'isNotNullAndNotEmptyString']);
+            if (empty($values)) {
+                continue;
             }
 
             $schemaField = $schema->getField($solrField);
@@ -270,6 +277,20 @@ class SolrIndexer extends AbstractIndexer
         }
     }
 
+    /**
+     * Check if a value is not null neither an empty string.
+     *
+     * @param mixed $value
+     * @return boolean
+     */
+    protected function isNotNullAndNotEmptyString($value)
+    {
+        return !is_null($value) && $value !== '';
+    }
+
+    /**
+     * Commit the prepared documents.
+     */
     protected function commit()
     {
         $this->getLogger()->info('Commit index in Solr.'); // @translate

@@ -33,7 +33,7 @@ class DateRange implements ValueFormatterInterface
 {
     public function getLabel()
     {
-        return 'Date range';
+        return 'Date range'; // @translate
     }
 
     public function format($value)
