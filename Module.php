@@ -88,6 +88,7 @@ class Module extends AbstractModule
 
     public function install(ServiceLocatorInterface $serviceLocator)
     {
+        $this->setServiceLocator($serviceLocator);
         $connection = $serviceLocator->get('Omeka\Connection');
 
         if (!extension_loaded('solr')) {
@@ -124,6 +125,7 @@ SQL;
 
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
+        $this->setServiceLocator($serviceLocator);
         $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
         $module = $moduleManager->getModule('Search');
         if ($module && in_array($module->getState(), [
