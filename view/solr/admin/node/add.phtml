@@ -53,4 +53,11 @@ $form->prepare();
 <?php $this->trigger('view.add.form.after'); ?>
 <?php echo $this->form()->closeTag(); ?>
 
+<?php if (!class_exists('SolrDisMaxQuery')): ?>
+<p>
+<?php $solrVersion = class_exists('SolrUtils') ? \SolrUtils::getSolrVersion() : $translate('[unknown]'); ?>
+<?php echo sprintf($translate('To use advanced query options, you need the php-solr library 2.1.0 or above (lastest recommended, current %s).'), $solrVersion); ?>
+</p>
+<?php endif; ?>
+
 <?php $this->trigger('view.add.after'); ?>

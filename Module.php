@@ -32,6 +32,8 @@ namespace Solr;
 
 use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
+use Omeka\Mvc\Controller\Plugin\Messenger;
+use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
 use Zend\EventManager\Event;
@@ -95,6 +97,17 @@ class Module extends AbstractModule
             $translator = $serviceLocator->get('MvcTranslator');
             $message = $translator->translate('Solr module requires PHP Solr extension, which is not loaded.');
             throw new ModuleCannotInstallException($message);
+        }
+
+        if (!class_exists('SolrDisMaxQuery')) {
+            $translator = $serviceLocator->get('MvcTranslator');
+            $solrVersion = class_exists('SolrUtils') ? \SolrUtils::getSolrVersion() : $translator->translate('[unknown]');
+            $message = new Message(
+                $translator->translate('To use advanced query options (and/or, distance max, etc.), Solr module requires PHP Solr library 2.1.0 or above (lastest recommended, current %s).'),
+                $solrVersion
+            );
+            $messenger = new Messenger();
+            $messenger->addWarning($message);
         }
 
         $this->execSqlFromFile(__DIR__ . '/data/install/schema.sql');
