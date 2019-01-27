@@ -184,6 +184,11 @@ return [
             'solr' => Service\Adapter\SolrAdapterFactory::class,
         ],
     ],
+    'solr' => [
+        'config' => [
+            'solr_bypass_certificate_check' => false,
+        ],
+    ],
     'solr_value_extractors' => [
         'factories' => [
             'items' => Service\ValueExtractor\ItemValueExtractorFactory::class,

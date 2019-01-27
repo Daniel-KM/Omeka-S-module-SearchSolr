@@ -162,6 +162,16 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
             return reset($messages);
         }
 
+        // Check if the config bypass certificate check.
+        if (!empty($clientSettings['secure'])) {
+            $services = $this->getServiceLocator();
+            if (!empty($services->get('Config')['solr']['config']['solr_bypass_certificate_check'])) {
+                $logger = $services->get('Omeka\Logger');
+                $logger->warn('Solr: the config bypasses the check of the certificate.'); // @translate
+                return 'OK (warning: check of certificate disabled)'; // @translate
+            }
+        }
+
         return 'OK'; // @translate
     }
 

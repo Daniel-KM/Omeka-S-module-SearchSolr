@@ -44,11 +44,36 @@ class SchemaFactory implements FactoryInterface
         $solrNode = $options['solr_node'];
 
         if (!isset($this->schemas[$solrNode->id()])) {
-            $this->schemas[$solrNode->id()] = new Schema(
-                $solrNode->clientUrl() . '/schema'
-            );
+            $schemaUrl = $solrNode->clientUrl() . '/schema';
+            $schema = new Schema($schemaUrl);
+            if (!empty($solrNode->clientSettings()['secure'])
+                && !empty($services->get('Config')['solr']['config']['solr_bypass_certificate_check'])
+            ) {
+                $this->setSchemaConfig($schema, $schemaUrl);
+            }
+            $this->schemas[$solrNode->id()] = $schema;
         }
 
         return $this->schemas[$solrNode->id()];
+    }
+
+    /**
+     * Set the schema directly in order to bypass certificate check.
+     *
+     * To bypass certificate check avoids only the expiration or incompletion
+     * issue, not the authentication. Nevertheless, it's not recommended for
+     * production.
+     *
+     * @param Schema $schema
+     * @param string $schemaUrl
+     */
+    protected function setSchemaConfig(Schema $schema, $schemaUrl)
+    {
+        $arrContextOptions = ['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]];
+        $contents = @file_get_contents($schemaUrl, false, stream_context_create($arrContextOptions));
+        if ($contents) {
+            $response = json_decode($contents, true);
+            $schema->setSchema($response['schema']);
+        }
     }
 }
