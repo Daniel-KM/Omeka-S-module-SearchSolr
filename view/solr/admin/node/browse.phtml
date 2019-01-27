@@ -68,9 +68,8 @@ $escape = $this->plugin('escapeHtml');
                         <span><?php echo $node->name(); ?></span>
                         <ul class="actions">
                             <li><?php
-                            $clientSettings = $node->clientSettings();
                             echo $this->hyperlink('',
-                                sprintf('//%s:%s/solr/#/%s', $clientSettings['hostname'], $clientSettings['port'], substr($clientSettings['path'], 5)),
+                                $node->clientUrlAdminBoard(),
                                 ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable'),]
                             );
                             ?></li>
@@ -100,7 +99,7 @@ $escape = $this->plugin('escapeHtml');
                             </li>
                         </ul>
                     </td>
-                    <td><?php echo $node->clientUrl(); ?></td>
+                    <td><?php echo $node->clientUrlAdmin(); ?></td>
                     <td><?php echo $node->status(); ?></td>
                 </tr>
             <?php endforeach; ?>

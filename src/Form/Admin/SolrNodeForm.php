@@ -57,7 +57,7 @@ class SolrNodeForm extends Form
             'name' => 'hostname',
             'type' => Element\Text::class,
             'options' => [
-                'label' => 'Hostname', // @translate
+                'label' => 'IP or hostname', // @translate
             ],
             'attributes' => [
                 'id' => 'hostname',
@@ -89,6 +89,44 @@ class SolrNodeForm extends Form
                 'id' => 'path',
                 'required' => true,
                 'placeholder' => 'solr/omeka',
+            ],
+        ]);
+
+        $clientSettingsFieldset->add([
+            'name' => 'secure',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Is secure', // @translate
+            ],
+            'attributes' => [
+                'id' => 'secure',
+            ],
+        ]);
+
+        $clientSettingsFieldset->add([
+            'name' => 'login',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => 'Solr login (if secured)', // @translate
+            ],
+            'attributes' => [
+                'id' => 'login',
+                'required' => false,
+                'placeholder' => 'admin@example.org',
+            ],
+        ]);
+
+        $clientSettingsFieldset->add([
+            'name' => 'password',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => 'Solr password (if secured)', // @translate
+                'info' => 'Note: the password is saved clear in the database, so it is recommended to create a specific user.', // @translate
+            ],
+            'attributes' => [
+                'id' => 'password',
+                'required' => false,
+                'placeholder' => '******',
             ],
         ]);
 

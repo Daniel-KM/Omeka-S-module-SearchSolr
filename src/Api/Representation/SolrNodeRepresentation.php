@@ -99,11 +99,34 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
      */
     public function clientUrl()
     {
-        $clientSettings = $this->clientSettings();
-        $hostname = $clientSettings['hostname'];
-        $port = $clientSettings['port'];
-        $path = $clientSettings['path'];
-        return sprintf('%s:%s/%s', $hostname, $port, $path);
+        $settings = $this->clientSettings();
+        $user = isset($settings['login']) ? $settings['login'] : '';
+        $pass = isset($settings['password']) ? ':' . $settings['password'] : '';
+        $pass = ($user || $pass) ? $pass . '@' : '';
+        return (empty($settings['secure']) ? 'http://' : 'https://')
+            . $user . $pass . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
+    }
+
+    /**
+     * Get the url to the node without credentials.
+     *
+     * @return string
+     */
+    public function clientUrlAdmin()
+    {
+        $settings = $this->clientSettings();
+        return (empty($settings['secure']) ? 'http://' : 'https://')
+            . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
+    }
+
+    /**
+     * @return string
+     */
+    public function clientUrlAdminBoard()
+    {
+        $settings = $this->clientSettings();
+        return (empty($settings['secure']) ? 'http://' : 'https://')
+            . $settings['hostname'] . ':' . $settings['port'] . '/solr/#/' . substr($settings['path'], 5);
     }
 
     /**
@@ -117,7 +140,8 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
             return new Message('Solr module requires PHP Solr extension, which is not loaded.'); // @translate
         }
 
-        $solrClient = new SolrClient($this->clientSettings());
+        $clientSettings = $this->clientSettings();
+        $solrClient = new SolrClient($clientSettings);
         try {
             @$solrClient->ping();
         } catch (SolrException $e) {
@@ -127,7 +151,18 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
             return reset($messages);
         }
 
-        return 'OK';
+        // Check the schema too, in particular when there are credentials, but
+        // the certificate is expired or incomplete.
+        try {
+            $this->schema()->getSchema();
+        } catch (SolrException $e) {
+            $logger = $this->getServiceLocator()->get('Omeka\Logger');
+            $logger->err($e);
+            $messages = explode("\n", $e->getMessage());
+            return reset($messages);
+        }
+
+        return 'OK'; // @translate
     }
 
     /**

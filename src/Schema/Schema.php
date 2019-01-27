@@ -9,17 +9,7 @@ class Schema
     /**
      * @var string
      */
-    protected $hostname;
-
-    /**
-     * @var string
-     */
-    protected $port;
-
-    /**
-     * @var string
-     */
-    protected $path;
+    protected $schemaUrl;
 
     /**
      * @var array
@@ -47,18 +37,18 @@ class Schema
     protected $fields = [];
 
     /**
-     * @param string $hostname
-     * @param string $port
-     * @param string $path
+     * @param string $schemaUrl
      */
-    public function __construct($hostname, $port, $path)
+    public function __construct($schemaUrl)
     {
-        $this->hostname = $hostname;
-        $this->port = $port;
-        $this->path = $path;
+        $this->schemaUrl = $schemaUrl;
     }
 
     /**
+     * Get the Solr node schema.
+     *
+     * There is no method in php-solr to get the schema, so do request via http/https.
+     *
      * @throws \SolrServerException
      * @throws \SolrClientException
      * @return array
@@ -66,29 +56,28 @@ class Schema
     public function getSchema()
     {
         if (!isset($this->schema)) {
-            $url = "http://{$this->hostname}:{$this->port}/{$this->path}/schema";
-            try {
-                $contents = @file_get_contents($url);
-                if ($contents === false) {
-                    throw new \SolrServerException(new Message(
-                        'Solr is not available: check the server (%s).', // @translate
+            $contents = @file_get_contents($this->schemaUrl);
+            if ($contents === false) {
+                // Remove the credentials of the url for the logs.
+                $parsed = parse_url($this->schemaUrl);
+                $credentials = isset($parsed['user']) ? substr($parsed['user'], 0, 1) . '***:***@' : '';
+                $url = $parsed['scheme'] . '://' . $credentials . $parsed['host'] . ':' . $parsed['port'] . $parsed['path'];
+                if ($credentials) {
+                    $message = new Message(
+                        'Solr node is not available. Check config or certificate to get Solr node schema "%s".', // @translate
                         $url
-                    ));
+                    );
+                } else {
+                    $message = new Message(
+                        'Solr node is not available. Check config to get Solr node schema "%s".', // @translate
+                        $url
+                    );
                 }
-            } catch (\SolrException $e) {
-                throw new \SolrClientException(
-                    new Message(
-                        'Solr is not available: check url %s to the schema (message: %s).', // @translate
-                        $url,
-                        $e->getMessage()
-                    ),
-                    $e->getCode(),
-                    $e
-                );
+                throw new \SolrServerException($message);
             }
 
             $response = json_decode($contents, true);
-            $this->schema = $response['schema'];
+            $this->setSchema($response['schema']);
         }
 
         return $this->schema;

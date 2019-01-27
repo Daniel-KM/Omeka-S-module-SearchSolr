@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2019
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -37,19 +38,17 @@ class SchemaFactory implements FactoryInterface
 {
     protected $schemas = [];
 
-    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $solr_node = $options['solr_node'];
+        /** @var \Solr\Api\Representation\SolrNodeRepresentation $solrNode */
+        $solrNode = $options['solr_node'];
 
-        if (!isset($this->schemas[$solr_node->id()])) {
-            $settings = $solr_node->clientSettings();
-            $this->schemas[$solr_node->id()] = new Schema(
-                $settings['hostname'],
-                $settings['port'],
-                $settings['path']
+        if (!isset($this->schemas[$solrNode->id()])) {
+            $this->schemas[$solrNode->id()] = new Schema(
+                $solrNode->clientUrl() . '/schema'
             );
         }
 
-        return $this->schemas[$solr_node->id()];
+        return $this->schemas[$solrNode->id()];
     }
 }

@@ -77,6 +77,8 @@ class NodeController extends AbstractActionController
         }
 
         $data = $form->getData();
+        // SolrClient requires a boolean for the option "secure".
+        $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $node = $this->api()->create('solr_nodes', $data)->getContent();
         $this->messenger()->addSuccess(new Message('Solr node "%s" created.', $node->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
@@ -100,8 +102,10 @@ class NodeController extends AbstractActionController
             return $view;
         }
 
-        $formData = $form->getData();
-        $this->api()->update('solr_nodes', $id, $formData);
+        $data = $form->getData();
+        // SolrClient requires a boolean for the option "secure".
+        $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
+        $this->api()->update('solr_nodes', $id, $data);
 
         $this->messenger()->addSuccess(new Message('Solr node "%s" updated.', $node->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this node.'); // @translate
