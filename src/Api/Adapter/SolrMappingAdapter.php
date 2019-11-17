@@ -78,22 +78,25 @@ class SolrMappingAdapter extends AbstractEntityAdapter
 
     public function buildQuery(QueryBuilder $qb, array $query)
     {
+        $isOldOmeka = \Omeka\Module::VERSION < 2;
+        $alias = $isOldOmeka ? $this->getEntityClass() : 'omeka_root';
         $expr = $qb->expr();
 
         if (isset($query['solr_node_id'])) {
-            $alias = $this->createAlias();
-            $qb->innerJoin(
-                $this->getEntityClass() . '.solrNode',
-                $alias
-            );
-            $qb->andWhere($expr->eq(
-                $alias . '.id',
-                $this->createNamedParameter($qb, $query['solr_node_id']))
-            );
+            $nodeAlias = $this->createAlias();
+            $qb
+                ->innerJoin(
+                    $alias . '.solrNode',
+                    $nodeAlias
+                )
+                ->andWhere($expr->eq(
+                    $nodeAlias . '.id',
+                    $this->createNamedParameter($qb, $query['solr_node_id']))
+                );
         }
         if (isset($query['resource_name'])) {
             $qb->andWhere($expr->eq(
-                $this->getEntityClass() . '.resourceName',
+                $alias . '.resourceName',
                 $this->createNamedParameter($qb, $query['resource_name'])
             ));
         }
