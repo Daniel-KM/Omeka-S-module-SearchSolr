@@ -217,6 +217,18 @@ If you have a special config, consult the [Solr documentation].
 
 After, an upgrade or any change in the config, go back to Omeka to reindex data.
 
+### Clean logs of Solr
+
+If you keep the default config of Solr, the logs are stored on the main file
+system and after some months or years, the file system may be filled. So change
+the config or add a cron to stop/clean/restart Solr.
+
+```sh
+sudo /opt/solr/bin/solr stop
+sudo rm /opt/solr/server/logs/solr-8983-console.log
+sudo /opt/solr/bin/solr start
+```
+
 
 Warning
 -------
