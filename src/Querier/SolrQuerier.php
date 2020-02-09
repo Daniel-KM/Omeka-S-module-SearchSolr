@@ -165,7 +165,46 @@ class SolrQuerier extends AbstractQuerier
             }
         }
 
-        $this->addFilterQueries($query);
+        // There are two way to add filter queries: multiple simple filters, or
+        // one complex filter query. A complex filter may be required when the
+        // joiners are mixed with "and" and "or".
+        // $this->addFilterQueries($query);
+        $filters = $query->getFilterQueries();
+        if ($filters) {
+            $first = true;
+            $fq = '';
+            foreach ($filters as $name => $values) {
+                foreach ($values as $value) {
+                    // There is no default in Omeka.
+                    // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+                    $type = $value['type'];
+                    $value = $this->encloseValue($value, $type);
+                    $joiner = @$value['joiner'] ?: 'and';
+                    switch ($type) {
+                        case 'neq':
+                        case 'nin':
+                            if ($first) {
+                                $fq .= "-$name:$value";
+                                $first = false;
+                            } else {
+                                // FIXME "Or" + "not contains" ?
+                                $fq .= $joiner === 'and' ? " -$name:$value" : " $name:$value";
+                            }
+                            break;
+                        case 'eq':
+                        case 'in':
+                            if ($first) {
+                                $fq .= "+$name:$value";
+                                $first = false;
+                            } else {
+                                $fq .= $joiner === 'and' ? " +$name:$value" : " $name:$value";
+                            }
+                            break;
+                    }
+                }
+            }
+            $solrQuery->addFilterQuery($fq);
+        }
 
         $sort = $query->getSort();
         if ($sort) {
