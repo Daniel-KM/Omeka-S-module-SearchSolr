@@ -1,8 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau 2020
+ * Copyright Daniel Berthereau, 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -30,16 +29,25 @@
 
 namespace Solr\ValueFormatter;
 
-interface ValueFormatterInterface
-{
-    /**
-     * @return string
-     */
-    public function getLabel();
+use \DateTime;
 
-    /**
-     * @param mixed $value
-     * @return string|null
-     */
-    public function format($value);
+class Date implements ValueFormatterInterface
+{
+    public function getLabel()
+    {
+        return 'Date'; // @translate
+    }
+
+    public function format($value)
+    {
+        if (strlen($value) < 20) {
+            $value = substr_replace('0000-01-01T00:00:00Z', $value, 0, strlen($value) - 20);
+        }
+        try {
+            $v = new DateTime($value);
+        } catch (\Exception $e) {
+            return null;
+        }
+        return $v->format('Y-m-d\TH:i:s\Z');
+    }
 }

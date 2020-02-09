@@ -130,11 +130,37 @@ class SolrQuerier extends AbstractQuerier
             }
         }
 
+        $normalizeDate = function ($value) {
+            if ($value) {
+                if (strlen($value) < 20) {
+                    $value = substr_replace('0000-01-01T00:00:00Z', $value, 0, strlen($value) - 20);
+                }
+                try {
+                    $value = new \DateTime($value);
+                    return $value->format('Y-m-d\TH:i:s\Z');
+                } catch (\Exception $e) {
+                }
+            }
+            return '*';
+        };
+
         $dateRangeFilters = $query->getDateRangeFilters();
         foreach ($dateRangeFilters as $name => $filterValues) {
+            // Normalize dates if needed.
+            $normalize = substr_compare($name, '_dt', -3) === 0
+                || substr_compare($name, '_dts', -4) === 0
+                || substr_compare($name, '_pdt', -4) === 0
+                || substr_compare($name, '_tdt', -4) === 0
+                || substr_compare($name, '_pdts', -5) === 0
+                || substr_compare($name, '_tdts', -5) === 0;
             foreach ($filterValues as $filterValue) {
-                $start = $filterValue['start'] ? $filterValue['start'] : '*';
-                $end = $filterValue['end'] ? $filterValue['end'] : '*';
+                if ($normalize) {
+                    $start = $normalizeDate($filterValue['start']);
+                    $end = $normalizeDate($filterValue['end']);
+                } else {
+                    $start = $filterValue['start'] ? $filterValue['start'] : '*';
+                    $end = $filterValue['end'] ? $filterValue['end'] : '*';
+                }
                 $solrQuery->addFilterQuery("$name:[$start TO $end]");
             }
         }

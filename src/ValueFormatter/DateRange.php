@@ -39,10 +39,13 @@ class DateRange implements ValueFormatterInterface
     public function format($value)
     {
         $matches = [];
+        // A range like 1914-1918 or 1914/1918.
         if (preg_match('|^\s*(\d+)\s*[-/]\s*(\d+)\s*$|', $value, $matches)) {
             $start = $matches[1];
             $end = $matches[2];
-        } elseif (preg_match('|^\s*(\d+)\s*$|', $value, $matches)) {
+        }
+        // A single year like 1914.
+        elseif (preg_match('|^\s*(\d+)\s*$|', $value, $matches)) {
             $start = $end = $matches[1];
         }
 

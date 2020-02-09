@@ -197,6 +197,7 @@ return [
     ],
     'solr_value_formatters' => [
         'invokables' => [
+            'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
             'plain_text' => ValueFormatter\PlainText::class,
         ],
