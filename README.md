@@ -19,7 +19,7 @@ See general end user documentation for [Installing a module].
 - [Solr PHP extension] (>= 2.0.0). It must be enabled for the CLI as well as the
   web server.
 - A running Apache Solr 5 or 6 instance. The module works with Solr 5.5.5
-  (Java [1.7 u55]) and Solr 6.6.5 (Java [1.8]), but not Solr 7.2.1 (indexing
+  (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]), but not Solr 7.2.1 (indexing
   works, not the search).  This instance can be installed on the same server
   than Omeka, or provided by another server, a virtual machine, or a cloud
   service.
@@ -94,17 +94,17 @@ item sets.
 Don’t forget to reindex the fields each time the Solr config is updated too.
 
 
-Solr install on Debian <a id="solr-install"></a>
-----------------------
+Solr install <a id="solr-install"></a>
+------------
 
 The packaged release of Solr on Debian is obsolete (3.6.2), so it should be
 installed via the original sources. If you have a build or a development server,
 it’s recommended to create a Solr package outside of the server and to install
-it via `dpkg`.
+it via `dpkg`. The process is the same  for Red Hat and derivatives.
 
 ### Install Solr
 
-The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.5 (Java [1.8]), but
+The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]), but
 not Solr 7.2.1 (indexing works, not the search).
 
 ```bash
@@ -115,35 +115,19 @@ java -version
 #sudo apt install default-jre
 # The certificate is currently obsolete on Apache server, so don’t check it.
 # To install another version, just change all next version numbers below.
-wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.5/solr-6.6.5.tgz
+wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
 # Extract the install script
-tar zxvf solr-6.6.5.tgz solr-6.6.5/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-6.6.6.tgz solr-6.6.6/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-6.6.5.tgz
+sudo bash ./install_solr_service.sh solr-6.6.6.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-6.6.5 /opt/solr
-# Clean the sources.sudo bash ./install_solr_service.sh solr-6.6.5.tgz
-rm solr-6.6.5.tgz
+#sudo ln -s /opt/solr-6.6.6 /opt/solr
+# Clean the sources.sudo bash ./install_solr_service.sh solr-6.6.6.tgz
+rm solr-6.6.6.tgz
 rm install_solr_service.sh
 ```
 
-### Upgrade Solr
-
-Before upgrade, you should backup the folder `/var/solr` if you want to upgrade
-a previous config:
-
-```bash
-cd /opt
-java -version
-#sudo apt install default-jre
-wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.5/solr-6.6.5.tgz
-tar zxvf solr-6.6.5.tgz solr-6.6.5/bin/install_solr_service.sh --strip-components=2
-# The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-6.6.5.tgz -f
-rm solr-6.6.5.tgz
-rm install_solr_service.sh
-# See below to upgrade the indexes.
-```
+### Integration in the system
 
 Solr may be managed as a system service:
 
@@ -157,6 +141,86 @@ Solr is automatically launched and available in your browser at [http://localhos
 
 Solr is available via command line too at `/opt/solr/bin/solr`.
 
+If the service is not available after the install, you can create the file "/etc/systemd/system/solr.service",
+that may need to be adapted for the distribution, here for Centos 8 (see the [solr service gist]):
+
+```ini
+# put this file in /etc/systemd/system/ as root
+# below paths assume solr installed in /opt/solr, SOLR_PID_DIR is /data
+# and that all configuration exists in /etc/default/solr.in.sh which is the case if previously installed as an init.d service
+# change port in pid file if differs
+# note that it is configured to auto restart solr if it fails (Restart=on-faliure) and that's the motivation indeed :)
+# to switch from systemv (init.d) to systemd, do the following after creating this file:
+# sudo systemctl daemon-reload
+# sudo service solr stop # if already running
+# sudo systemctl enable solr
+# systemctl start solr
+# this was inspired by https://confluence.t5.fi/display/~stefan.roos/2015/04/01/Creating+systemd+unit+(service)+for+Apache+Solr
+[Unit]
+Description=Apache SOLR
+ConditionPathExists=/opt/solr
+After=syslog.target network.target remote-fs.target nss-lookup.target systemd-journald-dev-log.socket
+Before=multi-user.target
+Conflicts=shutdown.target
+StartLimitIntervalSec=60
+
+[Service]
+User=solr
+LimitNOFILE=1048576
+LimitNPROC=1048576
+PIDFile=/var/solr/solr-8983.pid
+Environment=SOLR_INCLUDE=/etc/default/solr.in.sh
+Environment=RUNAS=solr
+Environment=SOLR_INSTALL_DIR=/opt/solr
+
+Restart=on-failure
+RestartSec=5
+
+ExecStart=/opt/solr/bin/solr start
+ExecStop=/opt/solr/bin/solr stop
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Note: In some Red Hat derivatives, the extension php-solr is not available and
+you may  need to create a link. For example if you use the package "php72-php-pecl-solr2-2.5.0-1.el8.remi.x86_64"
+for Centos 8, you should add these links:
+
+```sh
+sudo ln -s /etc/opt/remi/php72/php.d/50-solr.ini /etc/php.d/50-solr.ini
+sudo ln -s /opt/remi/php72/root/usr/lib64/php/modules/solr.so /usr/lib64/php/modules/solr.so
+# And restart services.
+sudo systemctl restart php-fpm
+sudo systemctl restart httpd
+```
+
+### Protect access to Solr
+
+You may need some more commands to protect install. Check the default port 8983.
+The simpler solution is to close this port with your firewall. Else, you may
+need to add a user control to the admin board. Search on your not-favorite
+search engine to add such a protection.
+
+### Upgrade Solr
+
+Before upgrade, you should backup the folder `/var/solr` if you want to upgrade
+a previous config:
+
+```bash
+cd /opt
+java -version
+#sudo apt install default-jre
+wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
+tar zxvf solr-6.6.6.tgz solr-6.6.6/bin/install_solr_service.sh --strip-components=2
+# The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
+sudo bash ./install_solr_service.sh solr-6.6.6.tgz -f
+rm solr-6.6.6.tgz
+rm install_solr_service.sh
+# See below to upgrade the indexes.
+```
+
 ### Uninstall Solr
 
 When Solr is installed manually, there is no automatic uninstallation process.
@@ -169,7 +233,7 @@ sudo update-rc.d -f solr remove
 sudo rm /etc/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-6.6.5
+sudo rm -r /opt/solr-6.6.6
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -277,22 +341,13 @@ The fact that you are presently reading this means that you have had knowledge
 of the CeCILL license and that you accept its terms.
 
 
-Contact
--------
-
-Current maintainers of the module:
-
-* BibLibre (see [BibLibre])
-* Daniel Berthereau (see [Daniel-KM])
-
-
 Copyright
 ---------
 
 See commits for full list of contributors.
 
-* Copyright BibLibre, 2016-2017
-* Copyright Daniel Berthereau, 2017-2018
+* Copyright BibLibre, 2016-2017 (see [BibLibre])
+* Copyright Daniel Berthereau, 2017-2020 (see [Daniel-KM])
 * Copyright Paul Sarrassat, 2018
 
 
@@ -310,6 +365,7 @@ See commits for full list of contributors.
 [1.7 u55]: https://lucene.apache.org/solr/5_5_5/SYSTEM_REQUIREMENTS.html
 [http://localhost:8983]: http://localhost:8983
 [http://localhost:8983/solr/#/omeka]: http://localhost:8983/solr/#/omeka
+[solr service gist]: https://gist.github.com/Daniel-KM/1fb475a47340d7945fa6c47c945707d0
 [Solr documentation]: https://lucene.apache.org/solr/resources.html
 [module issues]: https://github.com/BibLibre/Omeka-S-module-Solr/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
