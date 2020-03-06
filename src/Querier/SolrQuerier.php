@@ -186,7 +186,7 @@ class SolrQuerier extends AbstractQuerier
         $this->solrQuery->addGroupField($resourceNameField);
 
         $resources = $this->query->getResources();
-        $fq = $resourceNameField . ':' . implode(' OR ', $resources);
+        $fq = $resourceNameField . ':(' . implode(' OR ', $resources) . ')';
         $this->solrQuery->addFilterQuery($fq);
 
         if ($sitesField) {
