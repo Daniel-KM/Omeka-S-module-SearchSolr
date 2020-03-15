@@ -44,6 +44,21 @@ use SolrServerException;
 class SolrQuerier extends AbstractQuerier
 {
     /**
+     * @var Query
+     */
+    protected $query;
+
+    /**
+     * @var Response
+     */
+    protected $response;
+
+    /**
+     * @var SolrQuery
+     */
+    protected $solrQuery;
+
+    /**
      * @var \SolrClient
      */
     protected $client;
@@ -55,63 +70,37 @@ class SolrQuerier extends AbstractQuerier
 
     public function query(Query $query)
     {
-        $client = $this->getClient();
+        $this->query = $query;
+        $this->response = new Response;
 
-        $solrNode = $this->getSolrNode();
-        $solrNodeSettings = $solrNode->settings();
+        $this->init();
+
+        $solrNodeSettings = $this->solrNode->settings();
         $isPublicField = $solrNodeSettings['is_public_field'];
         $resourceNameField = $solrNodeSettings['resource_name_field'];
         $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
 
-        $q = trim($query->getQuery());
+        $this->mainQuery();
 
-        $queryConfig = array_filter($solrNodeSettings['query']);
-        if ($queryConfig && class_exists('SolrDisMaxQuery')) {
-            $solrQuery = new SolrDisMaxQuery;
-            if (isset($queryConfig['query_alt'])) {
-                $solrQuery->setQueryAlt($queryConfig['query_alt']);
-            } elseif (!strlen($q)) {
-                // Kept to avoid a crash when there is no query or blank query,
-                // and no alternative query.
-                $q = '*:*';
-            }
-            if (strlen($q)) {
-                $solrQuery->setQuery($q);
-            }
-            if (isset($queryConfig['minimum_match'])) {
-                $solrQuery->setMinimumMatch($queryConfig['minimum_match']);
-            }
-            if (isset($queryConfig['tie_breaker'])) {
-                $solrQuery->setTieBreaker($queryConfig['tie_breaker']);
-            }
-        } else {
-            // Kept if the class SolrDisMaxQuery is not available.
-            $solrQuery = new SolrQuery;
-            // TODO Use the value of the user.
-            if (!strlen($q)) {
-                $q = '*:*';
-            }
-            $solrQuery->setQuery($q);
-        }
-        $solrQuery->addField('id');
+        $this->solrQuery->addField('id');
 
         $isPublic = $query->getIsPublic();
         if ($isPublic) {
-            $solrQuery->addFilterQuery($isPublicField . ':' . 1);
+            $this->solrQuery->addFilterQuery($isPublicField . ':' . 1);
         }
 
-        $solrQuery->setGroup(true);
-        $solrQuery->addGroupField($resourceNameField);
+        $this->solrQuery->setGroup(true);
+        $this->solrQuery->addGroupField($resourceNameField);
 
         $resources = $query->getResources();
         $fq = $resourceNameField . ':' . implode(' OR ', $resources);
-        $solrQuery->addFilterQuery($fq);
+        $this->solrQuery->addFilterQuery($fq);
 
         if ($sitesField) {
             $siteId = $query->getSiteId();
             if (isset($siteId)) {
                 $fq = $sitesField . ':' . $siteId;
-                $solrQuery->addFilterQuery($fq);
+                $this->solrQuery->addFilterQuery($fq);
             }
         }
 
@@ -126,7 +115,7 @@ class SolrQuerier extends AbstractQuerier
                 } else {
                     $value = $this->enclose($value);
                 }
-                $solrQuery->addFilterQuery("$name:$value");
+                $this->solrQuery->addFilterQuery("$name:$value");
             }
         }
 
@@ -161,50 +150,11 @@ class SolrQuerier extends AbstractQuerier
                     $start = $filterValue['start'] ? $filterValue['start'] : '*';
                     $end = $filterValue['end'] ? $filterValue['end'] : '*';
                 }
-                $solrQuery->addFilterQuery("$name:[$start TO $end]");
+                $this->solrQuery->addFilterQuery("$name:[$start TO $end]");
             }
         }
 
-        // There are two way to add filter queries: multiple simple filters, or
-        // one complex filter query. A complex filter may be required when the
-        // joiners are mixed with "and" and "or".
-        // $this->addFilterQueries($query);
-        $filters = $query->getFilterQueries();
-        if ($filters) {
-            $first = true;
-            $fq = '';
-            foreach ($filters as $name => $values) {
-                foreach ($values as $value) {
-                    // There is no default in Omeka.
-                    // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
-                    $type = $value['type'];
-                    $value = $this->encloseValue($value, $type);
-                    $joiner = @$value['joiner'] ?: 'and';
-                    switch ($type) {
-                        case 'neq':
-                        case 'nin':
-                            if ($first) {
-                                $fq .= "-$name:$value";
-                                $first = false;
-                            } else {
-                                // FIXME "Or" + "not contains" ?
-                                $fq .= $joiner === 'and' ? " -$name:$value" : " $name:$value";
-                            }
-                            break;
-                        case 'eq':
-                        case 'in':
-                            if ($first) {
-                                $fq .= "+$name:$value";
-                                $first = false;
-                            } else {
-                                $fq .= $joiner === 'and' ? " +$name:$value" : " $name:$value";
-                            }
-                            break;
-                    }
-                }
-            }
-            $solrQuery->addFilterQuery($fq);
-        }
+        $this->addFilterQueries();
 
         $sort = $query->getSort();
         if ($sort) {
@@ -214,34 +164,34 @@ class SolrQuerier extends AbstractQuerier
             } else {
                 $sortOrder = $sortOrder === 'desc' ? SolrQuery::ORDER_DESC : SolrQuery::ORDER_ASC;
             }
-            $solrQuery->addSortField($sortField, $sortOrder);
+            $this->solrQuery->addSortField($sortField, $sortOrder);
         }
 
         $limit = $query->getLimit();
         if ($limit) {
-            $solrQuery->setGroupLimit($limit);
+            $this->solrQuery->setGroupLimit($limit);
         }
 
         $offset = $query->getOffset();
         if ($offset) {
-            $solrQuery->setGroupOffset($offset);
+            $this->solrQuery->setGroupOffset($offset);
         }
 
         $facetFields = $query->getFacetFields();
         if (count($facetFields)) {
-            $solrQuery->setFacet(true);
+            $this->solrQuery->setFacet(true);
             foreach ($facetFields as $facetField) {
-                $solrQuery->addFacetField($facetField);
+                $this->solrQuery->addFacetField($facetField);
             }
         }
 
         $facetLimit = $query->getFacetLimit();
         if ($facetLimit) {
-            $solrQuery->setFacetLimit($facetLimit);
+            $this->solrQuery->setFacetLimit($facetLimit);
         }
 
         try {
-            $solrQueryResponse = $client->query($solrQuery);
+            $solrQueryResponse = $this->solrClient->query($this->solrQuery);
         } catch (SolrServerException $e) {
             // The query may be badly formatted, so try to escape all reserved
             // characters instead of returning an exception.
@@ -268,10 +218,11 @@ class SolrQuerier extends AbstractQuerier
                 '?' => '\?',
                 ':' => '\:',
             ];
+            $q = $this->query->getQuery();
             $escapedQ = str_replace(array_keys($reservedCharacters), array_values($reservedCharacters), $q);
-            $solrQuery->setQuery($escapedQ);
+            $this->solrQuery->setQuery($escapedQ);
             try {
-                $solrQueryResponse = $client->query($solrQuery);
+                $solrQueryResponse = $this->solrClient->query($this->solrQuery);
             } catch (SolrServerException $e) {
                 throw new QuerierException($e->getMessage(), $e->getCode(), $e);
             }
@@ -280,16 +231,15 @@ class SolrQuerier extends AbstractQuerier
         }
         $solrResponse = $solrQueryResponse->getResponse();
 
-        $response = new Response;
-        $response->setTotalResults($solrResponse['grouped'][$resourceNameField]['matches']);
+        $this->response->setTotalResults($solrResponse['grouped'][$resourceNameField]['matches']);
         foreach ($solrResponse['grouped'][$resourceNameField]['groups'] as $group) {
-            $response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
+            $this->response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
             // In some cases, numFound can be greater than 1 and docs empty,
             // probably related to a config issue between items/item_sets.
             if ($group['doclist']['docs']) {
                 foreach ($group['doclist']['docs'] as $doc) {
                     list(, $resourceId) = explode(':', $doc['id']);
-                    $response->addResult($group['groupValue'], ['id' => $resourceId]);
+                    $this->response->addResult($group['groupValue'], ['id' => $resourceId]);
                 }
             }
         }
@@ -298,18 +248,104 @@ class SolrQuerier extends AbstractQuerier
             foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
                 foreach ($values as $value => $count) {
                     if ($count > 0) {
-                        $response->addFacetCount($name, $value, $count);
+                        $this->response->addFacetCount($name, $value, $count);
                     }
                 }
             }
         }
 
-        return $response;
+        return $this->response;
     }
 
-    protected function addFilterQueries(SolrQuery $solrQuery, Query $query)
+    protected function mainQuery()
     {
-        $filters = $query->getFilterQueries();
+        $q = $this->query->getQuery();
+
+        $solrNodeSettings = $this->solrNode->settings();
+        $queryConfig = array_filter($solrNodeSettings['query']);
+        if ($queryConfig && class_exists('SolrDisMaxQuery')) {
+            $this->solrQuery = new SolrDisMaxQuery;
+            if (isset($queryConfig['query_alt'])) {
+                $this->solrQuery->setQueryAlt($queryConfig['query_alt']);
+            } elseif (!strlen($q)) {
+                // Kept to avoid a crash when there is no query or blank query,
+                // and no alternative query.
+                $q = '*:*';
+            }
+            if (strlen($q)) {
+                $this->solrQuery->setQuery($q);
+            }
+            if (isset($queryConfig['minimum_match'])) {
+                $this->solrQuery->setMinimumMatch($queryConfig['minimum_match']);
+            }
+            if (isset($queryConfig['tie_breaker'])) {
+                $this->solrQuery->setTieBreaker($queryConfig['tie_breaker']);
+            }
+            return;
+        }
+
+        // Kept if the class SolrDisMaxQuery is not available.
+        $this->solrQuery = new SolrQuery;
+        // TODO Use the value of the user.
+        if (!strlen($q)) {
+            $q = '*:*';
+        }
+        $this->solrQuery->setQuery($q);
+    }
+
+    protected function addFilterQueries()
+    {
+        // There are two way to add filter queries: multiple simple filters, or
+        // one complex filter query. A complex filter may be required when the
+        // joiners are mixed with "and" and "or".
+        // if ($multiple) {
+        //     $this->addMultipleFilterQueries();
+        //     return;
+        // }
+
+        $filters = $this->query->getFilterQueries();
+        if (!$filters) {
+            return;
+        }
+
+        $first = true;
+        $fq = '';
+        foreach ($filters as $name => $values) {
+            foreach ($values as $value) {
+                // There is no default in Omeka.
+                // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+                $type = $value['type'];
+                $value = $this->encloseValue($value, $type);
+                $joiner = @$value['joiner'] ?: 'and';
+                switch ($type) {
+                    case 'neq':
+                    case 'nin':
+                        if ($first) {
+                            $fq .= "-$name:$value";
+                            $first = false;
+                        } else {
+                            // FIXME "Or" + "not contains" ?
+                            $fq .= $joiner === 'and' ? " -$name:$value" : " $name:$value";
+                        }
+                        break;
+                    case 'eq':
+                    case 'in':
+                        if ($first) {
+                            $fq .= "+$name:$value";
+                            $first = false;
+                        } else {
+                            $fq .= $joiner === 'and' ? " +$name:$value" : " $name:$value";
+                        }
+                        break;
+                }
+            }
+        }
+        $this->solrQuery->addFilterQuery($fq);
+    }
+
+    protected function addMultipleFilterQueries()
+    {
+        $filters = $this->query->getFilterQueries();
         foreach ($filters as $name => $values) {
             foreach ($values as $value) {
                 $type = $value['type'];
@@ -318,60 +354,60 @@ class SolrQuerier extends AbstractQuerier
                 // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
                 switch ($type) {
                     case 'neq':
-                        $solrQuery->addFilterQuery("-$name:$value");
+                        $this->solrQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'eq':
-                        $solrQuery->addFilterQuery("+$name:$value");
+                        $this->solrQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nin':
-                        $solrQuery->addFilterQuery("-$name:$value");
+                        $this->solrQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'in':
-                        $solrQuery->addFilterQuery("+$name:$value");
+                        $this->solrQuery->addFilterQuery("+$name:$value");
                         break;
 
                     // TODO Fixes theses Solr queries.
                     case 'nlist':
-                        $solrQuery->addFilterQuery("-$name:$value");
+                        $this->solrQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'list':
-                        $solrQuery->addFilterQuery("+$name:$value");
+                        $this->solrQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nsw':
-                        $solrQuery->addFilterQuery("-$name:$value");
+                        $this->solrQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'sw':
-                        $solrQuery->addFilterQuery("+$name:$value");
+                        $this->solrQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'new':
-                        $solrQuery->addFilterQuery("-$name:$value");
+                        $this->solrQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'ew':
-                        $solrQuery->addFilterQuery("+$name:$value");
+                        $this->solrQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nma':
-                        $solrQuery->addFilterQuery("-$name:$value");
+                        $this->solrQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'ma':
-                        $solrQuery->addFilterQuery("+$name:$value");
+                        $this->solrQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nres':
-                        $solrQuery->addFilterQuery("-$name:$value");
+                        $this->solrQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'res':
-                        $solrQuery->addFilterQuery("+$name:$value");
+                        $this->solrQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nex':
-                        $solrQuery->addFilterQuery("-$name:[* TO *]");
+                        $this->solrQuery->addFilterQuery("-$name:[* TO *]");
                         break;
                     case 'ex':
-                        $solrQuery->addFilterQuery("+$name:[* TO *]");
+                        $this->solrQuery->addFilterQuery("+$name:[* TO *]");
                         break;
                 }
             }
@@ -419,16 +455,13 @@ class SolrQuerier extends AbstractQuerier
     }
 
     /**
-     * @return \SolrClient
+     * @return self
      */
-    protected function getClient()
+    protected function init()
     {
-        if (!isset($this->client)) {
-            $solrNode = $this->getSolrNode();
-            $this->client = new SolrClient($solrNode->clientSettings());
-        }
-
-        return $this->client;
+        $this->getSolrNode();
+        $this->getClient();
+        return $this;
     }
 
     /**
@@ -438,14 +471,24 @@ class SolrQuerier extends AbstractQuerier
     {
         if (!isset($this->solrNode)) {
             $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-
             $solrNodeId = $this->getAdapterSetting('solr_node_id');
             if ($solrNodeId) {
+                // Automatically throw an exception when empty.
                 $response = $api->read('solr_nodes', $solrNodeId);
                 $this->solrNode = $response->getContent();
             }
         }
-
         return $this->solrNode;
+    }
+
+    /**
+     * @return \SolrClient
+     */
+    protected function getClient()
+    {
+        if (!isset($this->solrClient)) {
+            $this->solrClient = new SolrClient($this->solrNode->clientSettings());
+        }
+        return $this->solrClient;
     }
 }
