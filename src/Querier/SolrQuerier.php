@@ -260,6 +260,7 @@ class SolrQuerier extends AbstractQuerier
     protected function mainQuery()
     {
         $q = $this->query->getQuery();
+        $excludedFiles = $this->query->getExcludedFields();
 
         $solrNodeSettings = $this->solrNode->settings();
         $queryConfig = array_filter($solrNodeSettings['query']);
@@ -272,25 +273,50 @@ class SolrQuerier extends AbstractQuerier
                 // and no alternative query.
                 $q = '*:*';
             }
-            if (strlen($q)) {
-                $this->solrQuery->setQuery($q);
-            }
             if (isset($queryConfig['minimum_match'])) {
                 $this->solrQuery->setMinimumMatch($queryConfig['minimum_match']);
             }
             if (isset($queryConfig['tie_breaker'])) {
                 $this->solrQuery->setTieBreaker($queryConfig['tie_breaker']);
             }
+        } else {
+            // Kept if the class SolrDisMaxQuery is not available.
+            $this->solrQuery = new SolrQuery;
+            // TODO Use the value of the user.
+            if (!strlen($q)) {
+                $q = '*:*';
+            }
+        }
+
+        if (strlen($q)) {
+            if ($excludedFiles && $q !== '*:*') {
+                $this->mainQueryWithExcludedFields();
+            } else {
+                $this->solrQuery->setQuery($q);
+            }
+        }
+    }
+
+    /**
+     * Only called from mainQuery(). $q is never empty.
+     */
+    protected function mainQueryWithExcludedFields()
+    {
+        // Currently, the only way to exclude fields is to search in all other
+        // fields.
+        $usedFields = $this->usedSolrFields();
+        $excludedFields = $this->query->getExcludedFields();
+        $usedFields = array_diff($usedFields, $excludedFields);
+        if (!count($usedFields)) {
             return;
         }
 
-        // Kept if the class SolrDisMaxQuery is not available.
-        $this->solrQuery = new SolrQuery;
-        // TODO Use the value of the user.
-        if (!strlen($q)) {
-            $q = '*:*';
+        $q = $this->query->getQuery();
+        $qq = [];
+        foreach ($usedFields as $field) {
+            $qq[] = $field . ':' . $q;
         }
-        $this->solrQuery->setQuery($q);
+        $this->solrQuery->setQuery(implode(' ', $qq));
     }
 
     protected function addFilterQueries()
@@ -412,6 +438,15 @@ class SolrQuerier extends AbstractQuerier
                 }
             }
         }
+    }
+
+    protected function usedSolrFields()
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $mappings */
+        return $api->search('solr_mappings', [
+            'solr_node_id' => $this->solrNode->id(),
+        ], ['returnScalar' => 'fieldName'])->getContent();
     }
 
     protected function encloseValue($value, $type = null)
