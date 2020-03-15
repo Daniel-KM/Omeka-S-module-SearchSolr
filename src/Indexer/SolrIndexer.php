@@ -223,11 +223,11 @@ class SolrIndexer extends AbstractIndexer
             if ($source === 'is_public' && $solrField === $isPublicField) {
                 continue;
             }
-            // The admin can‘t modify this parameter via the standard interface.
+            // The admin can’t modify this parameter via the standard interface.
             if ($source === 'resource_name' && $solrField === $sitesField) {
                 continue;
             }
-            // The admin can‘t modify this parameter via the standard interface.
+            // The admin can’t modify this parameter via the standard interface.
             if ($source === 'site/o:id' && $solrField === $sitesField) {
                 continue;
             }

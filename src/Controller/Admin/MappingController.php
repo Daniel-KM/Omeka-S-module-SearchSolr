@@ -155,7 +155,7 @@ class MappingController extends AbstractActionController
             $this->messenger()->addSuccess(new Message('%d mappings successfully created: "%s".', // @translate
                 count($result), implode('", "', $result)));
             $this->messenger()->addWarning('Check all new mappings and remove useless ones.'); // @translate
-            $this->messenger()->addNotice('Don‘t forget to run the indexation of the node.'); // @translate
+            $this->messenger()->addNotice('Don’t forget to run the indexation of the node.'); // @translate
         } else {
             $this->messenger()->addWarning('No new mappings added.'); // @translate
         }
@@ -220,7 +220,7 @@ class MappingController extends AbstractActionController
         if ($result) {
             $this->messenger()->addSuccess(new Message('%d mappings successfully deleted: "%s".', // @translate
                 count($result), implode('", "', $result)));
-            $this->messenger()->addNotice('Don‘t forget to run the indexation of the node.'); // @translate
+            $this->messenger()->addNotice('Don’t forget to run the indexation of the node.'); // @translate
         } else {
             $this->messenger()->addWarning('No mappings deleted.'); // @translate
         }
