@@ -157,7 +157,7 @@ class ItemValueExtractor implements ValueExtractorInterface
                 || preg_match('~^item_set/(.*)|^item_set$~', $field, $matches)
             ) {
                 $fieldName = $matches[0];
-                $subFieldName = $matches[1];
+                $subFieldName = isset($matches[1]) ? $matches[1] : '';
                 switch ($fieldName) {
                     case 'media':
                         return $this->extractMediaValue($item, $subFieldName);
