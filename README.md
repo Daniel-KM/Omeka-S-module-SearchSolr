@@ -67,6 +67,8 @@ Quick start
         3. Edit the name of the label that will be used for facets and sort
         fields in the same page. The string will be automatically translated if
         it exists in Omeka.
+        4. There are options for the default search results. If wanted, the
+        query may be nothing, all, or anything. See the [documentation].
 4. In admin or site settings
     1. To access to the search form, enable it in the main settings (for the
        admin board) and in the site settings (for the front-end sites). So the
@@ -357,6 +359,7 @@ See commits for full list of contributors.
 [Apache Solr]: https://lucene.apache.org/solr/
 [Solr module]: https://github.com/biblibre/omeka-s-module-Solr
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
+[documentation]: https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#q-alt-parameter
 [Solr PHP extension]: https://pecl.php.net/package/solr
 [below]: #manage-solr
 [below for Debian]: #solr-install
