@@ -32,7 +32,6 @@ namespace Solr\Querier;
 
 use Search\Querier\AbstractQuerier;
 use Search\Querier\Exception\QuerierException;
-use Search\Query;
 use Search\Response;
 use Solr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
@@ -43,11 +42,6 @@ use SolrServerException;
 
 class SolrQuerier extends AbstractQuerier
 {
-    /**
-     * @var Query
-     */
-    protected $query;
-
     /**
      * @var Response
      */
@@ -68,140 +62,13 @@ class SolrQuerier extends AbstractQuerier
      */
     protected $solrNode;
 
-    public function query(Query $query)
+    public function query()
     {
-        $this->query = $query;
         $this->response = new Response;
 
-        $this->init();
-
-        $solrNodeSettings = $this->solrNode->settings();
-        $isPublicField = $solrNodeSettings['is_public_field'];
-        $resourceNameField = $solrNodeSettings['resource_name_field'];
-        $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
-
-        if (class_exists('SolrDisMaxQuery')) {
-            $this->solrQuery = new SolrDisMaxQuery;
-        } else {
-            // Kept if the class SolrDisMaxQuery is not available.
-            $this->solrQuery = new SolrQuery;
-        }
-
-        $isDefaultQuery = $this->defaultQuery();
-        if ($isDefaultQuery) {
-            if ($query->getDefaultQuery() === '') {
-                return $this->response;
-            }
-        } else {
-            $this->mainQuery();
-        }
-
-        $this->solrQuery->addField('id');
-
-        $isPublic = $query->getIsPublic();
-        if ($isPublic) {
-            $this->solrQuery->addFilterQuery($isPublicField . ':' . 1);
-        }
-
-        $this->solrQuery->setGroup(true);
-        $this->solrQuery->addGroupField($resourceNameField);
-
-        $resources = $query->getResources();
-        $fq = $resourceNameField . ':' . implode(' OR ', $resources);
-        $this->solrQuery->addFilterQuery($fq);
-
-        if ($sitesField) {
-            $siteId = $query->getSiteId();
-            if (isset($siteId)) {
-                $fq = $sitesField . ':' . $siteId;
-                $this->solrQuery->addFilterQuery($fq);
-            }
-        }
-
-        $filters = $query->getFilters();
-        foreach ($filters as $name => $values) {
-            foreach ($values as $value) {
-                if (is_array($value)) {
-                    if (empty($value)) {
-                        continue;
-                    }
-                    $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
-                } else {
-                    $value = $this->enclose($value);
-                }
-                $this->solrQuery->addFilterQuery("$name:$value");
-            }
-        }
-
-        $normalizeDate = function ($value) {
-            if ($value) {
-                if (strlen($value) < 20) {
-                    $value = substr_replace('0000-01-01T00:00:00Z', $value, 0, strlen($value) - 20);
-                }
-                try {
-                    $value = new \DateTime($value);
-                    return $value->format('Y-m-d\TH:i:s\Z');
-                } catch (\Exception $e) {
-                }
-            }
-            return '*';
-        };
-
-        $dateRangeFilters = $query->getDateRangeFilters();
-        foreach ($dateRangeFilters as $name => $filterValues) {
-            // Normalize dates if needed.
-            $normalize = substr_compare($name, '_dt', -3) === 0
-                || substr_compare($name, '_dts', -4) === 0
-                || substr_compare($name, '_pdt', -4) === 0
-                || substr_compare($name, '_tdt', -4) === 0
-                || substr_compare($name, '_pdts', -5) === 0
-                || substr_compare($name, '_tdts', -5) === 0;
-            foreach ($filterValues as $filterValue) {
-                if ($normalize) {
-                    $start = $normalizeDate($filterValue['start']);
-                    $end = $normalizeDate($filterValue['end']);
-                } else {
-                    $start = $filterValue['start'] ? $filterValue['start'] : '*';
-                    $end = $filterValue['end'] ? $filterValue['end'] : '*';
-                }
-                $this->solrQuery->addFilterQuery("$name:[$start TO $end]");
-            }
-        }
-
-        $this->addFilterQueries();
-
-        $sort = $query->getSort();
-        if ($sort) {
-            @list($sortField, $sortOrder) = explode(' ', $sort, 2);
-            if ($sortField === 'score') {
-                $sortOrder = $sortOrder === 'asc' ? SolrQuery::ORDER_ASC : SolrQuery::ORDER_DESC;
-            } else {
-                $sortOrder = $sortOrder === 'desc' ? SolrQuery::ORDER_DESC : SolrQuery::ORDER_ASC;
-            }
-            $this->solrQuery->addSortField($sortField, $sortOrder);
-        }
-
-        $limit = $query->getLimit();
-        if ($limit) {
-            $this->solrQuery->setGroupLimit($limit);
-        }
-
-        $offset = $query->getOffset();
-        if ($offset) {
-            $this->solrQuery->setGroupOffset($offset);
-        }
-
-        $facetFields = $query->getFacetFields();
-        if (count($facetFields)) {
-            $this->solrQuery->setFacet(true);
-            foreach ($facetFields as $facetField) {
-                $this->solrQuery->addFacetField($facetField);
-            }
-        }
-
-        $facetLimit = $query->getFacetLimit();
-        if ($facetLimit) {
-            $this->solrQuery->setFacetLimit($facetLimit);
+        $this->solrQuery = $this->getPreparedQuery() ;
+        if (is_null($this->solrQuery)) {
+            return $this->response;
         }
 
         try {
@@ -232,7 +99,7 @@ class SolrQuerier extends AbstractQuerier
                 '?' => '\?',
                 ':' => '\:',
             ];
-            $q = $isDefaultQuery ? $this->query->getQuery() : $this->query->getDefaultQuery();
+            $q = $this->query->getQuery();
             $escapedQ = str_replace(array_keys($reservedCharacters), array_values($reservedCharacters), $q);
             $this->solrQuery->setQuery($escapedQ);
             try {
@@ -243,7 +110,11 @@ class SolrQuerier extends AbstractQuerier
         } catch (SolrClientException $e) {
             throw new QuerierException($e->getMessage(), $e->getCode(), $e);
         }
+
         $solrResponse = $solrQueryResponse->getResponse();
+
+        $solrNodeSettings = $this->solrNode->settings();
+        $resourceNameField = $solrNodeSettings['resource_name_field'];
 
         $this->response->setTotalResults($solrResponse['grouped'][$resourceNameField]['matches']);
         foreach ($solrResponse['grouped'][$resourceNameField]['groups'] as $group) {
@@ -269,6 +140,154 @@ class SolrQuerier extends AbstractQuerier
         }
 
         return $this->response;
+    }
+
+    /**
+     * @return SolrDisMaxQuery|SolrQuery|null Arguments for the Solr php api.
+     *
+     * {@inheritDoc}
+     * @see \Search\Querier\AbstractQuerier::getPreparedQuery()
+     */
+    public function getPreparedQuery()
+    {
+        $this->init();
+
+        if (empty($this->query)) {
+            $this->solrQuery = null;
+            return $this->solrQuery;
+        }
+
+        $solrNodeSettings = $this->solrNode->settings();
+        $isPublicField = $solrNodeSettings['is_public_field'];
+        $resourceNameField = $solrNodeSettings['resource_name_field'];
+        $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
+
+        if (class_exists('SolrDisMaxQuery')) {
+            $this->solrQuery = new SolrDisMaxQuery;
+        } else {
+            // Kept if the class SolrDisMaxQuery is not available.
+            $this->solrQuery = new SolrQuery;
+        }
+
+        $isDefaultQuery = $this->defaultQuery();
+        if ($isDefaultQuery) {
+            if ($this->query->getDefaultQuery() === '') {
+                $this->solrQuery = null;
+                return $this->solrQuery;
+            }
+        } else {
+            $this->mainQuery();
+        }
+
+        $this->solrQuery->addField('id');
+
+        $isPublic = $this->query->getIsPublic();
+        if ($isPublic) {
+            $this->solrQuery->addFilterQuery($isPublicField . ':' . 1);
+        }
+
+        $this->solrQuery->setGroup(true);
+        $this->solrQuery->addGroupField($resourceNameField);
+
+        $resources = $this->query->getResources();
+        $fq = $resourceNameField . ':' . implode(' OR ', $resources);
+        $this->solrQuery->addFilterQuery($fq);
+
+        if ($sitesField) {
+            $siteId = $this->query->getSiteId();
+            if (isset($siteId)) {
+                $fq = $sitesField . ':' . $siteId;
+                $this->solrQuery->addFilterQuery($fq);
+            }
+        }
+
+        $filters = $this->query->getFilters();
+        foreach ($filters as $name => $values) {
+            foreach ($values as $value) {
+                if (is_array($value)) {
+                    if (empty($value)) {
+                        continue;
+                    }
+                    $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
+                } else {
+                    $value = $this->enclose($value);
+                }
+                $this->solrQuery->addFilterQuery("$name:$value");
+            }
+        }
+
+        $normalizeDate = function ($value) {
+            if ($value) {
+                if (strlen($value) < 20) {
+                    $value = substr_replace('0000-01-01T00:00:00Z', $value, 0, strlen($value) - 20);
+                }
+                try {
+                    $value = new \DateTime($value);
+                    return $value->format('Y-m-d\TH:i:s\Z');
+                } catch (\Exception $e) {
+                }
+            }
+            return '*';
+        };
+
+        $dateRangeFilters = $this->query->getDateRangeFilters();
+        foreach ($dateRangeFilters as $name => $filterValues) {
+            // Normalize dates if needed.
+            $normalize = substr_compare($name, '_dt', -3) === 0
+                || substr_compare($name, '_dts', -4) === 0
+                || substr_compare($name, '_pdt', -4) === 0
+                || substr_compare($name, '_tdt', -4) === 0
+                || substr_compare($name, '_pdts', -5) === 0
+                || substr_compare($name, '_tdts', -5) === 0;
+            foreach ($filterValues as $filterValue) {
+                if ($normalize) {
+                    $start = $normalizeDate($filterValue['start']);
+                    $end = $normalizeDate($filterValue['end']);
+                } else {
+                    $start = $filterValue['start'] ? $filterValue['start'] : '*';
+                    $end = $filterValue['end'] ? $filterValue['end'] : '*';
+                }
+                $this->solrQuery->addFilterQuery("$name:[$start TO $end]");
+            }
+        }
+
+        $this->addFilterQueries();
+
+        $sort = $this->query->getSort();
+        if ($sort) {
+            @list($sortField, $sortOrder) = explode(' ', $sort, 2);
+            if ($sortField === 'score') {
+                $sortOrder = $sortOrder === 'asc' ? SolrQuery::ORDER_ASC : SolrQuery::ORDER_DESC;
+            } else {
+                $sortOrder = $sortOrder === 'desc' ? SolrQuery::ORDER_DESC : SolrQuery::ORDER_ASC;
+            }
+            $this->solrQuery->addSortField($sortField, $sortOrder);
+        }
+
+        $limit = $this->query->getLimit();
+        if ($limit) {
+            $this->solrQuery->setGroupLimit($limit);
+        }
+
+        $offset = $this->query->getOffset();
+        if ($offset) {
+            $this->solrQuery->setGroupOffset($offset);
+        }
+
+        $facetFields = $this->query->getFacetFields();
+        if (count($facetFields)) {
+            $this->solrQuery->setFacet(true);
+            foreach ($facetFields as $facetField) {
+                $this->solrQuery->addFacetField($facetField);
+            }
+        }
+
+        $facetLimit = $this->query->getFacetLimit();
+        if ($facetLimit) {
+            $this->solrQuery->setFacetLimit($facetLimit);
+        }
+
+        return $this->solrQuery;
     }
 
     protected function defaultQuery()
