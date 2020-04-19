@@ -99,7 +99,8 @@ class SolrQuerier extends AbstractQuerier
                 '?' => '\?',
                 ':' => '\:',
             ];
-            $q = $this->query->getQuery();
+            // The solr query cannot be an empty string.
+            $q = $this->query->getQuery() ?: '*:*';
             $escapedQ = str_replace(array_keys($reservedCharacters), array_values($reservedCharacters), $q);
             $this->solrQuery->setQuery($escapedQ);
             try {
@@ -170,12 +171,7 @@ class SolrQuerier extends AbstractQuerier
         }
 
         $isDefaultQuery = $this->defaultQuery();
-        if ($isDefaultQuery) {
-            if ($this->query->getDefaultQuery() === '') {
-                $this->solrQuery = null;
-                return $this->solrQuery;
-            }
-        } else {
+        if (!$isDefaultQuery) {
             $this->mainQuery();
         }
 
@@ -292,18 +288,14 @@ class SolrQuerier extends AbstractQuerier
 
     protected function defaultQuery()
     {
-        // The default query is set by default for simplicity.
-        $defaultQuery = $this->query->getDefaultQuery();
-        if (strlen($defaultQuery)) {
-            if ($defaultQuery === '*') {
-                $defaultQuery = '*:*';
-            }
-            $this->solrQuery->setQuery($defaultQuery);
-            if (class_exists('SolrDisMaxQuery')) {
-                // Kept to avoid a crash when there is no query or blank query,
-                // and no alternative query.
-                $this->solrQuery->setQueryAlt($defaultQuery);
-            }
+        // The default query is managed by the module Search.
+        // Here, this is a catch-them-all query.
+        $defaultQuery = '*:*';
+
+        if (class_exists('SolrDisMaxQuery')) {
+            // Kept to avoid a crash when there is no query or blank query,
+            // and no alternative query.
+            $this->solrQuery->setQueryAlt($defaultQuery);
         }
 
         $q = $this->query->getQuery();
@@ -311,6 +303,7 @@ class SolrQuerier extends AbstractQuerier
             return false;
         }
 
+        $this->solrQuery->setQuery($defaultQuery);
         return true;
     }
 
