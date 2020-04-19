@@ -182,23 +182,6 @@ It must be a multi-valued, integer-based field (*_is).', // @translate
         $querySettingsFieldset = new Fieldset('query');
 
         $querySettingsFieldset->add([
-            'name' => 'query_alt',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Default query', // @translate
-                'info' => 'This alternative query is used when the user does not query anything, allowing to choose a default result.
-If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
-                'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#q-alt-parameter',
-            ],
-            'attributes' => [
-                'id' => 'query_alt',
-                'required' => false,
-                'value' => '',
-                'placeholder' => '*:*',
-            ],
-        ]);
-
-        $querySettingsFieldset->add([
             'name' => 'minimum_match',
             'type' => Element\Text::class,
             'options' => [

@@ -80,7 +80,21 @@ class SolrQuerier extends AbstractQuerier
         $resourceNameField = $solrNodeSettings['resource_name_field'];
         $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
 
-        $this->mainQuery();
+        if (class_exists('SolrDisMaxQuery')) {
+            $this->solrQuery = new SolrDisMaxQuery;
+        } else {
+            // Kept if the class SolrDisMaxQuery is not available.
+            $this->solrQuery = new SolrQuery;
+        }
+
+        $isDefaultQuery = $this->defaultQuery();
+        if ($isDefaultQuery) {
+            if ($query->getDefaultQuery() === '') {
+                return $this->response;
+            }
+        } else {
+            $this->mainQuery();
+        }
 
         $this->solrQuery->addField('id');
 
@@ -218,7 +232,7 @@ class SolrQuerier extends AbstractQuerier
                 '?' => '\?',
                 ':' => '\:',
             ];
-            $q = $this->query->getQuery();
+            $q = $isDefaultQuery ? $this->query->getQuery() : $this->query->getDefaultQuery();
             $escapedQ = str_replace(array_keys($reservedCharacters), array_values($reservedCharacters), $q);
             $this->solrQuery->setQuery($escapedQ);
             try {
@@ -257,6 +271,30 @@ class SolrQuerier extends AbstractQuerier
         return $this->response;
     }
 
+    protected function defaultQuery()
+    {
+        // The default query is set by default for simplicity.
+        $defaultQuery = $this->query->getDefaultQuery();
+        if (strlen($defaultQuery)) {
+            if ($defaultQuery === '*') {
+                $defaultQuery = '*:*';
+            }
+            $this->solrQuery->setQuery($defaultQuery);
+            if (class_exists('SolrDisMaxQuery')) {
+                // Kept to avoid a crash when there is no query or blank query,
+                // and no alternative query.
+                $this->solrQuery->setQueryAlt($defaultQuery);
+            }
+        }
+
+        $q = $this->query->getQuery();
+        if (strlen($q)) {
+            return false;
+        }
+
+        return true;
+    }
+
     protected function mainQuery()
     {
         $q = $this->query->getQuery();
@@ -265,26 +303,11 @@ class SolrQuerier extends AbstractQuerier
         $solrNodeSettings = $this->solrNode->settings();
         $queryConfig = array_filter($solrNodeSettings['query']);
         if ($queryConfig && class_exists('SolrDisMaxQuery')) {
-            $this->solrQuery = new SolrDisMaxQuery;
-            if (isset($queryConfig['query_alt'])) {
-                $this->solrQuery->setQueryAlt($queryConfig['query_alt']);
-            } elseif (!strlen($q)) {
-                // Kept to avoid a crash when there is no query or blank query,
-                // and no alternative query.
-                $q = '*:*';
-            }
             if (isset($queryConfig['minimum_match'])) {
                 $this->solrQuery->setMinimumMatch($queryConfig['minimum_match']);
             }
             if (isset($queryConfig['tie_breaker'])) {
                 $this->solrQuery->setTieBreaker($queryConfig['tie_breaker']);
-            }
-        } else {
-            // Kept if the class SolrDisMaxQuery is not available.
-            $this->solrQuery = new SolrQuery;
-            // TODO Use the value of the user.
-            if (!strlen($q)) {
-                $q = '*:*';
             }
         }
 
@@ -509,8 +532,7 @@ class SolrQuerier extends AbstractQuerier
             $solrNodeId = $this->getAdapterSetting('solr_node_id');
             if ($solrNodeId) {
                 // Automatically throw an exception when empty.
-                $response = $api->read('solr_nodes', $solrNodeId);
-                $this->solrNode = $response->getContent();
+                $this->solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
             }
         }
         return $this->solrNode;

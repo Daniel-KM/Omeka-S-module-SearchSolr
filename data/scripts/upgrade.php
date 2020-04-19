@@ -187,3 +187,54 @@ WHERE `source` = 'item_set/id'
 SQL;
     $connection->exec($sql);
 }
+
+if (version_compare($oldVersion, '3.5.12', '<')) {
+    // Move query_all to search settings.
+    $sql = <<<'SQL'
+SELECT id, settings FROM solr_node;
+SQL;
+    $stmt = $connection->query($sql);
+    $solrNodes = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+    foreach ($solrNodes as $solrNodeId => $solrNodeSettings) {
+        $solrNodeSettings = json_decode($solrNodeSettings, true) ?: [];
+        $queryAlt = empty($solrNodeSettings['query']['query_alt']) ? '*:*' : $solrNodeSettings['query']['query_alt'];
+        unset($solrNodeSettings['query']['query_alt']);
+        $solrNodeSettings = $connection->quote(json_encode($solrNodeSettings, 320));
+        $sql = <<<SQL
+UPDATE solr_node
+SET `settings` = $solrNodeSettings
+WHERE id = $solrNodeId;
+SQL;
+        $connection->exec($sql);
+
+        $sql = <<<'SQL'
+SELECT id, settings FROM search_index WHERE adapter = "solr";
+SQL;
+        $stmt = $connection->query($sql);
+        $searchIndexes = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        foreach ($searchIndexes as $searchIndexId => $searchIndexSettings) {
+            $searchIndexSettings = json_decode($searchIndexSettings, true) ?: [];
+            if (isset($searchIndexSettings['adapter']['solr_node_id'])
+                && (int) $searchIndexSettings['adapter']['solr_node_id'] === $solrNodeId
+            ) {
+                $sql = <<<SQL
+SELECT id, settings FROM search_page WHERE index_id = $searchIndexId;
+SQL;
+                $stmt = $connection->query($sql);
+                $searchPages = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+                foreach ($searchPages as $searchPageId => $searchPageSettings) {
+                    $searchPageSettings = json_decode($searchPageSettings, true) ?: [];
+                    $searchPageSettings['default_results'] = 'query';
+                    $searchPageSettings['default_query'] = $queryAlt;
+                    $searchPageSettings = $connection->quote(json_encode($searchPageSettings, 320));
+                    $sql = <<<SQL
+UPDATE search_page
+SET `settings` = $searchPageSettings
+WHERE id = $searchPageId;
+SQL;
+                    $connection->exec($sql);
+                }
+            }
+        }
+    }
+}
