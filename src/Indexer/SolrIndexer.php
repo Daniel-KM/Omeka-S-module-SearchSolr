@@ -32,6 +32,7 @@ namespace Solr\Indexer;
 
 use Omeka\Entity\Resource;
 use Search\Indexer\AbstractIndexer;
+use Search\Query;
 use Solr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrInputDocument;
@@ -97,11 +98,25 @@ class SolrIndexer extends AbstractIndexer
         return isset($valueExtractor);
     }
 
-    public function clearIndex()
+    public function clearIndex(Query $query = null)
     {
-        $client = $this->getClient();
-        $client->deleteByQuery('*:*');
-        $client->commit();
+        if ($query) {
+            /** @var \SolrDisMaxQuery|\SolrQuery|null $solrQuery */
+            $solrQuery = $this->index->querier()
+                ->setQuery($query)
+                ->getPreparedQuery();
+            if (is_null($solrQuery)) {
+                $query = '*:*';
+            } else {
+                $query = $solrQuery->toString();
+            }
+        } else {
+            $query = '*:*';
+        }
+
+        $solrClient = $this->getClient();
+        $solrClient->deleteByQuery($query);
+        $solrClient->commit();
     }
 
     public function indexResource(Resource $resource)
