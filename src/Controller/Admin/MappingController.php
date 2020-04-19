@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2020
  * Copyright Paul Sarrassat, 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -120,18 +120,13 @@ class MappingController extends AbstractActionController
             return $v->source();
         }, $mappings);
 
-        // Get all properties and all used properties of all vocabularies.
-        $properties = $api->search('properties')->getContent();
-        $propertyIds = $this->connection
-            ->query('SELECT DISTINCT property_id FROM value')
-            ->fetchAll(\PDO::FETCH_COLUMN);
-        // TODO Check hidden terms of the module HIdeProperties?
-
         // Add all missing mappings.
         $result = [];
+        $properties = $api->search('properties')->getContent();
+        $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
         foreach ($properties as $property) {
             // Skip property that are not used.
-            if (!in_array($property->id(), $propertyIds)) {
+            if (!in_array($property->id(), $usedPropertyIds)) {
                 continue;
             }
             $term = $property->term();
@@ -188,18 +183,13 @@ class MappingController extends AbstractActionController
         }
         $mappings = $mappingList;
 
-        // Get all properties and all used properties of all vocabularies.
-        $properties = $api->search('properties')->getContent();
-        $propertyIds = $this->connection
-            ->query('SELECT DISTINCT property_id FROM value')
-            ->fetchAll(\PDO::FETCH_COLUMN);
-        // TODO Check hidden terms of the module HIdeProperties?
-
         // Add all missing mappings.
         $result = [];
+        $properties = $api->search('properties')->getContent();
+        $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
         foreach ($properties as $property) {
             // Skip property that are used.
-            if (in_array($property->id(), $propertyIds)) {
+            if (in_array($property->id(), $usedPropertyIds)) {
                 continue;
             }
             $term = $property->term();
@@ -478,6 +468,32 @@ class MappingController extends AbstractActionController
             }
         }
         return false;
+    }
+
+    /**
+     * Get all used properties.
+     *
+     * @param string $resourceName
+     * @return \Omeka\Api\Representation\PropertyRepresentation[]
+     */
+    protected function listUsedPropertyIds($resourceName)
+    {
+        $resourceTypes = [
+            'items' => \Omeka\Entity\Item::class,
+            'item_sets' => \Omeka\Entity\ItemSet::class,
+        ];
+
+        $qb = $this->connection->createQueryBuilder()
+            ->select('DISTINCT value.property_id')
+            ->from('value', 'value')
+            ->join('value', 'resource', 'resource', 'resource.id = value.resource_id')
+            ->where('resource.resource_type = :resource_type')
+            ->setParameter('resource_type', $resourceTypes[$resourceName])
+            ->orderBy('value.property_id', 'ASC');
+
+        return $this->connection
+            ->executeQuery($qb, $qb->getParameters())
+            ->fetchAll(\PDO::FETCH_COLUMN, 0);
     }
 
     /**

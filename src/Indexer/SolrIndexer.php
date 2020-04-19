@@ -212,6 +212,8 @@ class SolrIndexer extends AbstractIndexer
                     $document->addField($sitesField, $siteItemSet->getSite()->getId());
                 }
                 break;
+            default:
+                return;
         }
 
         foreach ($solrMappings as $solrMapping) {
