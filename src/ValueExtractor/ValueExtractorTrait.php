@@ -49,7 +49,9 @@ trait ValueExtractorTrait
         $source
     ) {
         // $subField may be NULL.
-        @list($field, $subField) = explode('/', $source, 2);
+        list($field, $subField) = strpos($source, '/') === false
+            ? [$source, null]
+            : explode('/', $source, 2);
 
         switch ($field) {
             // Item_set or media may have been set without field.
