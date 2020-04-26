@@ -41,13 +41,13 @@ class SchemaFactory implements FactoryInterface
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $solrNode */
-        $solrNode = $options['solr_node'];
+        $solrNode = $options['searchsolr_node'];
 
         if (!isset($this->schemas[$solrNode->id()])) {
             $schemaUrl = $solrNode->clientUrl() . '/schema';
             $schema = new Schema($schemaUrl);
             if (!empty($solrNode->clientSettings()['secure'])
-                && !empty($services->get('Config')['solr']['config']['solr_bypass_certificate_check'])
+                && !empty($services->get('Config')['solr']['config']['searchsolr_bypass_certificate_check'])
             ) {
                 $this->setSchemaConfig($schema, $schemaUrl);
             }

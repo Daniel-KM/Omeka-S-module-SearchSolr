@@ -43,7 +43,7 @@ class NodeController extends AbstractActionController
 {
     public function browseAction()
     {
-        $response = $this->api()->search('solr_nodes');
+        $response = $this->api()->search('searchsolr_nodes');
         $nodes = $response->getContent();
 
         $view = new ViewModel;
@@ -79,7 +79,7 @@ class NodeController extends AbstractActionController
         $data = $form->getData();
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
-        $node = $this->api()->create('solr_nodes', $data)->getContent();
+        $node = $this->api()->create('searchsolr_nodes', $data)->getContent();
         $this->messenger()->addSuccess(new Message('Solr node "%s" created.', $node->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
         return $this->redirect()->toRoute('admin/solr');
@@ -89,7 +89,7 @@ class NodeController extends AbstractActionController
     {
         $id = $this->params('id');
         /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $node */
-        $node = $this->api()->read('solr_nodes', $id)->getContent();
+        $node = $this->api()->read('searchsolr_nodes', $id)->getContent();
 
         $form = $this->getForm(SolrNodeForm::class);
         $data = $node->jsonSerialize();
@@ -105,7 +105,7 @@ class NodeController extends AbstractActionController
         $data = $form->getData();
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
-        $this->api()->update('solr_nodes', $id, $data);
+        $this->api()->update('searchsolr_nodes', $id, $data);
 
         $this->messenger()->addSuccess(new Message('Solr node "%s" updated.', $node->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this node.'); // @translate
@@ -116,12 +116,12 @@ class NodeController extends AbstractActionController
     public function deleteConfirmAction()
     {
         $id = $this->params('id');
-        $response = $this->api()->read('solr_nodes', $id);
+        $response = $this->api()->read('searchsolr_nodes', $id);
         $node = $response->getContent();
 
         $searchIndexes = $this->searchSearchIndexes($node);
         $searchPages = $this->searchSearchPages($node);
-        $solrMappings = $this->api()->search('solr_mappings', ['solr_node_id' => $node->id()])->getContent();
+        $solrMappings = $this->api()->search('searchsolr_mappings', ['searchsolr_node_id' => $node->id()])->getContent();
 
         $view = new ViewModel;
         $view->setTerminal(true);
@@ -141,7 +141,7 @@ class NodeController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $this->api()->delete('solr_nodes', $this->params('id'));
+                $this->api()->delete('searchsolr_nodes', $this->params('id'));
                 $this->messenger()->addSuccess('Solr node successfully deleted'); // @translate
             } else {
                 $this->messenger()->addError('Solr node could not be deleted'); // @translate
@@ -164,7 +164,7 @@ class NodeController extends AbstractActionController
         $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
-            if ($solrNode->id() == $searchIndexSettings['adapter']['solr_node_id']) {
+            if ($solrNode->id() == $searchIndexSettings['adapter']['searchsolr_node_id']) {
                 $result[$searchIndex->id()] = $searchIndex;
             }
         }

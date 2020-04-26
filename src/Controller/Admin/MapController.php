@@ -68,7 +68,7 @@ class MappingController extends AbstractActionController
     public function browseAction()
     {
         $solrNodeId = $this->params('nodeId');
-        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
 
         $valueExtractors = [];
         foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
@@ -87,9 +87,9 @@ class MappingController extends AbstractActionController
         $solrNodeId = $this->params('nodeId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
-        $mappings = $this->api()->search('solr_mappings', [
-            'solr_node_id' => $solrNode->id(),
+        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
+        $mappings = $this->api()->search('searchsolr_mappings', [
+            'searchsolr_node_id' => $solrNode->id(),
             'resource_name' => $resourceName,
         ])->getContent();
 
@@ -105,14 +105,14 @@ class MappingController extends AbstractActionController
         $solrNodeId = $this->params('nodeId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
 
         $api = $this->api();
 
         // Get all existing indexed properties.
         /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
-        $mappings = $api->search('solr_mappings', [
-            'solr_node_id' => $solrNode->id(),
+        $mappings = $api->search('searchsolr_mappings', [
+            'searchsolr_node_id' => $solrNode->id(),
             'resource_name' => $resourceName,
         ])->getContent();
         // Keep only the source.
@@ -141,7 +141,7 @@ class MappingController extends AbstractActionController
             $data['o:field_name'] = str_replace(':', '_', $term) . '_t';
             $data['o:source'] = $term;
             $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
-            $api->create('solr_mappings', $data);
+            $api->create('searchsolr_mappings', $data);
 
             $result[] = $term;
         }
@@ -166,14 +166,14 @@ class MappingController extends AbstractActionController
         $solrNodeId = $this->params('nodeId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
 
         $api = $this->api();
 
         // Get all existing indexed properties.
         /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
-        $mappings = $api->search('solr_mappings', [
-            'solr_node_id' => $solrNode->id(),
+        $mappings = $api->search('searchsolr_mappings', [
+            'searchsolr_node_id' => $solrNode->id(),
             'resource_name' => $resourceName,
         ])->getContent();
         // Map as associative array by mapping id and keep only the source.
@@ -202,7 +202,7 @@ class MappingController extends AbstractActionController
             $ids = array_keys(array_filter($mappings, function ($v) use ($term) {
                 return $v === $term;
             }));
-            $api->batchDelete('solr_mappings', $ids);
+            $api->batchDelete('searchsolr_mappings', $ids);
 
             $result[] = $term;
         }
@@ -226,10 +226,10 @@ class MappingController extends AbstractActionController
         $solrNodeId = $this->params('nodeId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
 
         $form = $this->getForm(SolrMappingForm::class, [
-            'solr_node_id' => $solrNodeId,
+            'searchsolr_node_id' => $solrNodeId,
             'resource_name' => $resourceName,
         ]);
 
@@ -241,7 +241,7 @@ class MappingController extends AbstractActionController
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_node']['o:id'] = $solrNodeId;
                 $data['o:resource_name'] = $resourceName;
-                $this->api()->create('solr_mappings', $data);
+                $this->api()->create('searchsolr_mappings', $data);
 
                 $this->messenger()->addSuccess(new Message('Solr mapping created: %s.', // @translate
                     $data['o:field_name']));
@@ -275,10 +275,10 @@ class MappingController extends AbstractActionController
         $id = $this->params('id');
 
         /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation $mapping */
-        $mapping = $this->api()->read('solr_mappings', $id)->getContent();
+        $mapping = $this->api()->read('searchsolr_mappings', $id)->getContent();
 
         $form = $this->getForm(SolrMappingForm::class, [
-            'solr_node_id' => $solrNodeId,
+            'searchsolr_node_id' => $solrNodeId,
             'resource_name' => $resourceName,
         ]);
         $mappingData = $mapping->jsonSerialize();
@@ -293,7 +293,7 @@ class MappingController extends AbstractActionController
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_node']['o:id'] = $solrNodeId;
                 $data['o:resource_name'] = $resourceName;
-                $this->api()->update('solr_mappings', $id, $data);
+                $this->api()->update('searchsolr_mappings', $id, $data);
 
                 $this->messenger()->addSuccess(new Message('Solr mapping modified: %s.', // @translate
                     $data['o:field_name']));
@@ -325,7 +325,7 @@ class MappingController extends AbstractActionController
     public function deleteConfirmAction()
     {
         $id = $this->params('id');
-        $response = $this->api()->read('solr_mappings', $id);
+        $response = $this->api()->read('searchsolr_mappings', $id);
         $mapping = $response->getContent();
 
         $searchPages = $this->searchSearchPages($mapping->solrNode());
@@ -350,13 +350,13 @@ class MappingController extends AbstractActionController
     public function deleteAction()
     {
         $id = $this->params('id');
-        $mapping = $this->api()->read('solr_mappings', $id)->getContent();
+        $mapping = $this->api()->read('searchsolr_mappings', $id)->getContent();
 
         if ($this->getRequest()->isPost()) {
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $this->api()->delete('solr_mappings', $id);
+                $this->api()->delete('searchsolr_mappings', $id);
                 $this->messenger()->addSuccess('Solr mapping successfully deleted'); // @translate
                 $this->messenger()->addWarning('Don’t forget to check search pages that used this mapping.'); // @translate
             } else {
@@ -372,7 +372,7 @@ class MappingController extends AbstractActionController
 
     protected function getSolrSchema($solrNodeId)
     {
-        $solrNode = $this->api()->read('solr_nodes', $solrNodeId)->getContent();
+        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
         return $solrNode->schema()->getSchema();
     }
 
@@ -415,7 +415,7 @@ class MappingController extends AbstractActionController
         $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
-            if ($solrNode->id() == $searchIndexSettings['adapter']['solr_node_id']) {
+            if ($solrNode->id() == $searchIndexSettings['adapter']['searchsolr_node_id']) {
                 $result[$searchIndex->id()] = $searchIndex;
             }
         }

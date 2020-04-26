@@ -4,8 +4,8 @@ namespace SearchSolr;
 return [
     'api_adapters' => [
         'invokables' => [
-            'solr_nodes' => Api\Adapter\SolrNodeAdapter::class,
-            'solr_mappings' => Api\Adapter\SolrMappingAdapter::class,
+            'searchsolr_nodes' => Api\Adapter\SolrNodeAdapter::class,
+            'searchsolr_mappings' => Api\Adapter\SolrMappingAdapter::class,
         ],
     ],
     'entity_manager' => [
@@ -37,9 +37,9 @@ return [
     ],
     'service_manager' => [
         'factories' => [
-            'Solr\ValueExtractorManager' => Service\ValueExtractorManagerFactory::class,
-            'Solr\ValueFormatterManager' => Service\ValueFormatterManagerFactory::class,
-            'Solr\Schema' => Service\SchemaFactory::class,
+            'SearchSolr\ValueExtractorManager' => Service\ValueExtractorManagerFactory::class,
+            'SearchSolr\ValueFormatterManager' => Service\ValueFormatterManagerFactory::class,
+            'SearchSolr\Schema' => Service\SchemaFactory::class,
         ],
     ],
     'navigation' => [
@@ -95,7 +95,7 @@ return [
                         'options' => [
                             'route' => '/solr',
                             'defaults' => [
-                                '__NAMESPACE__' => 'Solr\Controller\Admin',
+                                '__NAMESPACE__' => 'SearchSolr\Controller\Admin',
                                 'controller' => Controller\Admin\NodeController::class,
                                 'action' => 'browse',
                             ],
@@ -186,16 +186,16 @@ return [
     ],
     'solr' => [
         'config' => [
-            'solr_bypass_certificate_check' => false,
+            'searchsolr_bypass_certificate_check' => false,
         ],
     ],
-    'solr_value_extractors' => [
+    'searchsolr_value_extractors' => [
         'factories' => [
             'items' => Service\ValueExtractor\ItemValueExtractorFactory::class,
             'item_sets' => Service\ValueExtractor\ItemSetValueExtractorFactory::class,
         ],
     ],
-    'solr_value_formatters' => [
+    'searchsolr_value_formatters' => [
         'invokables' => [
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,

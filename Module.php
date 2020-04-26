@@ -63,14 +63,14 @@ class Module extends AbstractModule
         $serviceListener = $container->get('ServiceListener');
 
         $serviceListener->addServiceManager(
-            'Solr\ValueExtractorManager',
-            'solr_value_extractors',
+            'SearchSolr\ValueExtractorManager',
+            'searchsolr_value_extractors',
             Feature\ValueExtractorProviderInterface::class,
             'getSolrValueExtractorConfig'
         );
         $serviceListener->addServiceManager(
-            'Solr\ValueFormatterManager',
-            'solr_value_formatters',
+            'SearchSolr\ValueFormatterManager',
+            'searchsolr_value_formatters',
             Feature\ValueFormatterProviderInterface::class,
             'getSolrValueFormatterConfig'
         );
@@ -215,10 +215,10 @@ SQL;
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
-        $solrMapping = $api->read('solr_mappings', $request->getId())->getContent();
+        $solrMapping = $api->read('searchsolr_mappings', $request->getId())->getContent();
         $data = $request->getContent();
         $data['solrMapping'] = [
-            'solr_node_id' => $solrMapping->solrNode()->id(),
+            'searchsolr_node_id' => $solrMapping->solrNode()->id(),
             'resource_name' => $solrMapping->resourceName(),
             'field_name' => $solrMapping->fieldName(),
             'source' => $solrMapping->source(),
@@ -280,7 +280,7 @@ SQL;
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
         $solrMappingValues = $request->getValue('solrMapping');
-        $searchPages = $this->searchSearchPagesByNodeId($solrMappingValues['solr_node_id']);
+        $searchPages = $this->searchSearchPagesByNodeId($solrMappingValues['searchsolr_node_id']);
         if (empty($searchPages)) {
             return;
         }
@@ -319,7 +319,7 @@ SQL;
         $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
-            if ($solrNodeId == $searchIndexSettings['adapter']['solr_node_id']) {
+            if ($solrNodeId == $searchIndexSettings['adapter']['searchsolr_node_id']) {
                 $result[$searchIndex->id()] = $searchIndex;
             }
         }

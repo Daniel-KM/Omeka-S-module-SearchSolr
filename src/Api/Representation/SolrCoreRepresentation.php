@@ -165,7 +165,7 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
 
         // Check if the config bypass certificate check.
         if (!empty($clientSettings['secure'])) {
-            if (!empty($services->get('Config')['solr']['config']['solr_bypass_certificate_check'])) {
+            if (!empty($services->get('Config')['searchsolr']['config']['searchsolr_bypass_certificate_check'])) {
                 $logger->warn('Solr: the config bypasses the check of the certificate.'); // @translate
                 return 'OK (warning: check of certificate disabled)'; // @translate
             }

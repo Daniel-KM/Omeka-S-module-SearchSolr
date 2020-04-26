@@ -37,7 +37,7 @@ class MappingControllerFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
+        $valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $connection = $services->get('Omeka\Connection');
         $controller = new MappingController;
         $controller->setValueExtractorManager($valueExtractorManager);

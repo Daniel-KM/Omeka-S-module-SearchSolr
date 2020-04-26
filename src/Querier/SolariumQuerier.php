@@ -479,8 +479,8 @@ class SolrQuerier extends AbstractQuerier
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
-        return $api->search('solr_mappings', [
-            'solr_node_id' => $this->solrNode->id(),
+        return $api->search('searchsolr_mappings', [
+            'searchsolr_node_id' => $this->solrNode->id(),
         ], ['returnScalar' => 'fieldName'])->getContent();
     }
 
@@ -541,10 +541,10 @@ class SolrQuerier extends AbstractQuerier
     {
         if (!isset($this->solrNode)) {
             $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-            $solrNodeId = $this->getAdapterSetting('solr_node_id');
+            $solrNodeId = $this->getAdapterSetting('searchsolr_node_id');
             if ($solrNodeId) {
                 // Automatically throw an exception when empty.
-                $this->solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
+                $this->solrNode = $api->read('searchsolr_nodes', $solrNodeId)->getContent();
             }
         }
         return $this->solrNode;

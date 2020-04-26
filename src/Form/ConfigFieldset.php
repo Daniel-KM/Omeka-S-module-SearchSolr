@@ -40,7 +40,7 @@ class ConfigFieldset extends Fieldset
         parent::__construct($name, $options);
 
         $this->add([
-            'name' => 'solr_node_id',
+            'name' => 'searchsolr_node_id',
             'type' => Element\Select::class,
             'options' => [
                 'label' => 'Solr node', // @translate

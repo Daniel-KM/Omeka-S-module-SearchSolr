@@ -92,7 +92,7 @@ class SolrIndexer extends AbstractIndexer
     public function canIndex($resourceName)
     {
         $services = $this->getServiceLocator();
-        $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
+        $valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
         return isset($valueExtractor);
@@ -160,8 +160,8 @@ class SolrIndexer extends AbstractIndexer
         $this->api = $services->get('Omeka\ApiManager');
         $this->apiAdapters = $services->get('Omeka\ApiAdapterManager');
         $this->entityManager = $services->get('Omeka\EntityManager');
-        $this->valueExtractorManager = $services->get('Solr\ValueExtractorManager');
-        $this->valueFormatterManager = $services->get('Solr\ValueFormatterManager');
+        $this->valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
+        $this->valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
         $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();
     }
 
@@ -320,10 +320,10 @@ class SolrIndexer extends AbstractIndexer
     protected function getSolrNode()
     {
         if (!isset($this->solrNode)) {
-            $solrNodeId = $this->getAdapterSetting('solr_node_id');
+            $solrNodeId = $this->getAdapterSetting('searchsolr_node_id');
             if ($solrNodeId) {
                 $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-                $this->solrNode = $api->read('solr_nodes', $solrNodeId)->getContent();
+                $this->solrNode = $api->read('searchsolr_nodes', $solrNodeId)->getContent();
             }
         }
         return $this->solrNode;
@@ -352,9 +352,9 @@ class SolrIndexer extends AbstractIndexer
         if (!isset($this->solrMappings[$resourceName])) {
             $solrNode = $this->getSolrNode();
             $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-            $this->solrMappings[$resourceName] = $api->search('solr_mappings', [
+            $this->solrMappings[$resourceName] = $api->search('searchsolr_mappings', [
                 'resource_name' => $resourceName,
-                'solr_node_id' => $solrNode->id(),
+                'searchsolr_node_id' => $solrNode->id(),
             ])->getContent();
         }
         return $this->solrMappings[$resourceName];

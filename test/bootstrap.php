@@ -18,4 +18,4 @@ use OmekaTestHelper\Bootstrap;
 Bootstrap::bootstrap(__DIR__);
 Bootstrap::loginAsAdmin();
 Bootstrap::enableModule('Search');
-Bootstrap::enableModule('Solr');
+Bootstrap::enableModule('SearchSolr');
