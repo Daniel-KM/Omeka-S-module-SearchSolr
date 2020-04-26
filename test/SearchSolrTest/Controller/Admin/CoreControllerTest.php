@@ -8,7 +8,7 @@ class CoreControllerTest extends SolrControllerTestCase
 {
     public function testBrowseAction()
     {
-        $this->dispatch('/admin/solr');
+        $this->dispatch('/admin/search/solr');
         $this->assertResponseStatusCode(200);
 
         $this->assertXpathQueryContentRegex('//table//td[1]', '/default/');
@@ -16,7 +16,7 @@ class CoreControllerTest extends SolrControllerTestCase
 
     public function testAddGetAction()
     {
-        $this->dispatch('/admin/solr/core/add');
+        $this->dispatch('/admin/search/solr/core/add');
         $this->assertResponseStatusCode(200);
 
         $this->assertQuery('input[name="o:name"]');
@@ -30,7 +30,7 @@ class CoreControllerTest extends SolrControllerTestCase
     {
         $forms = $this->getServiceLocator()->get('FormElementManager');
         $form = $forms->get('Solr\Form\Admin\SolrCoreForm');
-        $this->dispatch('/admin/solr/core/add', 'POST', [
+        $this->dispatch('/admin/search/solr/core/add', 'POST', [
             'o:name' => 'TestCore2',
             'o:settings' => [
                 'client' => [
@@ -42,7 +42,7 @@ class CoreControllerTest extends SolrControllerTestCase
             ],
             'csrf' => $form->get('csrf')->getValue(),
         ]);
-        $this->assertRedirectTo('/admin/solr');
+        $this->assertRedirectTo('/admin/search/solr');
     }
 
     public function testEditAction()
@@ -75,6 +75,6 @@ class CoreControllerTest extends SolrControllerTestCase
         $this->dispatch($solrCore3->adminUrl('delete'), 'POST', [
             'confirmform_csrf' => $form->get('confirmform_csrf')->getValue(),
         ]);
-        $this->assertRedirectTo('/admin/solr');
+        $this->assertRedirectTo('/admin/search/solr');
     }
 }

@@ -42,9 +42,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map create');
 <nav class="breadcrumbs">
     <?php
     echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/solr'));
-    echo $this->hyperlink(sprintf($translate('Resources list for core "%s"'), $map->solrCore()->name()), $this->url('admin/solr/core-id-map', ['coreId' => $map->solrCore()->id()], true));
-    echo $this->hyperlink(sprintf($translate('Maps for "%s"'), $form->getOption('resource_name')), $this->url('admin/solr/core-id-map-resource', ['coreId' => $map->solrCore()->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
+    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
+    echo $this->hyperlink(sprintf($translate('Resources list for core "%s"'), $map->solrCore()->name()), $this->url('admin/search/solr/core-id-map', ['coreId' => $map->solrCore()->id()], true));
+    echo $this->hyperlink(sprintf($translate('Maps for "%s"'), $form->getOption('resource_name')), $this->url('admin/search/solr/core-id-map-resource', ['coreId' => $map->solrCore()->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
     ?>
     <span><?php echo $translate('Edit'); ?></span>
 </nav>

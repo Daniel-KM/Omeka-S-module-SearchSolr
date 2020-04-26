@@ -82,7 +82,7 @@ class CoreController extends AbstractActionController
         $core = $this->api()->create('solr_cores', $data)->getContent();
         $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
-        return $this->redirect()->toRoute('admin/solr');
+        return $this->redirect()->toRoute('admin/search/solr');
     }
 
     public function editAction()
@@ -110,7 +110,7 @@ class CoreController extends AbstractActionController
         $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this core.'); // @translate
 
-        return $this->redirect()->toRoute('admin/solr');
+        return $this->redirect()->toRoute('admin/search/solr');
     }
 
     public function deleteConfirmAction()
@@ -147,7 +147,7 @@ class CoreController extends AbstractActionController
                 $this->messenger()->addError('Solr core could not be deleted'); // @translate
             }
         }
-        return $this->redirect()->toRoute('admin/solr');
+        return $this->redirect()->toRoute('admin/search/solr');
     }
 
     /**

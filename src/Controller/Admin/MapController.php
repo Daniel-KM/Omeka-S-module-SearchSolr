@@ -155,7 +155,7 @@ class MapController extends AbstractActionController
             $this->messenger()->addWarning('No new maps added.'); // @translate
         }
 
-        return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+        return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
             'coreId' => $solrCoreId,
             'resourceName' => $resourceName,
         ]);
@@ -215,7 +215,7 @@ class MapController extends AbstractActionController
             $this->messenger()->addWarning('No maps deleted.'); // @translate
         }
 
-        return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+        return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
             'coreId' => $solrCoreId,
             'resourceName' => $resourceName,
         ]);
@@ -246,7 +246,7 @@ class MapController extends AbstractActionController
                 $this->messenger()->addSuccess(new Message('Solr map created: %s.', // @translate
                     $data['o:field_name']));
 
-                return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+                return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
                     'coreId' => $solrCoreId,
                     'resourceName' => $resourceName,
                 ]);
@@ -300,7 +300,7 @@ class MapController extends AbstractActionController
 
                 $this->messenger()->addWarning('Don’t forget to check search pages that use this map.'); // @translate
 
-                return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+                return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
                     'coreId' => $solrCoreId,
                     'resourceName' => $resourceName,
                 ]);
@@ -364,7 +364,7 @@ class MapController extends AbstractActionController
             }
         }
 
-        return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+        return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
             'coreId' => $map->solrCore()->id(),
             'resourceName' => $map->resourceName(),
         ]);

@@ -55,29 +55,29 @@ return [
                 'pages' => [
                     [
                         'label' => 'Solr', // @translate
-                        'route' => 'admin/solr',
+                        'route' => 'admin/search/solr',
                         'resource' => Controller\Admin\CoreController::class,
                         'privilege' => 'browse',
                         // 'class' => 'o-icon-search',
                         'pages' => [
                             [
-                                'route' => 'admin/solr/node',
+                                'route' => 'admin/search/solr/core',
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/solr/node-id',
+                                'route' => 'admin/search/solr/core-id',
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/solr/node-id-mapping',
+                                'route' => 'admin/search/solr/core-id-map',
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/solr/node-id-mapping-resource',
+                                'route' => 'admin/search/solr/core-id-map-resource',
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/solr/node-id-mapping-resource-id',
+                                'route' => 'admin/search/solr/core-id-map-resource-id',
                                 'visible' => false,
                             ],
                         ],
@@ -90,69 +90,84 @@ return [
         'routes' => [
             'admin' => [
                 'child_routes' => [
-                    'solr' => [
-                        'type' => \Zend\Router\Http\Segment::class,
+                    'search' => [
+                        // Kept to simplify upgrade.
+                        'type' => \Zend\Router\Http\Literal::class,
                         'options' => [
-                            'route' => '/solr',
+                            'route' => '/search-manager',
                             'defaults' => [
-                                '__NAMESPACE__' => 'SearchSolr\Controller\Admin',
-                                'controller' => Controller\Admin\NodeController::class,
+                                '__NAMESPACE__' => 'Search\Controller\Admin',
+                                'controller' => \Search\Controller\Admin\IndexController::class,
                                 'action' => 'browse',
                             ],
                         ],
                         'may_terminate' => true,
                         'child_routes' => [
-                            'node' => [
+                            'solr' => [
                                 'type' => \Zend\Router\Http\Segment::class,
                                 'options' => [
-                                    'route' => '/node[/:action]',
+                                    'route' => '/solr',
                                     'defaults' => [
+                                        '__NAMESPACE__' => 'SearchSolr\Controller\Admin',
+                                        'controller' => Controller\Admin\CoreController::class,
                                         'action' => 'browse',
                                     ],
                                 ],
-                            ],
-                            'node-id' => [
-                                'type' => \Zend\Router\Http\Segment::class,
-                                'options' => [
-                                    'route' => '/node/:id[/:action]',
-                                    'constraints' => [
-                                        'id' => '\d+',
+                                'may_terminate' => true,
+                                'child_routes' => [
+                                    'core' => [
+                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'options' => [
+                                            'route' => '/core[/:action]',
+                                            'defaults' => [
+                                                'action' => 'browse',
+                                            ],
+                                        ],
                                     ],
-                                    'defaults' => [
-                                        'action' => 'show',
+                                    'core-id' => [
+                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'options' => [
+                                            'route' => '/core/:id[/:action]',
+                                            'constraints' => [
+                                                'id' => '\d+',
+                                            ],
+                                            'defaults' => [
+                                                'action' => 'show',
+                                            ],
+                                        ],
                                     ],
-                                ],
-                            ],
-                            'node-id-mapping' => [
-                                'type' => \Zend\Router\Http\Segment::class,
-                                'options' => [
-                                    'route' => '/node/:nodeId/mapping',
-                                    'defaults' => [
-                                        'controller' => Controller\Admin\MappingController::class,
-                                        'action' => 'browse',
+                                    'core-id-map' => [
+                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'options' => [
+                                            'route' => '/core/:coreId/map',
+                                            'defaults' => [
+                                                'controller' => Controller\Admin\MapController::class,
+                                                'action' => 'browse',
+                                            ],
+                                        ],
                                     ],
-                                ],
-                            ],
-                            'node-id-mapping-resource' => [
-                                'type' => \Zend\Router\Http\Segment::class,
-                                'options' => [
-                                    'route' => '/node/:nodeId/mapping/:resourceName[/:action]',
-                                    'defaults' => [
-                                        'controller' => Controller\Admin\MappingController::class,
-                                        'action' => 'browseResource',
+                                    'core-id-map-resource' => [
+                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'options' => [
+                                            'route' => '/core/:coreId/map/:resourceName[/:action]',
+                                            'defaults' => [
+                                                'controller' => Controller\Admin\MapController::class,
+                                                'action' => 'browseResource',
+                                            ],
+                                        ],
                                     ],
-                                ],
-                            ],
-                            'node-id-mapping-resource-id' => [
-                                'type' => \Zend\Router\Http\Segment::class,
-                                'options' => [
-                                    'route' => '/node/:nodeId/mapping/:resourceName/:id[/:action]',
-                                    'constraints' => [
-                                        'id' => '\d+',
-                                    ],
-                                    'defaults' => [
-                                        'controller' => Controller\Admin\MappingController::class,
-                                        'action' => 'show',
+                                    'core-id-map-resource-id' => [
+                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'options' => [
+                                            'route' => '/core/:coreId/map/:resourceName/:id[/:action]',
+                                            'constraints' => [
+                                                'id' => '\d+',
+                                            ],
+                                            'defaults' => [
+                                                'controller' => Controller\Admin\MapController::class,
+                                                'action' => 'show',
+                                            ],
+                                        ],
                                     ],
                                 ],
                             ],

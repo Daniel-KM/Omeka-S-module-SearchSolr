@@ -46,7 +46,7 @@ echo $this->pageTitle($pageTitle);
 
 <nav class="breadcrumbs">
     <?php echo $this->hyperlink($translate('Search'), $this->url('admin/search')); ?>
-    <?php echo $this->hyperlink($translate('Solr cores'), $this->url('admin/solr')); ?>
+    <?php echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')); ?>
     <span>
     <?php echo sprintf($translate('Resources list for core "%s"'), $solrCore->name()); ?>
     </span>
@@ -67,7 +67,7 @@ echo $this->pageTitle($pageTitle);
                         <ul class="actions">
                             <li>
                                 <?php
-                                    $href = $this->url('admin/solr/core-id-map-resource', ['resourceName' => $name, 'coreId' => $solrCore->id()]);
+                                    $href = $this->url('admin/search/solr/core-id-map-resource', ['resourceName' => $name, 'coreId' => $solrCore->id()]);
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon-settings',
                                         'title' => $translate('Rules'),

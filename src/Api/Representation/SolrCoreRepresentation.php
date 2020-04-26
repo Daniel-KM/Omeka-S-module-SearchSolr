@@ -66,7 +66,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             'force_canonical' => $canonical,
         ];
 
-        return $url('admin/solr/core-id', $params, $options);
+        return $url('admin/search/solr/core-id', $params, $options);
     }
 
     /**
@@ -189,7 +189,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $options = [
             'force_canonical' => $canonical,
         ];
-        return $url('admin/solr/core-id-map', $params, $options);
+        return $url('admin/search/solr/core-id-map', $params, $options);
     }
 
     /**
@@ -209,7 +209,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $options = [
             'force_canonical' => $canonical,
         ];
-        return $url('admin/solr/core-id-map-resource', $params, $options);
+        return $url('admin/search/solr/core-id-map-resource', $params, $options);
     }
 
     /**
