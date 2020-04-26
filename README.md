@@ -1,9 +1,13 @@
-Solr (module for Omeka S)
+Solr (module for Omeka S) [deprecated]
 =========================
 
 [![Build Status](https://travis-ci.org/biblibre/omeka-s-module-Solr.svg?branch=master)](https://travis-ci.org/biblibre/omeka-s-module-Solr)
 
 [Solr] is a module for [Omeka S] that provides a [Search] adapter for [Apache Solr].
+
+**IMPORTANT**
+This fork of the module Solr of BibLibre is deprecated and replaced by the
+module [Search adapter for Solr] in order to manage future improvements.
 
 
 Installation
@@ -109,15 +113,15 @@ it via `dpkg`. The process is the same  for Red Hat and derivatives.
 The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]), but
 not Solr 7.2.1 (indexing works, not the search).
 
-```bash
+```sh
 cd /opt
 # Check if java is installed with the good version.
 java -version
 # If not installed, install it (uncomment)
 #sudo apt install default-jre
-# The certificate is currently obsolete on Apache server, so don’t check it.
+# If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
+wget https://archive.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
 # Extract the install script
 tar zxvf solr-6.6.6.tgz solr-6.6.6/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
@@ -133,10 +137,17 @@ rm install_solr_service.sh
 
 Solr may be managed as a system service:
 
-```bash
+```sh
 sudo systemctl status solr
 sudo systemctl stop solr
 sudo systemctl start solr
+```
+
+The result may be more complete with direct command:
+```sh
+sudo su - solr -c "/opt/solr/bin/solr status"
+sudo su - solr -c "/opt/solr/bin/solr stop"
+sudo su - solr -c "/opt/solr/bin/solr start"
 ```
 
 Solr is automatically launched and available in your browser at [http://localhost:8983].
@@ -210,11 +221,11 @@ search engine to add such a protection.
 Before upgrade, you should backup the folder `/var/solr` if you want to upgrade
 a previous config:
 
-```bash
+```sh
 cd /opt
 java -version
 #sudo apt install default-jre
-wget --no-check-certificate https://www.eu.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
+wget https://archive.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
 tar zxvf solr-6.6.6.tgz solr-6.6.6/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
 sudo bash ./install_solr_service.sh solr-6.6.6.tgz -f
@@ -229,7 +240,7 @@ When Solr is installed manually, there is no automatic uninstallation process.
 The next commands are dangerous, so check the commands above twice before
 executing, in particular don’t add whitespace after the slashs "/".
 
-```bash
+```sh
 sudo systemctl stop solr
 sudo update-rc.d -f solr remove
 sudo rm /etc/init.d/solr
@@ -255,7 +266,7 @@ At least one index ("node", "collection" or "core")  should be created in Solr
 to be used with Omeka. The simpler is to create one via the command line to
 avoid permissions issues.
 
-```
+```sh
 sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
 ```
 
@@ -274,7 +285,7 @@ The config files are saved in `/var/solr/data` by default.
 If you choose a data driven schema, you can remove it and create a new one with
 the same name.
 
-```
+```sh
 sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"
 sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
 ```
@@ -354,6 +365,7 @@ See commits for full list of contributors.
 
 
 [Solr]: https://github.com/BibLibre/Omeka-S-module-Solr
+[Search adapter for Solr]: https://github.com/Daniel-KM/Omeka-S-module-SearchSolr
 [Omeka S]: https://omeka.org/s
 [Search]: https://github.com/biblibre/omeka-s-module-Search
 [Apache Solr]: https://lucene.apache.org/solr/
