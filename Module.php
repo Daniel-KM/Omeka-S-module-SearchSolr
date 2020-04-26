@@ -38,8 +38,6 @@ if (!class_exists(\Generic\AbstractModule::class)) {
 
 use Generic\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
-use Omeka\Mvc\Controller\Plugin\Messenger;
-use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
 use Zend\EventManager\Event;
@@ -55,6 +53,8 @@ class Module extends AbstractModule
 
     public function init(ModuleManager $moduleManager)
     {
+        require_once __DIR__ . '/vendor/autoload.php';
+
         // No need to check the dependency upon Search here.
         // Once disabled via onBootstrap(), thiis method is no more called.
 
@@ -94,21 +94,10 @@ class Module extends AbstractModule
     {
         $serviceLocator = $this->getServiceLocator();
 
-        if (!extension_loaded('solr')) {
+        if (!file_exists(__DIR__ . '/vendor/solarium/solarium/library/Solarium/Autoloader.php')) {
             $translator = $serviceLocator->get('MvcTranslator');
-            $message = $translator->translate('Solr module requires PHP Solr extension, which is not loaded.');
+            $message = sprintf($translator->translate('The composer library "%s" is not installed. See readme.'), 'Solarium'); // @translate
             throw new ModuleCannotInstallException($message);
-        }
-
-        if (!class_exists('SolrDisMaxQuery')) {
-            $translator = $serviceLocator->get('MvcTranslator');
-            $solrVersion = class_exists('SolrUtils') ? \SolrUtils::getSolrVersion() : $translator->translate('[unknown]');
-            $message = new Message(
-                $translator->translate('To use advanced query options (and/or, distance max, etc.), Solr module requires PHP Solr library 2.1.0 or above (lastest recommended, current %s).'),
-                $solrVersion
-            );
-            $messenger = new Messenger();
-            $messenger->addWarning($message);
         }
     }
 

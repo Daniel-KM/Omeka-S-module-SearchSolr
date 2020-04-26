@@ -6,5 +6,8 @@
         "psr-4": {
             "SearchSolrTest\\": "test/SearchSolrTest/"
         }
+    },
+    "require": {
+        "solarium/solarium": "^3.8"
     }
 }
