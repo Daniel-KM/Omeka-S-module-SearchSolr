@@ -107,7 +107,7 @@ class SolrNodeForm extends Form
             'name' => 'login',
             'type' => Element\Text::class,
             'options' => [
-                'label' => 'Solr login (if secured)', // @translate
+                'label' => 'Solr user', // @translate
             ],
             'attributes' => [
                 'id' => 'login',
@@ -120,7 +120,7 @@ class SolrNodeForm extends Form
             'name' => 'password',
             'type' => Element\Text::class,
             'options' => [
-                'label' => 'Solr password (if secured)', // @translate
+                'label' => 'Solr password', // @translate
                 'info' => 'Note: the password is saved clear in the database, so it is recommended to create a specific user.', // @translate
             ],
             'attributes' => [
@@ -144,6 +144,7 @@ It must be a single-valued, boolean-based field (*_b).', // @translate
                 'id' => 'is_public_field',
                 'required' => true,
                 'placeholder' => 'is_public_b',
+                'value' => 'is_public_b',
             ],
         ]);
 
@@ -159,6 +160,7 @@ It must be a single-valued, string-based field (*_s).', // @translate
                 'id' => 'resource_name_field',
                 'required' => true,
                 'placeholder' => 'resource_name_s',
+                'value' => 'resource_name_s',
             ],
         ]);
 
@@ -174,6 +176,7 @@ It must be a multi-valued, integer-based field (*_is).', // @translate
                 'id' => 'sites_field',
                 'required' => true,
                 'placeholder' => 'site_id_is',
+                'value' => 'site_id_is',
             ],
         ]);
 
@@ -188,7 +191,7 @@ It must be a multi-valued, integer-based field (*_is).', // @translate
                 'label' => 'Minimum match (or/and)', // @translate
                 'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
 If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
-                'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
+                'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
             ],
             'attributes' => [
                 'required' => false,
@@ -204,7 +207,7 @@ If empty, the config of the solr node (solrconfig.xml) will be used.', // @trans
                 'label' => 'Tie breaker', // @translate
                 'info' => 'Increase score according to the number of matched fields.
 If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
-                'documentation' => 'https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
+                'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
             ],
             'attributes' => [
                 'id' => 'tie_breaker',
