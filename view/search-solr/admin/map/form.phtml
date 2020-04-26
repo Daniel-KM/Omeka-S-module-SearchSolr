@@ -1,18 +1,18 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Form\Admin\SolrMappingForm $form
+ * @var \SearchSolr\Form\Admin\SolrMapForm $form
  * @var string $schema
  * @var array $sourceLabels
  */
 
 $translate = $this->plugin('translate');
-$this->headLink()->appendStylesheet($this->assetUrl('css/solr-admin.css', 'Solr'));
+$this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()->appendScript(
     'var schema = ' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
 var sourceLabels = ' . json_encode($sourceLabels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';'
 );
-$this->headScript()->appendFile($this->assetUrl('js/solr-admin.js', 'Solr'), 'text/javascript', ['defer' => 'defer']);
+$this->headScript()->appendFile($this->assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 ?>
 
 <?php $form->prepare(); ?>

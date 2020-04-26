@@ -35,7 +35,7 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 
-class SolrNodeAdapter extends AbstractEntityAdapter
+class SolrCoreAdapter extends AbstractEntityAdapter
 {
     protected $sortFields = [
         'id' => 'id',
@@ -44,17 +44,17 @@ class SolrNodeAdapter extends AbstractEntityAdapter
 
     public function getResourceName()
     {
-        return 'solr_nodes';
+        return 'solr_cores';
     }
 
     public function getRepresentationClass()
     {
-        return \SearchSolr\Api\Representation\SolrNodeRepresentation::class;
+        return \SearchSolr\Api\Representation\SolrCoreRepresentation::class;
     }
 
     public function getEntityClass()
     {
-        return \SearchSolr\Entity\SolrNode::class;
+        return \SearchSolr\Entity\SolrCore::class;
     }
 
     public function hydrate(Request $request, EntityInterface $entity,

@@ -34,7 +34,7 @@ use Omeka\Entity\AbstractEntity;
 /**
  * @Entity
  */
-class SolrNode extends AbstractEntity
+class SolrCore extends AbstractEntity
 {
     /**
      * @Id

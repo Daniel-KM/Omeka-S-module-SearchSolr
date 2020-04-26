@@ -36,14 +36,14 @@ use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
-use SearchSolr\Api\Representation\SolrNodeRepresentation;
-use SearchSolr\Form\Admin\SolrMappingForm;
+use SearchSolr\Api\Representation\SolrCoreRepresentation;
+use SearchSolr\Form\Admin\SolrMapForm;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use SearchSolr\Api\Representation\SolrMappingRepresentation;
+use SearchSolr\Api\Representation\SolrMapRepresentation;
 
-class MappingController extends AbstractActionController
+class MapController extends AbstractActionController
 {
     /**
      * @var ValueExtractorManager
@@ -67,8 +67,8 @@ class MappingController extends AbstractActionController
 
     public function browseAction()
     {
-        $solrNodeId = $this->params('nodeId');
-        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
+        $solrCoreId = $this->params('coreId');
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         $valueExtractors = [];
         foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
@@ -76,7 +76,7 @@ class MappingController extends AbstractActionController
         }
 
         $view = new ViewModel;
-        $view->setVariable('solrNode', $solrNode);
+        $view->setVariable('solrCore', $solrCore);
         $view->setVariable('valueExtractors', $valueExtractors);
 
         return $view;
@@ -84,43 +84,43 @@ class MappingController extends AbstractActionController
 
     public function browseResourceAction()
     {
-        $solrNodeId = $this->params('nodeId');
+        $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
-        $mappings = $this->api()->search('searchsolr_mappings', [
-            'searchsolr_node_id' => $solrNode->id(),
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        $maps = $this->api()->search('solr_maps', [
+            'solr_core_id' => $solrCore->id(),
             'resource_name' => $resourceName,
         ])->getContent();
 
         $view = new ViewModel;
-        $view->setVariable('solrNode', $solrNode);
+        $view->setVariable('solrCore', $solrCore);
         $view->setVariable('resourceName', $resourceName);
-        $view->setVariable('mappings', $mappings);
+        $view->setVariable('maps', $maps);
         return $view;
     }
 
     public function completeAction()
     {
-        $solrNodeId = $this->params('nodeId');
+        $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         $api = $this->api();
 
         // Get all existing indexed properties.
-        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
-        $mappings = $api->search('searchsolr_mappings', [
-            'searchsolr_node_id' => $solrNode->id(),
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
+        $maps = $api->search('solr_maps', [
+            'solr_core_id' => $solrCore->id(),
             'resource_name' => $resourceName,
         ])->getContent();
         // Keep only the source.
-        $mappings = array_map(function ($v) {
+        $maps = array_map(function ($v) {
             return $v->source();
-        }, $mappings);
+        }, $maps);
 
-        // Add all missing mappings.
+        // Add all missing maps.
         $result = [];
         $properties = $api->search('properties')->getContent();
         $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
@@ -131,59 +131,59 @@ class MappingController extends AbstractActionController
             }
             $term = $property->term();
             // Skip property that are already mapped.
-            if (in_array($term, $mappings)) {
+            if (in_array($term, $maps)) {
                 continue;
             }
 
             $data = [];
-            $data['o:solr_node']['o:id'] = $solrNodeId;
+            $data['o:solr_core']['o:id'] = $solrCoreId;
             $data['o:resource_name'] = $resourceName;
             $data['o:field_name'] = str_replace(':', '_', $term) . '_t';
             $data['o:source'] = $term;
             $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
-            $api->create('searchsolr_mappings', $data);
+            $api->create('solr_maps', $data);
 
             $result[] = $term;
         }
 
         if ($result) {
-            $this->messenger()->addSuccess(new Message('%d mappings successfully created: "%s".', // @translate
+            $this->messenger()->addSuccess(new Message('%d maps successfully created: "%s".', // @translate
                 count($result), implode('", "', $result)));
-            $this->messenger()->addWarning('Check all new mappings and remove useless ones.'); // @translate
-            $this->messenger()->addNotice('Don’t forget to run the indexation of the node.'); // @translate
+            $this->messenger()->addWarning('Check all new maps and remove useless ones.'); // @translate
+            $this->messenger()->addNotice('Don’t forget to run the indexation of the core.'); // @translate
         } else {
-            $this->messenger()->addWarning('No new mappings added.'); // @translate
+            $this->messenger()->addWarning('No new maps added.'); // @translate
         }
 
-        return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
-            'nodeId' => $solrNodeId,
+        return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+            'coreId' => $solrCoreId,
             'resourceName' => $resourceName,
         ]);
     }
 
     public function cleanAction()
     {
-        $solrNodeId = $this->params('nodeId');
+        $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         $api = $this->api();
 
         // Get all existing indexed properties.
-        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
-        $mappings = $api->search('searchsolr_mappings', [
-            'searchsolr_node_id' => $solrNode->id(),
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
+        $maps = $api->search('solr_maps', [
+            'solr_core_id' => $solrCore->id(),
             'resource_name' => $resourceName,
         ])->getContent();
-        // Map as associative array by mapping id and keep only the source.
-        $mappingList = [];
-        foreach ($mappings as $mapping) {
-            $mappingList[$mapping->id()] = $mapping->source();
+        // Map as associative array by map id and keep only the source.
+        $mapList = [];
+        foreach ($maps as $map) {
+            $mapList[$map->id()] = $map->source();
         }
-        $mappings = $mappingList;
+        $maps = $mapList;
 
-        // Add all missing mappings.
+        // Add all missing maps.
         $result = [];
         $properties = $api->search('properties')->getContent();
         $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
@@ -194,42 +194,42 @@ class MappingController extends AbstractActionController
             }
             $term = $property->term();
             // Skip property that are not mapped.
-            if (!in_array($term, $mappings)) {
+            if (!in_array($term, $maps)) {
                 continue;
             }
 
-            // There may be multiple mappings with the same term.
-            $ids = array_keys(array_filter($mappings, function ($v) use ($term) {
+            // There may be multiple maps with the same term.
+            $ids = array_keys(array_filter($maps, function ($v) use ($term) {
                 return $v === $term;
             }));
-            $api->batchDelete('searchsolr_mappings', $ids);
+            $api->batchDelete('solr_maps', $ids);
 
             $result[] = $term;
         }
 
         if ($result) {
-            $this->messenger()->addSuccess(new Message('%d mappings successfully deleted: "%s".', // @translate
+            $this->messenger()->addSuccess(new Message('%d maps successfully deleted: "%s".', // @translate
                 count($result), implode('", "', $result)));
-            $this->messenger()->addNotice('Don’t forget to run the indexation of the node.'); // @translate
+            $this->messenger()->addNotice('Don’t forget to run the indexation of the core.'); // @translate
         } else {
-            $this->messenger()->addWarning('No mappings deleted.'); // @translate
+            $this->messenger()->addWarning('No maps deleted.'); // @translate
         }
 
-        return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
-            'nodeId' => $solrNodeId,
+        return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+            'coreId' => $solrCoreId,
             'resourceName' => $resourceName,
         ]);
     }
 
     public function addAction()
     {
-        $solrNodeId = $this->params('nodeId');
+        $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
 
-        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
-        $form = $this->getForm(SolrMappingForm::class, [
-            'searchsolr_node_id' => $solrNodeId,
+        $form = $this->getForm(SolrMapForm::class, [
+            'solr_core_id' => $solrCoreId,
             'resource_name' => $resourceName,
         ]);
 
@@ -239,15 +239,15 @@ class MappingController extends AbstractActionController
             if ($form->isValid()) {
                 $data = $form->getData();
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
-                $data['o:solr_node']['o:id'] = $solrNodeId;
+                $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
-                $this->api()->create('searchsolr_mappings', $data);
+                $this->api()->create('solr_maps', $data);
 
-                $this->messenger()->addSuccess(new Message('Solr mapping created: %s.', // @translate
+                $this->messenger()->addSuccess(new Message('Solr map created: %s.', // @translate
                     $data['o:field_name']));
 
-                return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
-                    'nodeId' => $solrNodeId,
+                return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+                    'coreId' => $solrCoreId,
                     'resourceName' => $resourceName,
                 ]);
             } else {
@@ -261,29 +261,29 @@ class MappingController extends AbstractActionController
         }
 
         $view = new ViewModel;
-        $view->setVariable('solrNode', $solrNode);
+        $view->setVariable('solrCore', $solrCore);
         $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
+        $view->setVariable('schema', $this->getSolrSchema($solrCoreId));
         $view->setVariable('sourceLabels', $this->getSourceLabels());
         return $view;
     }
 
     public function editAction()
     {
-        $solrNodeId = $this->params('nodeId');
+        $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
         $id = $this->params('id');
 
-        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation $mapping */
-        $mapping = $this->api()->read('searchsolr_mappings', $id)->getContent();
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
+        $map = $this->api()->read('solr_maps', $id)->getContent();
 
-        $form = $this->getForm(SolrMappingForm::class, [
-            'searchsolr_node_id' => $solrNodeId,
+        $form = $this->getForm(SolrMapForm::class, [
+            'solr_core_id' => $solrCoreId,
             'resource_name' => $resourceName,
         ]);
-        $mappingData = $mapping->jsonSerialize();
-        $mappingData['o:source'] = $this->sourceStringToArray($mappingData['o:source']);
-        $form->setData($mappingData);
+        $mapData = $map->jsonSerialize();
+        $mapData['o:source'] = $this->sourceStringToArray($mapData['o:source']);
+        $form->setData($mapData);
 
         if ($this->getRequest()->isPost()) {
             $data = $this->params()->fromPost();
@@ -291,17 +291,17 @@ class MappingController extends AbstractActionController
             if ($form->isValid()) {
                 $data = $form->getData();
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
-                $data['o:solr_node']['o:id'] = $solrNodeId;
+                $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
-                $this->api()->update('searchsolr_mappings', $id, $data);
+                $this->api()->update('solr_maps', $id, $data);
 
-                $this->messenger()->addSuccess(new Message('Solr mapping modified: %s.', // @translate
+                $this->messenger()->addSuccess(new Message('Solr map modified: %s.', // @translate
                     $data['o:field_name']));
 
-                $this->messenger()->addWarning('Don’t forget to check search pages that use this mapping.'); // @translate
+                $this->messenger()->addWarning('Don’t forget to check search pages that use this map.'); // @translate
 
-                return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
-                    'nodeId' => $solrNodeId,
+                return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+                    'coreId' => $solrCoreId,
                     'resourceName' => $resourceName,
                 ]);
             } else {
@@ -315,9 +315,9 @@ class MappingController extends AbstractActionController
         }
 
         $view = new ViewModel;
-        $view->setVariable('mapping', $mapping);
+        $view->setVariable('map', $map);
         $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrNodeId));
+        $view->setVariable('schema', $this->getSolrSchema($solrCoreId));
         $view->setVariable('sourceLabels', $this->getSourceLabels());
         return $view;
     }
@@ -325,55 +325,55 @@ class MappingController extends AbstractActionController
     public function deleteConfirmAction()
     {
         $id = $this->params('id');
-        $response = $this->api()->read('searchsolr_mappings', $id);
-        $mapping = $response->getContent();
+        $response = $this->api()->read('solr_maps', $id);
+        $map = $response->getContent();
 
-        $searchPages = $this->searchSearchPages($mapping->solrNode());
-        $searchPagesUsingMapping = [];
+        $searchPages = $this->searchSearchPages($map->solrCore());
+        $searchPagesUsingMap = [];
         foreach ($searchPages as $searchPage) {
-            if ($this->doesSearchPageUseMapping($searchPage, $mapping)) {
-                $searchPagesUsingMapping[] = $searchPage;
+            if ($this->doesSearchPageUseMap($searchPage, $map)) {
+                $searchPagesUsingMap[] = $searchPage;
             }
         }
 
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'Solr mapping'); // @translate
-        $view->setVariable('resource', $mapping);
-        $view->setVariable('partialPath', 'common/solr-mapping-delete-confirm-details');
+        $view->setVariable('resourceLabel', 'Solr map'); // @translate
+        $view->setVariable('resource', $map);
+        $view->setVariable('partialPath', 'common/solr-map-delete-confirm-details');
         $view->setVariable('totalSearchPages', count($searchPages));
-        $view->setVariable('totalSearchPagesUsingMapping', count($searchPagesUsingMapping));
+        $view->setVariable('totalSearchPagesUsingMap', count($searchPagesUsingMap));
         return $view;
     }
 
     public function deleteAction()
     {
         $id = $this->params('id');
-        $mapping = $this->api()->read('searchsolr_mappings', $id)->getContent();
+        $map = $this->api()->read('solr_maps', $id)->getContent();
 
         if ($this->getRequest()->isPost()) {
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $this->api()->delete('searchsolr_mappings', $id);
-                $this->messenger()->addSuccess('Solr mapping successfully deleted'); // @translate
-                $this->messenger()->addWarning('Don’t forget to check search pages that used this mapping.'); // @translate
+                $this->api()->delete('solr_maps', $id);
+                $this->messenger()->addSuccess('Solr map successfully deleted'); // @translate
+                $this->messenger()->addWarning('Don’t forget to check search pages that used this map.'); // @translate
             } else {
-                $this->messenger()->addError('Solr mapping could not be deleted'); // @translate
+                $this->messenger()->addError('Solr map could not be deleted'); // @translate
             }
         }
 
-        return $this->redirect()->toRoute('admin/solr/node-id-mapping-resource', [
-            'nodeId' => $mapping->solrNode()->id(),
-            'resourceName' => $mapping->resourceName(),
+        return $this->redirect()->toRoute('admin/solr/core-id-map-resource', [
+            'coreId' => $map->solrCore()->id(),
+            'resourceName' => $map->resourceName(),
         ]);
     }
 
-    protected function getSolrSchema($solrNodeId)
+    protected function getSolrSchema($solrCoreId)
     {
-        $solrNode = $this->api()->read('searchsolr_nodes', $solrNodeId)->getContent();
-        return $solrNode->schema()->getSchema();
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        return $solrCore->schema()->getSchema();
     }
 
     protected function getSourceLabels()
@@ -402,20 +402,20 @@ class MappingController extends AbstractActionController
     }
 
     /**
-     * Find all search indexes related to a specific solr node.
+     * Find all search indexes related to a specific solr core.
      *
-     * @todo Factorize with NodeController::searchSearchIndexes()
-     * @param SolrNodeRepresentation $solrNode
+     * @todo Factorize with CoreController::searchSearchIndexes()
+     * @param SolrCoreRepresentation $solrCore
      * @return SearchIndexRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchIndexes(SolrNodeRepresentation $solrNode)
+    protected function searchSearchIndexes(SolrCoreRepresentation $solrCore)
     {
         $result = [];
         $api = $this->api();
         $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
-            if ($solrNode->id() == $searchIndexSettings['adapter']['searchsolr_node_id']) {
+            if ($solrCore->id() == $searchIndexSettings['adapter']['solr_core_id']) {
                 $result[$searchIndex->id()] = $searchIndex;
             }
         }
@@ -423,18 +423,18 @@ class MappingController extends AbstractActionController
     }
 
     /**
-     * Find all search pages related to a specific solr node.
+     * Find all search pages related to a specific solr core.
      *
-     * @todo Factorize with NodeController::searchSearchPages()
-     * @param SolrNodeRepresentation $solrNode
+     * @todo Factorize with CoreController::searchSearchPages()
+     * @param SolrCoreRepresentation $solrCore
      * @return SearchPageRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchPages(SolrNodeRepresentation $solrNode)
+    protected function searchSearchPages(SolrCoreRepresentation $solrCore)
     {
-        // TODO Use entity manager to simplify search of pages from node.
+        // TODO Use entity manager to simplify search of pages from core.
         $result = [];
         $api = $this->api();
-        $searchIndexes = $this->searchSearchIndexes($solrNode);
+        $searchIndexes = $this->searchSearchIndexes($solrCore);
         foreach ($searchIndexes as $searchIndex) {
             $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
             foreach ($searchPages as $searchPage) {
@@ -445,18 +445,18 @@ class MappingController extends AbstractActionController
     }
 
     /**
-     * Check if a search page use a mapping enabled as facet or sort field.
+     * Check if a search page use a map enabled as facet or sort field.
      *
      * @param SearchPageRepresentation $searchPage
-     * @param SolrMappingRepresentation $solrMapping
+     * @param SolrMapRepresentation $solrMap
      * @return bool
      */
-    protected function doesSearchPageUseMapping(
+    protected function doesSearchPageUseMap(
         SearchPageRepresentation $searchPage,
-        SolrMappingRepresentation $solrMapping
+        SolrMapRepresentation $solrMap
     ) {
         $searchPageSettings = $searchPage->settings();
-        $fieldName = $solrMapping->fieldName();
+        $fieldName = $solrMap->fieldName();
         foreach ($searchPageSettings as $value) {
             if (is_array($value)) {
                 if (!empty($value[$fieldName]['enabled'])

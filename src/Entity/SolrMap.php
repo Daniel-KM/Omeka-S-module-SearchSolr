@@ -34,7 +34,7 @@ use Omeka\Entity\AbstractEntity;
 /**
  * @Entity
  */
-class SolrMapping extends AbstractEntity
+class SolrMap extends AbstractEntity
 {
     /**
      * @Id
@@ -45,14 +45,14 @@ class SolrMapping extends AbstractEntity
 
     /**
      * @ManyToOne(
-     *     targetEntity="Solr\Entity\SolrNode"
+     *     targetEntity="Solr\Entity\SolrCore"
      * )
      * @JoinColumn(
      *     nullable=false,
      *     onDelete="CASCADE"
      * )
      */
-    protected $solrNode;
+    protected $solrCore;
 
     /**
      * @Column(type="string", length=255)
@@ -79,14 +79,14 @@ class SolrMapping extends AbstractEntity
         return $this->id;
     }
 
-    public function setSolrNode(SolrNode $solrNode)
+    public function setSolrCore(SolrCore $solrCore)
     {
-        $this->solrNode = $solrNode;
+        $this->solrCore = $solrCore;
     }
 
-    public function getSolrNode()
+    public function getSolrCore()
     {
-        return $this->solrNode;
+        return $this->solrCore;
     }
 
     public function setResourceName($resourceName)

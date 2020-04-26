@@ -31,21 +31,21 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Api\Representation\SolrNodeRepresentation $solrNode
- * @var \SearchSolr\Form\Admin\SolrMappingForm $form
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var \SearchSolr\Form\Admin\SolrMapForm $form
  */
 
 $translate = $this->plugin('translate');
-$this->htmlElement('body')->appendAttribute('class', 'solr-mapping create');
+$this->htmlElement('body')->appendAttribute('class', 'solr-map create');
 ?>
-<?php echo $this->pageTitle($translate('Add Solr mapping')); ?>
+<?php echo $this->pageTitle($translate('Add Solr map')); ?>
 <nav class="breadcrumbs">
     <?php
     echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr'));
-    echo $this->hyperlink(sprintf($translate('Resources list for node "%s"'), $solrNode->name()), $this->url('admin/solr/node-id-mapping', ['nodeId' => $solrNode->id()], true));
-    echo $this->hyperlink(sprintf($translate('Mappings for "%s"'), $form->getOption('resource_name')), $this->url('admin/solr/node-id-mapping-resource', ['nodeId' => $solrNode->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
+    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/solr'));
+    echo $this->hyperlink(sprintf($translate('Resources list for core "%s"'), $solrCore->name()), $this->url('admin/solr/core-id-map', ['coreId' => $solrCore->id()], true));
+    echo $this->hyperlink(sprintf($translate('Maps for "%s"'), $form->getOption('resource_name')), $this->url('admin/solr/core-id-map-resource', ['coreId' => $solrCore->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
     ?>
     <span><?php echo $translate('Add'); ?></span>
 </nav>
-<?php echo $this->partial('solr/admin/mapping/form'); ?>
+<?php echo $this->partial('search-solr/admin/map/form'); ?>

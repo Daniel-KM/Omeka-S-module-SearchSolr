@@ -33,7 +33,7 @@ use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
 
-class SolrNodeForm extends Form
+class SolrCoreForm extends Form
 {
     public function init()
     {
@@ -83,7 +83,7 @@ class SolrNodeForm extends Form
             'name' => 'path',
             'type' => Element\Text::class,
             'options' => [
-                'label' => 'Solr node path', // @translate
+                'label' => 'Solr core path', // @translate
             ],
             'attributes' => [
                 'id' => 'path',
@@ -190,7 +190,7 @@ It must be a multi-valued, integer-based field (*_is).', // @translate
             'options' => [
                 'label' => 'Minimum match (or/and)', // @translate
                 'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
-If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
+If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
                 'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
             ],
             'attributes' => [
@@ -206,7 +206,7 @@ If empty, the config of the solr node (solrconfig.xml) will be used.', // @trans
             'options' => [
                 'label' => 'Tie breaker', // @translate
                 'info' => 'Increase score according to the number of matched fields.
-If empty, the config of the solr node (solrconfig.xml) will be used.', // @translate
+If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
                 'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
             ],
             'attributes' => [

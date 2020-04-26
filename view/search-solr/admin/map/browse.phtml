@@ -31,24 +31,24 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Api\Representation\SolrNodeRepresentation $solrNode
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
  * @var \SearchSolr\ValueExtractor\ValueExtractorInterface[] $valueExtractors
  */
 
 $translate = $this->plugin('translate');
 ?>
-<?php $this->htmlElement('body')->appendAttribute('class', 'solr-mapping browse'); ?>
+<?php $this->htmlElement('body')->appendAttribute('class', 'solr-map browse'); ?>
 
 <?php
-$pageTitle = sprintf($translate('Solr node "%s"'), $solrNode->name());
+$pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
 echo $this->pageTitle($pageTitle);
 ?>
 
 <nav class="breadcrumbs">
     <?php echo $this->hyperlink($translate('Search'), $this->url('admin/search')); ?>
-    <?php echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr')); ?>
+    <?php echo $this->hyperlink($translate('Solr cores'), $this->url('admin/solr')); ?>
     <span>
-    <?php echo sprintf($translate('Resources list for node "%s"'), $solrNode->name()); ?>
+    <?php echo sprintf($translate('Resources list for core "%s"'), $solrCore->name()); ?>
     </span>
 </nav>
 
@@ -67,7 +67,7 @@ echo $this->pageTitle($pageTitle);
                         <ul class="actions">
                             <li>
                                 <?php
-                                    $href = $this->url('admin/solr/node-id-mapping-resource', ['resourceName' => $name, 'nodeId' => $solrNode->id()]);
+                                    $href = $this->url('admin/solr/core-id-map-resource', ['resourceName' => $name, 'coreId' => $solrCore->id()]);
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon-settings',
                                         'title' => $translate('Rules'),

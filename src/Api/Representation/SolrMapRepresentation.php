@@ -31,18 +31,18 @@ namespace SearchSolr\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
-class SolrMappingRepresentation extends AbstractEntityRepresentation
+class SolrMapRepresentation extends AbstractEntityRepresentation
 {
     public function getJsonLdType()
     {
-        return 'o:SolrMapping';
+        return 'o:SolrMap';
     }
 
     public function getJsonLd()
     {
         $entity = $this->resource;
         return [
-            'o:solr_node' => $this->solrNode()->getReference(),
+            'o:solr_core' => $this->solrCore()->getReference(),
             'o:resource_name' => $entity->getResourceName(),
             'o:field_name' => $entity->getFieldName(),
             'o:source' => $entity->getSource(),
@@ -57,22 +57,22 @@ class SolrMappingRepresentation extends AbstractEntityRepresentation
             'action' => $action,
             'id' => $this->id(),
             'resourceName' => $this->resourceName(),
-            'nodeId' => $this->solrNode()->id(),
+            'coreId' => $this->solrCore()->id(),
         ];
         $options = [
             'force_canonical' => $canonical,
         ];
 
-        return $url('admin/solr/node-id-mapping-resource-id', $params, $options);
+        return $url('admin/solr/core-id-map-resource-id', $params, $options);
     }
 
     /**
-     * @return \SearchSolr\Api\Representation\SolrNodeRepresentation
+     * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
      */
-    public function solrNode()
+    public function solrCore()
     {
-        $solrNode = $this->resource->getSolrNode();
-        return $this->getAdapter('solr_nodes')->getRepresentation($solrNode);
+        $solrCore = $this->resource->getSolrCore();
+        return $this->getAdapter('solr_cores')->getRepresentation($solrCore);
     }
 
     /**

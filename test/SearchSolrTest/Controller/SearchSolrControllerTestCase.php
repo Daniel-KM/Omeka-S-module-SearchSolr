@@ -6,8 +6,8 @@ use OmekaTestHelper\Controller\OmekaControllerTestCase;
 
 abstract class SolrControllerTestCase extends OmekaControllerTestCase
 {
-    protected $solrNode;
-    protected $solrMapping;
+    protected $solrCore;
+    protected $solrMap;
     protected $searchIndex;
     protected $searchPage;
 
@@ -17,22 +17,22 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
 
         $this->loginAsAdmin();
 
-        $response = $this->api()->create('solr_nodes', [
-            'o:name' => 'TestNode',
+        $response = $this->api()->create('solr_cores', [
+            'o:name' => 'TestCore',
             'o:settings' => [
                 'client' => [
                     'hostname' => 'localhost',
                     'port' => '8983',
-                    'path' => 'solr/test_node',
+                    'path' => 'solr/test_core',
                 ],
                 'resource_name_field' => 'resource_name_s',
             ],
         ]);
-        $solrNode = $response->getContent();
+        $solrCore = $response->getContent();
 
-        $response = $this->api()->create('solr_mappings', [
-            'o:solr_node' => [
-                'o:id' => $solrNode->id(),
+        $response = $this->api()->create('solr_maps', [
+            'o:solr_core' => [
+                'o:id' => $solrCore->id(),
             ],
             'o:resource_name' => 'items',
             'o:field_name' => 'dc_terms_title_t',
@@ -41,7 +41,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
                 'formatter' => '',
             ],
         ]);
-        $solrMapping = $response->getContent();
+        $solrMap = $response->getContent();
 
         $response = $this->api()->create('search_indexes', [
             'o:name' => 'TestIndex',
@@ -52,7 +52,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
                     'item_sets',
                 ],
                 'adapter' => [
-                    'solr_node_id' => $solrNode->id(),
+                    'solr_core_id' => $solrCore->id(),
                 ],
             ],
         ]);
@@ -69,8 +69,8 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
         ]);
         $searchPage = $response->getContent();
 
-        $this->solrNode = $solrNode;
-        $this->solrMapping = $solrMapping;
+        $this->solrCore = $solrCore;
+        $this->solrMap = $solrMap;
         $this->searchIndex = $searchIndex;
         $this->searchPage = $searchPage;
     }
@@ -79,7 +79,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
     {
         $this->api()->delete('search_pages', $this->searchPage->id());
         $this->api()->delete('search_indexes', $this->searchIndex->id());
-        $this->api()->delete('solr_mappings', $this->solrMapping->id());
-        $this->api()->delete('solr_nodes', $this->solrNode->id());
+        $this->api()->delete('solr_maps', $this->solrMap->id());
+        $this->api()->delete('solr_cores', $this->solrCore->id());
     }
 }

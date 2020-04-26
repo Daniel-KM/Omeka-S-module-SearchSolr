@@ -1,25 +1,25 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Api\Representation\SolrMappingRepresentation $resource
- * @var \SearchSolr\Api\Representation\SolrMappingRepresentation $mapping
+ * @var \SearchSolr\Api\Representation\SolrMapRepresentation $resource
+ * @var \SearchSolr\Api\Representation\SolrMapRepresentation $map
  * @var int $totalSearchPages
- * @var int $totalSearchPagesUsingMapping
+ * @var int $totalSearchPagesUsingMap
  */
 
 $translate = $this->plugin('translate');
 ?>
 <?php if ($totalSearchPages): ?>
 <p><?php
-echo sprintf($translate('Mapping between property "%s" and Solr field "%s" for "%s"'), $resource->source(), $resource->fieldName(), $resource->resourceName());
+echo sprintf($translate('Map between property "%s" and Solr field "%s" for "%s"'), $resource->source(), $resource->fieldName(), $resource->resourceName());
 ?></p>
 <h4><?php echo $translate('WARNING'); ?></h4>
 <p><?php
-echo sprintf($translate('This will remove all references to this Solr mapping in search pages that use it (%d, of which %d are enabled for facets or sort fields).'),
-    $totalSearchPages, $totalSearchPagesUsingMapping);
+echo sprintf($translate('This will remove all references to this Solr map in search pages that use it (%d, of which %d are enabled for facets or sort fields).'),
+    $totalSearchPages, $totalSearchPagesUsingMap);
 ?></p>
 <?php else: ?>
 <p><?php
-echo $translate('There is no search pages associated with this Solr mapping.');
+echo $translate('There is no search pages associated with this Solr map.');
 ?></p>
 <?php endif; ?>

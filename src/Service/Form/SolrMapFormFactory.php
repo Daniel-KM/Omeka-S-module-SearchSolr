@@ -3,16 +3,16 @@ namespace SearchSolr\Service\Form;
 
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
-use SearchSolr\Form\Admin\SolrMappingForm;
+use SearchSolr\Form\Admin\SolrMapForm;
 
-class SolrMappingFormFactory implements FactoryInterface
+class SolrMapFormFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
         $api = $services->get('Omeka\ApiManager');
-        $form = new SolrMappingForm(null, $options);
+        $form = new SolrMapForm(null, $options);
         return $form
             ->setValueExtractorManager($valueExtractorManager)
             ->setValueFormatterManager($valueFormatterManager)

@@ -65,9 +65,9 @@ class SolrAdapter extends AbstractAdapter
 
     public function getConfigFieldset()
     {
-        $solrNodes = $this->api->search('solr_nodes')->getContent();
+        $solrCores = $this->api->search('solr_cores')->getContent();
 
-        return new ConfigFieldset(null, ['solrNodes' => $solrNodes]);
+        return new ConfigFieldset(null, ['solrCores' => $solrCores]);
     }
 
     public function getIndexerClass()
@@ -88,19 +88,19 @@ class SolrAdapter extends AbstractAdapter
     public function getAvailableSortFields(SearchIndexRepresentation $index)
     {
         $settings = $index->settings();
-        $solrNodeId = $settings['adapter']['solr_node_id'];
-        if (!$solrNodeId) {
+        $solrCoreId = $settings['adapter']['solr_core_id'];
+        if (!$solrCoreId) {
             return [];
         }
 
-        /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $solrNode */
-        $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();
-        $schema = $solrNode->schema();
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
+        $schema = $solrCore->schema();
 
-        $response = $this->api->search('solr_mappings', [
-            'solr_node_id' => $solrNodeId,
+        $response = $this->api->search('solr_maps', [
+            'solr_core_id' => $solrCoreId,
         ]);
-        $mappings = $response->getContent();
+        $maps = $response->getContent();
 
         $sortFields = [
             'score desc' => [
@@ -114,14 +114,14 @@ class SolrAdapter extends AbstractAdapter
             'desc' => $this->translator->translate('Desc'),
         ];
 
-        foreach ($mappings as $mapping) {
-            $fieldName = $mapping->fieldName();
+        foreach ($maps as $map) {
+            $fieldName = $map->fieldName();
             $schemaField = $schema->getField($fieldName);
             if (!$schemaField || $schemaField->isMultivalued()) {
                 continue;
             }
-            $mappingSettings = $mapping->settings();
-            $label = isset($mappingSettings['label']) ? $mappingSettings['label'] : '';
+            $mapSettings = $map->settings();
+            $label = isset($mapSettings['label']) ? $mapSettings['label'] : '';
             foreach ($directionLabel as $direction => $labelDirection) {
                 $name = $fieldName . ' ' . $direction;
                 $sortFields[$name] = [
@@ -137,21 +137,21 @@ class SolrAdapter extends AbstractAdapter
     public function getAvailableFields(SearchIndexRepresentation $index)
     {
         $settings = $index->settings();
-        $solrNodeId = $settings['adapter']['solr_node_id'];
-        if (!$solrNodeId) {
+        $solrCoreId = $settings['adapter']['solr_core_id'];
+        if (!$solrCoreId) {
             return [];
         }
 
-        $response = $this->api->search('solr_mappings', [
-            'solr_node_id' => $solrNodeId,
+        $response = $this->api->search('solr_maps', [
+            'solr_core_id' => $solrCoreId,
         ]);
-        $mappings = $response->getContent();
+        $maps = $response->getContent();
 
         $facetFields = [];
-        foreach ($mappings as $mapping) {
-            $name = $mapping->fieldName();
-            $mappingSettings = $mapping->settings();
-            $label = isset($mappingSettings['label']) ? $mappingSettings['label'] : '';
+        foreach ($maps as $map) {
+            $name = $map->fieldName();
+            $mapSettings = $map->settings();
+            $label = isset($mapSettings['label']) ? $mapSettings['label'] : '';
             $facetFields[$name] = [
                 'name' => $name,
                 'label' => $label,

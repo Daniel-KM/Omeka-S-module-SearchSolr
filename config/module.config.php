@@ -4,8 +4,8 @@ namespace SearchSolr;
 return [
     'api_adapters' => [
         'invokables' => [
-            'searchsolr_nodes' => Api\Adapter\SolrNodeAdapter::class,
-            'searchsolr_mappings' => Api\Adapter\SolrMappingAdapter::class,
+            'solr_cores' => Api\Adapter\SolrCoreAdapter::class,
+            'solr_maps' => Api\Adapter\SolrMapAdapter::class,
         ],
     ],
     'entity_manager' => [
@@ -23,16 +23,16 @@ return [
     ],
     'form_elements' => [
         'factories' => [
-            Form\Admin\SolrNodeForm::class => Service\Form\SolrNodeFormFactory::class,
-            Form\Admin\SolrMappingForm::class => Service\Form\SolrMappingFormFactory::class,
+            Form\Admin\SolrCoreForm::class => Service\Form\SolrCoreFormFactory::class,
+            Form\Admin\SolrMapForm::class => Service\Form\SolrMapFormFactory::class,
         ],
     ],
     'controllers' => [
         'invokables' => [
-            Controller\Admin\NodeController::class => Controller\Admin\NodeController::class,
+            Controller\Admin\CoreController::class => Controller\Admin\CoreController::class,
         ],
         'factories' => [
-            Controller\Admin\MappingController::class => Service\Controller\MappingControllerFactory::class,
+            Controller\Admin\MapController::class => Service\Controller\MapControllerFactory::class,
         ],
     ],
     'service_manager' => [
@@ -56,7 +56,7 @@ return [
                     [
                         'label' => 'Solr', // @translate
                         'route' => 'admin/solr',
-                        'resource' => Controller\Admin\NodeController::class,
+                        'resource' => Controller\Admin\CoreController::class,
                         'privilege' => 'browse',
                         // 'class' => 'o-icon-search',
                         'pages' => [
@@ -184,7 +184,7 @@ return [
             'solr' => Service\Adapter\SolrAdapterFactory::class,
         ],
     ],
-    'solr' => [
+    'searchsolr' => [
         'config' => [
             'searchsolr_bypass_certificate_check' => false,
         ],

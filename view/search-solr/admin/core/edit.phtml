@@ -31,13 +31,13 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Form\Admin\SolrNodeForm $form
+ * @var \SearchSolr\Form\Admin\SolrCoreForm $form
  */
 
 $translate = $this->plugin('translate');
 $form->prepare();
 ?>
-<?php echo $this->pageTitle($translate('Edit Solr node')); ?>
+<?php echo $this->pageTitle($translate('Edit Solr core')); ?>
 
 <?php echo $this->form()->openTag($form); ?>
 <div id="page-actions">
@@ -46,9 +46,9 @@ $form->prepare();
 <nav class="breadcrumbs">
     <?php
     echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    echo $this->hyperlink($translate('Solr nodes'), $this->url('admin/solr'));
+    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/solr'));
     ?>
-    <span><?php echo $translate('Edit node'); ?></span>
+    <span><?php echo $translate('Edit core'); ?></span>
 </nav>
 <?php echo $this->formCollection($form, false); ?>
 <?php $this->trigger('view.edit.form.after'); ?>

@@ -33,7 +33,7 @@ namespace SearchSolr\Indexer;
 use Omeka\Entity\Resource;
 use Search\Indexer\AbstractIndexer;
 use Search\Query;
-use SearchSolr\Api\Representation\SolrNodeRepresentation;
+use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
@@ -41,9 +41,9 @@ use SolrServerException;
 class SolrIndexer extends AbstractIndexer
 {
     /**
-     * @var SolrNodeRepresentation
+     * @var SolrCoreRepresentation
      */
-    protected $solrNode;
+    protected $solrCore;
 
     /**
      * @var SolrClient
@@ -81,9 +81,9 @@ class SolrIndexer extends AbstractIndexer
     protected $formatters = [];
 
     /**
-     * @var array Array of SolrMappingRepresentation by resource name.
+     * @var array Array of SolrMapRepresentation by resource name.
      */
-    protected $solrMappings;
+    protected $solrMaps;
     /**
      * @var int[]
      */
@@ -177,10 +177,10 @@ class SolrIndexer extends AbstractIndexer
         $this->getLogger()->info(sprintf('Indexing resource #%1$s (%2$s)', $resourceId, $resourceName));
 
         $client = $this->getClient();
-        $solrNode = $this->getSolrNode();
-        $solrNodeSettings = $solrNode->settings();
-        $solrMappings = $this->getSolrMappings($resourceName);
-        $schema = $solrNode->schema();
+        $solrCore = $this->getSolrCore();
+        $solrCoreSettings = $solrCore->settings();
+        $solrMaps = $this->getSolrMaps($resourceName);
+        $schema = $solrCore->schema();
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
 
@@ -196,13 +196,13 @@ class SolrIndexer extends AbstractIndexer
         // Force the indexation of visibility, resource type and sites, even if
         // not selected in mapping, because they are the base of Omeka.
 
-        $isPublicField = $solrNodeSettings['is_public_field'];
+        $isPublicField = $solrCoreSettings['is_public_field'];
         $document->addField($isPublicField, $resource->isPublic());
 
-        $resourceNameField = $solrNodeSettings['resource_name_field'];
+        $resourceNameField = $solrCoreSettings['resource_name_field'];
         $document->addField($resourceNameField, $resourceName);
 
-        $sitesField = $solrNodeSettings['sites_field'];
+        $sitesField = $solrCoreSettings['sites_field'];
         switch ($resourceName) {
             case 'items':
                 // There is no method to get the list of sites of an item.
@@ -231,9 +231,9 @@ class SolrIndexer extends AbstractIndexer
                 return;
         }
 
-        foreach ($solrMappings as $solrMapping) {
-            $solrField = $solrMapping->fieldName();
-            $source = $solrMapping->source();
+        foreach ($solrMaps as $solrMap) {
+            $solrField = $solrMap->fieldName();
+            $source = $solrMap->source();
 
             // Index the required fields one time only except if the admin wants
             // to store it in a different field too.
@@ -267,7 +267,7 @@ class SolrIndexer extends AbstractIndexer
                 $values = array_slice($values, 0, 1);
             }
 
-            $formatter = $solrMapping->settings()['formatter'];
+            $formatter = $solrMap->settings()['formatter'];
             $valueFormatter = $formatter
                 ? isset($this->formatters[$formatter])
                     ? $this->formatters[$formatter]
@@ -315,18 +315,18 @@ class SolrIndexer extends AbstractIndexer
     }
 
     /**
-     * @return \SearchSolr\Api\Representation\SolrNodeRepresentation
+     * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
      */
-    protected function getSolrNode()
+    protected function getSolrCore()
     {
-        if (!isset($this->solrNode)) {
-            $solrNodeId = $this->getAdapterSetting('searchsolr_node_id');
-            if ($solrNodeId) {
+        if (!isset($this->solrCore)) {
+            $solrCoreId = $this->getAdapterSetting('solr_core_id');
+            if ($solrCoreId) {
                 $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-                $this->solrNode = $api->read('searchsolr_nodes', $solrNodeId)->getContent();
+                $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
             }
         }
-        return $this->solrNode;
+        return $this->solrCore;
     }
 
     /**
@@ -335,8 +335,8 @@ class SolrIndexer extends AbstractIndexer
     protected function getClient()
     {
         if (!isset($this->client)) {
-            $solrNode = $this->getSolrNode();
-            $this->client = new SolrClient($solrNode->clientSettings());
+            $solrCore = $this->getSolrCore();
+            $this->client = new SolrClient($solrCore->clientSettings());
         }
         return $this->client;
     }
@@ -345,18 +345,18 @@ class SolrIndexer extends AbstractIndexer
      * Get the solr mappings for a resource type.
      *
      * @param string $resourceName
-     * @return \SearchSolr\Api\Representation\SolrMappingRepresentation[]
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
      */
-    protected function getSolrMappings($resourceName)
+    protected function getSolrMaps($resourceName)
     {
-        if (!isset($this->solrMappings[$resourceName])) {
-            $solrNode = $this->getSolrNode();
+        if (!isset($this->solrMaps[$resourceName])) {
+            $solrCore = $this->getSolrCore();
             $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-            $this->solrMappings[$resourceName] = $api->search('searchsolr_mappings', [
+            $this->solrMaps[$resourceName] = $api->search('solr_maps', [
                 'resource_name' => $resourceName,
-                'searchsolr_node_id' => $solrNode->id(),
+                'solr_core_id' => $solrCore->id(),
             ])->getContent();
         }
-        return $this->solrMappings[$resourceName];
+        return $this->solrMaps[$resourceName];
     }
 }

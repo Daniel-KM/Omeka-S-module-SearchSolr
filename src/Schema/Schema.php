@@ -46,7 +46,7 @@ class Schema
     }
 
     /**
-     * Get the Solr node schema.
+     * Get the Solr core schema.
      *
      * There is no method in php-solr to get the schema, so do request via http/https.
      *
@@ -64,12 +64,12 @@ class Schema
                 $url = $parsed['scheme'] . '://' . $credentials . $parsed['host'] . ':' . $parsed['port'] . $parsed['path'];
                 if ($credentials) {
                     $message = new Message(
-                        'Solr node is not available. Check config or certificate to get Solr node schema "%s".', // @translate
+                        'Solr core is not available. Check config or certificate to get Solr core schema "%s".', // @translate
                         $url
                     );
                 } else {
                     $message = new Message(
-                        'Solr node is not available. Check config to get Solr node schema "%s".', // @translate
+                        'Solr core is not available. Check config to get Solr core schema "%s".', // @translate
                         $url
                     );
                 }

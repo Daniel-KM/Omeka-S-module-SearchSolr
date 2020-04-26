@@ -34,20 +34,20 @@ use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
-use SearchSolr\Form\Admin\SolrNodeForm;
-use SearchSolr\Api\Representation\SolrNodeRepresentation;
+use SearchSolr\Form\Admin\SolrCoreForm;
+use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
-class NodeController extends AbstractActionController
+class CoreController extends AbstractActionController
 {
     public function browseAction()
     {
-        $response = $this->api()->search('searchsolr_nodes');
-        $nodes = $response->getContent();
+        $response = $this->api()->search('solr_cores');
+        $cores = $response->getContent();
 
         $view = new ViewModel;
-        $view->setVariable('nodes', $nodes);
+        $view->setVariable('cores', $cores);
         return $view;
     }
 
@@ -67,7 +67,7 @@ class NodeController extends AbstractActionController
 
     public function addAction()
     {
-        $form = $this->getForm(SolrNodeForm::class);
+        $form = $this->getForm(SolrCoreForm::class);
 
         $view = new ViewModel;
         $view->setVariable('form', $form);
@@ -79,8 +79,8 @@ class NodeController extends AbstractActionController
         $data = $form->getData();
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
-        $node = $this->api()->create('searchsolr_nodes', $data)->getContent();
-        $this->messenger()->addSuccess(new Message('Solr node "%s" created.', $node->name())); // @translate
+        $core = $this->api()->create('solr_cores', $data)->getContent();
+        $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
         return $this->redirect()->toRoute('admin/solr');
     }
@@ -88,11 +88,11 @@ class NodeController extends AbstractActionController
     public function editAction()
     {
         $id = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $node */
-        $node = $this->api()->read('searchsolr_nodes', $id)->getContent();
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
+        $core = $this->api()->read('solr_cores', $id)->getContent();
 
-        $form = $this->getForm(SolrNodeForm::class);
-        $data = $node->jsonSerialize();
+        $form = $this->getForm(SolrCoreForm::class);
+        $data = $core->jsonSerialize();
         $form->setData($data);
 
         $view = new ViewModel;
@@ -105,10 +105,10 @@ class NodeController extends AbstractActionController
         $data = $form->getData();
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
-        $this->api()->update('searchsolr_nodes', $id, $data);
+        $this->api()->update('solr_cores', $id, $data);
 
-        $this->messenger()->addSuccess(new Message('Solr node "%s" updated.', $node->name())); // @translate
-        $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this node.'); // @translate
+        $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+        $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this core.'); // @translate
 
         return $this->redirect()->toRoute('admin/solr');
     }
@@ -116,22 +116,22 @@ class NodeController extends AbstractActionController
     public function deleteConfirmAction()
     {
         $id = $this->params('id');
-        $response = $this->api()->read('searchsolr_nodes', $id);
-        $node = $response->getContent();
+        $response = $this->api()->read('solr_cores', $id);
+        $core = $response->getContent();
 
-        $searchIndexes = $this->searchSearchIndexes($node);
-        $searchPages = $this->searchSearchPages($node);
-        $solrMappings = $this->api()->search('searchsolr_mappings', ['searchsolr_node_id' => $node->id()])->getContent();
+        $searchIndexes = $this->searchSearchIndexes($core);
+        $searchPages = $this->searchSearchPages($core);
+        $solrMaps = $this->api()->search('solr_maps', ['solr_core_id' => $core->id()])->getContent();
 
         $view = new ViewModel;
         $view->setTerminal(true);
         $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'Solr node'); // @translate
-        $view->setVariable('resource', $node);
-        $view->setVariable('partialPath', 'common/solr-node-delete-confirm-details');
+        $view->setVariable('resourceLabel', 'Solr core'); // @translate
+        $view->setVariable('resource', $core);
+        $view->setVariable('partialPath', 'common/solr-core-delete-confirm-details');
         $view->setVariable('totalSearchIndexes', count($searchIndexes));
         $view->setVariable('totalSearchPages', count($searchPages));
-        $view->setVariable('totalSolrMappings', count($solrMappings));
+        $view->setVariable('totalSolrMaps', count($solrMaps));
         return $view;
     }
 
@@ -141,30 +141,30 @@ class NodeController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $this->api()->delete('searchsolr_nodes', $this->params('id'));
-                $this->messenger()->addSuccess('Solr node successfully deleted'); // @translate
+                $this->api()->delete('solr_cores', $this->params('id'));
+                $this->messenger()->addSuccess('Solr core successfully deleted'); // @translate
             } else {
-                $this->messenger()->addError('Solr node could not be deleted'); // @translate
+                $this->messenger()->addError('Solr core could not be deleted'); // @translate
             }
         }
         return $this->redirect()->toRoute('admin/solr');
     }
 
     /**
-     * Find all search indexes related to a specific solr node.
+     * Find all search indexes related to a specific solr core.
      *
-     * @todo Factorize with MappingController::searchSearchIndexes()
-     * @param SolrNodeRepresentation $solrNode
+     * @todo Factorize with MapController::searchSearchIndexes()
+     * @param SolrCoreRepresentation $solrCore
      * @return SearchIndexRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchIndexes(SolrNodeRepresentation $solrNode)
+    protected function searchSearchIndexes(SolrCoreRepresentation $solrCore)
     {
         $result = [];
         $api = $this->api();
         $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
-            if ($solrNode->id() == $searchIndexSettings['adapter']['searchsolr_node_id']) {
+            if ($solrCore->id() == $searchIndexSettings['adapter']['solr_core_id']) {
                 $result[$searchIndex->id()] = $searchIndex;
             }
         }
@@ -172,18 +172,18 @@ class NodeController extends AbstractActionController
     }
 
     /**
-     * Find all search pages related to a specific solr node.
+     * Find all search pages related to a specific solr core.
      *
-     * @todo Factorize with MappingController::searchSearchPages()
-     * @param SolrNodeRepresentation $solrNode
+     * @todo Factorize with MapController::searchSearchPages()
+     * @param SolrCoreRepresentation $solrCore
      * @return SearchPageRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchPages(SolrNodeRepresentation $solrNode)
+    protected function searchSearchPages(SolrCoreRepresentation $solrCore)
     {
-        // TODO Use entity manager to simplify search of pages from node.
+        // TODO Use entity manager to simplify search of pages from core.
         $result = [];
         $api = $this->api();
-        $searchIndexes = $this->searchSearchIndexes($solrNode);
+        $searchIndexes = $this->searchSearchIndexes($solrCore);
         foreach ($searchIndexes as $searchIndex) {
             $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
             foreach ($searchPages as $searchPage) {

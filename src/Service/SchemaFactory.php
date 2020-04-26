@@ -40,21 +40,21 @@ class SchemaFactory implements FactoryInterface
 
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $solrNode */
-        $solrNode = $options['searchsolr_node'];
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $options['solr_core'];
 
-        if (!isset($this->schemas[$solrNode->id()])) {
-            $schemaUrl = $solrNode->clientUrl() . '/schema';
+        if (!isset($this->schemas[$solrCore->id()])) {
+            $schemaUrl = $solrCore->clientUrl() . '/schema';
             $schema = new Schema($schemaUrl);
-            if (!empty($solrNode->clientSettings()['secure'])
-                && !empty($services->get('Config')['solr']['config']['searchsolr_bypass_certificate_check'])
+            if (!empty($solrCore->clientSettings()['secure'])
+                && !empty($services->get('Config')['searchsolr']['config']['searchsolr_bypass_certificate_check'])
             ) {
                 $this->setSchemaConfig($schema, $schemaUrl);
             }
-            $this->schemas[$solrNode->id()] = $schema;
+            $this->schemas[$solrCore->id()] = $schema;
         }
 
-        return $this->schemas[$solrNode->id()];
+        return $this->schemas[$solrCore->id()];
     }
 
     /**

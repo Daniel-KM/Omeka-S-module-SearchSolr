@@ -31,28 +31,28 @@
 <?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Api\Representation\SolrNodeRepresentation $nodes
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $cores
  */
 
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 ?>
-<?php $this->htmlElement('body')->appendAttribute('class', 'solr-node browse'); ?>
+<?php $this->htmlElement('body')->appendAttribute('class', 'solr-core browse'); ?>
 
 <?php echo $this->pageTitle($translate('Solr configuration')); ?>
 
 <div id="page-actions">
-    <a class="button" href="<?php echo $this->url('admin/solr/node', ['action' => 'add']); ?>"><?php echo $translate('Add new node'); ?></a>
+    <a class="button" href="<?php echo $this->url('admin/solr/core', ['action' => 'add']); ?>"><?php echo $translate('Add new core'); ?></a>
 </div>
 
 <nav class="breadcrumbs">
     <?php
     echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
     ?>
-    <span><?php echo $translate('Solr nodes'); ?></span>
+    <span><?php echo $translate('Solr cores'); ?></span>
 </nav>
-<h2><?php echo $translate('Nodes'); ?></h2>
-<?php if (count($nodes)): ?>
+<h2><?php echo $translate('Cores'); ?></h2>
+<?php if (count($cores)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
@@ -62,20 +62,20 @@ $escape = $this->plugin('escapeHtml');
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($nodes as $node): ?>
+            <?php foreach ($cores as $core): ?>
                 <tr>
                     <td>
-                        <span><?php echo $node->name(); ?></span>
+                        <span><?php echo $core->name(); ?></span>
                         <ul class="actions">
                             <li><?php
                             echo $this->hyperlink('',
-                                $node->clientUrlAdminBoard(),
+                                $core->clientUrlAdminBoard(),
                                 ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable'),]
                             );
                             ?></li>
                             <li>
                                 <?php
-                                    echo $node->link('', 'edit', [
+                                    echo $core->link('', 'edit', [
                                         'class' => 'o-icon-edit',
                                         'title' => $translate('Edit'),
                                     ]);
@@ -83,24 +83,24 @@ $escape = $this->plugin('escapeHtml');
                             </li>
                             <li>
                                 <?php
-                                    $href = $node->mappingUrl();
+                                    $href = $core->mapUrl();
                                     echo $this->hyperlink('', $href, [
                                         'class' => 'o-icon- fa fa-sliders fa-sliders-h',
-                                        'title' => $translate('Mapping'),
+                                        'title' => $translate('Map'),
                                     ]);
                                 ?>
                             </li>
                             <li>
                                 <a href="#"
-                                data-sidebar-content-url="<?php echo $escape($node->url('delete-confirm')); ?>"
+                                data-sidebar-content-url="<?php echo $escape($core->url('delete-confirm')); ?>"
                                 class="o-icon-delete sidebar-content"
                                 aria-label="<?php echo $escape($translate('Delete')); ?>"
                                 title="<?php echo $escape($translate('Delete')); ?>"></a>
                             </li>
                         </ul>
                     </td>
-                    <td><?php echo $node->clientUrlAdmin(); ?></td>
-                    <td><?php echo $node->status(); ?></td>
+                    <td><?php echo $core->clientUrlAdmin(); ?></td>
+                    <td><?php echo $core->status(); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

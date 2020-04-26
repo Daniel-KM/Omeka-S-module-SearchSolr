@@ -119,23 +119,23 @@ class Module extends AbstractModule
         $connection = $serviceLocator->get('Omeka\Connection');
 
         $sql = <<<'SQL'
-INSERT INTO `solr_node` (`name`, `settings`)
+INSERT INTO `solr_core` (`name`, `settings`)
 VALUES ("default", ?);
 SQL;
-        $defaultSettings = $this->getSolrNodeDefaultSettings();
+        $defaultSettings = $this->getSolrCoreDefaultSettings();
         $connection->executeQuery($sql, [json_encode($defaultSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
 
         $sql = <<<'SQL'
-INSERT INTO `solr_mapping` (`solr_node_id`, `resource_name`, `field_name`, `source`, `settings`)
+INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `settings`)
 VALUES (1, ?, ?, ?, ?);
 SQL;
-        $defaultMappings = $this->getDefaultSolrMappings();
-        foreach ($defaultMappings as $mapping) {
+        $defaultMaps = $this->getDefaultSolrMaps();
+        foreach ($defaultMaps as $map) {
             $connection->executeQuery($sql, [
-                $mapping['resource_name'],
-                $mapping['field_name'],
-                $mapping['source'],
-                json_encode($mapping['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                $map['resource_name'],
+                $map['field_name'],
+                $map['source'],
+                json_encode($map['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
             ]);
         }
     }
@@ -164,85 +164,85 @@ SQL;
     {
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $acl->allow(null, [
-            \SearchSolr\Api\Adapter\SolrNodeAdapter::class,
-            \SearchSolr\Api\Adapter\SolrMappingAdapter::class,
+            \SearchSolr\Api\Adapter\SolrCoreAdapter::class,
+            \SearchSolr\Api\Adapter\SolrMapAdapter::class,
         ]);
-        $acl->allow(null, \SearchSolr\Entity\SolrNode::class, 'read');
+        $acl->allow(null, \SearchSolr\Entity\SolrCore::class, 'read');
     }
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $sharedEventManager->attach(
-            Api\Adapter\SolrNodeAdapter::class,
+            Api\Adapter\SolrCoreAdapter::class,
             'api.delete.post',
-            [$this, 'deletePostSolrNode']
+            [$this, 'deletePostSolrCore']
         );
         $sharedEventManager->attach(
-            Api\Adapter\SolrMappingAdapter::class,
+            Api\Adapter\SolrMapAdapter::class,
             'api.update.pre',
-            [$this, 'preSolrMapping']
+            [$this, 'preSolrMap']
         );
         $sharedEventManager->attach(
-            Api\Adapter\SolrMappingAdapter::class,
+            Api\Adapter\SolrMapAdapter::class,
             'api.delete.pre',
-            [$this, 'preSolrMapping']
+            [$this, 'preSolrMap']
         );
         $sharedEventManager->attach(
-            Api\Adapter\SolrMappingAdapter::class,
+            Api\Adapter\SolrMapAdapter::class,
             'api.update.post',
-            [$this, 'updatePostSolrMapping']
+            [$this, 'updatePostSolrMap']
         );
         $sharedEventManager->attach(
-            Api\Adapter\SolrMappingAdapter::class,
+            Api\Adapter\SolrMapAdapter::class,
             'api.delete.post',
-            [$this, 'deletePostSolrMapping']
+            [$this, 'deletePostSolrMap']
         );
     }
 
-    public function deletePostSolrNode(Event $event)
+    public function deletePostSolrCore(Event $event)
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
         $id = $request->getId();
-        $searchIndexes = $this->searchSearchIndexesByNodeId($id);
+        $searchIndexes = $this->searchSearchIndexesByCoreId($id);
         if (empty($searchIndexes)) {
             return;
         }
         $api->batchDelete('search_indexes', array_keys($searchIndexes), [], ['continueOnError' => true]);
     }
 
-    public function preSolrMapping(Event $event)
+    public function preSolrMap(Event $event)
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
-        $solrMapping = $api->read('searchsolr_mappings', $request->getId())->getContent();
+        $solrMap = $api->read('solr_maps', $request->getId())->getContent();
         $data = $request->getContent();
-        $data['solrMapping'] = [
-            'searchsolr_node_id' => $solrMapping->solrNode()->id(),
-            'resource_name' => $solrMapping->resourceName(),
-            'field_name' => $solrMapping->fieldName(),
-            'source' => $solrMapping->source(),
-            'settings' => $solrMapping->settings(),
+        $data['solrMap'] = [
+            'solr_core_id' => $solrMap->solrCore()->id(),
+            'resource_name' => $solrMap->resourceName(),
+            'field_name' => $solrMap->fieldName(),
+            'source' => $solrMap->source(),
+            'settings' => $solrMap->settings(),
         ];
         $request->setContent($data);
     }
 
-    public function updatePostSolrMapping(Event $event)
+    public function updatePostSolrMap(Event $event)
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
         $response = $event->getParam('response');
-        $solrMapping = $response->getContent();
-        $oldSolrMappingValues = $request->getValue('solrMapping');
+        $solrMap = $response->getContent();
+        $oldSolrMapValues = $request->getValue('solrMap');
 
         // Quick check if the Solr field name is unchanged.
-        $fieldName = $solrMapping->getFieldName();
-        $oldFieldName = $oldSolrMappingValues['field_name'];
+        $fieldName = $solrMap->getFieldName();
+        $oldFieldName = $oldSolrMapValues['field_name'];
         if ($fieldName === $oldFieldName) {
             return;
         }
 
-        $searchPages = $this->searchSearchPagesByNodeId($solrMapping->getSolrNode()->getId());
+        $searchPages = $this->searchSearchPagesByCoreId($solrMap->getSolrCore()->getId());
         if (empty($searchPages)) {
             return;
         }
@@ -275,17 +275,17 @@ SQL;
         }
     }
 
-    public function deletePostSolrMapping(Event $event)
+    public function deletePostSolrMap(Event $event)
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
-        $solrMappingValues = $request->getValue('solrMapping');
-        $searchPages = $this->searchSearchPagesByNodeId($solrMappingValues['searchsolr_node_id']);
+        $solrMapValues = $request->getValue('solrMap');
+        $searchPages = $this->searchSearchPagesByCoreId($solrMapValues['solr_core_id']);
         if (empty($searchPages)) {
             return;
         }
 
-        $fieldName = $solrMappingValues['field_name'];
+        $fieldName = $solrMapValues['field_name'];
         foreach ($searchPages as $searchPage) {
             $searchPageSettings = $searchPage->settings();
             foreach ($searchPageSettings as $key => $value) {
@@ -306,20 +306,20 @@ SQL;
     }
 
     /**
-     * Find all search indexes related to a specific solr node.
+     * Find all search indexes related to a specific solr core.
      *
-     * @todo Factorize searchSearchIndexes() from node with NodeController.
-     * @param int $solrNodeId
+     * @todo Factorize searchSearchIndexes() from core with CoreController.
+     * @param int $solrCoreId
      * @return SearchIndexRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchIndexesByNodeId($solrNodeId)
+    protected function searchSearchIndexesByCoreId($solrCoreId)
     {
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
-            if ($solrNodeId == $searchIndexSettings['adapter']['searchsolr_node_id']) {
+            if ($solrCoreId == $searchIndexSettings['adapter']['solr_core_id']) {
                 $result[$searchIndex->id()] = $searchIndex;
             }
         }
@@ -327,18 +327,18 @@ SQL;
     }
 
     /**
-     * Find all search pages that use a specific solr node id.
+     * Find all search pages that use a specific solr core id.
      *
-     * @todo Factorize searchSearchPages() from node with NodeController.
-     * @param int $solrNodeId
+     * @todo Factorize searchSearchPages() from core with CoreController.
+     * @param int $solrCoreId
      * @return SearchPageRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchPagesByNodeId($solrNodeId)
+    protected function searchSearchPagesByCoreId($solrCoreId)
     {
-        // TODO Use entity manager to simplify search of pages from node.
+        // TODO Use entity manager to simplify search of pages from core.
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $searchIndexes = $this->searchSearchIndexesByNodeId($solrNodeId);
+        $searchIndexes = $this->searchSearchIndexesByCoreId($solrCoreId);
         foreach ($searchIndexes as $searchIndex) {
             $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
             foreach ($searchPages as $searchPage) {
@@ -348,7 +348,7 @@ SQL;
         return $result;
     }
 
-    protected function getSolrNodeDefaultSettings()
+    protected function getSolrCoreDefaultSettings()
     {
         return [
             'client' => [
@@ -362,7 +362,7 @@ SQL;
         ];
     }
 
-    protected function getDefaultSolrMappings()
+    protected function getDefaultSolrMaps()
     {
         return include __DIR__ . '/config/default_mappings.php';
     }

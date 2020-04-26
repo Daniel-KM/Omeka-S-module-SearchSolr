@@ -36,14 +36,14 @@ use SolrClient;
 use SolrException;
 use SearchSolr\Schema;
 
-class SolrNodeRepresentation extends AbstractEntityRepresentation
+class SolrCoreRepresentation extends AbstractEntityRepresentation
 {
     /**
      * {@inheritDoc}
      */
     public function getJsonLdType()
     {
-        return 'o:SolrNode';
+        return 'o:SolrCore';
     }
 
     public function getJsonLd()
@@ -66,7 +66,7 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
             'force_canonical' => $canonical,
         ];
 
-        return $url('admin/solr/node-id', $params, $options);
+        return $url('admin/solr/core-id', $params, $options);
     }
 
     /**
@@ -108,7 +108,7 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
     }
 
     /**
-     * Get the url to the node without credentials.
+     * Get the url to the core without credentials.
      *
      * @return string
      */
@@ -179,17 +179,17 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
      * @param bool $canonical
      * @return string
      */
-    public function mappingUrl($action = null, $canonical = false)
+    public function mapUrl($action = null, $canonical = false)
     {
         $url = $this->getViewHelper('Url');
         $params = [
             'action' => $action,
-            'nodeId' => $this->id(),
+            'coreId' => $this->id(),
         ];
         $options = [
             'force_canonical' => $canonical,
         ];
-        return $url('admin/solr/node-id-mapping', $params, $options);
+        return $url('admin/solr/core-id-map', $params, $options);
     }
 
     /**
@@ -198,28 +198,28 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
      * @param bool $canonical
      * @return string
      */
-    public function resourceMappingUrl($resourceName, $action = null, $canonical = false)
+    public function resourceMapUrl($resourceName, $action = null, $canonical = false)
     {
         $url = $this->getViewHelper('Url');
         $params = [
             'action' => $action,
-            'nodeId' => $this->id(),
+            'coreId' => $this->id(),
             'resourceName' => $resourceName,
         ];
         $options = [
             'force_canonical' => $canonical,
         ];
-        return $url('admin/solr/node-id-mapping-resource', $params, $options);
+        return $url('admin/solr/core-id-map-resource', $params, $options);
     }
 
     /**
-     * Get the schema for the node.
+     * Get the schema for the core.
      *
      * @return \SearchSolr\Schema\Schema
      */
     public function schema()
     {
         $services = $this->getServiceLocator();
-        return $services->build(Schema::class, ['solr_node' => $this]);
+        return $services->build(Schema::class, ['solr_core' => $this]);
     }
 }

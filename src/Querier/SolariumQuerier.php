@@ -33,7 +33,7 @@ namespace SearchSolr\Querier;
 use Search\Querier\AbstractQuerier;
 use Search\Querier\Exception\QuerierException;
 use Search\Response;
-use SearchSolr\Api\Representation\SolrNodeRepresentation;
+use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SolrClient;
 use SolrClientException;
 use SolrDisMaxQuery;
@@ -58,9 +58,9 @@ class SolrQuerier extends AbstractQuerier
     protected $client;
 
     /**
-     * @var SolrNodeRepresentation
+     * @var SolrCoreRepresentation
      */
-    protected $solrNode;
+    protected $solrCore;
 
     public function query()
     {
@@ -114,8 +114,8 @@ class SolrQuerier extends AbstractQuerier
 
         $solrResponse = $solrQueryResponse->getResponse();
 
-        $solrNodeSettings = $this->solrNode->settings();
-        $resourceNameField = $solrNodeSettings['resource_name_field'];
+        $solrCoreSettings = $this->solrCore->settings();
+        $resourceNameField = $solrCoreSettings['resource_name_field'];
 
         $this->response->setTotalResults($solrResponse['grouped'][$resourceNameField]['matches']);
         foreach ($solrResponse['grouped'][$resourceNameField]['groups'] as $group) {
@@ -158,10 +158,10 @@ class SolrQuerier extends AbstractQuerier
             return $this->solrQuery;
         }
 
-        $solrNodeSettings = $this->solrNode->settings();
-        $isPublicField = $solrNodeSettings['is_public_field'];
-        $resourceNameField = $solrNodeSettings['resource_name_field'];
-        $sitesField = isset($solrNodeSettings['sites_field']) ? $solrNodeSettings['sites_field'] : null;
+        $solrCoreSettings = $this->solrCore->settings();
+        $isPublicField = $solrCoreSettings['is_public_field'];
+        $resourceNameField = $solrCoreSettings['resource_name_field'];
+        $sitesField = isset($solrCoreSettings['sites_field']) ? $solrCoreSettings['sites_field'] : null;
 
         if (class_exists('SolrDisMaxQuery')) {
             $this->solrQuery = new SolrDisMaxQuery;
@@ -312,8 +312,8 @@ class SolrQuerier extends AbstractQuerier
         $q = $this->query->getQuery();
         $excludedFiles = $this->query->getExcludedFields();
 
-        $solrNodeSettings = $this->solrNode->settings();
-        $queryConfig = array_filter($solrNodeSettings['query']);
+        $solrCoreSettings = $this->solrCore->settings();
+        $queryConfig = array_filter($solrCoreSettings['query']);
         if ($queryConfig && class_exists('SolrDisMaxQuery')) {
             if (isset($queryConfig['minimum_match'])) {
                 $this->solrQuery->setMinimumMatch($queryConfig['minimum_match']);
@@ -478,9 +478,9 @@ class SolrQuerier extends AbstractQuerier
     protected function usedSolrFields()
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
-        return $api->search('searchsolr_mappings', [
-            'searchsolr_node_id' => $this->solrNode->id(),
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
+        return $api->search('solr_maps', [
+            'solr_core_id' => $this->solrCore->id(),
         ], ['returnScalar' => 'fieldName'])->getContent();
     }
 
@@ -529,25 +529,25 @@ class SolrQuerier extends AbstractQuerier
      */
     protected function init()
     {
-        $this->getSolrNode();
+        $this->getSolrCore();
         $this->getClient();
         return $this;
     }
 
     /**
-     * @return SolrNodeRepresentation
+     * @return SolrCoreRepresentation
      */
-    protected function getSolrNode()
+    protected function getSolrCore()
     {
-        if (!isset($this->solrNode)) {
+        if (!isset($this->solrCore)) {
             $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-            $solrNodeId = $this->getAdapterSetting('searchsolr_node_id');
-            if ($solrNodeId) {
+            $solrCoreId = $this->getAdapterSetting('solr_core_id');
+            if ($solrCoreId) {
                 // Automatically throw an exception when empty.
-                $this->solrNode = $api->read('searchsolr_nodes', $solrNodeId)->getContent();
+                $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
             }
         }
-        return $this->solrNode;
+        return $this->solrCore;
     }
 
     /**
@@ -556,7 +556,7 @@ class SolrQuerier extends AbstractQuerier
     protected function getClient()
     {
         if (!isset($this->solrClient)) {
-            $this->solrClient = new SolrClient($this->solrNode->clientSettings());
+            $this->solrClient = new SolrClient($this->solrCore->clientSettings());
         }
         return $this->solrClient;
     }

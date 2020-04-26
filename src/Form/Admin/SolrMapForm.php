@@ -37,7 +37,7 @@ use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
 
-class SolrMappingForm extends Form
+class SolrMapForm extends Form
 {
     /**
      * @var ValueExtractorManager

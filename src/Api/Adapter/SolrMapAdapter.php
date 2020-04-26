@@ -36,7 +36,7 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 
-class SolrMappingAdapter extends AbstractEntityAdapter
+class SolrMapAdapter extends AbstractEntityAdapter
 {
     protected $sortFields = [
         'id' => 'id',
@@ -44,17 +44,17 @@ class SolrMappingAdapter extends AbstractEntityAdapter
 
     public function getResourceName()
     {
-        return 'solr_mappings';
+        return 'solr_maps';
     }
 
     public function getRepresentationClass()
     {
-        return \SearchSolr\Api\Representation\SolrMappingRepresentation::class;
+        return \SearchSolr\Api\Representation\SolrMapRepresentation::class;
     }
 
     public function getEntityClass()
     {
-        return \SearchSolr\Entity\SolrMapping::class;
+        return \SearchSolr\Entity\SolrMap::class;
     }
 
     public function hydrate(Request $request, EntityInterface $entity,
@@ -73,7 +73,7 @@ class SolrMappingAdapter extends AbstractEntityAdapter
             $entity->setSettings($request->getValue('o:settings'));
         }
 
-        $this->hydrateSolrNode($request, $entity);
+        $this->hydrateSolrCore($request, $entity);
     }
 
     public function buildQuery(QueryBuilder $qb, array $query)
@@ -82,16 +82,16 @@ class SolrMappingAdapter extends AbstractEntityAdapter
         $alias = $isOldOmeka ? $this->getEntityClass() : 'omeka_root';
         $expr = $qb->expr();
 
-        if (isset($query['solr_node_id'])) {
-            $nodeAlias = $this->createAlias();
+        if (isset($query['solr_core_id'])) {
+            $coreAlias = $this->createAlias();
             $qb
                 ->innerJoin(
-                    $alias . '.solrNode',
-                    $nodeAlias
+                    $alias . '.solrCore',
+                    $coreAlias
                 )
                 ->andWhere($expr->eq(
-                    $nodeAlias . '.id',
-                    $this->createNamedParameter($qb, $query['solr_node_id']))
+                    $coreAlias . '.id',
+                    $this->createNamedParameter($qb, $query['solr_core_id']))
                 );
         }
         if (isset($query['resource_name'])) {
@@ -102,19 +102,19 @@ class SolrMappingAdapter extends AbstractEntityAdapter
         }
     }
 
-    protected function hydrateSolrNode(Request $request, EntityInterface $entity)
+    protected function hydrateSolrCore(Request $request, EntityInterface $entity)
     {
-        if ($this->shouldHydrate($request, 'o:solr_node')) {
+        if ($this->shouldHydrate($request, 'o:solr_core')) {
             $data = $request->getContent();
-            if (isset($data['o:solr_node']['o:id'])
-                && is_numeric($data['o:solr_node']['o:id'])
+            if (isset($data['o:solr_core']['o:id'])
+                && is_numeric($data['o:solr_core']['o:id'])
             ) {
-                $node = $this->getAdapter('solr_nodes')
-                    ->findEntity($data['o:solr_node']['o:id']);
+                $core = $this->getAdapter('solr_cores')
+                    ->findEntity($data['o:solr_core']['o:id']);
             } else {
-                $node = null;
+                $core = null;
             }
-            $entity->setSolrNode($node);
+            $entity->setSolrCore($core);
         }
     }
 }
