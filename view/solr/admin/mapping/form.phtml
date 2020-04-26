@@ -12,7 +12,7 @@ $this->headScript()->appendScript(
     'var schema = ' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
 var sourceLabels = ' . json_encode($sourceLabels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';'
 );
-$this->headScript()->appendFile($this->assetUrl('js/solr-admin.js', 'Solr'));
+$this->headScript()->appendFile($this->assetUrl('js/solr-admin.js', 'Solr'), 'text/javascript', ['defer' => 'defer']);
 ?>
 
 <?php $form->prepare(); ?>
