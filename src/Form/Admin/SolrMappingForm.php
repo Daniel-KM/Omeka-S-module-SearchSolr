@@ -119,6 +119,7 @@ class SolrMappingForm extends Form
     public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
     {
         $this->valueExtractorManager = $valueExtractorManager;
+        return $this;
     }
 
     /**
@@ -135,6 +136,7 @@ class SolrMappingForm extends Form
     public function setValueFormatterManager(ValueFormatterManager $valueFormatterManager)
     {
         $this->valueFormatterManager = $valueFormatterManager;
+        return $this;
     }
 
     /**
@@ -151,6 +153,7 @@ class SolrMappingForm extends Form
     public function setApiManager(ApiManager $apiManager)
     {
         $this->apiManager = $apiManager;
+        return $this;
     }
 
     /**

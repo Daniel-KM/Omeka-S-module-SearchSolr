@@ -136,6 +136,9 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
      */
     public function status()
     {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
         if (!extension_loaded('solr')) {
             return new Message('Solr module requires PHP Solr extension, which is not loaded.'); // @translate
         }
@@ -145,7 +148,6 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         try {
             @$solrClient->ping();
         } catch (SolrException $e) {
-            $logger = $this->getServiceLocator()->get('Omeka\Logger');
             $logger->err($e);
             $messages = explode("\n", $e->getMessage());
             return reset($messages);
@@ -156,7 +158,6 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
         try {
             $this->schema()->getSchema();
         } catch (SolrException $e) {
-            $logger = $this->getServiceLocator()->get('Omeka\Logger');
             $logger->err($e);
             $messages = explode("\n", $e->getMessage());
             return reset($messages);
@@ -164,9 +165,7 @@ class SolrNodeRepresentation extends AbstractEntityRepresentation
 
         // Check if the config bypass certificate check.
         if (!empty($clientSettings['secure'])) {
-            $services = $this->getServiceLocator();
             if (!empty($services->get('Config')['solr']['config']['solr_bypass_certificate_check'])) {
-                $logger = $services->get('Omeka\Logger');
                 $logger->warn('Solr: the config bypasses the check of the certificate.'); // @translate
                 return 'OK (warning: check of certificate disabled)'; // @translate
             }

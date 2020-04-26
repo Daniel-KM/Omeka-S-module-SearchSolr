@@ -144,7 +144,7 @@ class SolrQuerier extends AbstractQuerier
     }
 
     /**
-     * @return SolrDisMaxQuery|SolrQuery|null Arguments for the Solr php api.
+     * @return SolrDisMaxQuery|SolrQuery|null
      *
      * {@inheritDoc}
      * @see \Search\Querier\AbstractQuerier::getPreparedQuery()
