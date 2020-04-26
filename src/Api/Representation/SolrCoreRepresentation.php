@@ -125,8 +125,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function clientUrlAdminBoard()
     {
         $settings = $this->clientSettings();
-        return (empty($settings['secure']) ? 'http://' : 'https://')
-            . $settings['hostname'] . ':' . $settings['port'] . '/solr/#/' . substr($settings['path'], 5);
+        // Remove first part of the string ("solr/").
+        $path = mb_substr($settings['path'], (mb_strrpos($settings['path'], '/') ?: -1) + 1);
+        $url = (empty($settings['secure']) ? 'http://' : 'https://')
+            . $settings['hostname'] . ':' . $settings['port'] . '/solr/#/' . $path;
+        return $url;
     }
 
     /**
