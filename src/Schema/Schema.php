@@ -3,7 +3,7 @@
 namespace SearchSolr\Schema;
 
 use Omeka\Stdlib\Message;
-use SolrServerException;
+use Solarium\Exception\HttpException as SolariumServerException;
 
 class Schema
 {
@@ -50,7 +50,7 @@ class Schema
      *
      * There is no method in php-solr to get the schema, so do request via http/https.
      *
-     * @throws \SolrServerException
+     * @throws \Solarium\Exception\HttpException
      * @return array
      */
     public function getSchema()
@@ -73,7 +73,7 @@ class Schema
                         $url
                     );
                 }
-                throw new SolrServerException($message);
+                throw new SolariumServerException($message);
             }
 
             $response = json_decode($contents, true);

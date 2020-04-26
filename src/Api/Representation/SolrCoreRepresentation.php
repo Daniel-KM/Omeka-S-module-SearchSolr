@@ -32,9 +32,9 @@ namespace SearchSolr\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 use Omeka\Stdlib\Message;
-use SolrClient;
-use SolrException;
 use SearchSolr\Schema;
+use Solarium\Client as SolariumClient;
+use Solarium\Exception\HttpException as SolariumException;
 
 class SolrCoreRepresentation extends AbstractEntityRepresentation
 {
@@ -142,17 +142,23 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
 
-        if (!extension_loaded('solr')) {
-            return new Message('Solr module requires PHP Solr extension, which is not loaded.'); // @translate
+        if (!file_exists(dirname(dirname(dirname(__DIR__))) . '/vendor/solarium/solarium/library/Solarium/Autoloader.php')) {
+            $message = new Message('The composer library "%s" is not installed. See readme.', 'Solarium'); // @translate
+            $logger->err($message);
+            return $message;
         }
 
         $clientSettings = $this->clientSettings();
-        $solrClient = new SolrClient($clientSettings);
+        $solariumClient = new SolariumClient($clientSettings);
         try {
-            @$solrClient->ping();
-        } catch (SolrException $e) {
+            // Create a ping query.
+            $query = $solariumClient->createPing();
+            // Execute the ping query.
+            $solariumClient->ping($query);
+        } catch (SolariumException $e) {
             $logger->err($e);
             $messages = explode("\n", $e->getMessage());
+
             return reset($messages);
         }
 
@@ -160,7 +166,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         // the certificate is expired or incomplete.
         try {
             $this->schema()->getSchema();
-        } catch (SolrException $e) {
+        } catch (SolariumException $e) {
             $logger->err($e);
             $messages = explode("\n", $e->getMessage());
             return reset($messages);
