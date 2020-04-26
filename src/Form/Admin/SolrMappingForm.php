@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,11 +28,11 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form\Admin;
+namespace SearchSolr\Form\Admin;
 
 use Omeka\Api\Manager as ApiManager;
-use Solr\ValueExtractor\Manager as ValueExtractorManager;
-use Solr\ValueFormatter\Manager as ValueFormatterManager;
+use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
+use SearchSolr\ValueFormatter\Manager as ValueFormatterManager;
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 use Zend\Form\Form;
@@ -123,7 +123,7 @@ class SolrMappingForm extends Form
     }
 
     /**
-     * @return \Solr\ValueExtractor\Manager
+     * @return \SearchSolr\ValueExtractor\Manager
      */
     public function getValueExtractorManager()
     {
@@ -140,7 +140,7 @@ class SolrMappingForm extends Form
     }
 
     /**
-     * @return \Solr\ValueFormatter\Manager
+     * @return \SearchSolr\ValueFormatter\Manager
      */
     public function getValueFormatterManager()
     {
@@ -172,7 +172,7 @@ class SolrMappingForm extends Form
         $valueExtractorManager = $this->getValueExtractorManager();
 
         $resourceName = $this->getOption('resource_name');
-        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
+        /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
         if (!isset($valueExtractor)) {
             return null;

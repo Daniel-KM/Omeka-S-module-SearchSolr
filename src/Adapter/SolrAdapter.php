@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,12 +28,12 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Adapter;
+namespace SearchSolr\Adapter;
 
 use Omeka\Api\Manager as ApiManager;
 use Search\Adapter\AbstractAdapter;
 use Search\Api\Representation\SearchIndexRepresentation;
-use Solr\Form\ConfigFieldset;
+use SearchSolr\Form\ConfigFieldset;
 use Zend\I18n\Translator\TranslatorInterface;
 
 class SolrAdapter extends AbstractAdapter
@@ -72,12 +72,12 @@ class SolrAdapter extends AbstractAdapter
 
     public function getIndexerClass()
     {
-        return \Solr\Indexer\SolrIndexer::class;
+        return \SearchSolr\Indexer\SolrIndexer::class;
     }
 
     public function getQuerierClass()
     {
-        return \Solr\Querier\SolrQuerier::class;
+        return \SearchSolr\Querier\SolrQuerier::class;
     }
 
     public function getAvailableFacetFields(SearchIndexRepresentation $index)
@@ -93,7 +93,7 @@ class SolrAdapter extends AbstractAdapter
             return [];
         }
 
-        /** @var \Solr\Api\Representation\SolrNodeRepresentation $solrNode */
+        /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $solrNode */
         $solrNode = $this->api->read('solr_nodes', $solrNodeId)->getContent();
         $schema = $solrNode->schema();
 

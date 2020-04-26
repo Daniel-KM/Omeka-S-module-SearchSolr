@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Api\Representation;
+namespace SearchSolr\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
@@ -67,7 +67,7 @@ class SolrMappingRepresentation extends AbstractEntityRepresentation
     }
 
     /**
-     * @return \Solr\Api\Representation\SolrNodeRepresentation
+     * @return \SearchSolr\Api\Representation\SolrNodeRepresentation
      */
     public function solrNode()
     {

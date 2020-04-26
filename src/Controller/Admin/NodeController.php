@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,14 +28,14 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Controller\Admin;
+namespace SearchSolr\Controller\Admin;
 
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
-use Solr\Form\Admin\SolrNodeForm;
-use Solr\Api\Representation\SolrNodeRepresentation;
+use SearchSolr\Form\Admin\SolrNodeForm;
+use SearchSolr\Api\Representation\SolrNodeRepresentation;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
@@ -88,7 +88,7 @@ class NodeController extends AbstractActionController
     public function editAction()
     {
         $id = $this->params('id');
-        /** @var \Solr\Api\Representation\SolrNodeRepresentation $node */
+        /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $node */
         $node = $this->api()->read('solr_nodes', $id)->getContent();
 
         $form = $this->getForm(SolrNodeForm::class);

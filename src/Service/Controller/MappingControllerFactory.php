@@ -27,11 +27,11 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Service\Controller;
+namespace SearchSolr\Service\Controller;
 
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
-use Solr\Controller\Admin\MappingController;
+use SearchSolr\Controller\Admin\MappingController;
 
 class MappingControllerFactory implements FactoryInterface
 {

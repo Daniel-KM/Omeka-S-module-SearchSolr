@@ -1,5 +1,5 @@
 <?php
-namespace Solr;
+namespace SearchSolr;
 
 /**
  * @var Module $this

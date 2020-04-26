@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Form\Admin;
+namespace SearchSolr\Form\Admin;
 
 use Zend\Form\Element;
 use Zend\Form\Fieldset;

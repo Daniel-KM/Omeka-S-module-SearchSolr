@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,12 +28,12 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Indexer;
+namespace SearchSolr\Indexer;
 
 use Omeka\Entity\Resource;
 use Search\Indexer\AbstractIndexer;
 use Search\Query;
-use Solr\Api\Representation\SolrNodeRepresentation;
+use SearchSolr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
@@ -66,12 +66,12 @@ class SolrIndexer extends AbstractIndexer
     protected $entityManager;
 
     /**
-     * @var \Solr\ValueExtractor\Manager
+     * @var \SearchSolr\ValueExtractor\Manager
      */
     protected $valueExtractorManager;
 
     /**
-     * @var \Solr\ValueFormatter\Manager
+     * @var \SearchSolr\ValueFormatter\Manager
      */
     protected $valueFormatterManager;
 
@@ -93,7 +93,7 @@ class SolrIndexer extends AbstractIndexer
     {
         $services = $this->getServiceLocator();
         $valueExtractorManager = $services->get('Solr\ValueExtractorManager');
-        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
+        /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $valueExtractorManager->get($resourceName);
         return isset($valueExtractor);
     }
@@ -181,7 +181,7 @@ class SolrIndexer extends AbstractIndexer
         $solrNodeSettings = $solrNode->settings();
         $solrMappings = $this->getSolrMappings($resourceName);
         $schema = $solrNode->schema();
-        /** @var \Solr\ValueExtractor\ValueExtractorInterface $valueExtractor */
+        /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
 
         /** @var \Omeka\Api\Representation\AbstractResourceRepresentation $representation */
@@ -298,7 +298,7 @@ class SolrIndexer extends AbstractIndexer
      * Check if a value is not null neither an empty string.
      *
      * @param mixed $value
-     * @return boolean
+     * @return bool
      */
     protected function isNotNullAndNotEmptyString($value)
     {
@@ -315,7 +315,7 @@ class SolrIndexer extends AbstractIndexer
     }
 
     /**
-     * @return \Solr\Api\Representation\SolrNodeRepresentation
+     * @return \SearchSolr\Api\Representation\SolrNodeRepresentation
      */
     protected function getSolrNode()
     {
@@ -345,7 +345,7 @@ class SolrIndexer extends AbstractIndexer
      * Get the solr mappings for a resource type.
      *
      * @param string $resourceName
-     * @return \Solr\Api\Representation\SolrMappingRepresentation[]
+     * @return \SearchSolr\Api\Representation\SolrMappingRepresentation[]
      */
     protected function getSolrMappings($resourceName)
     {

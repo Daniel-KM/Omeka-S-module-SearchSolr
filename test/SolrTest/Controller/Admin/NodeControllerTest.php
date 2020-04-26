@@ -1,6 +1,6 @@
 <?php
 
-namespace SolrTest\Controller\Admin;
+namespace SearchSolrTest\Controller\Admin;
 
 use SolrTest\Controller\SolrControllerTestCase;
 

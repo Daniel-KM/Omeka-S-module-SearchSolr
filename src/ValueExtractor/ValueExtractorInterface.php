@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau 2018
+ * Copyright Daniel Berthereau 2018-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\ValueExtractor;
+namespace SearchSolr\ValueExtractor;
 
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 

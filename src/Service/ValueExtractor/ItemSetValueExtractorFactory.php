@@ -27,11 +27,11 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Service\ValueExtractor;
+namespace SearchSolr\Service\ValueExtractor;
 
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
-use Solr\ValueExtractor\ItemSetValueExtractor;
+use SearchSolr\ValueExtractor\ItemSetValueExtractor;
 
 class ItemSetValueExtractorFactory implements FactoryInterface
 {

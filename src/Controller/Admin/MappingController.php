@@ -29,19 +29,19 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Controller\Admin;
+namespace SearchSolr\Controller\Admin;
 
 use Doctrine\DBAL\Connection;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
-use Solr\Api\Representation\SolrNodeRepresentation;
-use Solr\Form\Admin\SolrMappingForm;
-use Solr\ValueExtractor\Manager as ValueExtractorManager;
+use SearchSolr\Api\Representation\SolrNodeRepresentation;
+use SearchSolr\Form\Admin\SolrMappingForm;
+use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Solr\Api\Representation\SolrMappingRepresentation;
+use SearchSolr\Api\Representation\SolrMappingRepresentation;
 
 class MappingController extends AbstractActionController
 {
@@ -110,7 +110,7 @@ class MappingController extends AbstractActionController
         $api = $this->api();
 
         // Get all existing indexed properties.
-        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $mappings */
+        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
         $mappings = $api->search('solr_mappings', [
             'solr_node_id' => $solrNode->id(),
             'resource_name' => $resourceName,
@@ -171,7 +171,7 @@ class MappingController extends AbstractActionController
         $api = $this->api();
 
         // Get all existing indexed properties.
-        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $mappings */
+        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
         $mappings = $api->search('solr_mappings', [
             'solr_node_id' => $solrNode->id(),
             'resource_name' => $resourceName,
@@ -199,7 +199,7 @@ class MappingController extends AbstractActionController
             }
 
             // There may be multiple mappings with the same term.
-            $ids = array_keys(array_filter($mappings, function($v) use ($term) {
+            $ids = array_keys(array_filter($mappings, function ($v) use ($term) {
                 return $v === $term;
             }));
             $api->batchDelete('solr_mappings', $ids);
@@ -274,7 +274,7 @@ class MappingController extends AbstractActionController
         $resourceName = $this->params('resourceName');
         $id = $this->params('id');
 
-        /** @var \Solr\Api\Representation\SolrMappingRepresentation $mapping */
+        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation $mapping */
         $mapping = $this->api()->read('solr_mappings', $id)->getContent();
 
         $form = $this->getForm(SolrMappingForm::class, [

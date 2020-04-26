@@ -1,6 +1,6 @@
 <?php
 
-namespace Solr\ValueFormatter;
+namespace SearchSolr\ValueFormatter;
 
 /**
  * ValueFormatter to strip all HTML tags. Useful for HTML media content.

@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2019
+ * Copyright Daniel Berthereau, 2019-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,10 +28,10 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Service;
+namespace SearchSolr\Service;
 
 use Interop\Container\ContainerInterface;
-use Solr\Schema\Schema;
+use SearchSolr\Schema\Schema;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
 class SchemaFactory implements FactoryInterface
@@ -40,7 +40,7 @@ class SchemaFactory implements FactoryInterface
 
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        /** @var \Solr\Api\Representation\SolrNodeRepresentation $solrNode */
+        /** @var \SearchSolr\Api\Representation\SolrNodeRepresentation $solrNode */
         $solrNode = $options['solr_node'];
 
         if (!isset($this->schemas[$solrNode->id()])) {

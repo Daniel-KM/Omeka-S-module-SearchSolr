@@ -1,6 +1,6 @@
 <?php
 
-namespace Solr\Schema;
+namespace SearchSolr\Schema;
 
 use Omeka\Stdlib\Message;
 use SolrServerException;

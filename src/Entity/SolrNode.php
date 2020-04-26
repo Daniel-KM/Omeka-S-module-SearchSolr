@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Entity;
+namespace SearchSolr\Entity;
 
 use Omeka\Entity\AbstractEntity;
 

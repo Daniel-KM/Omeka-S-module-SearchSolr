@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Api\Adapter;
+namespace SearchSolr\Api\Adapter;
 
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
@@ -49,12 +49,12 @@ class SolrNodeAdapter extends AbstractEntityAdapter
 
     public function getRepresentationClass()
     {
-        return \Solr\Api\Representation\SolrNodeRepresentation::class;
+        return \SearchSolr\Api\Representation\SolrNodeRepresentation::class;
     }
 
     public function getEntityClass()
     {
-        return \Solr\Entity\SolrNode::class;
+        return \SearchSolr\Entity\SolrNode::class;
     }
 
     public function hydrate(Request $request, EntityInterface $entity,

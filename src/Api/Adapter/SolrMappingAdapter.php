@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,7 +28,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Api\Adapter;
+namespace SearchSolr\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
@@ -49,12 +49,12 @@ class SolrMappingAdapter extends AbstractEntityAdapter
 
     public function getRepresentationClass()
     {
-        return \Solr\Api\Representation\SolrMappingRepresentation::class;
+        return \SearchSolr\Api\Representation\SolrMappingRepresentation::class;
     }
 
     public function getEntityClass()
     {
-        return \Solr\Entity\SolrMapping::class;
+        return \SearchSolr\Entity\SolrMapping::class;
     }
 
     public function hydrate(Request $request, EntityInterface $entity,

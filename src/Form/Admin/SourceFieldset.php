@@ -1,6 +1,6 @@
 <?php
 
-namespace Solr\Form\Admin;
+namespace SearchSolr\Form\Admin;
 
 use Zend\Form\Fieldset;
 use Zend\Form\Element;

@@ -28,12 +28,12 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Querier;
+namespace SearchSolr\Querier;
 
 use Search\Querier\AbstractQuerier;
 use Search\Querier\Exception\QuerierException;
 use Search\Response;
-use Solr\Api\Representation\SolrNodeRepresentation;
+use SearchSolr\Api\Representation\SolrNodeRepresentation;
 use SolrClient;
 use SolrClientException;
 use SolrDisMaxQuery;
@@ -478,7 +478,7 @@ class SolrQuerier extends AbstractQuerier
     protected function usedSolrFields()
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        /** @var \Solr\Api\Representation\SolrMappingRepresentation[] $mappings */
+        /** @var \SearchSolr\Api\Representation\SolrMappingRepresentation[] $mappings */
         return $api->search('solr_mappings', [
             'solr_node_id' => $this->solrNode->id(),
         ], ['returnScalar' => 'fieldName'])->getContent();

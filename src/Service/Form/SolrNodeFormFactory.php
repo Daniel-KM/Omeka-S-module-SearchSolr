@@ -1,9 +1,9 @@
 <?php
-namespace Solr\Service\Form;
+namespace SearchSolr\Service\Form;
 
 use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Factory\FactoryInterface;
-use Solr\Form\Admin\SolrNodeForm;
+use SearchSolr\Form\Admin\SolrNodeForm;
 
 class SolrNodeFormFactory implements FactoryInterface
 {

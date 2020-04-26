@@ -27,10 +27,10 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Service;
+namespace SearchSolr\Service;
 
 use Zend\Mvc\Service\AbstractPluginManagerFactory;
-use Solr\ValueFormatter\Manager;
+use SearchSolr\ValueFormatter\Manager;
 
 class ValueFormatterManagerFactory extends AbstractPluginManagerFactory
 {

@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2018
+ * Copyright Daniel Berthereau, 2018-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,10 +28,10 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Service\Adapter;
+namespace SearchSolr\Service\Adapter;
 
 use Interop\Container\ContainerInterface;
-use Solr\Adapter\SolrAdapter;
+use SearchSolr\Adapter\SolrAdapter;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
 class SolrAdapterFactory implements FactoryInterface

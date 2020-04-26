@@ -1,6 +1,6 @@
 <?php
 
-namespace SolrTest\Controller;
+namespace SearchSolrTest\Controller;
 
 use OmekaTestHelper\Controller\OmekaControllerTestCase;
 

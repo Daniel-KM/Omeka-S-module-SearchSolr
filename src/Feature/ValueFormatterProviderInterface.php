@@ -27,7 +27,7 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace Solr\Feature;
+namespace SearchSolr\Feature;
 
 interface ValueFormatterProviderInterface
 {
