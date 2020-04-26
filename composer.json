@@ -4,7 +4,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "SolrTest\\": "test/SolrTest/"
+            "SearchSolrTest\\": "test/SearchSolrTest/"
         }
     }
 }
