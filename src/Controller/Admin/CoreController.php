@@ -79,6 +79,7 @@ class CoreController extends AbstractActionController
         $data = $form->getData();
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
+        $data['o:settings']['client']['hostname'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['hostname']);
         $core = $this->api()->create('solr_cores', $data)->getContent();
         $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
@@ -105,6 +106,7 @@ class CoreController extends AbstractActionController
         $data = $form->getData();
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
+        $data['o:settings']['client']['hostname'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['hostname']);
         $this->api()->update('solr_cores', $id, $data);
 
         $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
