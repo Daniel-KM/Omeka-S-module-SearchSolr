@@ -156,6 +156,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             // Execute the ping query.
             $solariumClient->ping($query);
         } catch (SolariumException $e) {
+            if ($e->getCode() === 404) {
+                $message = new Message('The core is available, but the index is not found. Check if it is created.'); // @translate
+                $logger->err($message);
+                return $message;
+            }
             $logger->err($e);
             $messages = explode("\n", $e->getMessage());
 
