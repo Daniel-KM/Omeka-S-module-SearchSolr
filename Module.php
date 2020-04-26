@@ -30,7 +30,13 @@
 
 namespace Solr;
 
-use Omeka\Module\AbstractModule;
+if (!class_exists(\Generic\AbstractModule::class)) {
+    require file_exists(dirname(__DIR__) . '/Generic/AbstractModule.php')
+        ? dirname(__DIR__) . '/Generic/AbstractModule.php'
+        : __DIR__ . '/src/Generic/AbstractModule.php';
+}
+
+use Generic\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Stdlib\Message;
@@ -40,16 +46,12 @@ use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
 use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\MvcEvent;
-use Zend\ServiceManager\ServiceLocatorInterface;
 
 class Module extends AbstractModule
 {
-    protected $dependency = 'Search';
+    const NAMESPACE = __NAMESPACE__;
 
-    public function getConfig()
-    {
-        return include __DIR__ . '/config/module.config.php';
-    }
+    protected $dependency = 'Search';
 
     public function init(ModuleManager $moduleManager)
     {
@@ -88,10 +90,9 @@ class Module extends AbstractModule
         $this->addAclRules();
     }
 
-    public function install(ServiceLocatorInterface $serviceLocator)
+    protected function preInstall()
     {
-        $this->setServiceLocator($serviceLocator);
-        $connection = $serviceLocator->get('Omeka\Connection');
+        $serviceLocator = $this->getServiceLocator();
 
         if (!extension_loaded('solr')) {
             $translator = $serviceLocator->get('MvcTranslator');
@@ -109,10 +110,13 @@ class Module extends AbstractModule
             $messenger = new Messenger();
             $messenger->addWarning($message);
         }
+    }
 
-        $this->execSqlFromFile(__DIR__ . '/data/install/schema.sql');
-
+    protected function postInstall()
+    {
         // Install a default config.
+        $serviceLocator = $this->getServiceLocator();
+        $connection = $serviceLocator->get('Omeka\Connection');
 
         $sql = <<<'SQL'
 INSERT INTO `solr_node` (`name`, `settings`)
@@ -136,9 +140,9 @@ SQL;
         }
     }
 
-    public function uninstall(ServiceLocatorInterface $serviceLocator)
+    protected function preUninstall()
     {
-        $this->setServiceLocator($serviceLocator);
+        $serviceLocator = $this->getServiceLocator();
         $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
         $module = $moduleManager->getModule('Search');
         if ($module && in_array($module->getState(), [
@@ -151,16 +155,6 @@ SQL;
         }
         $connection = $serviceLocator->get('Omeka\Connection');
         $connection->exec($sql);
-
-        $this->setServiceLocator($serviceLocator);
-        $this->execSqlFromFile(__DIR__ . '/data/install/uninstall.sql');
-    }
-
-    public function upgrade($oldVersion, $newVersion,
-        ServiceLocatorInterface $serviceLocator)
-    {
-        $this->setServiceLocator($serviceLocator);
-        require_once 'data/scripts/upgrade.php';
     }
 
     /**
@@ -371,66 +365,5 @@ SQL;
     protected function getDefaultSolrMappings()
     {
         return include __DIR__ . '/config/default_mappings.php';
-    }
-
-    /**
-     * Execute a sql from a file.
-     *
-     * @param string $filepath
-     * @return mixed
-     */
-    protected function execSqlFromFile($filepath)
-    {
-        if (!file_exists($filepath) || !filesize($filepath) || !is_readable($filepath)) {
-            return;
-        }
-        $services = $this->getServiceLocator();
-        $connection = $services->get('Omeka\Connection');
-        $sql = file_get_contents($filepath);
-        return $connection->exec($sql);
-    }
-
-    /**
-     * Check if a module is active.
-     *
-     * @param string $moduleClass
-     * @return bool
-     */
-    protected function isModuleActive($moduleClass)
-    {
-        $services = $this->getServiceLocator();
-        $moduleManager = $services->get('Omeka\ModuleManager');
-        $module = $moduleManager->getModule($moduleClass);
-        return $module
-            && $module->getState() === \Omeka\Module\Manager::STATE_ACTIVE;
-    }
-
-    /**
-     * Disable a module.
-     *
-     * @param string $moduleClass
-     */
-    protected function disableModule($moduleClass)
-    {
-        // Check if the module is enabled first to avoid an exception.
-        if (!$this->isModuleActive($moduleClass)) {
-            return;
-        }
-        /** @var \Omeka\Module\Manager $moduleManager */
-        $services = $this->getServiceLocator();
-        $moduleManager = $services->get('Omeka\ModuleManager');
-        $module = $moduleManager->getModule($moduleClass);
-        $moduleManager->deactivate($module);
-
-        $translator = $services->get('MvcTranslator');
-        $message = new \Omeka\Stdlib\Message(
-            $translator->translate('The module "%s" was automatically deactivated because the dependencies are unavailable.'), // @translate
-            $moduleClass
-        );
-        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
-        $messenger->addWarning($message);
-
-        $logger = $services->get('Omeka\Logger');
-        $logger->warn($message);
     }
 }
