@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -37,6 +38,7 @@ use Omeka\Entity\AbstractEntity;
 class SolrCore extends AbstractEntity
 {
     /**
+     * @var int
      * @Id
      * @Column(type="integer")
      * @GeneratedValue
@@ -44,12 +46,19 @@ class SolrCore extends AbstractEntity
     protected $id;
 
     /**
-     * @Column(type="string", length=255)
+     * @var string
+     * @Column(
+     *      type="string",
+     *      length=190
+     * )
      */
     protected $name;
 
     /**
-     * @Column(type="json_array")
+     * @var array
+     * @Column(
+     *      type="json_array"
+     * )
      */
     protected $settings;
 
@@ -58,21 +67,37 @@ class SolrCore extends AbstractEntity
         return $this->id;
     }
 
+    /**
+     * @param string $name
+     * @return self
+     */
     public function setName($name)
     {
         $this->name = $name;
+        return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getName()
     {
         return $this->name;
     }
 
-    public function setSettings($settings)
+    /**
+     * @param array $settings
+     * return self
+     */
+    public function setSettings(array $settings)
     {
         $this->settings = $settings;
+        return $this;
     }
 
+    /**
+     * @return array
+     */
     public function getSettings()
     {
         return $this->settings;

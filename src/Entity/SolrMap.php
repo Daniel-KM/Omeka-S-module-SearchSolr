@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -37,6 +38,7 @@ use Omeka\Entity\AbstractEntity;
 class SolrMap extends AbstractEntity
 {
     /**
+     * @var int
      * @Id
      * @Column(type="integer")
      * @GeneratedValue
@@ -44,8 +46,9 @@ class SolrMap extends AbstractEntity
     protected $id;
 
     /**
+     * @var SolrCore
      * @ManyToOne(
-     *     targetEntity="Solr\Entity\SolrCore"
+     *     targetEntity="SearchSolr\Entity\SolrCore"
      * )
      * @JoinColumn(
      *     nullable=false,
@@ -55,22 +58,37 @@ class SolrMap extends AbstractEntity
     protected $solrCore;
 
     /**
-     * @Column(type="string", length=255)
+     * @var string
+     * @Column(
+     *      type="string",
+     *      length=190
+     * )
      */
     protected $resourceName;
 
     /**
-     * @Column(type="string", length=255)
+     * @var string
+     * @Column(
+     *      type="string",
+     *      length=190
+     * )
      */
     protected $fieldName;
 
     /**
-     * @Column(type="string", length=255)
+     * @var string
+     * @Column(
+     *      type="string",
+     *      length=190
+     * )
      */
     protected $source;
 
     /**
-     * @Column(type="json_array")
+     * @var array
+     * @Column(
+     *      type="json_array"
+     * )
      */
     protected $settings;
 
@@ -79,51 +97,91 @@ class SolrMap extends AbstractEntity
         return $this->id;
     }
 
+    /**
+     * @param SolrCore $solrCore
+     * @return self
+     */
     public function setSolrCore(SolrCore $solrCore)
     {
         $this->solrCore = $solrCore;
+        return $this;
     }
 
+    /**
+     * @return \SearchSolr\Entity\SolrCore
+     */
     public function getSolrCore()
     {
         return $this->solrCore;
     }
 
+    /**
+     * @param string $resourceName
+     * @return self
+     */
     public function setResourceName($resourceName)
     {
         $this->resourceName = $resourceName;
+        return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getResourceName()
     {
         return $this->resourceName;
     }
 
+    /**
+     * @param string $fieldName
+     * @return self
+     */
     public function setFieldName($fieldName)
     {
         $this->fieldName = $fieldName;
+        return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getFieldName()
     {
         return $this->fieldName;
     }
 
+    /**
+     * @param string $source
+     * @return self
+     */
     public function setSource($source)
     {
         $this->source = $source;
+        return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getSource()
     {
         return $this->source;
     }
 
-    public function setSettings($settings)
+    /**
+     * @param array $settings
+     * @return self
+     */
+    public function setSettings(array $settings)
     {
         $this->settings = $settings;
+        return $this;
     }
 
+    /**
+     * @return array
+     */
     public function getSettings()
     {
         return $this->settings;

@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS `solr_mapping`;
-DROP TABLE IF EXISTS `solr_node`;
+DROP TABLE IF EXISTS `solr_map`;
+DROP TABLE IF EXISTS `solr_core`;
