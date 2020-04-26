@@ -36,7 +36,7 @@ use Search\Api\Representation\SearchIndexRepresentation;
 use SearchSolr\Form\ConfigFieldset;
 use Zend\I18n\Translator\TranslatorInterface;
 
-class SolrAdapter extends AbstractAdapter
+class SolariumAdapter extends AbstractAdapter
 {
     /**
      * @param ApiManager $api
@@ -60,7 +60,7 @@ class SolrAdapter extends AbstractAdapter
 
     public function getLabel()
     {
-        return 'Solr';
+        return 'Solarium';
     }
 
     public function getConfigFieldset()
@@ -72,12 +72,12 @@ class SolrAdapter extends AbstractAdapter
 
     public function getIndexerClass()
     {
-        return \SearchSolr\Indexer\SolrIndexer::class;
+        return \SearchSolr\Indexer\SolariumIndexer::class;
     }
 
     public function getQuerierClass()
     {
-        return \SearchSolr\Querier\SolrQuerier::class;
+        return \SearchSolr\Querier\SolariumQuerier::class;
     }
 
     public function getAvailableFacetFields(SearchIndexRepresentation $index)

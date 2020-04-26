@@ -196,7 +196,7 @@ return [
     ],
     'search_adapters' => [
         'factories' => [
-            'solr' => Service\Adapter\SolrAdapterFactory::class,
+            'solarium' => Service\Adapter\SolariumAdapterFactory::class,
         ],
     ],
     'searchsolr' => [

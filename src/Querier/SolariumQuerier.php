@@ -40,7 +40,7 @@ use SolrDisMaxQuery;
 use SolrQuery;
 use SolrServerException;
 
-class SolrQuerier extends AbstractQuerier
+class SolariumQuerier extends AbstractQuerier
 {
     /**
      * @var Response

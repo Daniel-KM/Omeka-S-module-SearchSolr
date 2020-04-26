@@ -38,7 +38,7 @@ use SolrClient;
 use SolrInputDocument;
 use SolrServerException;
 
-class SolrIndexer extends AbstractIndexer
+class SolariumIndexer extends AbstractIndexer
 {
     /**
      * @var SolrCoreRepresentation

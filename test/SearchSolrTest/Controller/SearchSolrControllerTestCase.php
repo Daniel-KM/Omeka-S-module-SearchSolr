@@ -45,7 +45,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
 
         $response = $this->api()->create('search_indexes', [
             'o:name' => 'TestIndex',
-            'o:adapter' => 'solr',
+            'o:adapter' => 'solarium',
             'o:settings' => [
                 'resources' => [
                     'items',

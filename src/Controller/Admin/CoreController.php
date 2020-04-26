@@ -161,7 +161,7 @@ class CoreController extends AbstractActionController
     {
         $result = [];
         $api = $this->api();
-        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
+        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solarium'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
             if ($solrCore->id() == $searchIndexSettings['adapter']['solr_core_id']) {

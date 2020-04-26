@@ -139,7 +139,7 @@ SQL;
             \Omeka\Module\Manager::STATE_NOT_ACTIVE,
         ])) {
             $sql = <<<'SQL'
-DELETE FROM `search_index` WHERE `adapter` = 'solr';
+DELETE FROM `search_index` WHERE `adapter` = 'solarium';
 SQL;
         }
         $connection = $serviceLocator->get('Omeka\Connection');
@@ -305,7 +305,7 @@ SQL;
     {
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solr'])->getContent();
+        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solarium'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
             $searchIndexSettings = $searchIndex->settings();
             if ($solrCoreId == $searchIndexSettings['adapter']['solr_core_id']) {

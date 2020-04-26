@@ -31,16 +31,16 @@
 namespace SearchSolr\Service\Adapter;
 
 use Interop\Container\ContainerInterface;
-use SearchSolr\Adapter\SolrAdapter;
+use SearchSolr\Adapter\SolariumAdapter;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
-class SolrAdapterFactory implements FactoryInterface
+class SolariumAdapterFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $api = $services->get('Omeka\ApiManager');
         $translator = $services->get('MvcTranslator');
-        $adapter = new SolrAdapter($api, $translator);
+        $adapter = new SolariumAdapter($api, $translator);
         return $adapter;
     }
 }
