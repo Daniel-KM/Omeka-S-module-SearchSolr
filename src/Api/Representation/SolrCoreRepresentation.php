@@ -90,8 +90,33 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function clientSettings()
     {
-        $settings = $this->settings();
-        return (array) $settings['client'];
+        $settings = $this->resource->getSettings();
+        // Currently, the keys from the old module Solr are kept.
+        // TODO Convert settings during from old module Solr before saving.
+        $clientSettings = (array) $settings['client'];
+        $clientSettings['endpoint'] = $this->endpoint();
+        return $clientSettings;
+    }
+
+    public function endpoint()
+    {
+        $settings = $this->resource->getSettings();
+        $clientSettings = (array) $settings['client'];
+        return [
+            $clientSettings['hostname'] => [
+                'host' => $clientSettings['hostname'],
+                'port' => $clientSettings['port'],
+                // Solarium < 5.0: full path and no core (or collection).
+                // @url https://solarium.readthedocs.io/en/stable/getting-started/#pitfall-when-upgrading-from-earlier-versions-to-5x
+                // 'path' => '/' . $clientSettings['path'] . '/',
+                'path' => '/',
+                // Core and collection have the same meaning on a standard solr.
+                'core' => preg_replace('(^/?solr/?)', '', $clientSettings['path']),
+                // 'collection' => preg_replace('(^/?solr)', '', $clientSettings['path']),
+                'username' => $clientSettings['login'],
+                'password' => $clientSettings['password'],
+            ],
+        ];
     }
 
     /**
@@ -142,39 +167,42 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
 
-        if (!file_exists(dirname(dirname(dirname(__DIR__))) . '/vendor/solarium/solarium/library/Solarium/Autoloader.php')) {
+        if (!file_exists(dirname(dirname(dirname(__DIR__))) . '/vendor/solarium/solarium/src/Client.php')) {
             $message = new Message('The composer library "%s" is not installed. See readme.', 'Solarium'); // @translate
             $logger->err($message);
             return $message;
         }
 
         $clientSettings = $this->clientSettings();
+
         $solariumClient = new SolariumClient($clientSettings);
+
         try {
             // Create a ping query.
             $query = $solariumClient->createPing();
-            // Execute the ping query.
+            // Execute the ping query. Result is not checked, bug use exception.
             $solariumClient->ping($query);
         } catch (SolariumException $e) {
             if ($e->getCode() === 404) {
-                $message = new Message('The core is available, but the index is not found. Check if it is created.'); // @translate
+                $message = new Message('Solr core not found. Check your url.'); // @translate
+                $logger->err($message);
+                return $message;
+            }
+            if ($e->getCode() === 401) {
+                $message = new Message('Solr core not found or unauthorized. Check your url and your credentials.'); // @translate
                 $logger->err($message);
                 return $message;
             }
             $logger->err($e);
-            $messages = explode("\n", $e->getMessage());
-
-            return reset($messages);
+            return $e->getMessage();
         }
-
         // Check the schema too, in particular when there are credentials, but
         // the certificate is expired or incomplete.
         try {
             $this->schema()->getSchema();
         } catch (SolariumException $e) {
             $logger->err($e);
-            $messages = explode("\n", $e->getMessage());
-            return reset($messages);
+            return $e->getMessage();
         }
 
         // Check if the config bypass certificate check.

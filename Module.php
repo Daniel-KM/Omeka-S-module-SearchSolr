@@ -92,10 +92,9 @@ class Module extends AbstractModule
 
     protected function preInstall()
     {
-        $serviceLocator = $this->getServiceLocator();
-
-        if (!file_exists(__DIR__ . '/vendor/solarium/solarium/library/Solarium/Autoloader.php')) {
-            $translator = $serviceLocator->get('MvcTranslator');
+        $services = $this->getServiceLocator();
+        if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
+            $translator = $services->get('MvcTranslator');
             $message = sprintf($translator->translate('The composer library "%s" is not installed. See readme.'), 'Solarium'); // @translate
             throw new ModuleCannotInstallException($message);
         }

@@ -3,7 +3,7 @@
 namespace SearchSolr\Schema;
 
 use Omeka\Stdlib\Message;
-use Solarium\Exception\HttpException as SolariumServerException;
+use Solarium\Exception\HttpException as SolariumException;
 
 class Schema
 {
@@ -73,7 +73,7 @@ class Schema
                         $url
                     );
                 }
-                throw new SolariumServerException($message);
+                throw new SolariumException($message);
             }
 
             $response = json_decode($contents, true);
