@@ -98,12 +98,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $clientSettings;
     }
 
+    /**
+     * @see \Solarium\Core\Client\Endpoint
+     * @return array
+     */
     public function endpoint()
     {
         $settings = $this->resource->getSettings();
         $clientSettings = (array) $settings['client'];
         return [
             $clientSettings['hostname'] => [
+                'scheme' =>  $clientSettings['scheme'],
                 'host' => $clientSettings['hostname'],
                 'port' => $clientSettings['port'],
                 // Solarium < 5.0: full path and no core (or collection).
@@ -128,8 +133,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $user = isset($settings['login']) ? $settings['login'] : '';
         $pass = isset($settings['password']) ? ':' . $settings['password'] : '';
         $pass = ($user || $pass) ? $pass . '@' : '';
-        return (empty($settings['secure']) ? 'http://' : 'https://')
-            . $user . $pass . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
+        return $settings['scheme'] . '://' . $user . $pass . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
     }
 
     /**
@@ -140,8 +144,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function clientUrlAdmin()
     {
         $settings = $this->clientSettings();
-        return (empty($settings['secure']) ? 'http://' : 'https://')
-            . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
+        return $settings['scheme'] . '://' . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
     }
 
     /**
@@ -152,8 +155,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $settings = $this->clientSettings();
         // Remove first part of the string ("solr/").
         $path = mb_substr($settings['path'], (mb_strrpos($settings['path'], '/') ?: -1) + 1);
-        $url = (empty($settings['secure']) ? 'http://' : 'https://')
-            . $settings['hostname'] . ':' . $settings['port'] . '/solr/#/' . $path;
+        $url = $settings['scheme'] . '://' . $settings['hostname'] . ':' . $settings['port'] . '/solr/#/' . $path;
         return $url;
     }
 

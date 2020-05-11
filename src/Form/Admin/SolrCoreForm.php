@@ -54,6 +54,20 @@ class SolrCoreForm extends Form
         $clientSettingsFieldset = new Fieldset('client');
 
         $clientSettingsFieldset->add([
+            'name' => 'scheme',
+            'type' => Element\Text::class,
+            'options' => [
+                'label' => 'Scheme', // @translate
+            ],
+            'attributes' => [
+                'id' => 'scheme',
+                'required' => true,
+                'placeholder' => 'https',
+                'value' => 'http',
+            ],
+        ]);
+
+        $clientSettingsFieldset->add([
             'name' => 'hostname',
             'type' => Element\Text::class,
             'options' => [

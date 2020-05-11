@@ -340,6 +340,7 @@ SQL;
     {
         return [
             'client' => [
+                'scheme' => 'http',
                 'hostname' => 'localhost',
                 'port' => 8983,
                 'path' => 'solr/omeka',
