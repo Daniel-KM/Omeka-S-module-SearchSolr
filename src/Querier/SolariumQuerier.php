@@ -128,10 +128,13 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
-        foreach ($solariumResultSet->getFacetSet() as $name => $values) {
-            foreach ($values as $value => $count) {
-                if ($count > 0) {
-                    $this->response->addFacetCount($name, $value, $count);
+        $facetSet = $solariumResultSet->getFacetSet();
+        if ($facetSet) {
+            foreach ($facetSet as $name => $values) {
+                foreach ($values as $value => $count) {
+                    if ($count > 0) {
+                        $this->response->addFacetCount($name, $value, $count);
+                    }
                 }
             }
         }
@@ -488,7 +491,6 @@ class SolariumQuerier extends AbstractQuerier
     protected function usedSolrFields()
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
         return $api->search('solr_maps', [
             'solr_core_id' => $this->solrCore->id(),
         ], ['returnScalar' => 'fieldName'])->getContent();
