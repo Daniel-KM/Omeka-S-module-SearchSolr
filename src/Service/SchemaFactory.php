@@ -46,9 +46,8 @@ class SchemaFactory implements FactoryInterface
         if (!isset($this->schemas[$solrCore->id()])) {
             $schemaUrl = $solrCore->clientUrl() . '/schema';
             $schema = new Schema($schemaUrl);
-            if (!empty($solrCore->clientSettings()['secure'])
-                && !empty($services->get('Config')['searchsolr']['config']['searchsolr_bypass_certificate_check'])
-            ) {
+            $clientSettings = $solrCore->clientSettings();
+            if (!empty($clientSettings['secure']) && !empty($clientSettings['bypass_certificate_check'])) {
                 $this->setSchemaConfig($schema, $schemaUrl);
             }
             $this->schemas[$solrCore->id()] = $schema;
@@ -69,8 +68,13 @@ class SchemaFactory implements FactoryInterface
      */
     protected function setSchemaConfig(Schema $schema, $schemaUrl)
     {
-        $arrContextOptions = ['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]];
-        $contents = @file_get_contents($schemaUrl, false, stream_context_create($arrContextOptions));
+        $streamContextOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ],
+        ];
+        $contents = @file_get_contents($schemaUrl, false, stream_context_create($streamContextOptions));
         if ($contents) {
             $response = json_decode($contents, true);
             $schema->setSchema($response['schema']);

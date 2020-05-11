@@ -200,9 +200,6 @@ return [
         ],
     ],
     'searchsolr' => [
-        'config' => [
-            'searchsolr_bypass_certificate_check' => false,
-        ],
     ],
     'searchsolr_value_extractors' => [
         'factories' => [

@@ -130,6 +130,18 @@ class SolrCoreForm extends Form
             ],
         ]);
 
+        $clientSettingsFieldset->add([
+            'name' => 'bypass_certificate_check',
+            'type' => Element\Checkbox::class,
+            'options' => [
+                'label' => 'Bypass certificate check', // @translate
+                'info' => 'Avoid issue when the certificate expires.', // @translate
+            ],
+            'attributes' => [
+                'id' => 'bypass_certificate_check',
+            ],
+        ]);
+
         $settingsFieldset->add($clientSettingsFieldset);
 
         $settingsFieldset->add([
