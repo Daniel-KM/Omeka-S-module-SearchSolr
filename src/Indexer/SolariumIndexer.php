@@ -35,9 +35,13 @@ use Search\Indexer\AbstractIndexer;
 use Search\Query;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use Solarium\Client as SolariumClient;
-use SolrInputDocument;
-use SolrServerException;
+use Solarium\Exception\HttpException as SolariumServerException;
+use Solarium\QueryType\Update\Query\Document as SolariumInputDocument;
 
+/**
+ * @url https://solarium.readthedocs.io/en/stable/getting-started/
+ * @url https://solarium.readthedocs.io/en/stable/documents/
+ */
 class SolariumIndexer extends AbstractIndexer
 {
     /**
@@ -101,22 +105,24 @@ class SolariumIndexer extends AbstractIndexer
     public function clearIndex(Query $query = null)
     {
         if ($query) {
-            /** @var \SolrDisMaxQuery|\SolrQuery|null $solrQuery */
-            $solrQuery = $this->index->querier()
+            /** @var \Solarium\QueryType\Select\Query\Query|null $solariumQuery */
+            $solariumQuery = $this->index->querier()
                 ->setQuery($query)
                 ->getPreparedQuery();
-            if (is_null($solrQuery)) {
+            if (is_null($solariumQuery)) {
                 $query = '*:*';
             } else {
-                $query = $solrQuery->toString();
+                $query = $solariumQuery->getQuery();
             }
         } else {
             $query = '*:*';
         }
 
-        $solrClient = $this->getClient();
-        $solrClient->deleteByQuery($query);
-        $solrClient->commit();
+        $solariumClient = $this->getClient();
+        $update = $solariumClient->createUpdate();
+        $update->addDeleteQuery($query);
+        $update->addCommit();
+        $solariumClient->update($update);
     }
 
     public function indexResource(Resource $resource)
@@ -145,8 +151,11 @@ class SolariumIndexer extends AbstractIndexer
     public function deleteResource($resourceName, $resourceId)
     {
         $id = $this->getDocumentId($resourceName, $resourceId);
-        $this->getClient()->deleteById($id);
-        $this->commit();
+        $client = $this->getClient();
+        $update = $client->createUpdate();
+        $update->addDeleteById($id);
+        $update->addCommit();
+        $client->update($update);
     }
 
     /**
@@ -188,7 +197,7 @@ class SolariumIndexer extends AbstractIndexer
         $adapter = $this->apiAdapters->get($resourceName);
         $representation = $adapter->getRepresentation($resource);
 
-        $document = new SolrInputDocument;
+        $document = new SolariumInputDocument;
 
         $id = $this->getDocumentId($resourceName, $resourceId);
         $document->addField('id', $id);
@@ -206,6 +215,7 @@ class SolariumIndexer extends AbstractIndexer
         switch ($resourceName) {
             case 'items':
                 // There is no method to get the list of sites of an item.
+                // TODO Get sites of an items in Omeka 2.2/3.
                 foreach ($this->siteIds as $siteId) {
                     $query = ['id' => $resourceId, 'site_id' => $siteId];
                     $res = $this->api->search('items', $query, ['returnScalar' => 'id'])->getContent();
@@ -286,9 +296,13 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
+        //  TODO Improve bulk indexing of documents for Solarium. Here of via BufferedAdd plugin.
         try {
-            $client->addDocument($document);
-        } catch (SolrServerException $e) {
+            $update = $client->createUpdate();
+            $update->addDocuments([$document]);
+            $update->addCommit();
+            $client->update($update);
+        } catch (SolariumServerException $e) {
             $this->getLogger()->err(sprintf('Indexing of resource %s failed', $resourceId)); // @translate
             $this->getLogger()->err($e);
         }
@@ -311,7 +325,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function commit()
     {
         $this->getLogger()->info('Commit index in Solr.'); // @translate
-        $this->getClient()->commit();
+        // $this->getClient()->commit();
     }
 
     /**
