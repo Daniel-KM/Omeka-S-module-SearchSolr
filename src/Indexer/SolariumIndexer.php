@@ -34,7 +34,7 @@ use Omeka\Entity\Resource;
 use Search\Indexer\AbstractIndexer;
 use Search\Query;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
-use SolrClient;
+use Solarium\Client as SolariumClient;
 use SolrInputDocument;
 use SolrServerException;
 
@@ -46,9 +46,9 @@ class SolariumIndexer extends AbstractIndexer
     protected $solrCore;
 
     /**
-     * @var SolrClient
+     * @var SolariumClient
      */
-    protected $client;
+    protected $solariumClient;
 
     /**
      * @var \Omeka\Api\Manager
@@ -323,22 +323,23 @@ class SolariumIndexer extends AbstractIndexer
             $solrCoreId = $this->getAdapterSetting('solr_core_id');
             if ($solrCoreId) {
                 $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+                // Automatically throw an exception when empty.
                 $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
+                $this->solariumClient = $this->solrCore->solariumClient();
             }
         }
         return $this->solrCore;
     }
 
     /**
-     * @return SolrClient
+     * @return SolariumClient
      */
     protected function getClient()
     {
-        if (!isset($this->client)) {
-            $solrCore = $this->getSolrCore();
-            $this->client = new SolrClient($solrCore->clientSettings());
+        if (!isset($this->solariumClient)) {
+            $this->solariumClient = $this->getSolrCore()->solariumClient();
         }
-        return $this->client;
+        return $this->solariumClient;
     }
 
     /**

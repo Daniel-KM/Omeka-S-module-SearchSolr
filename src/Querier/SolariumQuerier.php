@@ -34,7 +34,7 @@ use Search\Querier\AbstractQuerier;
 use Search\Querier\Exception\QuerierException;
 use Search\Response;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
-use SolrClient;
+use Solarium\Client as SolariumClient;
 use SolrClientException;
 use SolrDisMaxQuery;
 use SolrQuery;
@@ -53,9 +53,9 @@ class SolariumQuerier extends AbstractQuerier
     protected $solrQuery;
 
     /**
-     * @var \SolrClient
+     * @var SolariumClient
      */
-    protected $client;
+    protected $solariumClient;
 
     /**
      * @var SolrCoreRepresentation
@@ -530,21 +530,21 @@ class SolariumQuerier extends AbstractQuerier
     protected function init()
     {
         $this->getSolrCore();
-        $this->getClient();
         return $this;
     }
 
     /**
-     * @return SolrCoreRepresentation
+     * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
      */
     protected function getSolrCore()
     {
         if (!isset($this->solrCore)) {
-            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
             $solrCoreId = $this->getAdapterSetting('solr_core_id');
             if ($solrCoreId) {
+                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
                 // Automatically throw an exception when empty.
                 $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
+                $this->solariumClient = $this->solrCore->solariumClient();
             }
         }
         return $this->solrCore;
@@ -555,9 +555,9 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function getClient()
     {
-        if (!isset($this->solrClient)) {
-            $this->solrClient = new SolrClient($this->solrCore->clientSettings());
+        if (!isset($this->solariumClient)) {
+            $this->solariumClient = $this->getSolrCore()->solariumClient();
         }
-        return $this->solrClient;
+        return $this->solariumClient;
     }
 }

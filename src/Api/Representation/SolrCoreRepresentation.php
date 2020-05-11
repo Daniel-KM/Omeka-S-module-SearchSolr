@@ -39,6 +39,11 @@ use Solarium\Exception\HttpException as SolariumException;
 class SolrCoreRepresentation extends AbstractEntityRepresentation
 {
     /**
+     * @var SolariumClient
+     */
+    protected $solariumClient;
+
+    /**
      * {@inheritDoc}
      */
     public function getJsonLdType()
@@ -124,6 +129,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * @return \Solarium\Client
+     */
+    public function solariumClient()
+    {
+        if (!isset($this->solariumClient)) {
+            $this->solariumClient = new SolariumClient(['endpoint' => $this->endpoint()]);
+        }
+        return $this->solariumClient;
+    }
+
+    /**
      * @return string
      */
     public function clientUrl()
@@ -172,8 +188,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         }
 
         $clientSettings = $this->clientSettings();
-
-        $solariumClient = new SolariumClient($clientSettings);
+        $solariumClient = $this->solariumClient();
 
         try {
             // Create a ping query.
