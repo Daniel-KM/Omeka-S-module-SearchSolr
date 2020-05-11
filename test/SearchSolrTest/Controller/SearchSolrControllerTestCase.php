@@ -21,9 +21,10 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
             'o:name' => 'TestCore',
             'o:settings' => [
                 'client' => [
-                    'hostname' => 'localhost',
+                    'host' => 'localhost',
                     'port' => '8983',
-                    'path' => 'solr/test_core',
+                    'path' => '/',
+                    'core' => 'test_core',
                 ],
                 'resource_name_field' => 'resource_name_s',
             ],

@@ -60,7 +60,7 @@ class Schema
             if ($contents === false) {
                 // Remove the credentials of the url for the logs.
                 $parsed = parse_url($this->schemaUrl);
-                $credentials = isset($parsed['user']) ? substr($parsed['user'], 0, 1) . '***:***@' : '';
+                $credentials = isset($parsed['username']) ? substr($parsed['username'], 0, 1) . '***:***@' : '';
                 $url = $parsed['scheme'] . '://' . $credentials . $parsed['host'] . ':' . $parsed['port'] . $parsed['path'];
                 if ($credentials) {
                     $message = new Message(

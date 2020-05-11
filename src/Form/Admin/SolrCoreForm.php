@@ -68,13 +68,13 @@ class SolrCoreForm extends Form
         ]);
 
         $clientSettingsFieldset->add([
-            'name' => 'hostname',
+            'name' => 'host',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'IP or hostname', // @translate
             ],
             'attributes' => [
-                'id' => 'hostname',
+                'id' => 'host',
                 'required' => true,
                 'placeholder' => 'localhost',
             ],
@@ -94,15 +94,15 @@ class SolrCoreForm extends Form
         ]);
 
         $clientSettingsFieldset->add([
-            'name' => 'path',
+            'name' => 'core',
             'type' => Element\Text::class,
             'options' => [
-                'label' => 'Solr core path', // @translate
+                'label' => 'Solr core', // @translate
             ],
             'attributes' => [
-                'id' => 'path',
+                'id' => 'core',
                 'required' => true,
-                'placeholder' => 'solr/omeka',
+                'placeholder' => 'omeka',
             ],
         ]);
 
@@ -118,15 +118,15 @@ class SolrCoreForm extends Form
         ]);
 
         $clientSettingsFieldset->add([
-            'name' => 'login',
+            'name' => 'username',
             'type' => Element\Text::class,
             'options' => [
                 'label' => 'Solr user', // @translate
             ],
             'attributes' => [
-                'id' => 'login',
+                'id' => 'username',
                 'required' => false,
-                'placeholder' => 'admin@example.org',
+                'placeholder' => 'admin_solr',
             ],
         ]);
 

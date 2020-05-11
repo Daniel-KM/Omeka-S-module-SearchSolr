@@ -107,20 +107,19 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $settings = $this->resource->getSettings();
         $clientSettings = (array) $settings['client'];
         return [
-            $clientSettings['hostname'] => [
-                'scheme' =>  $clientSettings['scheme'],
-                'host' => $clientSettings['hostname'],
-                'port' => $clientSettings['port'],
-                // Solarium < 5.0: full path and no core (or collection).
-                // @url https://solarium.readthedocs.io/en/stable/getting-started/#pitfall-when-upgrading-from-earlier-versions-to-5x
-                // 'path' => '/' . $clientSettings['path'] . '/',
-                'path' => '/',
-                // Core and collection have the same meaning on a standard solr.
-                'core' => preg_replace('(^/?solr/?)', '', $clientSettings['path']),
-                // 'collection' => preg_replace('(^/?solr)', '', $clientSettings['path']),
-                'username' => $clientSettings['login'],
-                'password' => $clientSettings['password'],
-            ],
+            $clientSettings['host'] => array_intersect_key(
+                $clientSettings, [
+                    'scheme' => null,
+                    'host' => null,
+                    'port' => null,
+                    'path' => '/',
+                    // Core and collection have same meaning on a standard solr.
+                    // 'collection' => null,
+                    'core' => null,
+                    'username' => null,
+                    'password' => null,
+                ]
+            ),
         ];
     }
 
@@ -130,10 +129,10 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function clientUrl()
     {
         $settings = $this->clientSettings();
-        $user = isset($settings['login']) ? $settings['login'] : '';
-        $pass = isset($settings['password']) ? ':' . $settings['password'] : '';
-        $pass = ($user || $pass) ? $pass . '@' : '';
-        return $settings['scheme'] . '://' . $user . $pass . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
+        $user = empty($settings['username']) ? '' : $settings['username'];
+        $pass = empty($settings['password']) ? '' : ':' . $settings['password'];
+        $credentials = ($user || $pass) ? $user . $pass . '@' : '';
+        return $settings['scheme'] . '://' . $credentials . $settings['host'] . ':' . $settings['port'] . '/solr/' . $settings['core'];
     }
 
     /**
@@ -144,7 +143,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function clientUrlAdmin()
     {
         $settings = $this->clientSettings();
-        return $settings['scheme'] . '://' . $settings['hostname'] . ':' . $settings['port'] . '/' . $settings['path'];
+        return $settings['scheme'] . '://' . $settings['host'] . ':' . $settings['port'] . '/solr/' . $settings['core'];
     }
 
     /**
@@ -153,10 +152,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function clientUrlAdminBoard()
     {
         $settings = $this->clientSettings();
-        // Remove first part of the string ("solr/").
-        $path = mb_substr($settings['path'], (mb_strrpos($settings['path'], '/') ?: -1) + 1);
-        $url = $settings['scheme'] . '://' . $settings['hostname'] . ':' . $settings['port'] . '/solr/#/' . $path;
-        return $url;
+        return $settings['scheme'] . '://' . $settings['host'] . ':' . $settings['port'] . '/solr/#/' . $settings['core'];
     }
 
     /**

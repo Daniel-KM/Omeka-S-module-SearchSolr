@@ -341,9 +341,13 @@ SQL;
         return [
             'client' => [
                 'scheme' => 'http',
-                'hostname' => 'localhost',
+                'host' => 'localhost',
                 'port' => 8983,
-                'path' => 'solr/omeka',
+                'path' => '/',
+                // 'collection' => null,
+                'core' => 'omeka',
+                'username' => null,
+                'password' => null,
             ],
             'is_public_field' => 'is_public_b',
             'resource_name_field' => 'resource_name_s',

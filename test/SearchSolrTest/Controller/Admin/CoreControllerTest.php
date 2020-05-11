@@ -20,9 +20,9 @@ class CoreControllerTest extends SolrControllerTestCase
         $this->assertResponseStatusCode(200);
 
         $this->assertQuery('input[name="o:name"]');
-        $this->assertQuery('input[name="o:settings[client][hostname]"]');
+        $this->assertQuery('input[name="o:settings[client][host]"]');
         $this->assertQuery('input[name="o:settings[client][port]"]');
-        $this->assertQuery('input[name="o:settings[client][path]"]');
+        $this->assertQuery('input[name="o:settings[client][core]"]');
         $this->assertQuery('input[name="o:settings[resource_name_field]"]');
     }
 
@@ -34,9 +34,10 @@ class CoreControllerTest extends SolrControllerTestCase
             'o:name' => 'TestCore2',
             'o:settings' => [
                 'client' => [
-                    'hostname' => 'example.com',
+                    'host' => 'example.com',
                     'port' => '8983',
-                    'path' => 'solr/test_core2',
+                    'path' => '/',
+                    'core' => 'test_core2',
                 ],
                 'resource_name_field' => 'resource_name_s',
             ],
@@ -63,9 +64,10 @@ class CoreControllerTest extends SolrControllerTestCase
             'o:name' => 'TestCore3',
             'o:settings' => [
                 'client' => [
-                    'hostname' => 'localhost',
+                    'host' => 'localhost',
                     'port' => '8983',
-                    'path' => 'solr/test_core3',
+                    'path' => '/',
+                    'core' => 'test_core3',
                 ],
                 'resource_name_field' => 'resource_name_s',
             ],
