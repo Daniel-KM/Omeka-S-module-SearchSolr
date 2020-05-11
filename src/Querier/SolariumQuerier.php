@@ -35,10 +35,7 @@ use Search\Querier\Exception\QuerierException;
 use Search\Response;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use Solarium\Client as SolariumClient;
-use SolrClientException;
-use SolrDisMaxQuery;
-use SolrQuery;
-use SolrServerException;
+use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 
 class SolariumQuerier extends AbstractQuerier
 {
@@ -48,9 +45,9 @@ class SolariumQuerier extends AbstractQuerier
     protected $response;
 
     /**
-     * @var SolrQuery
+     * @var SolariumQuery
      */
-    protected $solrQuery;
+    protected $solariumQuery;
 
     /**
      * @var SolariumClient
@@ -66,17 +63,18 @@ class SolariumQuerier extends AbstractQuerier
     {
         $this->response = new Response;
 
-        $this->solrQuery = $this->getPreparedQuery() ;
-        if (is_null($this->solrQuery)) {
+        $this->solariumQuery = $this->getPreparedQuery();
+        if (is_null($this->solariumQuery)) {
             return $this->response;
         }
 
         try {
-            $solrQueryResponse = $this->solrClient->query($this->solrQuery);
-        } catch (SolrServerException $e) {
+            $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
+        } catch (\Exception $e) {
+            // TODO Is it still needed?
             // The query may be badly formatted, so try to escape all reserved
             // characters instead of returning an exception.
-            // @link https://lucene.apache.org/core/7_2_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
+            // @link https://lucene.apache.org/core/8_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
             // TODO Check before the query.
             $reservedCharacters = [
                 // The character "\" must be escaped first.
@@ -102,40 +100,38 @@ class SolariumQuerier extends AbstractQuerier
             // The solr query cannot be an empty string.
             $q = $this->query->getQuery() ?: '*:*';
             $escapedQ = str_replace(array_keys($reservedCharacters), array_values($reservedCharacters), $q);
-            $this->solrQuery->setQuery($escapedQ);
+            $this->solariumQuery->setQuery($escapedQ);
             try {
-                $solrQueryResponse = $this->solrClient->query($this->solrQuery);
-            } catch (SolrServerException $e) {
+                $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
+            } catch (\Exception $e) {
                 throw new QuerierException($e->getMessage(), $e->getCode(), $e);
             }
-        } catch (SolrClientException $e) {
+        } catch (\Exception $e) {
             throw new QuerierException($e->getMessage(), $e->getCode(), $e);
         }
 
-        $solrResponse = $solrQueryResponse->getResponse();
+        // Normalize the response for module Search.
+        // getData() allows to get everything as array.
+        // $solariumResultSet->getData();
 
-        $solrCoreSettings = $this->solrCore->settings();
-        $resourceNameField = $solrCoreSettings['resource_name_field'];
-
-        $this->response->setTotalResults($solrResponse['grouped'][$resourceNameField]['matches']);
-        foreach ($solrResponse['grouped'][$resourceNameField]['groups'] as $group) {
-            $this->response->setResourceTotalResults($group['groupValue'], $group['doclist']['numFound']);
-            // In some cases, numFound can be greater than 1 and docs empty,
-            // probably related to a config issue between items/item_sets.
-            if ($group['doclist']['docs']) {
-                foreach ($group['doclist']['docs'] as $doc) {
-                    list(, $resourceId) = explode(':', $doc['id']);
-                    $this->response->addResult($group['groupValue'], ['id' => $resourceId]);
+        // The result is always grouped, so getNumFound() is empty. The same for getDocuments().
+        // There is only one grouping here: by resource name (items/item sets).
+        foreach ($solariumResultSet->getGrouping() as $fieldGroup) {
+            $this->response->setTotalResults($fieldGroup->getMatches());
+            foreach ($fieldGroup as $valueGroup) {
+                $groupName = $valueGroup->getValue();
+                $this->response->setResourceTotalResults($groupName, $valueGroup->getNumFound());
+                foreach ($valueGroup as $document) {
+                    list(, $resourceId) = explode(':', $document['id']);
+                    $this->response->addResult($groupName, ['id' => $resourceId]);
                 }
             }
         }
 
-        if (!empty($solrResponse['facet_counts']['facet_fields'])) {
-            foreach ($solrResponse['facet_counts']['facet_fields'] as $name => $values) {
-                foreach ($values as $value => $count) {
-                    if ($count > 0) {
-                        $this->response->addFacetCount($name, $value, $count);
-                    }
+        foreach ($solariumResultSet->getFacetSet() as $name => $values) {
+            foreach ($values as $value => $count) {
+                if ($count > 0) {
+                    $this->response->addFacetCount($name, $value, $count);
                 }
             }
         }
@@ -144,7 +140,9 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
-     * @return SolrDisMaxQuery|SolrQuery|null
+     * @todo Improve the integration of Solarium. Many things can be added directly as option or as array.
+     *
+     * @return SolariumQuery|null
      *
      * {@inheritDoc}
      * @see \Search\Querier\AbstractQuerier::getPreparedQuery()
@@ -154,8 +152,8 @@ class SolariumQuerier extends AbstractQuerier
         $this->init();
 
         if (empty($this->query)) {
-            $this->solrQuery = null;
-            return $this->solrQuery;
+            $this->solariumQuery = null;
+            return $this->solariumQuery;
         }
 
         $solrCoreSettings = $this->solrCore->settings();
@@ -163,37 +161,40 @@ class SolariumQuerier extends AbstractQuerier
         $resourceNameField = $solrCoreSettings['resource_name_field'];
         $sitesField = isset($solrCoreSettings['sites_field']) ? $solrCoreSettings['sites_field'] : null;
 
-        if (class_exists('SolrDisMaxQuery')) {
-            $this->solrQuery = new SolrDisMaxQuery;
-        } else {
-            // Kept if the class SolrDisMaxQuery is not available.
-            $this->solrQuery = new SolrQuery;
-        }
+        // TODO Add a param to select DisMaxQuery, standard query, eDisMax, or external query parsers.
+
+        $this->solariumQuery = $this->solariumClient->createSelect();
 
         $isDefaultQuery = $this->defaultQuery();
         if (!$isDefaultQuery) {
             $this->mainQuery();
         }
 
-        $this->solrQuery->addField('id');
+        $this->solariumQuery->addField('id');
 
         $isPublic = $this->query->getIsPublic();
         if ($isPublic) {
-            $this->solrQuery->addFilterQuery($isPublicField . ':' . 1);
+            $this->solariumQuery
+                ->createFilterQuery($isPublicField)
+                ->setQuery('1');
         }
 
-        $this->solrQuery->setGroup(true);
-        $this->solrQuery->addGroupField($resourceNameField);
+        $this->solariumQuery
+            ->getGrouping()
+            ->addField($resourceNameField)
+            ->setNumberOfGroups(true);
 
         $resources = $this->query->getResources();
-        $fq = $resourceNameField . ':(' . implode(' OR ', $resources) . ')';
-        $this->solrQuery->addFilterQuery($fq);
+        $this->solariumQuery
+            ->createFilterQuery($resourceNameField)
+            ->setQuery('(' . implode(' OR ', $resources) . ')');
 
         if ($sitesField) {
             $siteId = $this->query->getSiteId();
             if (isset($siteId)) {
-                $fq = $sitesField . ':' . $siteId;
-                $this->solrQuery->addFilterQuery($fq);
+                $this->solariumQuery
+                    ->createFilterQuery($sitesField)
+                    ->setQuery($siteId);
             }
         }
 
@@ -208,7 +209,9 @@ class SolariumQuerier extends AbstractQuerier
                 } else {
                     $value = $this->enclose($value);
                 }
-                $this->solrQuery->addFilterQuery("$name:$value");
+                $this->solariumQuery
+                    ->createFilterQuery($name)
+                    ->setQuery($value);
             }
         }
 
@@ -243,7 +246,9 @@ class SolariumQuerier extends AbstractQuerier
                     $start = $filterValue['start'] ? $filterValue['start'] : '*';
                     $end = $filterValue['end'] ? $filterValue['end'] : '*';
                 }
-                $this->solrQuery->addFilterQuery("$name:[$start TO $end]");
+                $this->solariumQuery
+                    ->createFilterQuery($name)
+                    ->setQuery("[$start TO $end]");
             }
         }
 
@@ -253,37 +258,37 @@ class SolariumQuerier extends AbstractQuerier
         if ($sort) {
             @list($sortField, $sortOrder) = explode(' ', $sort, 2);
             if ($sortField === 'score') {
-                $sortOrder = $sortOrder === 'asc' ? SolrQuery::ORDER_ASC : SolrQuery::ORDER_DESC;
+                $sortOrder = $sortOrder === 'asc' ? SolariumQuery::SORT_ASC : SolariumQuery::SORT_DESC;
             } else {
-                $sortOrder = $sortOrder === 'desc' ? SolrQuery::ORDER_DESC : SolrQuery::ORDER_ASC;
+                $sortOrder = $sortOrder === 'desc' ? SolariumQuery::SORT_DESC : SolariumQuery::SORT_ASC;
             }
-            $this->solrQuery->addSortField($sortField, $sortOrder);
+            $this->solariumQuery->addSort($sortField, $sortOrder);
         }
 
         $limit = $this->query->getLimit();
         if ($limit) {
-            $this->solrQuery->setGroupLimit($limit);
+            $this->solariumQuery->getGrouping()->setLimit($limit);
         }
 
         $offset = $this->query->getOffset();
         if ($offset) {
-            $this->solrQuery->setGroupOffset($offset);
+            $this->solariumQuery->getGrouping()->setOffset($offset);
         }
 
         $facetFields = $this->query->getFacetFields();
         if (count($facetFields)) {
-            $this->solrQuery->setFacet(true);
+            $facetSet = $this->solariumQuery->getFacetSet();
             foreach ($facetFields as $facetField) {
-                $this->solrQuery->addFacetField($facetField);
+                $facetSet->createFacetField($facetField)->setField($facetField);
             }
         }
 
         $facetLimit = $this->query->getFacetLimit();
         if ($facetLimit) {
-            $this->solrQuery->setFacetLimit($facetLimit);
+            $this->solariumQuery->getFacetSet()->setLimit($facetLimit);
         }
 
-        return $this->solrQuery;
+        return $this->solariumQuery;
     }
 
     protected function defaultQuery()
@@ -292,18 +297,14 @@ class SolariumQuerier extends AbstractQuerier
         // Here, this is a catch-them-all query.
         $defaultQuery = '*:*';
 
-        if (class_exists('SolrDisMaxQuery')) {
-            // Kept to avoid a crash when there is no query or blank query,
-            // and no alternative query.
-            $this->solrQuery->setQueryAlt($defaultQuery);
-        }
+        $this->solariumQuery->getDisMax()->setQueryAlternative($defaultQuery);
 
         $q = $this->query->getQuery();
         if (strlen($q)) {
             return false;
         }
 
-        $this->solrQuery->setQuery($defaultQuery);
+        $this->solariumQuery->setQuery($defaultQuery);
         return true;
     }
 
@@ -314,12 +315,14 @@ class SolariumQuerier extends AbstractQuerier
 
         $solrCoreSettings = $this->solrCore->settings();
         $queryConfig = array_filter($solrCoreSettings['query']);
-        if ($queryConfig && class_exists('SolrDisMaxQuery')) {
+        if ($queryConfig) {
+            // TODO These options and other DisMax ones can be passed directly as options. Even the query is an option.
+            $dismax = $this->solariumQuery->getDisMax();
             if (isset($queryConfig['minimum_match'])) {
-                $this->solrQuery->setMinimumMatch($queryConfig['minimum_match']);
+                $dismax->setMinimumMatch($queryConfig['minimum_match']);
             }
             if (isset($queryConfig['tie_breaker'])) {
-                $this->solrQuery->setTieBreaker($queryConfig['tie_breaker']);
+                $dismax->setTie($queryConfig['tie_breaker']);
             }
         }
 
@@ -327,7 +330,7 @@ class SolariumQuerier extends AbstractQuerier
             if ($excludedFiles && $q !== '*:*') {
                 $this->mainQueryWithExcludedFields();
             } else {
-                $this->solrQuery->setQuery($q);
+                $this->solariumQuery->setQuery($q);
             }
         }
     }
@@ -351,7 +354,7 @@ class SolariumQuerier extends AbstractQuerier
         foreach ($usedFields as $field) {
             $qq[] = $field . ':' . $q;
         }
-        $this->solrQuery->setQuery(implode(' ', $qq));
+        $this->solariumQuery->setQuery(implode(' ', $qq));
     }
 
     protected function addFilterQueries()
@@ -368,6 +371,9 @@ class SolariumQuerier extends AbstractQuerier
         if (!$filters) {
             return;
         }
+
+        // FIXME Manage complex filters queries with solarium.
+        return;
 
         $first = true;
         $fq = '';
@@ -401,11 +407,15 @@ class SolariumQuerier extends AbstractQuerier
                 }
             }
         }
-        $this->solrQuery->addFilterQuery($fq);
+
+        $this->solariumQuery->addFilterQuery($fq);
     }
 
     protected function addMultipleFilterQueries()
     {
+        // FIXME Manage complex filters queries with solarium.
+        return;
+
         $filters = $this->query->getFilterQueries();
         foreach ($filters as $name => $values) {
             foreach ($values as $value) {
@@ -415,60 +425,60 @@ class SolariumQuerier extends AbstractQuerier
                 // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
                 switch ($type) {
                     case 'neq':
-                        $this->solrQuery->addFilterQuery("-$name:$value");
+                        $this->solariumQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'eq':
-                        $this->solrQuery->addFilterQuery("+$name:$value");
+                        $this->solariumQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nin':
-                        $this->solrQuery->addFilterQuery("-$name:$value");
+                        $this->solariumQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'in':
-                        $this->solrQuery->addFilterQuery("+$name:$value");
+                        $this->solariumQuery->addFilterQuery("+$name:$value");
                         break;
 
                     // TODO Fixes theses Solr queries.
                     case 'nlist':
-                        $this->solrQuery->addFilterQuery("-$name:$value");
+                        $this->solariumQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'list':
-                        $this->solrQuery->addFilterQuery("+$name:$value");
+                        $this->solariumQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nsw':
-                        $this->solrQuery->addFilterQuery("-$name:$value");
+                        $this->solariumQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'sw':
-                        $this->solrQuery->addFilterQuery("+$name:$value");
+                        $this->solariumQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'new':
-                        $this->solrQuery->addFilterQuery("-$name:$value");
+                        $this->solariumQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'ew':
-                        $this->solrQuery->addFilterQuery("+$name:$value");
+                        $this->solariumQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nma':
-                        $this->solrQuery->addFilterQuery("-$name:$value");
+                        $this->solariumQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'ma':
-                        $this->solrQuery->addFilterQuery("+$name:$value");
+                        $this->solariumQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nres':
-                        $this->solrQuery->addFilterQuery("-$name:$value");
+                        $this->solariumQuery->addFilterQuery("-$name:$value");
                         break;
                     case 'res':
-                        $this->solrQuery->addFilterQuery("+$name:$value");
+                        $this->solariumQuery->addFilterQuery("+$name:$value");
                         break;
 
                     case 'nex':
-                        $this->solrQuery->addFilterQuery("-$name:[* TO *]");
+                        $this->solariumQuery->addFilterQuery("-$name:[* TO *]");
                         break;
                     case 'ex':
-                        $this->solrQuery->addFilterQuery("+$name:[* TO *]");
+                        $this->solariumQuery->addFilterQuery("+$name:[* TO *]");
                         break;
                 }
             }
@@ -551,7 +561,7 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
-     * @return \SolrClient
+     * @return SolariumClient
      */
     protected function getClient()
     {
