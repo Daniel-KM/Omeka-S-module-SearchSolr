@@ -102,10 +102,29 @@ class Module extends AbstractModule
 
     protected function postInstall()
     {
-        // Install a default config.
-        $serviceLocator = $this->getServiceLocator();
-        $connection = $serviceLocator->get('Omeka\Connection');
+        // Upgrade from old module Solr if any, else install a default config.
+        $services = $this->getServiceLocator();
+        $connection = $services->get('Omeka\Connection');
 
+        /** @var \Omeka\Module\Manager $moduleManager */
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $module = $moduleManager->getModule('Solr');
+        if ($module
+            && version_compare($module->getIni('version'), '3.5.5', '>=')
+            && version_compare($module->getIni('version'), '3.5.14', '<=')
+        ) {
+            // Check if Solr was really installed.
+            try {
+                $connection->fetchAll('SELECT id FROM solr_node LIMIT 1;');
+                // So upgrade Solr.
+                $filepath = $this->modulePath() . '/data/scripts/upgrade_from_solr.php';
+                require_once $filepath;
+                return;
+            } catch (\Exception $e) {
+            }
+        }
+
+        // Install a default config.
         $sql = <<<'SQL'
 INSERT INTO `solr_core` (`name`, `settings`)
 VALUES ("default", ?);
