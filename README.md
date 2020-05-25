@@ -93,7 +93,8 @@ Quick start
         `resource_class_s`, `item_set_dcterms_title_ss`, `dcterms_creator_ss`,
         `dcterms_date_s`, `dcterms_spatial_ss`, `dcterms_language_ss` and
         `dcterms_rights_ss` as facets, and `Relevance`, `dcterms_title_s`,
-        `dcterms_date_s`, and `dcterms_creator_s` as sort fields.
+        `dcterms_date_s`, and `dcterms_creator_s` as sort fields. See below more
+        information about [indexation in Solr].
         3. Edit the name of the label that will be used for facets and sort
         fields in the same page. The string will be automatically translated if
         it exists in Omeka.
@@ -124,6 +125,26 @@ Furthermore, a check should be done when a field has the same name for items and
 item sets.
 
 Don’t forget to reindex the fields each time the Solr config is updated too.
+
+seration
+Indexation in Solr
+------------------
+
+The default indexation is working fine: everything is indexed as text and most
+of people use the basic search engine à la Google. In such cases, Solr manages
+uppercase/lowercase, transliteration, scoring, etc.
+
+Nevertheless, some people want an advanced search where they can request on a
+specific property, or a group of metadata, with pattern, and even combine them
+together with various joiners (and, or, not, near…). In that particular case, it
+will be required to create multiple index in details.
+
+
+TODO
+----
+
+- Create an automatic mode from the resource templates or from Dublin Core.
+- Create automatically multiple index by property (text, string, lower, latin).
 
 
 Solr install <a id="solr-install"></a>
