@@ -40,6 +40,10 @@ class SolrMapAdapter extends AbstractEntityAdapter
 {
     protected $sortFields = [
         'id' => 'id',
+        'core' => 'solrCore',
+        'resource_name' => 'resourceName',
+        'field_name' => 'fieldName',
+        'source' => 'source',
     ];
 
     public function getResourceName()
