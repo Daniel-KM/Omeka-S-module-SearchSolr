@@ -1,32 +1,58 @@
-Solr (module for Omeka S) [deprecated]
-=========================
+Search adapter for Solr (module for Omeka S)
+============================================
 
-[![Build Status](https://travis-ci.org/biblibre/omeka-s-module-Solr.svg?branch=master)](https://travis-ci.org/biblibre/omeka-s-module-Solr)
+[Search adapter for Solr] is a module for [Omeka S] that provides a [Search]
+adapter for [Apache Solr], so it is possible to get the power of a full search
+engine inside Omeka, for the public or in admin: search by relevance (score),
+instant search, facets, autocompletion, suggestions, etc.
 
-[Solr] is a module for [Omeka S] that provides a [Search] adapter for [Apache Solr].
+It is a full replacement for the module [Solr], a fork of the module [Solr by BibLibre].
+It has some new features and its main difference is that it _doesn’t_ require the
+[Solr PHP extension] installed on the server, so it can be installed simpler as
+any other module, in particular on any shared web hosting services. Of course,
+it still requires a Solr server, but it can be provided by another server or by
+a third party.
 
-**IMPORTANT**
-This fork of the module Solr of BibLibre is deprecated and replaced by the
-module [Search adapter for Solr] in order to manage future improvements.
+Technically, the module is based on the library [Solarium], and it is compatible
+with any past, current and future versions of Solr. It is well maintained, and
+it comes with a full api and a [full documentation], so it allows to integrate
+new features simpler, in particular for the indexation and the querying.
 
 
 Installation
 ------------
 
-Uncompress the zip inside the folder `modules` and rename it `Solr`.
+This module uses the module [Search], a fork of the module [Search by BibLibre],
+that should be installed first (version 3.5.14 or above).
 
-See general end user documentation for [Installing a module].
+The optional module [Generic] may be installed first.
+
+The module uses external libraries, so use the release zip to install it, or use
+and init the source.
+
+See general end user documentation for [installing a module].
+
+* From the zip
+
+Download the last release [SearchSolr.zip] from the list of releases (the master
+does not contain the dependency), and uncompress it in the `modules` directory.
+
+* From the source and for development
+
+If the module was installed from the source, rename the name of the folder of
+the module to `SearchSolr`, go to the root of the module, and run:
+
+```
+composer install
+```
 
 ### Requirements
 
 - Module [Search]
-- [Solr PHP extension] (>= 2.0.0). It must be enabled for the CLI as well as the
-  web server.
-- A running Apache Solr 5 or 6 instance. The module works with Solr 5.5.5
-  (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]), but not Solr 7.2.1 (indexing
-  works, not the search).  This instance can be installed on the same server
-  than Omeka, or provided by another server, a virtual machine, or a cloud
-  service.
+- A running Apache Solr 5 or upper instance. The module works with Solr 5.5.5
+  (Java [1.7 u55]), version 6 (Java [1.8]), or higher (Java [1.8] or higher).
+  This instance can be installed on the same server than Omeka, or provided by
+  another server, a virtual machine, or a cloud service.
 
 
 Quick start
@@ -34,23 +60,23 @@ Quick start
 
 1. Installation
     1. Install Solr (see a Solr tutorial or documentation, or [below for Debian]).
-    2. Create a Solr index (= "node", "core" or "collection") (see [below "Solr management"]),
+    2. Create a Solr index (= "core", "collection", or "node") (see [below "Solr management"]),
        that is named `omeka` or whatever you want (use it for the path in
        point 2.1).
-    3. Install the [Search] module.
-    4. Install this module.
+    3. Install the module [Search].
+    4. Install this module [Search adapter for Solr].
 2. In Solr admin
-    1. A default node `default` is automatically added, and it is linked to the
+    1. A default core `default` is automatically added, and it is linked to the
        default install of Solr with the path `solr/omeka`. It contains a default
        list of mappings for Dublin Core elements too.
-    2. Check if this node is working, or configure it correctly (host, port, and
+    2. Check if this core is working, or configure it correctly (host, port, and
        path of the Solr instance): the status should be `OK`.
-    3. This default node can be customized if needed, for example to force the
+    3. This default core can be customized if needed, for example to force the
        queries to be a "OR" query (default) or a "AND" query (more common).
 3. In Search admin
     1 . Create an index
         1. Add a new index with name `Default` or whatever you want, using the
-        Solr adapter and the `default` node.
+        Solr adapter and the `default` core.
         2. Launch the indexation by clicking on the "reindex" button (two arrows
         forming a circle).
     2. Create a page
@@ -90,7 +116,7 @@ The Search module does not replace the default search page neither the default
 search engine. So the theme should be updated.
 
 Don’t forget to check Search facets and sort fields of each search page each
-time that the list of node fields is modified: the fields that don’t exist
+time that the list of core fields is modified: the fields that don’t exist
 anymore are removed; the new ones are not added; the renamed ones are updated,
 but issues may occur in case of duplicate names.
 
@@ -110,8 +136,8 @@ it via `dpkg`. The process is the same  for Red Hat and derivatives.
 
 ### Install Solr
 
-The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]), but
-not Solr 7.2.1 (indexing works, not the search).
+The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]),
+and higher (with Java [1.8] or higher).
 
 ```sh
 cd /opt
@@ -121,15 +147,15 @@ java -version
 #sudo apt install default-jre
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://archive.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
+wget https://archive.apache.org/dist/lucene/solr/8.5.1/solr-8.5.1.tgz
 # Extract the install script
-tar zxvf solr-6.6.6.tgz solr-6.6.6/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-8.5.1.tgz solr-8.5.1/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-6.6.6.tgz
+sudo bash ./install_solr_service.sh solr-8.5.1.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-6.6.6 /opt/solr
-# Clean the sources.sudo bash ./install_solr_service.sh solr-6.6.6.tgz
-rm solr-6.6.6.tgz
+#sudo ln -s /opt/solr-8.5.1 /opt/solr
+# Clean the sources.
+rm solr-8.5.1.tgz
 rm install_solr_service.sh
 ```
 
@@ -148,6 +174,7 @@ The result may be more complete with direct command:
 sudo su - solr -c "/opt/solr/bin/solr status"
 sudo su - solr -c "/opt/solr/bin/solr stop"
 sudo su - solr -c "/opt/solr/bin/solr start"
+sudo su - solr -c "/opt/solr/bin/solr restart"
 ```
 
 Solr is automatically launched and available in your browser at [http://localhost:8983].
@@ -216,6 +243,44 @@ The simpler solution is to close this port with your firewall. Else, you may
 need to add a user control to the admin board. Search on your not-favorite
 search engine to add such a protection.
 
+The simplest protection to the Solr admin board is password based. For that,
+three files should be updated.
+
+* `/opt/solr/server/etc/jetty.xml`, before the ending tag `</Configure>`:
+```xml
+    <Call name="addBean">
+        <Arg>
+             <New class="org.eclipse.jetty.security.HashLoginService">
+                <Set name="name">Sec Realm</Set>
+                <Set name="config"><SystemProperty name="jetty.home" default="."/>/etc/realm.properties</Set>
+                <Set name="refreshInterval">0</Set>
+             </New>
+        </Arg>
+    </Call>
+```
+
+* `/opt/solr/server/solr-webapp/webapp/WEB-INF/web.xml`, before the ending tag `</web-app>`:
+```xml
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Solr authenticated application</web-resource-name>
+      <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>core1-role</role-name>
+    </auth-constraint>
+  </security-constraint>
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>Sec Realm</realm-name>
+  </login-config>
+```
+
+* `/opt/solr/server/etc/realm.properties`, a list of users, passwords, and roles:
+```
+omeka_admin: xxx-pass-word-yyy, core1-role
+```
+
 ### Upgrade Solr
 
 Before upgrade, you should backup the folder `/var/solr` if you want to upgrade
@@ -225,11 +290,11 @@ a previous config:
 cd /opt
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/6.6.6/solr-6.6.6.tgz
-tar zxvf solr-6.6.6.tgz solr-6.6.6/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/8.5.1/solr-8.5.1.tgz
+tar zxvf solr-8.5.1.tgz solr-8.5.1/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-6.6.6.tgz -f
-rm solr-6.6.6.tgz
+sudo bash ./install_solr_service.sh solr-8.5.1.tgz -f
+rm solr-8.5.1.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -246,7 +311,7 @@ sudo update-rc.d -f solr remove
 sudo rm /etc/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-6.6.6
+sudo rm -r /opt/solr-8.5.1
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -262,7 +327,7 @@ Solr management <a id="solr-management"></a>
 
 ### Create a config
 
-At least one index ("node", "collection" or "core")  should be created in Solr
+At least one index ("core", "collection", or "node")  should be created in Solr
 to be used with Omeka. The simpler is to create one via the command line to
 avoid permissions issues.
 
@@ -270,13 +335,13 @@ avoid permissions issues.
 sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
 ```
 
-Here, the user `solr` launches the command `solr` to create the node `omeka`,
+Here, the user `solr` launches the command `solr` to create the core `omeka`,
 and it will use the default config schema `data_driven_schema_configs`. This
 schema simplifies the management of fields, because they are guessed from the
 data.
 
 You can check it via the web interface at [http://localhost:8983/solr/#/omeka].
-Here, the path to set in the config of the node in Omeka S is `solr/omeka`.
+Here, the path to set in the config of the core in Omeka S is `solr/omeka`.
 
 The config files are saved in `/var/solr/data` by default.
 
@@ -363,13 +428,21 @@ See commits for full list of contributors.
 * Copyright Daniel Berthereau, 2017-2020 (see [Daniel-KM])
 * Copyright Paul Sarrassat, 2018
 
+The module [Solr by BibLibre] was built for the [digital library Explore] of [Université Paris Sciences & Lettres].
+The module [Search adapter for Solr] is built for the future [digital library Manioc]
+of [Université des Antilles et de la Guyane], currently managed with [Greenstone].
 
-[Solr]: https://github.com/BibLibre/Omeka-S-module-Solr
+
 [Search adapter for Solr]: https://github.com/Daniel-KM/Omeka-S-module-SearchSolr
 [Omeka S]: https://omeka.org/s
-[Search]: https://github.com/biblibre/omeka-s-module-Search
+[Solr]: https://github.com/Daniel-KM/Omeka-S-module-Solr
+[Solr by BibLibre]: https://github.com/biblibre/omeka-s-module-Solr
+[Search]: https://github.com/Daniel-KM/omeka-s-module-Search
+[Search by BibLibre]: https://github.com/biblibre/omeka-s-module-search
 [Apache Solr]: https://lucene.apache.org/solr/
-[Solr module]: https://github.com/biblibre/omeka-s-module-Solr
+[Solarium]: https://www.solarium-project.org/
+[full documentation]: https://solarium.readthedocs.io/en/stable/
+[Generic]: https://github.com/Daniel-KM/omeka-s-module-Generic
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
 [documentation]: https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#q-alt-parameter
 [Solr PHP extension]: https://pecl.php.net/package/solr
@@ -387,5 +460,10 @@ See commits for full list of contributors.
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org
 [OSI]: http://opensource.org
+[digital library Explore]: https://bibnum.explore.univ-psl.eu
+[Université Paris Sciences & Lettres]: https://univ-psl.eu
+[digital library Manioc]: http://www.manioc.org
+[Université des Antilles et de la Guyane]: http://www.univ-ag.fr
+[Greenstone]: http://www.greenstone.org
 [BibLibre]: https://github.com/biblibre
 [Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
