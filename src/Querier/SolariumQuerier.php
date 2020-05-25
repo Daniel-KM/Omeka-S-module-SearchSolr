@@ -298,16 +298,17 @@ class SolariumQuerier extends AbstractQuerier
     {
         // The default query is managed by the module Search.
         // Here, this is a catch-them-all query.
-        $defaultQuery = '*:*';
+        // The default query with Solarium returns all results.
+        // $defaultQuery = '';
 
-        $this->solariumQuery->getDisMax()->setQueryAlternative($defaultQuery);
+        // $this->solariumQuery->getDisMax()->setQueryAlternative($defaultQuery);
 
         $q = $this->query->getQuery();
         if (strlen($q)) {
             return false;
         }
 
-        $this->solariumQuery->setQuery($defaultQuery);
+        // $this->solariumQuery->setQuery($defaultQuery);
         return true;
     }
 
