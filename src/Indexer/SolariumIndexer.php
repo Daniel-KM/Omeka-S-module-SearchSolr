@@ -93,6 +93,11 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected $siteIds;
 
+    /**
+     * @var \Solarium\QueryType\Update\Query\Document[]
+     */
+    protected $solariumDocuments = [];
+
     public function canIndex($resourceName)
     {
         $services = $this->getServiceLocator();
@@ -118,11 +123,11 @@ class SolariumIndexer extends AbstractIndexer
             $query = '*:*';
         }
 
-        $solariumClient = $this->getClient();
-        $update = $solariumClient->createUpdate();
+        $client = $this->getClient();
+        $update = $client->createUpdate();
         $update->addDeleteQuery($query);
         $update->addCommit();
-        $solariumClient->update($update);
+        $client->update($update);
     }
 
     public function indexResource(Resource $resource)
@@ -185,7 +190,6 @@ class SolariumIndexer extends AbstractIndexer
         $resourceId = $resource->getId();
         $this->getLogger()->info(sprintf('Indexing resource #%1$s (%2$s)', $resourceId, $resourceName));
 
-        $client = $this->getClient();
         $solrCore = $this->getSolrCore();
         $solrCoreSettings = $solrCore->settings();
         $solrMaps = $this->getSolrMaps($resourceName);
@@ -296,16 +300,7 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
-        //  TODO Improve bulk indexing of documents for Solarium. Here of via BufferedAdd plugin.
-        try {
-            $update = $client->createUpdate();
-            $update->addDocuments([$document]);
-            $update->addCommit();
-            $client->update($update);
-        } catch (SolariumServerException $e) {
-            $this->getLogger()->err(sprintf('Indexing of resource %s failed', $resourceId)); // @translate
-            $this->getLogger()->err($e);
-        }
+        $this->solariumDocuments[] = $document;
     }
 
     /**
@@ -324,8 +319,29 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function commit()
     {
+        if (!$this->solariumDocuments) {
+            $this->getLogger()->notice('No document to commit in Solr.'); // @translate
+            return;
+        }
+
         $this->getLogger()->info('Commit index in Solr.'); // @translate
-        // $this->getClient()->commit();
+        //  TODO use BufferedAdd plugin?
+        $client = $this->getClient();
+        try {
+            $update = $client->createUpdate();
+            $update->addDocuments($this->solariumDocuments);
+            $update->addCommit();
+            $client->update($update);
+        } catch (SolariumServerException $e) {
+            if (count($this->solariumDocuments) <= 1) {
+                $this->getLogger()->err('Indexing of resource failed'); // @translate
+            } else {
+                $this->getLogger()->err('Indexing of resources failed'); // @translate
+            }
+            $this->getLogger()->err($e);
+        }
+
+        $this->solariumDocuments = [];
     }
 
     /**
