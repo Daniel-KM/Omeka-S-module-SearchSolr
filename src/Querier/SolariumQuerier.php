@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright BibLibre, 2016
+ * Copyright BibLibre, 2016-2020
  * Copyright Daniel Berthereau, 2017-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -71,43 +71,23 @@ class SolariumQuerier extends AbstractQuerier
         try {
             $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
         } catch (\Exception $e) {
-            // TODO Is it still needed?
+            // The solr query cannot be an empty string.
+            $q = $this->query->getQuery();
+            if (!$q) {
+                throw new QuerierException($e->getMessage(), $e->getCode(), $e);
+            }
+            // TODO Is it still needed? Not with DisMax.
             // The query may be badly formatted, so try to escape all reserved
             // characters instead of returning an exception.
             // @link https://lucene.apache.org/core/8_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
             // TODO Check before the query.
-            $reservedCharacters = [
-                // The character "\" must be escaped first.
-                '\\' => '\\\\',
-                '+' => '\+',
-                '-' => '\-' ,
-                '&&' => '\&\&',
-                '||' => '\|\|',
-                '!' => '\!',
-                '(' => '\(' ,
-                ')' => '\)',
-                '{' => '\{',
-                '}' => '\}',
-                '[' => '\[',
-                ']' => '\]',
-                '^' => '\^',
-                '"' => '\"',
-                '~' => '\~',
-                '*' => '\*',
-                '?' => '\?',
-                ':' => '\:',
-            ];
-            // The solr query cannot be an empty string.
-            $q = $this->query->getQuery() ?: '*:*';
-            $escapedQ = str_replace(array_keys($reservedCharacters), array_values($reservedCharacters), $q);
+            $escapedQ = $this->escapeSolrQuery($q);
             $this->solariumQuery->setQuery($escapedQ);
             try {
                 $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
             } catch (\Exception $e) {
                 throw new QuerierException($e->getMessage(), $e->getCode(), $e);
             }
-        } catch (\Exception $e) {
-            throw new QuerierException($e->getMessage(), $e->getCode(), $e);
         }
 
         // Normalize the response for module Search.
@@ -179,7 +159,7 @@ class SolariumQuerier extends AbstractQuerier
         if ($isPublic) {
             $this->solariumQuery
                 ->createFilterQuery($isPublicField)
-                ->setQuery('1');
+                ->setQuery("$isPublicField:1");
         }
 
         $this->solariumQuery
@@ -190,31 +170,27 @@ class SolariumQuerier extends AbstractQuerier
         $resources = $this->query->getResources();
         $this->solariumQuery
             ->createFilterQuery($resourceNameField)
-            ->setQuery('(' . implode(' OR ', $resources) . ')');
+            ->setQuery($resourceNameField . ':(' . implode(' OR ', $resources) . ')');
 
         if ($sitesField) {
             $siteId = $this->query->getSiteId();
             if (isset($siteId)) {
                 $this->solariumQuery
                     ->createFilterQuery($sitesField)
-                    ->setQuery($siteId);
+                    ->setQuery("$sitesField:$siteId");
             }
         }
 
         $filters = $this->query->getFilters();
         foreach ($filters as $name => $values) {
             foreach ($values as $value) {
-                if (is_array($value)) {
-                    if (empty($value)) {
-                        continue;
-                    }
-                    $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
-                } else {
-                    $value = $this->enclose($value);
+                $value = $this->encloseValue($value);
+                if (!strlen($value)) {
+                    continue;
                 }
                 $this->solariumQuery
                     ->createFilterQuery($name)
-                    ->setQuery($value);
+                    ->setQuery("$name:$value");
             }
         }
 
@@ -251,7 +227,7 @@ class SolariumQuerier extends AbstractQuerier
                 }
                 $this->solariumQuery
                     ->createFilterQuery($name)
-                    ->setQuery("[$start TO $end]");
+                    ->setQuery("$name:[$start TO $end]");
             }
         }
 
@@ -363,129 +339,110 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function addFilterQueries()
     {
-        // There are two way to add filter queries: multiple simple filters, or
-        // one complex filter query. A complex filter may be required when the
-        // joiners are mixed with "and" and "or".
-        // if ($multiple) {
-        //     $this->addMultipleFilterQueries();
-        //     return;
-        // }
-
         $filters = $this->query->getFilterQueries();
         if (!$filters) {
             return;
         }
 
-        // FIXME Manage complex filters queries with solarium.
-        return;
+        // Filters are boolean: in or out. nevertheless, the check can be more
+        // complex than "equal": before or after a date, like a string, etc.
 
         $first = true;
-        $fq = '';
         foreach ($filters as $name => $values) {
+            $fq = '';
             foreach ($values as $value) {
                 // There is no default in Omeka.
                 // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
                 $type = $value['type'];
-                $value = $this->encloseValue($value, $type);
-                $joiner = @$value['joiner'] ?: 'and';
-                switch ($type) {
-                    case 'neq':
-                    case 'nin':
-                        if ($first) {
-                            $fq .= "-$name:$value";
-                            $first = false;
-                        } else {
-                            // FIXME "Or" + "not contains" ?
-                            $fq .= $joiner === 'and' ? " -$name:$value" : " $name:$value";
-                        }
-                        break;
-                    case 'eq':
-                    case 'in':
-                        if ($first) {
-                            $fq .= "+$name:$value";
-                            $first = false;
-                        } else {
-                            $fq .= $joiner === 'and' ? " +$name:$value" : " $name:$value";
-                        }
-                        break;
+                $val = isset($value['value']) ? trim($value['value']) : '';
+                if ($val === '' && !in_array($type, ['ex', 'nex'])) {
+                    continue;
                 }
-            }
-        }
-
-        $this->solariumQuery->addFilterQuery($fq);
-    }
-
-    protected function addMultipleFilterQueries()
-    {
-        // FIXME Manage complex filters queries with solarium.
-        return;
-
-        $filters = $this->query->getFilterQueries();
-        foreach ($filters as $name => $values) {
-            foreach ($values as $value) {
-                $type = $value['type'];
-                $value = $this->encloseValue($value['value'], $type);
-                // There is no default in Omeka.
-                // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+                if ($first) {
+                    $joiner = '';
+                    $first = false;
+                } else {
+                    $joiner = isset($value['joiner']) && $value['joiner'] === 'or' ? 'OR' : 'AND';
+                }
+                // "AND/NOT" cannot be used as first.
+                if (substr($type, 0, 1) === 'n') {
+                    $bool = '(NOT ';
+                    $endBool = ')';
+                } else {
+                    $bool = '(';
+                    $endBool = ')';
+                }
                 switch ($type) {
+                    // Equal.
                     case 'neq':
-                        $this->solariumQuery->addFilterQuery("-$name:$value");
-                        break;
                     case 'eq':
-                        $this->solariumQuery->addFilterQuery("+$name:$value");
+                        $val = $this->encloseValue($val);
+                        $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
+                    // Contains.
                     case 'nin':
-                        $this->solariumQuery->addFilterQuery("-$name:$value");
-                        break;
                     case 'in':
-                        $this->solariumQuery->addFilterQuery("+$name:$value");
+                        $val = $this->regexValue($val);
+                        $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
-                    // TODO Fixes theses Solr queries.
-                    case 'nlist':
-                        $this->solariumQuery->addFilterQuery("-$name:$value");
-                        break;
-                    case 'list':
-                        $this->solariumQuery->addFilterQuery("+$name:$value");
-                        break;
-
+                    // Starts with.
                     case 'nsw':
-                        $this->solariumQuery->addFilterQuery("-$name:$value");
-                        break;
                     case 'sw':
-                        $this->solariumQuery->addFilterQuery("+$name:$value");
+                        $val = $this->regexValue($val, '^', '');
+                        $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
+                    // Ends with.
                     case 'new':
-                        $this->solariumQuery->addFilterQuery("-$name:$value");
-                        break;
                     case 'ew':
-                        $this->solariumQuery->addFilterQuery("+$name:$value");
+                        $val = $this->regexValue($val, '', '$');
+                        $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
+                    // Matches.
                     case 'nma':
-                        $this->solariumQuery->addFilterQuery("-$name:$value");
-                        break;
                     case 'ma':
-                        $this->solariumQuery->addFilterQuery("+$name:$value");
+                        // Matches is already an regular expression, so just set it.
+                        // TODO Add // or not?
+                        // TODO Escape regex for regexes…
+                        $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
+                    // In list.
+                    case 'nlist':
+                    case 'list':
+                        // TODO Manage api filter in list (not used in standard forms).
+                        break;
+
+                    // Resource with id.
                     case 'nres':
-                        $this->solariumQuery->addFilterQuery("-$name:$value");
-                        break;
                     case 'res':
-                        $this->solariumQuery->addFilterQuery("+$name:$value");
+                        // Like equal, but the field must be an integer.
+                        if (substr($name, -2) === '_i' || substr($name, -3) === '_is') {
+                            $val = (int) $val;
+                            $fq .= " $joiner ($name:$bool$val$endBool)";
+                        }
                         break;
 
+                    // Exists (has a value).
                     case 'nex':
-                        $this->solariumQuery->addFilterQuery("-$name:[* TO *]");
-                        break;
                     case 'ex':
-                        $this->solariumQuery->addFilterQuery("+$name:[* TO *]");
+                        // TODO Find the good way to manage "has a value" in a filter query of Solr.
                         break;
+
+                    default:
+                        throw new \Search\Querier\Exception\QuerierException(sprintf(
+                            'Search type "%s" is not managed.', // @translate
+                            $type
+                        ));
                 }
             }
+            $this->solariumQuery
+                // The name must be different from simple filter, or merge them.
+                ->createFilterQuery($name . '-fq')
+                ->setQuery(ltrim($fq));
         }
     }
 
@@ -497,22 +454,14 @@ class SolariumQuerier extends AbstractQuerier
         ], ['returnScalar' => 'fieldName'])->getContent();
     }
 
-    protected function encloseValue($value, $type = null)
+    /**
+     * Enclose a string to protect a query for Solr.
+     *
+     * @param array|string $string
+     * @return string
+     */
+    protected function encloseValue($value)
     {
-        if (in_array($type, ['in', 'nin'])) {
-            if (is_array($value)) {
-                if (empty($value)) {
-                    $value = '';
-                } else {
-                    $value = array_map(function ($v) {
-                        return '*' . $v . '*';
-                    }, $value);
-                }
-            } else {
-                $value = '*' . $value . '*';
-            }
-        }
-
         if (is_array($value)) {
             if (empty($value)) {
                 $value = '';
@@ -527,14 +476,94 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
-     * Protect a string for Solr.
+     * Prepare a value for a regular expression.
      *
-     * @param string $value
+     * Adapted from module Solr of BibLibre.
+     *
+     * @param array|string $value
+     * @param string $append
+     * @param string $prepend
      * @return string
      */
-    protected function enclose($value)
+    protected function regexValue($value, $prepend = '', $append = '')
     {
-        return '"' . addcslashes($value, '"') . '"';
+        $regexVal = function($string) use ($prepend, $append) {
+            $parts = preg_split('/([*?])/', $string, -1, PREG_SPLIT_DELIM_CAPTURE);
+            return '/' . $prepend . implode('', array_map(function ($part) {
+                if ($part === '*') {
+                    return '.*';
+                }
+                if ($part === '?') {
+                    return '.';
+                }
+                return $this->escapeRegexp($part);
+            }, $parts)) . $append . '/';
+        };
+        $values = array_map($regexVal, is_array($value) ? $value : [$value]);
+        return implode(' OR ', $values);
+    }
+
+    /**
+     * Enclose a string to protect a query for Solr.
+     *
+     * @param string $string
+     * @return string
+     */
+    protected function enclose($string)
+    {
+        return '"' . addcslashes($string, '"') . '"';
+    }
+
+    /**
+     * Enclose a string to protect a filter regex query for Solr.
+     *
+     * @param $string $string
+     * @return $string
+     */
+    protected function escapeRegexp($string)
+    {
+        return preg_quote($string, '/');
+    }
+
+    /**
+     * Enclose a string to protect a filter query for Solr.
+     *
+     * @param $string $string
+     * @return $string
+     */
+    protected function escape($string)
+    {
+        return preg_replace('/([+\-&|!(){}[\]\^"~*?:])/', '\\\\$1', $string);
+    }
+
+    protected function escapeSolrQuery($q)
+    {
+        $reservedCharacters = [
+            // The character "\" must be escaped first.
+            '\\' => '\\\\',
+            '+' => '\+',
+            '-' => '\-' ,
+            '&&' => '\&\&',
+            '||' => '\|\|',
+            '!' => '\!',
+            '(' => '\(' ,
+            ')' => '\)',
+            '{' => '\{',
+            '}' => '\}',
+            '[' => '\[',
+            ']' => '\]',
+            '^' => '\^',
+            '"' => '\"',
+            '~' => '\~',
+            '*' => '\*',
+            '?' => '\?',
+            ':' => '\:',
+        ];
+        return str_replace(
+            array_keys($reservedCharacters),
+            array_values($reservedCharacters),
+            $q
+        );
     }
 
     /**
