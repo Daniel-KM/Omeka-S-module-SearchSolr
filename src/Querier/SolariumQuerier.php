@@ -380,24 +380,30 @@ class SolariumQuerier extends AbstractQuerier
                         $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
+                    // Regex requires string (_s, _ws, etc.), not text (_t).
+                    // So if the field is a text, use a simple "+", that will be
+                    // enough in most of the cases.
+
                     // Contains.
                     case 'nin':
                     case 'in':
-                        $val = $this->regexValue($val);
+                        $val = $this->fieldIsText($name) ? $this->encloseValueAnd($val) : $this->regexValue($val);
                         $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
                     // Starts with.
                     case 'nsw':
                     case 'sw':
-                        $val = $this->regexValue($val, '^', '');
+                        // This query is manageable only with a string field.
+                        $val = $this->fieldIsText($name) ? $this->encloseValue($val) : $this->regexValue($val, '^', '');
                         $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
                     // Ends with.
                     case 'new':
                     case 'ew':
-                        $val = $this->regexValue($val, '', '$');
+                        // This query is manageable only with a string field.
+                        $val = $this->fieldIsText($name) ? $this->encloseValue($val) : $this->regexValue($val, '', '$');
                         $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
@@ -407,6 +413,7 @@ class SolariumQuerier extends AbstractQuerier
                         // Matches is already an regular expression, so just set it.
                         // TODO Add // or not?
                         // TODO Escape regex for regexes…
+                        $val = $this->fieldIsText($name) ? $this->encloseValue($val) : $val;
                         $fq .= " $joiner ($name:$bool$val$endBool)";
                         break;
 
@@ -454,6 +461,13 @@ class SolariumQuerier extends AbstractQuerier
         ], ['returnScalar' => 'fieldName'])->getContent();
     }
 
+    protected function fieldIsText($name)
+    {
+        return substr($name, -2) === '_t'
+            || substr($name, -4) === '_txt'
+            || (bool) strpos($name, '_txt_');
+    }
+
     /**
      * Enclose a string to protect a query for Solr.
      *
@@ -467,6 +481,27 @@ class SolariumQuerier extends AbstractQuerier
                 $value = '';
             } else {
                 $value = '(' . implode(' OR ', array_map([$this, 'enclose'], $value)) . ')';
+            }
+        } else {
+            $value = $this->enclose($value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Enclose a string to protect a query for Solr.
+     *
+     * @param array|string $string
+     * @return string
+     */
+    protected function encloseValueAnd($value)
+    {
+        if (is_array($value)) {
+            if (empty($value)) {
+                $value = '';
+            } else {
+                $value = '(' . implode(' +', array_map([$this, 'enclose'], $value)) . ')';
             }
         } else {
             $value = $this->enclose($value);
