@@ -435,8 +435,12 @@ class SolariumQuerier extends AbstractQuerier
 
                     // Exists (has a value).
                     case 'nex':
+                        $val = $this->encloseValue($val);
+                        $fq .= " $joiner (-$name:$val)";
+                        break;
                     case 'ex':
-                        // TODO Find the good way to manage "has a value" in a filter query of Solr.
+                        $val = $this->encloseValue($val);
+                        $fq .= " $joiner (+$name:$val)";
                         break;
 
                     default:
