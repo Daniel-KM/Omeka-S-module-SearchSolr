@@ -16,7 +16,8 @@ a third party.
 Technically, the module is based on the library [Solarium], and it is compatible
 with any past, current and future versions of Solr. It is well maintained, and
 it comes with a full api and a [full documentation], so it allows to integrate
-new features simpler, in particular for the indexation and the querying.
+new features simpler, in particular for the indexation and the querying. This
+library is used in the equivalent modules for most common cms too.
 
 
 Installation
@@ -74,7 +75,7 @@ Quick start
     3. This default core can be customized if needed, for example to force the
        queries to be a "OR" query (default) or a "AND" query (more common).
 3. In Search admin
-    1 . Create an index
+    1. Create an index
         1. Add a new index with name `Default` or whatever you want, using the
         Solr adapter and the `default` core.
         2. Launch the indexation by clicking on the "reindex" button (two arrows
@@ -126,7 +127,7 @@ item sets.
 
 Don’t forget to reindex the fields each time the Solr config is updated too.
 
-seration
+
 Indexation in Solr
 ------------------
 
@@ -245,18 +246,6 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
-Note: In some Red Hat derivatives, the extension php-solr is not available and
-you may  need to create a link. For example if you use the package "php72-php-pecl-solr2-2.5.0-1.el8.remi.x86_64"
-for Centos 8, you should add these links:
-
-```sh
-sudo ln -s /etc/opt/remi/php72/php.d/50-solr.ini /etc/php.d/50-solr.ini
-sudo ln -s /opt/remi/php72/root/usr/lib64/php/modules/solr.so /usr/lib64/php/modules/solr.so
-# And restart services.
-sudo systemctl restart php-fpm
-sudo systemctl restart httpd
-```
-
 ### Protect access to Solr
 
 You may need some more commands to protect install. Check the default port 8983.
@@ -372,6 +361,7 @@ If you choose a data driven schema, you can remove it and create a new one with
 the same name.
 
 ```sh
+# Warning: These commands are used for data driven indexation. Else, backup your config first.
 sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"
 sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
 ```
