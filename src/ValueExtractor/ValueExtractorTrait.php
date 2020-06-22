@@ -62,14 +62,14 @@ trait ValueExtractorTrait
                 return [$representation->id()];
 
             case 'item_set':
-                if (!$representation instanceof ItemRepresentation) {
+                if (!($representation instanceof ItemRepresentation)) {
                     $this->logger->warn('Tried to get item_set of non item resource.'); // @translate
                     return [];
                 }
                 return $this->extractItemSetValue($representation, $subField);
 
             case 'media':
-                if (!$representation instanceof ItemRepresentation) {
+                if (!($representation instanceof ItemRepresentation)) {
                     $this->logger->warn('Tried to get media of non item resource.'); // @translate
                     return [];
                 }
@@ -77,7 +77,7 @@ trait ValueExtractorTrait
         }
 
         $extractedValues = [];
-        /* @var ValueRepresentation[] $values */
+        /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
         $values = $representation->value($field, ['all' => true, 'default' => []]);
         foreach ($values as $value) {
             // Manage standard types and special types from modules RdfDatatype,
