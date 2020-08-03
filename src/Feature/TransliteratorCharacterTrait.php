@@ -2,8 +2,8 @@
 
 namespace SearchSolr\Feature;
 
-trait TransliteratorCharacterTrait {
-
+trait TransliteratorCharacterTrait
+{
     /**
      * Unlike sql, solr regex does not manage insensitive search, neither flag
      * "i", so when a filter query "contains" is done, this list is used.
