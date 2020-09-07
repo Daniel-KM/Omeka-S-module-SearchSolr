@@ -122,8 +122,12 @@ class Schema
     public function getFieldsByName()
     {
         if (!isset($this->fieldsByName)) {
-            $schema = $this->getSchema();
             $this->fieldsByName = [];
+            try {
+                $schema = $this->getSchema();
+            } catch (\Exception $e) {
+                return [];
+            }
             foreach ($schema['fields'] as $field) {
                 $this->fieldsByName[$field['name']] = $field;
             }
@@ -172,8 +176,12 @@ class Schema
     public function getDynamicFieldsMap()
     {
         if (!isset($this->dynamicFieldsMap)) {
-            $schema = $this->getSchema();
             $this->dynamicFieldsMap = [];
+            try {
+                $schema = $this->getSchema();
+            } catch (\Exception $e) {
+                return [];
+            }
             foreach ($schema['dynamicFields'] as $field) {
                 $name = $field['name'];
                 $char = $name[0];
@@ -208,7 +216,12 @@ class Schema
     public function getTypesByName()
     {
         if (!isset($this->typesByName)) {
-            $schema = $this->getSchema();
+            $this->typesByName = [];
+            try {
+                $schema = $this->getSchema();
+            } catch (\Exception $e) {
+                return [];
+            }
             foreach ($schema['fieldTypes'] as $type) {
                 $this->typesByName[$type['name']] = $type;
             }
