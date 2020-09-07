@@ -131,6 +131,8 @@ class SolariumAdapter extends AbstractAdapter
             }
         }
 
+        ksort($sortFields);
+
         return $sortFields;
     }
 
@@ -157,6 +159,8 @@ class SolariumAdapter extends AbstractAdapter
                 'label' => $label,
             ];
         }
+
+        ksort($facetFields);
 
         return $facetFields;
     }
