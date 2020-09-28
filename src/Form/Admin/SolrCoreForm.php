@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -37,224 +38,211 @@ class SolrCoreForm extends Form
 {
     public function init()
     {
-        $this->add([
-            'name' => 'o:name',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Name', // @translate
-            ],
-            'attributes' => [
-                'id' => 'o-name',
-                'required' => true,
-                'placeholder' => 'omeka',
-            ],
-        ]);
+        $this
+            ->add([
+                'name' => 'o:name',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Name', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'o-name',
+                    'required' => true,
+                    'placeholder' => 'omeka',
+                ],
+            ]);
 
         $settingsFieldset = new Fieldset('o:settings');
         $clientSettingsFieldset = new Fieldset('client');
 
-        $clientSettingsFieldset->add([
-            'name' => 'scheme',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Scheme', // @translate
-            ],
-            'attributes' => [
-                'id' => 'scheme',
-                'required' => true,
-                'placeholder' => 'https',
-                'value' => 'http',
-            ],
-        ]);
-
-        $clientSettingsFieldset->add([
-            'name' => 'host',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'IP or hostname', // @translate
-            ],
-            'attributes' => [
-                'id' => 'host',
-                'required' => true,
-                'placeholder' => 'localhost',
-            ],
-        ]);
-
-        $clientSettingsFieldset->add([
-            'name' => 'port',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Port', // @translate
-            ],
-            'attributes' => [
-                'id' => 'port',
-                'required' => true,
-                'placeholder' => '8983',
-            ],
-        ]);
-
-        $clientSettingsFieldset->add([
-            'name' => 'core',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Solr core', // @translate
-            ],
-            'attributes' => [
-                'id' => 'core',
-                'required' => true,
-                'placeholder' => 'omeka',
-            ],
-        ]);
-
-        $clientSettingsFieldset->add([
-            'name' => 'secure',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Is secure', // @translate
-            ],
-            'attributes' => [
-                'id' => 'secure',
-            ],
-        ]);
-
-        $clientSettingsFieldset->add([
-            'name' => 'username',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Solr user', // @translate
-            ],
-            'attributes' => [
-                'id' => 'username',
-                'required' => false,
-                'placeholder' => 'admin_solr',
-            ],
-        ]);
-
-        $clientSettingsFieldset->add([
-            'name' => 'password',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Solr password', // @translate
-                'info' => 'Note: the password is saved clear in the database, so it is recommended to create a specific user.', // @translate
-            ],
-            'attributes' => [
-                'id' => 'password',
-                'required' => false,
-                'placeholder' => '******',
-            ],
-        ]);
-
-        $clientSettingsFieldset->add([
-            'name' => 'bypass_certificate_check',
-            'type' => Element\Checkbox::class,
-            'options' => [
-                'label' => 'Bypass certificate check', // @translate
-                'info' => 'Avoid issue when the certificate expires.', // @translate
-            ],
-            'attributes' => [
-                'id' => 'bypass_certificate_check',
-            ],
-        ]);
+        $clientSettingsFieldset
+            ->add([
+                'name' => 'scheme',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Scheme', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'scheme',
+                    'required' => true,
+                    'placeholder' => 'https',
+                    'value' => 'http',
+                ],
+            ])
+            ->add([
+                'name' => 'host',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'IP or hostname', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'host',
+                    'required' => true,
+                    'placeholder' => 'localhost',
+                ],
+            ])
+            ->add([
+                'name' => 'port',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Port', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'port',
+                    'required' => true,
+                    'placeholder' => '8983',
+                ],
+            ])->add([
+                'name' => 'core',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr core', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'core',
+                    'required' => true,
+                    'placeholder' => 'omeka',
+                ],
+            ])->add([
+                'name' => 'secure',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Is secure', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'secure',
+                ],
+            ])->add([
+                'name' => 'username',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr user', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'username',
+                    'required' => false,
+                    'placeholder' => 'admin_solr',
+                ],
+            ])->add([
+                'name' => 'password',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr password', // @translate
+                    'info' => 'Note: the password is saved clear in the database, so it is recommended to create a specific user.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'password',
+                    'required' => false,
+                    'placeholder' => '******',
+                ],
+            ])->add([
+                'name' => 'bypass_certificate_check',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Bypass certificate check', // @translate
+                    'info' => 'Avoid issue when the certificate expires.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'bypass_certificate_check',
+                ],
+            ]);
 
         $settingsFieldset->add($clientSettingsFieldset);
 
-        $settingsFieldset->add([
-            'name' => 'is_public_field',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Is public field', // @translate
-                'info' => 'Name of Solr field that will be set when a resource is public.
-It must be a single-valued, boolean-based field (*_b).', // @translate
-            ],
-            'attributes' => [
-                'id' => 'is_public_field',
-                'required' => true,
-                'placeholder' => 'is_public_b',
-                'value' => 'is_public_b',
-            ],
-        ]);
-
-        $settingsFieldset->add([
-            'name' => 'resource_name_field',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Resource name field', // @translate
-                'info' => 'Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).
-It must be a single-valued, string-based field (*_s).', // @translate
-            ],
-            'attributes' => [
-                'id' => 'resource_name_field',
-                'required' => true,
-                'placeholder' => 'resource_name_s',
-                'value' => 'resource_name_s',
-            ],
-        ]);
-
-        $settingsFieldset->add([
-            'name' => 'sites_field',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Site ids field', // @translate
-                'info' => 'Name of Solr field that will contain the sites ids.
-It must be a multi-valued, integer-based field (*_is).', // @translate
-            ],
-            'attributes' => [
-                'id' => 'sites_field',
-                'required' => true,
-                'placeholder' => 'site_id_is',
-                'value' => 'site_id_is',
-            ],
-        ]);
+        $settingsFieldset
+            ->add([
+                'name' => 'is_public_field',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Is public field', // @translate
+                    'info' => 'Name of Solr field that will be set when a resource is public.
+    It must be a single-valued, boolean-based field (*_b).', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'is_public_field',
+                    'required' => true,
+                    'placeholder' => 'is_public_b',
+                    'value' => 'is_public_b',
+                ],
+            ])->add([
+                'name' => 'resource_name_field',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Resource name field', // @translate
+                    'info' => 'Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).
+    It must be a single-valued, string-based field (*_s).', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'resource_name_field',
+                    'required' => true,
+                    'placeholder' => 'resource_name_s',
+                    'value' => 'resource_name_s',
+                ],
+            ])->add([
+                'name' => 'sites_field',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Site ids field', // @translate
+                    'info' => 'Name of Solr field that will contain the sites ids.
+    It must be a multi-valued, integer-based field (*_is).', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'sites_field',
+                    'required' => true,
+                    'placeholder' => 'site_id_is',
+                    'value' => 'site_id_is',
+                ],
+            ]);
 
         $this->add($settingsFieldset);
 
         $querySettingsFieldset = new Fieldset('query');
 
-        $querySettingsFieldset->add([
-            'name' => 'minimum_match',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Minimum match (or/and)', // @translate
-                'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
-If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
-                'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
-            ],
-            'attributes' => [
-                'required' => false,
-                'value' => '',
-                'placeholder' => '50%',
-            ],
-        ]);
-
-        $querySettingsFieldset->add([
-            'name' => 'tie_breaker',
-            'type' => Element\Number::class,
-            'options' => [
-                'label' => 'Tie breaker', // @translate
-                'info' => 'Increase score according to the number of matched fields.
-If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
-                'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
-            ],
-            'attributes' => [
-                'id' => 'tie_breaker',
-                'required' => false,
-                'value' => '',
-                'placeholder' => '0.10',
-                'inclusive' => true,
-                'min' => '0.0',
-                'max' => '1.0',
-                'step' => '0.01',
-            ],
-        ]);
+        $querySettingsFieldset
+            ->add([
+                'name' => 'minimum_match',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Minimum match (or/and)', // @translate
+                    'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
+    If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
+                    'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
+                ],
+                'attributes' => [
+                    'required' => false,
+                    'value' => '',
+                    'placeholder' => '50%',
+                ],
+            ])->add([
+                'name' => 'tie_breaker',
+                'type' => Element\Number::class,
+                'options' => [
+                    'label' => 'Tie breaker', // @translate
+                    'info' => 'Increase score according to the number of matched fields.
+    If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
+                    'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
+                ],
+                'attributes' => [
+                    'id' => 'tie_breaker',
+                    'required' => false,
+                    'value' => '',
+                    'placeholder' => '0.10',
+                    'inclusive' => true,
+                    'min' => '0.0',
+                    'max' => '1.0',
+                    'step' => '0.01',
+                ],
+            ]);
 
         // TODO Other fields (boost...) requires multiple fields. See https://secure.php.net/manual/en/class.solrdismaxquery.php.
 
         $settingsFieldset->add($querySettingsFieldset);
 
         $inputFilter = $this->getInputFilter([]);
-        $inputFilter->get('o:settings')->get('query')->add([
-            'name' => 'tie_breaker',
-            'required' => false,
-        ]);
+        $inputFilter
+            ->get('o:settings')->get('query')->add([
+                'name' => 'tie_breaker',
+                'required' => false,
+            ]);
     }
 }

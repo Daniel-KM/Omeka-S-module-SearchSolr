@@ -56,61 +56,62 @@ class SolrMapForm extends Form
 
     public function init()
     {
-        $this->add([
-            'name' => 'o:source',
-            'type' => Element\Collection::class,
-            'options' => [
-                'count' => 1,
-                'should_create_template' => true,
-                'allow_add' => true,
-                'label' => 'Source', // @translate
-                'info' => 'To select a sub-property allows to store a linked metadata when the property is filled with a resource. Thereby, an item can be found from the specified value of a linked item. For example an issue of a journal can be linked with the journal, so the issue can be found from the title of the journal.', // @translate
-                'target_element' => new SourceFieldset(null, [
-                    'options' => $this->getSourceOptions(),
-                ]),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
-
-        $this->add([
-            'name' => 'o:field_name',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Solr field', // @translate
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
+        $this
+            ->add([
+                'name' => 'o:source',
+                'type' => Element\Collection::class,
+                'options' => [
+                    'count' => 1,
+                    'should_create_template' => true,
+                    'allow_add' => true,
+                    'label' => 'Source', // @translate
+                    'info' => 'To select a sub-property allows to store a linked metadata when the property is filled with a resource. Thereby, an item can be found from the specified value of a linked item. For example an issue of a journal can be linked with the journal, so the issue can be found from the title of the journal.', // @translate
+                    'target_element' => new SourceFieldset(null, [
+                        'options' => $this->getSourceOptions(),
+                    ]),
+                ],
+                'attributes' => [
+                    'required' => true,
+                ],
+            ])
+            ->add([
+                'name' => 'o:field_name',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr field', // @translate
+                ],
+                'attributes' => [
+                    'required' => true,
+                ],
+            ]);
 
         $settingsFieldset = new Fieldset('o:settings');
-        $settingsFieldset->add([
-            'name' => 'formatter',
-            'type' => Element\Select::class,
-            'options' => [
-                'label' => 'Formatter', // @translate
-                'value_options' => $this->getFormatterOptions(),
-                'empty_option' => 'None', // @translate
-            ],
-        ]);
-        $settingsFieldset->add([
-            'name' => 'label',
-            'type' => Element\Text::class,
-            'options' => [
-                'label' => 'Default label', // @translate
-                'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
-            ],
-        ]);
+        $settingsFieldset
+            ->add([
+                'name' => 'formatter',
+                'type' => Element\Select::class,
+                'options' => [
+                    'label' => 'Formatter', // @translate
+                    'value_options' => $this->getFormatterOptions(),
+                    'empty_option' => 'None', // @translate
+                ],
+            ])
+            ->add([
+                'name' => 'label',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Default label', // @translate
+                    'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
+                ],
+            ]);
         $this->add($settingsFieldset);
 
         $inputFilter = $this->getInputFilter();
-        $settingsFilter = $inputFilter->get('o:settings');
-        $settingsFilter->add([
-            'name' => 'formatter',
-            'required' => false,
-        ]);
+        $inputFilter->get('o:settings')
+            ->add([
+                'name' => 'formatter',
+                'required' => false,
+            ]);
     }
 
     /**

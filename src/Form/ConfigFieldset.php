@@ -39,17 +39,18 @@ class ConfigFieldset extends Fieldset
     {
         parent::__construct($name, $options);
 
-        $this->add([
-            'name' => 'solr_core_id',
-            'type' => Element\Select::class,
-            'options' => [
-                'label' => 'Solr core', // @translate
-                'value_options' => $this->getSolrCoresOptions(),
-            ],
-            'attributes' => [
-                'required' => true,
-            ],
-        ]);
+        $this
+            ->add([
+                'name' => 'solr_core_id',
+                'type' => Element\Select::class,
+                'options' => [
+                    'label' => 'Solr core', // @translate
+                    'value_options' => $this->getSolrCoresOptions(),
+                ],
+                'attributes' => [
+                    'required' => true,
+                ],
+            ]);
     }
 
     protected function getSolrCoresOptions()
