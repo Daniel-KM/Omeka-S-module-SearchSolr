@@ -86,6 +86,7 @@ class MapController extends AbstractActionController
         $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
 
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
         $maps = $this->api()->search('solr_maps', [
             'solr_core_id' => $solrCore->id(),
@@ -93,6 +94,12 @@ class MapController extends AbstractActionController
             'sort_by' => 'source',
             'sort_order' => 'asc',
         ])->getContent();
+
+        if (!$solrCore->schema()->checkDefaultField()) {
+            $this->messenger()->addWarning(new Message(
+                'This core seems to have no default field. If there are no results to a default query, add the copy field "_text_" with source "*".' // @translate
+            ));
+        }
 
         return new ViewModel([
             'solrCore' => $solrCore,

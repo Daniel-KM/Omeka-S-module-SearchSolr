@@ -229,4 +229,30 @@ class Schema
 
         return $this->typesByName;
     }
+
+    /**
+     * Check if the config has a default field to query (catchall), else nothing
+     * will be returned in a standard query.
+     *
+     * @todo Currently, the check is done on the catchall copy field, but the default field may be set somewhere else in the config.
+     *
+     * @link https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
+     * @link https://lucene.apache.org/solr/guide/solr-tutorial.html#create-a-catchall-copy-field
+     * @return bool
+     */
+    public function checkDefaultField()
+    {
+        $hasDefaultField = false;
+        $solrSchema = $this->getSchema();
+        $fieldsList = $this->getFieldsByName();
+        if (!empty($fieldsList['_text_']['indexed']) && !empty($solrSchema['copyFields'])) {
+            foreach ($solrSchema['copyFields'] as $copyField) {
+                if ($copyField['dest'] === '_text_' && $copyField['source'] === '*') {
+                    $hasDefaultField = true;
+                    break;
+                }
+            }
+        }
+        return $hasDefaultField;
+    }
 }
