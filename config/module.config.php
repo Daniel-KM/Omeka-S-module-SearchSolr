@@ -140,6 +140,9 @@ return [
                                         'type' => \Zend\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core/:coreId/map',
+                                            'constraints' => [
+                                                'coreId' => '\d+',
+                                            ],
                                             'defaults' => [
                                                 'controller' => Controller\Admin\MapController::class,
                                                 'action' => 'browse',
@@ -150,6 +153,9 @@ return [
                                         'type' => \Zend\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core/:coreId/map/:resourceName[/:action]',
+                                            'constraints' => [
+                                                'coreId' => '\d+',
+                                            ],
                                             'defaults' => [
                                                 'controller' => Controller\Admin\MapController::class,
                                                 'action' => 'browseResource',
@@ -161,6 +167,7 @@ return [
                                         'options' => [
                                             'route' => '/core/:coreId/map/:resourceName/:id[/:action]',
                                             'constraints' => [
+                                                'coreId' => '\d+',
                                                 'id' => '\d+',
                                             ],
                                             'defaults' => [
