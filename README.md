@@ -7,7 +7,7 @@ engine inside Omeka, for the public or in admin: search by relevance (score),
 instant search, facets, autocompletion, suggestions, etc.
 
 It is a full replacement for the module [Solr], a fork of the module [Solr by BibLibre].
-It has some new features and its main difference is that it _doesn’t_ require the
+It has some new features and its main difference is that it **_doesn’t_** require the
 [Solr PHP extension] installed on the server, so it can be installed simpler as
 any other module, in particular on any shared web hosting services. Of course,
 it still requires a Solr server, but it can be provided by another server or by
@@ -43,18 +43,16 @@ does not contain the dependency), and uncompress it in the `modules` directory.
 If the module was installed from the source, rename the name of the folder of
 the module to `SearchSolr`, go to the root of the module, and run:
 
-```
-composer install
+```sh
+composer install --no-dev
 ```
 
 ### Requirements
 
 - Module [Search]
-- A running Apache Solr 5 or upper instance. The module works with Solr 5.5.5
-  (Java [1.7 u55]), version 6 (Java [1.8]), or higher (Java [1.8] or higher).
-  This instance can be installed on the same server than Omeka, or provided by
-  another server, a virtual machine, or a cloud service.
-
+- A running Apache Solr. Compatibility:
+  - version 3.5.15 of this module has been tested with Solr 5 and Solr 6.
+  - version 3.5.15.2 of this module has been tested with Solr 6 to Solr 8.
 
 Quick start
 -----------
@@ -108,6 +106,10 @@ Quick start
        or `https://example.com/admin/search` in this example.
     2. Optionally, add a custom navigation link to the search page in the
        navigation settings of the site.
+5. In Solr dashboard
+    1. In the case the search doesn’t return any results, check the config of
+       the core in the Solr Dashboard and see [this issue on omeka.org] to set
+       and fill the default field.
 
 The search form should appear. Type some text then submit the form to display
 the results as grid or as list. The page can be themed.
@@ -144,8 +146,12 @@ will be required to create multiple index in details.
 TODO
 ----
 
-- Create an automatic mode from the resource templates or from Dublin Core.
-- Create automatically multiple index by property (text, string, lower, latin).
+- [ ] Create an automatic mode from the resource templates or from Dublin Core.
+- [ ] Create automatically multiple index by property (text, string, lower, latin).
+- [ ] Use the search engine directly without search api.
+- [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
+- [ ] Speed up indexation (in module Search too) via direct sql? BulkExport?
+- [ ] Replace class Schema and Field with solarium ones.
 
 
 Solr install <a id="solr-install"></a>
@@ -159,7 +165,8 @@ it via `dpkg`. The process is the same  for Red Hat and derivatives.
 ### Install Solr
 
 The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]),
-and higher (with Java [1.8] or higher).
+and Solr 7.7 and 8.6 (with Java [1.8] or higher). The last stable versions of Solr
+and Java (OpenJdk 11) are recommended.
 
 ```sh
 cd /opt
@@ -169,15 +176,15 @@ java -version
 #sudo apt install default-jre
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://archive.apache.org/dist/lucene/solr/8.5.1/solr-8.5.1.tgz
+wget https://archive.apache.org/dist/lucene/solr/8.6.2/solr-8.6.2.tgz
 # Extract the install script
-tar zxvf solr-8.5.1.tgz solr-8.5.1/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-8.6.2.tgz solr-8.6.2/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-8.5.1.tgz
+sudo bash ./install_solr_service.sh solr-8.6.2.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-8.5.1 /opt/solr
+#sudo ln -s /opt/solr-8.6.2 /opt/solr
 # Clean the sources.
-rm solr-8.5.1.tgz
+rm solr-8.6.2.tgz
 rm install_solr_service.sh
 ```
 
@@ -253,6 +260,8 @@ The simpler solution is to close this port with your firewall. Else, you may
 need to add a user control to the admin board. Search on your not-favorite
 search engine to add such a protection.
 
+#### Solr <= 7
+
 The simplest protection to the Solr admin board is password based. For that,
 three files should be updated.
 
@@ -291,20 +300,78 @@ three files should be updated.
 omeka_admin: xxx-pass-word-yyy, core1-role
 ```
 
+#### Solr >= 8
+
+As indicated in [Solr Basic Authentication], add the file `/var/solr/data/security.json`,
+with the user roles you want (here the user `omeka_admin` is added as `admin`:
+```json
+{
+    "authentication":{
+        "blockUnknown": true,
+        "class":"solr.BasicAuthPlugin",
+        "credentials":{
+            "solr": "IV0EHq1OnNrj6gvRCwvFwTrZ1+z1oBbnQdiVC3otuq0= Ndd7LKvVBAaZIF0QAVi1ekCfAJXr1GGfLtRUXhgrF8c="
+        },
+        "realm":"Omeka Solr",
+        "forwardCredentials": false
+    },
+    "authorization":{
+        "class":"solr.RuleBasedAuthorizationPlugin",
+        "permissions":[
+            {
+                "name":"security-edit",
+                "role":"admin"
+            }
+        ],
+        "user-role":{
+            "omeka_admin":"admin",
+            "solr":"admin"
+        }
+    }
+}
+```
+
+Don't forget to change rights of this file:
+```sh
+sudo chown solr:solr /var/solr/data/security.json && sudo chmod g+r,o-rw /var/solr/data/security.json
+```
+
+To add the hashed password, it is simpler to use the api endpoint, so add the
+specific admin user like that:
+```sh
+curl --user solr:SolrRocks http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d '{"set-user": {"omeka_admin":"MySecretPassPhrase"}}'
+```
+
+Finally, restart the server and **remove the default admin "solr"** or change
+its password, and restart the server again:
+```sh
+curl --user omeka:MySecretPassPhrase http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d  '{"delete-user": ["solr"]}'
+sudo systemctl restart solr
+```
+
+Of course, the user `omeka_admin` and the password should be setin the config of
+the core in the Solr page inside Omeka.
+
 ### Upgrade Solr
 
-Before upgrade, you should backup the folder `/var/solr` if you want to upgrade
-a previous config:
+Before upgrade, **you should backup the folder `/var/solr` and check the backup**
+in all cases, and in particular when the config is not the default one. For Solr
+itself, with the default install mode, the new version is installed beside the
+current one, so it is not required to backup the app itself, but you can backup
+the folder `/opt/solr/server/etc` if you want.
+
+Note: Solr can only be upgraded one major version by one major version, so to
+upgrade from version 6 to 8, you first need to upgrade to version 7.
 
 ```sh
 cd /opt
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/8.5.1/solr-8.5.1.tgz
-tar zxvf solr-8.5.1.tgz solr-8.5.1/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/8.6.2/solr-8.6.2.tgz
+tar zxvf solr-8.6.2.tgz solr-8.6.2/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-8.5.1.tgz -f
-rm solr-8.5.1.tgz
+sudo bash ./install_solr_service.sh solr-8.6.2.tgz -f
+rm solr-8.6.2.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -319,11 +386,12 @@ executing, in particular don’t add whitespace after the slashs "/".
 sudo systemctl stop solr
 sudo update-rc.d -f solr remove
 sudo rm /etc/init.d/solr
+sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-8.5.1
-# Only if you want to remove your indexes. WARNING: this will remove your configs too.
-# sudo rm -r /var/solr
+sudo rm -r /opt/solr-8.6.2
+# Only if you want to remove your indexes. WARNING: this will remove your configs too.
+# sudo rm -r /var/solr
 sudo deluser --remove-home solr
 sudo deluser --group solr
 ```
@@ -361,7 +429,7 @@ If you choose a data driven schema, you can remove it and create a new one with
 the same name.
 
 ```sh
-# Warning: These commands are used for data driven indexation. Else, backup your config first.
+# Warning: These commands are used for data driven indexation **without specific config**. Else, backup your config first.
 sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"
 sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
 ```
@@ -391,7 +459,8 @@ Use it at your own risk.
 It’s always recommended to backup your files and your databases and to check
 your archives regularly so you can roll back if needed.
 
-Note: the config of SolR is saved in `/var/solr/data` by default.
+Note: By default, the config of the server SolR is saved in `/opt/solr/server/etc`
+and in `/etc/default/solr.in.sh`; the config of the cores are saved in `/var/solr/data`.
 
 
 Troubleshooting
@@ -403,7 +472,7 @@ See online issues on the [module issues] page on GitHub.
 License
 -------
 
-This module is published under the [CeCILL v2.1] licence, compatible with
+This module is published under the [CeCILL v2.1] license, compatible with
 [GNU/GPL] and approved by [FSF] and [OSI].
 
 This software is governed by the CeCILL license under French law and abiding by
@@ -455,7 +524,8 @@ of [Université des Antilles et de la Guyane], currently managed with [Greenston
 [full documentation]: https://solarium.readthedocs.io/en/stable/
 [Generic]: https://github.com/Daniel-KM/omeka-s-module-Generic
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
-[documentation]: https://lucene.apache.org/solr/guide/7_5/the-dismax-query-parser.html#q-alt-parameter
+[documentation]: https://lucene.apache.org/solr/guide/the-dismax-query-parser.html#q-alt-parameter
+[this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
 [Solr PHP extension]: https://pecl.php.net/package/solr
 [below]: #manage-solr
 [below for Debian]: #solr-install
@@ -466,7 +536,8 @@ of [Université des Antilles et de la Guyane], currently managed with [Greenston
 [http://localhost:8983/solr/#/omeka]: http://localhost:8983/solr/#/omeka
 [solr service gist]: https://gist.github.com/Daniel-KM/1fb475a47340d7945fa6c47c945707d0
 [Solr documentation]: https://lucene.apache.org/solr/resources.html
-[module issues]: https://github.com/BibLibre/Omeka-S-module-Solr/issues
+[Solr Basic Authentication]: https://lucene.apache.org/solr/guide/basic-authentication-plugin.html#basic-authentication-plugin
+[module issues]: https://github.com/Daniel-KM/Omeka-S-module-Solr/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org
