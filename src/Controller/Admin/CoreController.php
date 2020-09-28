@@ -45,10 +45,9 @@ class CoreController extends AbstractActionController
     {
         $response = $this->api()->search('solr_cores');
         $cores = $response->getContent();
-
-        $view = new ViewModel;
-        $view->setVariable('cores', $cores);
-        return $view;
+        return new ViewModel([
+            'cores' => $cores,
+        ]);
     }
 
     protected function checkPostAndValidForm($form)
@@ -68,12 +67,10 @@ class CoreController extends AbstractActionController
     public function addAction()
     {
         $form = $this->getForm(SolrCoreForm::class);
-
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-
         if (!$this->checkPostAndValidForm($form)) {
-            return $view;
+            return new ViewModel([
+                'form' => $form,
+            ]);
         }
 
         $data = $form->getData();
@@ -96,11 +93,10 @@ class CoreController extends AbstractActionController
         $data = $core->jsonSerialize();
         $form->setData($data);
 
-        $view = new ViewModel;
-        $view->setVariable('form', $form);
-
         if (!$this->checkPostAndValidForm($form)) {
-            return $view;
+            return new ViewModel([
+                'form' => $form,
+            ]);
         }
 
         $data = $form->getData();
@@ -125,16 +121,17 @@ class CoreController extends AbstractActionController
         $searchPages = $this->searchSearchPages($core);
         $solrMaps = $this->api()->search('solr_maps', ['solr_core_id' => $core->id()])->getContent();
 
-        $view = new ViewModel;
-        $view->setTerminal(true);
-        $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'Solr core'); // @translate
-        $view->setVariable('resource', $core);
-        $view->setVariable('partialPath', 'common/solr-core-delete-confirm-details');
-        $view->setVariable('totalSearchIndexes', count($searchIndexes));
-        $view->setVariable('totalSearchPages', count($searchPages));
-        $view->setVariable('totalSolrMaps', count($solrMaps));
-        return $view;
+        $view = new ViewModel([
+            'resourceLabel' => 'Solr core', // @translate
+            'resource' => $core,
+            'partialPath' => 'common/solr-core-delete-confirm-details',
+            'totalSearchIndexes' => count($searchIndexes),
+            'totalSearchPages' => count($searchPages),
+            'totalSolrMaps' => count($solrMaps),
+        ]);
+        return $view
+            ->setTerminal(true)
+            ->setTemplate('common/delete-confirm-details');
     }
 
     public function deleteAction()

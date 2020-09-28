@@ -75,11 +75,10 @@ class MapController extends AbstractActionController
             $valueExtractors[$name] = $this->valueExtractorManager->get($name);
         }
 
-        $view = new ViewModel;
-        $view->setVariable('solrCore', $solrCore);
-        $view->setVariable('valueExtractors', $valueExtractors);
-
-        return $view;
+        return new ViewModel([
+            'solrCore' => $solrCore,
+            'valueExtractors' => $valueExtractors,
+        ]);
     }
 
     public function browseResourceAction()
@@ -95,11 +94,11 @@ class MapController extends AbstractActionController
             'sort_order' => 'asc',
         ])->getContent();
 
-        $view = new ViewModel;
-        $view->setVariable('solrCore', $solrCore);
-        $view->setVariable('resourceName', $resourceName);
-        $view->setVariable('maps', $maps);
-        return $view;
+        return new ViewModel([
+            'solrCore' => $solrCore,
+            'resourceName' => $resourceName,
+            'maps' => $maps,
+        ]);
     }
 
     public function completeAction()
@@ -262,12 +261,12 @@ class MapController extends AbstractActionController
             }
         }
 
-        $view = new ViewModel;
-        $view->setVariable('solrCore', $solrCore);
-        $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrCoreId));
-        $view->setVariable('sourceLabels', $this->getSourceLabels());
-        return $view;
+        return new ViewModel([
+            'solrCore' => $solrCore,
+            'form' => $form,
+            'schema' => $this->getSolrSchema($solrCoreId),
+            'sourceLabels' => $this->getSourceLabels(),
+        ]);
     }
 
     public function editAction()
@@ -316,12 +315,12 @@ class MapController extends AbstractActionController
             }
         }
 
-        $view = new ViewModel;
-        $view->setVariable('map', $map);
-        $view->setVariable('form', $form);
-        $view->setVariable('schema', $this->getSolrSchema($solrCoreId));
-        $view->setVariable('sourceLabels', $this->getSourceLabels());
-        return $view;
+        return new ViewModel([
+            'map' => $map,
+            'form' => $form,
+            'schema' => $this->getSolrSchema($solrCoreId),
+            'sourceLabels' => $this->getSourceLabels(),
+        ]);
     }
 
     public function deleteConfirmAction()
@@ -338,15 +337,16 @@ class MapController extends AbstractActionController
             }
         }
 
-        $view = new ViewModel;
-        $view->setTerminal(true);
-        $view->setTemplate('common/delete-confirm-details');
-        $view->setVariable('resourceLabel', 'Solr map'); // @translate
-        $view->setVariable('resource', $map);
-        $view->setVariable('partialPath', 'common/solr-map-delete-confirm-details');
-        $view->setVariable('totalSearchPages', count($searchPages));
-        $view->setVariable('totalSearchPagesUsingMap', count($searchPagesUsingMap));
-        return $view;
+        $view = new ViewModel([
+            'resourceLabel' => 'Solr map', // @translate
+            'resource' => $map,
+            'partialPath' => 'common/solr-map-delete-confirm-details',
+            'totalSearchPages' => count($searchPages),
+            'totalSearchPagesUsingMap' => count($searchPagesUsingMap),
+        ]);
+        return $view
+            ->setTerminal(true)
+            ->setTemplate('common/delete-confirm-details');
     }
 
     public function deleteAction()
