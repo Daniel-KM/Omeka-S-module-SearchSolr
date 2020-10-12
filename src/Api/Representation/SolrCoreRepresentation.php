@@ -291,4 +291,36 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         return $this->schema()->getField($field);
     }
+
+    public function schemaSupport($support)
+    {
+        switch ($support) {
+            case 'drupal':
+                $fields = [
+                    // Static fields.
+                    'index_id' => null,
+                    'site' => null,
+                    'hash' => null,
+                    'timestamp' => null,
+                    'boost_document' => null,
+                    'boost_term' => null,
+                    // Dynamic fields.
+                    'ss_search_api_id' => null,
+                    'ss_search_api_datasource' => null,
+                    'ss_search_api_language' => null,
+                    'sm_context_tags' => null,
+                ];
+                break;
+            default:
+                return [];
+        }
+
+        $schema = $this->schema();
+        foreach (array_keys($fields) as $fieldName) {
+            $field = $schema->getField($fieldName);
+            $fields[$fieldName] = !empty($field);
+        }
+
+        return $fields;
+    }
 }

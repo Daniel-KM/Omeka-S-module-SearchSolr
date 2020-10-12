@@ -215,6 +215,38 @@ It must be a single-valued, string-based field.', // @translate
                     'placeholder' => 'index_id',
                 ],
             ])
+            ->add([
+                'name' => 'support',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Index specific fields', // @translate
+                    'value_options' => [
+                        '' => 'No', // @translate
+                        'drupal' => 'Drupal', // @translate
+                    ],
+                    'info' => 'Allow to store specific data needed to share a core with a third party. All field names should be manually adapted.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'support',
+                    'value' => '',
+                    'required' => false,
+                ],
+            ])
+            ->add([
+                'name' => 'resource_languages',
+                // TODO The locale select is not working.
+                // 'type' => 'Omeka\Form\Element\LocaleSelect',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Resource languages codes for shared core', // @translate
+                    'info' => 'A third party may need to know the languages of a resource, even if it has no meaning in Omeka.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'resource_languages',
+                    'multiple' => true,
+                    // 'value' => 'und',
+                ],
+            ])
             // TODO Replace the checkbox by a button.
             ->add([
                 'name' => 'clear_full_index',
@@ -227,6 +259,12 @@ It must be a single-valued, string-based field.', // @translate
                     'id' => 'clear_full_index',
                 ],
             ]);
+
+        /*
+        $settingsFieldset->get('resource_languages')
+            ->setValueOptions(['und' => 'Undetermined'] + $settingsFieldset->get('resource_languages')->getValueOptions()) // @translate
+            ->setEmptyOption(null);
+        */
 
         $this->add($settingsFieldset);
 
@@ -278,6 +316,10 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
             ->get('o:settings')
             ->add([
                 'name' => 'clear_full_index',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'support',
                 'required' => false,
             ])
             ->get('query')

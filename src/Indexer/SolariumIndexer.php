@@ -110,6 +110,21 @@ class SolariumIndexer extends AbstractIndexer
     protected $indexName;
 
     /**
+     * @var string|false
+     */
+    protected $support;
+
+    /**
+     * @var array
+     */
+    protected $supportFields;
+
+    /**
+     * @var array
+     */
+    protected $vars = [];
+
+    /**
      * @var \Solarium\QueryType\Update\Query\Document[]
      */
     protected $solariumDocuments = [];
@@ -220,6 +235,7 @@ class SolariumIndexer extends AbstractIndexer
         $this->getServerId();
         $this->getIndexField();
         $this->getIndexName();
+        $this->getSupportFields();
 
         $services = $this->getServiceLocator();
         $this->api = $services->get('Omeka\ApiManager');
@@ -347,19 +363,57 @@ class SolariumIndexer extends AbstractIndexer
                 ? ($this->formatters[$formatter] ?? $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter))
                 : null;
 
+            $first = $this->support === 'drupal';
             if ($valueFormatter) {
                 foreach ($values as $value) {
                     $value = $valueFormatter->format($value);
                     $document->addField($solrField, $value);
+                    if ($first) {
+                        $first = false;
+                        $this->appendDrupalValues($resource, $document, $solrField, $value);
+                    }
                 }
             } else {
                 foreach ($values as $value) {
                     $document->addField($solrField, $value);
+                    if ($first) {
+                        $first = false;
+                        $this->appendDrupalValues($resource, $document, $solrField, $value);
+                    }
                 }
             }
         }
 
+        $this->appendSupportedFields($resource, $document);
+
         $this->solariumDocuments[] = $document;
+    }
+
+    protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document)
+    {
+        foreach ($this->supportFields as $solrField => $value) switch ($solrField) {
+            // Drupal.
+            case 'index_id':
+                // Already set for multi-index, and it is a single value.
+                break;
+            case 'site':
+            case 'hash':
+            case 'timestamp':
+            case 'boost_document':
+            case 'ss_search_api_language':
+            case 'sm_context_tags':
+                $document->addField($solrField, $value);
+                break;
+            case 'ss_search_api_datasource':
+                $document->addField($solrField, $resource->getResourceName());
+                break;
+            case 'ss_search_api_id':
+                $document->addField($solrField, $resource->getResourceName() . '/' . $resource->getId());
+                break;
+            default:
+                // Nothing to do.
+                break;
+        }
     }
 
     /**
@@ -448,6 +502,131 @@ class SolariumIndexer extends AbstractIndexer
             $this->indexName = $this->index->shortName();
         }
         return $this->indexName;
+    }
+
+    /**
+     * Get the specific supported fields.
+     *
+     * @return array
+     */
+    protected function getSupportFields()
+    {
+        if (is_null($this->supportFields)) {
+            $this->support = $this->solrCore->setting('support') ?: false;
+            $this->supportFields = array_filter($this->solrCore->schemaSupport($this->support));
+            // Manage some static values.
+            foreach ($this->supportFields as $solrField => &$value) switch ($solrField) {
+                // Drupal.
+                // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/solr-conf-templates/8.x/schema.xml
+                // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/src/Plugin/search_api/backend/SearchApiSolrBackend.php#L1060-1184
+                case 'index_id':
+                    $value = $this->indexName;
+                    break;
+                case 'site':
+                    // The site should be the language site one, but urls don't
+                    // include locale in Omeka.
+                    // TODO Check if the site url should be the default site one or the root of Omeka.
+                    $value = $this->solrCore->setting('site_url') ?: 'http://localhost/';
+                    break;
+                case 'hash':
+                    $value = $this->serverId;
+                    break;
+                case 'timestamp':
+                    // If this is It should be the same timestamp for all documents that are being indexed.
+                    $value = gmdate('Y-m-d\TH:i:s\Z');
+                    break;
+                case 'boost_document':
+                    // Boost at index time is not supported any more, but Drupal
+                    // stores a value in each item and uses it during request.
+                    $value = 1.0;
+                    break;
+                case 'sm_context_tags':
+                    // No need to escape already cleaned index values.
+                    $value = [
+                        'drupal_X2f_langcode_X3a_' . (strtok($this->solrCore->setting('resource_languages'), ' ') ?: 'und'),
+                        'search_api_X2f_index_X3a_' . $this->indexName,
+                        'search_api_solr_X2f_site_hash_X3a_' . $this->serverId,
+                    ];
+                    break;
+                case 'ss_search_api_language':
+                    $value = strtok($this->solrCore->setting('resource_languages'), ' ') ?: 'und';
+                    break;
+                case 'ss_search_api_datasource':
+                case 'ss_search_api_id':
+                case 'boost_term':
+                default:
+                    // Nothing to do.
+                    break;
+            }
+            unset($value);
+        }
+        if ($this->support === 'drupal') {
+            $this->vars['locales'] = explode(' ', $this->solrCore->setting('resource_languages')) ?: ['und'];
+            // In Drupal, dynamic fields are in schema.xml, except text ones, in
+            // schema_extra_fields.xml.
+            $dynamicFields = $this->solrCore->schema()->getDynamicFieldsMapByMainPart('prefix');
+            foreach ($this->solrMaps as $resourceName => $solrMaps) {
+                $this->vars['solr_maps'][$resourceName] = [];
+                foreach ($solrMaps as $solrMap) {
+                    $source = $solrMap->source();
+                    if (in_array($source, ['is_public', 'resource_name', 'site/o:id'])) {
+                        continue;
+                    }
+                    $solrField = $solrMap->fieldName();
+                    // Check if it is a dynamic field (prefix only.
+                    $prefix = strtok($solrField, '_') . '_';
+                    if (!isset($dynamicFields[$prefix])) {
+                        continue;
+                    }
+                    $this->vars['solr_maps'][$resourceName][$solrField] = [
+                        'prefix' => mb_substr($prefix, 0, -1),
+                        'name' => mb_substr($solrField, mb_strlen($prefix)),
+                    ];
+                }
+            }
+        }
+        return $this->supportFields;
+    }
+
+    /**
+     * Specific fields for Drupal.
+     *
+     * @param SolariumInputDocument $document
+     * @param string $solrField
+     * @param mixed $value
+     * @return self
+     */
+    protected function appendDrupalValues(Resource $resource, SolariumInputDocument $document, $solrField, $value)
+    {
+        $resourceName = $resource->getResourceName();
+        if (!isset($this->vars['solr_maps'][$resourceName][$solrField])) {
+            return $this;
+        }
+
+        // FIXME Use the translated values in Drupal sort fields.
+        // In Drupal, the same value is copied in each language field for sort…
+        // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/src/Plugin/search_api/backend/SearchApiSolrBackend.php#L1130-1172
+        // For example, field is "ss_title", so sort field is "sort_X3b_fr_title".
+        // This is slighly different from Drupal process.
+        $prefix = $this->vars['solr_maps'][$resourceName][$solrField]['prefix'];
+        $matches = [];
+        if (in_array(mb_substr($prefix . '_', 0, 3), ['tm_', 'ts_', 'sm_', 'ss_'])) {
+            foreach ($this->vars['locales'] as $locale) {
+                $field = 'sort_X3b_' . $locale . '_' . $this->vars['solr_maps'][$resourceName][$solrField]['name'];
+                if (!$document->{$field}) {
+                    $value = mb_substr($value, 0, 128);
+                    $document->addField($field, $value);
+                }
+            }
+        } elseif (strpos($solrField, 'random_') !== 0
+            && preg_match('/^([a-z]+)m(_.*)/', $solrField, $matches)
+        ) {
+            $field = $matches[1] . 's' . $matches[2];
+            if (!$document->{$field}) {
+                $document->addField($field, $value);
+            }
+        }
+        return $this;
     }
 
     /**

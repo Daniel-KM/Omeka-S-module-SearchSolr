@@ -194,6 +194,42 @@ class Schema
     }
 
     /**
+     * @param string $fieldNameType "prefix", "suffix", or all fields.
+     * @return array
+     */
+    public function getDynamicFieldsMapByMainPart($fieldNameType = null)
+    {
+        static $dynamicFieldsMapBy;
+        if (!isset($dynamicFieldsMapBy)) {
+            $dynamicFieldsMapBy = [];
+            try {
+                $schema = $this->getSchema();
+            } catch (\Exception $e) {
+                return [];
+            }
+            foreach ($schema['dynamicFields'] as $field) {
+                $name = $field['name'];
+                $isSuffix = $name[0] === '*';
+                $field['is_suffix'] = $isSuffix;
+                $dynamicFieldsMapBy[$isSuffix ? mb_substr($name, 1) : mb_substr($name, 0, -1)] = $field;
+            }
+        }
+
+        switch ($fieldNameType) {
+            default:
+                return $dynamicFieldsMapBy;
+            case 'prefix':
+                return array_filter($dynamicFieldsMapBy, function ($v) {
+                    return !$v['is_suffix'];
+                });
+            case 'suffix':
+                return array_filter($dynamicFieldsMapBy, function ($v) {
+                    return $v['is_suffix'];
+                });
+        }
+    }
+
+    /**
      * @param string $name
      * @return string|null
      */

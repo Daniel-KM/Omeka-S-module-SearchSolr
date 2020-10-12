@@ -62,7 +62,7 @@ class CoreController extends AbstractActionController
         ]);
     }
 
-    protected function checkPostAndValidForm($form)
+    protected function checkPostAndValidForm(\Zend\Form\Form $form)
     {
         if (!$this->getRequest()->isPost()) {
             return false;
@@ -92,7 +92,10 @@ class CoreController extends AbstractActionController
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
+        $data['o:settings']['site_url'] = $this->getBaseUrl();
+        $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages'])))) ?: ['und'];
         unset($data['o:settings']['clear_full_index']);
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
         $core = $this->api()->create('solr_cores', $data)->getContent();
 
         $result = $this->checkCoreConfig($core);
@@ -101,8 +104,23 @@ class CoreController extends AbstractActionController
             return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
         }
 
-        $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
-        $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
+        if (!empty($data['o:settings']['support'])) {
+            $supportFields = $core->schemaSupport($data['o:settings']['support']);
+            $unsupportedFields = array_filter($supportFields, function($v) {
+                return empty($v);
+            });
+            if (count($unsupportedFields)) {
+                $this->messenger()->addError(new Message(
+                    'Some specific static or dynamic fields are missing or not available for "%s" in the core: "%s".', // @translate
+                    $data['o:settings']['support'], implode('", "', array_keys($unsupportedFields))
+                ));
+            } else {
+                $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
+            }
+        } else {
+            $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
+        }
+        $this->messenger()->addWarning('Don’t forget to index the resources before using it.'); // @translate
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
@@ -129,6 +147,8 @@ class CoreController extends AbstractActionController
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
+        $data['o:settings']['site_url'] = $this->getBaseUrl();
+        $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages']))));
         unset($data['o:settings']['clear_full_index']);
         $this->api()->update('solr_cores', $id, $data);
 
@@ -138,7 +158,22 @@ class CoreController extends AbstractActionController
             return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
         }
 
-        $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+        if (!empty($data['o:settings']['support'])) {
+            $supportFields = $core->schemaSupport($data['o:settings']['support']);
+            $unsupportedFields = array_filter($supportFields, function($v) {
+                return empty($v);
+            });
+            if (count($unsupportedFields)) {
+                $this->messenger()->addError(new Message(
+                    'Some specific static or dynamic fields are missing or not available for "%s" in the core: "%s".', // @translate
+                    $data['o:settings']['support'], implode('", "', array_keys($unsupportedFields))
+                ));
+            } else {
+                $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+            }
+        } else {
+            $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+        }
         if ($clearFullIndex) {
             $this->clearFullIndex($core);
             $this->messenger()->addWarning(new Message('All indexes of core "%s" are been deleted.', $core->name())); // @translate
@@ -324,6 +359,19 @@ class CoreController extends AbstractActionController
             }
         }
         return $result;
+    }
+
+    /**
+     * Get the base url of the server.
+     *
+     * This value avoids issue in background job.
+     *
+     * @return string
+     */
+    protected function getBaseUrl()
+    {
+        $helpers = $this->viewHelpers();
+        return $helpers->get('ServerUrl')->__invoke($helpers->get('BasePath')->__invoke('/'));
     }
 
     protected function checkCoreConfig(SolrCoreRepresentation $solrCore)
