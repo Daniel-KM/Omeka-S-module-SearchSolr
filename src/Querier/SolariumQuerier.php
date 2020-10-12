@@ -105,7 +105,7 @@ class SolariumQuerier extends AbstractQuerier
                 $groupName = $valueGroup->getValue();
                 $this->response->setResourceTotalResults($groupName, $valueGroup->getNumFound());
                 foreach ($valueGroup as $document) {
-                    list(, $resourceId) = explode(':', $document['id']);
+                    $resourceId = basename($document['id']);
                     $this->response->addResult($groupName, ['id' => $resourceId]);
                 }
             }

@@ -210,6 +210,9 @@ return [
         ],
     ],
     'searchsolr' => [
+        'config' => [
+            'searchsolr_server_id' => null,
+        ],
     ],
     'searchsolr_value_extractors' => [
         'factories' => [

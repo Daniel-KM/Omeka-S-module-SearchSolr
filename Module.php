@@ -102,8 +102,13 @@ class Module extends AbstractModule
 
     protected function postInstall()
     {
-        // Upgrade from old module Solr if any, else install a default config.
         $services = $this->getServiceLocator();
+
+        $settings = $services->get('Omeka\Settings');
+        $serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
+        $settings->set('searchsolr_server_id', $serverId);
+
+        // Upgrade from old module Solr if any, else install a default config.
         $connection = $services->get('Omeka\Connection');
 
         /** @var \Omeka\Module\Manager $moduleManager */

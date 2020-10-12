@@ -88,10 +88,16 @@ class SolariumIndexer extends AbstractIndexer
      * @var array Array of SolrMapRepresentation by resource name.
      */
     protected $solrMaps;
+
     /**
      * @var int[]
      */
     protected $siteIds;
+
+    /**
+     * @var string
+     */
+    protected $serverId;
 
     /**
      * @var \Solarium\QueryType\Update\Query\Document[]
@@ -181,12 +187,13 @@ class SolariumIndexer extends AbstractIndexer
         $this->valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $this->valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
         $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();
+        $this->getServerId();
         return $this;
     }
 
     protected function getDocumentId($resourceName, $resourceId)
     {
-        return sprintf('%s:%s', $resourceName, $resourceId);
+        return sprintf('%s/%s/%s', $this->serverId, $resourceName, $resourceId);
     }
 
     protected function addResource(Resource $resource)
@@ -347,6 +354,26 @@ class SolariumIndexer extends AbstractIndexer
         }
 
         $this->solariumDocuments = [];
+    }
+
+    /**
+     * Get the unique server id of the Omeka install.
+     *
+     * @return string
+     */
+    protected function getServerId()
+    {
+        // Inspired from module Drupal search api solr.
+        // See search_api_solr\Utility\Utility::getSiteHash()).
+        if (is_null($this->serverId)) {
+            $settings = $this->getServiceLocator()->get('Omeka\Settings');
+            $this->serverId = $settings->get('searchsolr_server_id');
+            if (empty($this->serverId)) {
+                $this->serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
+                $settings->set('searchsolr_server_id', $this->serverId);
+            }
+        }
+        return $this->serverId;
     }
 
     /**
