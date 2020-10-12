@@ -33,13 +33,24 @@
  * @var \SearchSolr\ValueExtractor\ValueExtractorInterface[] $valueExtractors
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
+$url = $plugins->get('url');
 
 $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
 $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
 ?>
 
 <?= $this->pageTitle($pageTitle) ?>
+
+<div id="page-actions">
+    <?php $exportUrl = $url('admin/search/solr/core-id', [
+        'id' => $solrCore->id(),
+        'action' => 'export',
+    ]); ?>
+    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export maps') ?></a>
+</div>
 
 <nav class="breadcrumbs">
     <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
@@ -63,9 +74,9 @@ $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
                         <span><?= $valueExtractor->getLabel() ?></span>
                         <ul class="actions">
                             <li>
-                                <?= $this->hyperlink(
+                                <?= $hyperlink(
                                     '',
-                                    $this->url('admin/search/solr/core-id-map-resource', ['resourceName' => $name, 'coreId' => $solrCore->id()]),
+                                    $url('admin/search/solr/core-id-map-resource', ['resourceName' => $name, 'coreId' => $solrCore->id()]),
                                     ['class' => 'o-icon-settings', 'title' => $translate('Rules')]
                                 ) ?>
                             </li>

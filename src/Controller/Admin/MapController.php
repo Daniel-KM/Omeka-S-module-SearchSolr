@@ -37,11 +37,11 @@ use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
+use SearchSolr\Api\Representation\SolrMapRepresentation;
 use SearchSolr\Form\Admin\SolrMapForm;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use SearchSolr\Api\Representation\SolrMapRepresentation;
 
 class MapController extends AbstractActionController
 {

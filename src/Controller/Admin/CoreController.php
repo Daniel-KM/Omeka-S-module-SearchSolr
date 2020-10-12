@@ -149,6 +149,36 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
+    public function exportAction()
+    {
+        $solrCoreId = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+
+        // Export all maps even empty, so the user will have the headers.
+        $filename = $this->exportFilename($solrCore);
+        $content = $this->exportSolrMapping($solrCore);
+
+        $response = $this->getResponse();
+        $response->setContent($content);
+
+        // @see \Zend\Http\Headers
+        $response
+            ->getHeaders()
+            ->addHeaderLine('Content-Disposition: attachment; filename=' . $filename)
+            ->addHeaderLine('Content-Type: text/tab-separated-values')
+            // This is the strlen as bytes, not as character.
+            ->addHeaderLine('Content-length: ' . strlen($content))
+            // When forcing the download of a file over SSL, IE8 and lower
+            // browsers fail if the Cache-Control and Pragma headers are not set.
+            // @see http://support.microsoft.com/KB/323308
+            ->addHeaderLine('Cache-Control: max-age=0')
+            ->addHeaderLine('Expires: 0')
+            ->addHeaderLine('Pragma: public');
+
+        return $response;
+    }
+
     /**
      * Find all search indexes related to a specific solr core.
      *
@@ -190,5 +220,62 @@ class CoreController extends AbstractActionController
             }
         }
         return $result;
+    }
+
+    protected function exportFilename(SolrCoreRepresentation $solrCore)
+    {
+        $base = preg_replace('/[^A-Za-z0-9]/', '_', $solrCore->name());
+        $base = $base ? preg_replace('/_+/', '_', $base) . '-' : '';
+        $base .= $solrCore->id() . '-';
+        $base .= (new \DateTime())->format('Ymd-His');
+        $base .= '.tsv';
+        return $base;
+    }
+
+    protected function exportSolrMapping(SolrCoreRepresentation $solrCore)
+    {
+        // Because the output is always small, create it in memory in realtime.
+        $stream = fopen('php://temp', 'w+');
+
+        $headers = [
+            'resource_name',
+            'field_name',
+            'source',
+            'settings:label',
+            'settings:formatter',
+        ];
+
+        $this->appendTsvRow($stream, $headers);
+
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
+        $maps = $this->api()
+            ->search('solr_maps', [
+                'solr_core_id' => $solrCore->id(),
+                'sort_by' => 'source',
+                'sort_order' => 'asc',
+            ])
+            ->getContent();
+
+        foreach ($maps as $map) {
+            $settings = $map->settings();
+            $mapping = [
+                $map->resourceName(),
+                $map->fieldName(),
+                $map->source(),
+                $settings['label'],
+                $settings['formatter'],
+            ];
+            $this->appendTsvRow($stream, $mapping);
+        }
+
+        rewind($stream);
+        $output = stream_get_contents($stream);
+        fclose($stream);
+        return $output;
+    }
+
+    protected function appendTsvRow($stream, array $fields)
+    {
+        fputcsv($stream, $fields, "\t", chr(0), chr(0));
     }
 }
