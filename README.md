@@ -1,6 +1,9 @@
 Search adapter for Solr (module for Omeka S)
 ============================================
 
+> __New versions of this module and support for Omeka S version 3.0 and above
+> are available on [GitLab], which seems to respect users and privacy better.__
+
 [Search adapter for Solr] is a module for [Omeka S] that provides a [Search]
 adapter for [Apache Solr], so it is possible to get the power of a full search
 engine inside Omeka, for the public or in admin: search by relevance (score),
@@ -563,4 +566,5 @@ of [Université des Antilles et de la Guyane], currently managed with [Greenston
 [Université des Antilles et de la Guyane]: http://www.univ-ag.fr
 [Greenstone]: http://www.greenstone.org
 [BibLibre]: https://github.com/biblibre
+[GitLab]: https://gitlab.com/Daniel-KM
 [Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
