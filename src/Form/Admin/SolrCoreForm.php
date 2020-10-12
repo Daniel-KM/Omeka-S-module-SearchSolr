@@ -92,7 +92,8 @@ class SolrCoreForm extends Form
                     'required' => true,
                     'placeholder' => '8983',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'core',
                 'type' => Element\Text::class,
                 'options' => [
@@ -103,7 +104,8 @@ class SolrCoreForm extends Form
                     'required' => true,
                     'placeholder' => 'omeka',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'secure',
                 'type' => Element\Checkbox::class,
                 'options' => [
@@ -112,7 +114,8 @@ class SolrCoreForm extends Form
                 'attributes' => [
                     'id' => 'secure',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'username',
                 'type' => Element\Text::class,
                 'options' => [
@@ -123,7 +126,8 @@ class SolrCoreForm extends Form
                     'required' => false,
                     'placeholder' => 'admin_solr',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'password',
                 'type' => Element\Text::class,
                 'options' => [
@@ -135,7 +139,8 @@ class SolrCoreForm extends Form
                     'required' => false,
                     'placeholder' => '******',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'bypass_certificate_check',
                 'type' => Element\Checkbox::class,
                 'options' => [
@@ -156,7 +161,7 @@ class SolrCoreForm extends Form
                 'options' => [
                     'label' => 'Is public field', // @translate
                     'info' => 'Name of Solr field that will be set when a resource is public.
-    It must be a single-valued, boolean-based field (*_b).', // @translate
+It must be a single-valued, boolean-based field (*_b in default solr config).', // @translate
                 ],
                 'attributes' => [
                     'id' => 'is_public_field',
@@ -164,13 +169,14 @@ class SolrCoreForm extends Form
                     'placeholder' => 'is_public_b',
                     'value' => 'is_public_b',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'resource_name_field',
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Resource name field', // @translate
                     'info' => 'Name of Solr field that will contain the resource name (or resource type, e.g. "items", "item_sets"…).
-    It must be a single-valued, string-based field (*_s).', // @translate
+It must be a single-valued, string-based field (*_s in default solr config).', // @translate
                 ],
                 'attributes' => [
                     'id' => 'resource_name_field',
@@ -178,13 +184,14 @@ class SolrCoreForm extends Form
                     'placeholder' => 'resource_name_s',
                     'value' => 'resource_name_s',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'sites_field',
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Site ids field', // @translate
                     'info' => 'Name of Solr field that will contain the sites ids.
-    It must be a multi-valued, integer-based field (*_is).', // @translate
+It must be a multi-valued, integer-based field (*_is in default solr config).', // @translate
                 ],
                 'attributes' => [
                     'id' => 'sites_field',
@@ -205,7 +212,7 @@ class SolrCoreForm extends Form
                 'options' => [
                     'label' => 'Minimum match (or/and)', // @translate
                     'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
-    If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
+If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
                     'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
                 ],
                 'attributes' => [
@@ -213,13 +220,14 @@ class SolrCoreForm extends Form
                     'value' => '',
                     'placeholder' => '50%',
                 ],
-            ])->add([
+            ])
+            ->add([
                 'name' => 'tie_breaker',
                 'type' => Element\Number::class,
                 'options' => [
                     'label' => 'Tie breaker', // @translate
                     'info' => 'Increase score according to the number of matched fields.
-    If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
+If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
                     'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
                 ],
                 'attributes' => [
@@ -238,7 +246,7 @@ class SolrCoreForm extends Form
 
         $settingsFieldset->add($querySettingsFieldset);
 
-        $inputFilter = $this->getInputFilter([]);
+        $inputFilter = $this->getInputFilter();
         $inputFilter
             ->get('o:settings')->get('query')->add([
                 'name' => 'tie_breaker',
