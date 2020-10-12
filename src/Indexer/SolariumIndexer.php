@@ -247,9 +247,14 @@ class SolariumIndexer extends AbstractIndexer
         // Adapted Drupal convention to be used for any single or multi-index.
         // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/solr-conf-templates/8.x/schema.xml#L131-141
         // The 0-formatted id allows to sort quickly on id.
-        return $this->indexField
-            ? sprintf('%s-%s-%s/%07s', $this->serverId, $this->indexName, $resourceName, $resourceId)
-            : sprintf('%s-%s/%07s', $this->serverId, $resourceName, $resourceId);
+        if (empty($this->serverId)) {
+            return empty($this->indexField)
+                ? sprintf('%s/%07s', $resourceName, $resourceId)
+                : sprintf('%s-%s/%07s', $this->indexName, $resourceName, $resourceId);
+        }
+        return empty($this->indexField)
+            ? sprintf('%s-%s/%07s', $this->serverId, $resourceName, $resourceId)
+            : sprintf('%s-%s-%s/%07s', $this->serverId, $this->indexName, $resourceName, $resourceId);
     }
 
     protected function addResource(Resource $resource)
@@ -312,6 +317,7 @@ class SolariumIndexer extends AbstractIndexer
                     $document->addField($sitesField, $siteItemSet->getSite()->getId());
                 }
                 break;
+
             default:
                 return;
         }
@@ -477,12 +483,7 @@ class SolariumIndexer extends AbstractIndexer
         // Inspired from module Drupal search api solr.
         // See search_api_solr\Utility\Utility::getSiteHash()).
         if (is_null($this->serverId)) {
-            $settings = $this->getServiceLocator()->get('Omeka\Settings');
-            $this->serverId = $settings->get('searchsolr_server_id');
-            if (empty($this->serverId)) {
-                $this->serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
-                $settings->set('searchsolr_server_id', $this->serverId);
-            }
+            $this->serverId = $this->getSolrCore()->setting('server_id') ?: false;
         }
         return $this->serverId;
     }
@@ -495,7 +496,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function getIndexField()
     {
         if (is_null($this->indexField)) {
-            $this->indexField = $this->getSolrCore()->setting('index_field', false) ?: false;
+            $this->indexField = $this->getSolrCore()->setting('index_field') ?: false;
         }
         return $this->indexField;
     }
@@ -646,9 +647,9 @@ class SolariumIndexer extends AbstractIndexer
         if (!isset($this->solrCore)) {
             $solrCoreId = $this->getAdapterSetting('solr_core_id');
             if ($solrCoreId) {
-                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
                 // Automatically throw an exception when empty.
-                $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
+                $this->solrCore = $this->getServiceLocator()->get('Omeka\ApiManager')
+                    ->read('solr_cores', $solrCoreId)->getContent();
                 $this->solariumClient = $this->solrCore->solariumClient();
             }
         }

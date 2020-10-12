@@ -63,7 +63,9 @@ class CoreController extends AbstractActionController
     public function addAction()
     {
         /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
-        $form = $this->getForm(SolrCoreForm::class);
+        $form = $this->getForm(SolrCoreForm::class, [
+            'server_id' => $this->settings()->get('searchsolr_server_id'),
+        ]);
         $form->remove('o:settings');
 
         if (!$this->checkPostAndValidForm($form)) {
@@ -81,6 +83,7 @@ class CoreController extends AbstractActionController
                 'path' => '/',
                 'secure' => '0',
             ],
+            'server_id' => '',
         ];
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
         $core = $this->api()->create('solr_cores', $data)->getContent();
@@ -95,7 +98,9 @@ class CoreController extends AbstractActionController
         $core = $this->api()->read('solr_cores', $id)->getContent();
 
         /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
-        $form = $this->getForm(SolrCoreForm::class);
+        $form = $this->getForm(SolrCoreForm::class, [
+            'server_id' => $this->settings()->get('searchsolr_server_id'),
+        ]);
         $data = $core->jsonSerialize();
         $form->setData($data);
 
