@@ -97,22 +97,16 @@ class Schema
      */
     public function getField($name)
     {
+        // Fill fields only when needed.
         if (!isset($this->fields[$name])) {
             $fieldsByName = $this->getFieldsByName();
-            $field = null;
-            if (isset($fieldsByName[$name])) {
-                $field = $fieldsByName[$name];
-            } else {
-                $field = $this->getDynamicFieldFor($name);
-            }
-
-            if (isset($field)) {
+            $field = $fieldsByName[$name] ?? $this->getDynamicFieldFor($name);
+            if ($field) {
                 $type = $this->getType($field['type']);
                 $field = new Field($name, $field, $type);
             }
             $this->fields[$name] = $field;
         }
-
         return $this->fields[$name];
     }
 
@@ -132,7 +126,6 @@ class Schema
                 $this->fieldsByName[$field['name']] = $field;
             }
         }
-
         return $this->fieldsByName;
     }
 
@@ -185,22 +178,21 @@ class Schema
             foreach ($schema['dynamicFields'] as $field) {
                 $name = $field['name'];
                 $char = $name[0];
-                $key = 'prefix';
                 if ($char === '*') {
                     $char = $name[strlen($name) - 1];
                     $key = 'suffix';
+                } else {
+                    $key = 'prefix';
                 }
-
                 $this->dynamicFieldsMap[$key][$char][] = $field;
             }
         }
-
         return $this->dynamicFieldsMap;
     }
 
     /**
      * @param string $name
-     * @return string
+     * @return string|null
      */
     public function getType($name)
     {
@@ -208,6 +200,7 @@ class Schema
         if (isset($typesByName[$name])) {
             return $typesByName[$name];
         }
+        return null;
     }
 
     /**
@@ -226,7 +219,6 @@ class Schema
                 $this->typesByName[$type['name']] = $type;
             }
         }
-
         return $this->typesByName;
     }
 

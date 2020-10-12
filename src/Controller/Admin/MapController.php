@@ -158,7 +158,7 @@ class MapController extends AbstractActionController
             $this->messenger()->addSuccess(new Message('%d maps successfully created: "%s".', // @translate
                 count($result), implode('", "', $result)));
             $this->messenger()->addWarning('Check all new maps and remove useless ones.'); // @translate
-            $this->messenger()->addNotice('Don’t forget to run the indexation of the core.'); // @translate
+            $this->messenger()->addWarning('Don’t forget to run the indexation of the core.'); // @translate
         } else {
             $this->messenger()->addWarning('No new maps added.'); // @translate
         }

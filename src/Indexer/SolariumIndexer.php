@@ -106,11 +106,10 @@ class SolariumIndexer extends AbstractIndexer
 
     public function canIndex($resourceName)
     {
-        $services = $this->getServiceLocator();
-        $valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
-        /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
-        $valueExtractor = $valueExtractorManager->get($resourceName);
-        return isset($valueExtractor);
+        /** @see \SearchSolr\ValueExtractor\Manager */
+        return $this->getServiceLocator()
+            ->get('SearchSolr\ValueExtractorManager')
+            ->has($resourceName);
     }
 
     public function clearIndex(Query $query = null)
@@ -130,9 +129,10 @@ class SolariumIndexer extends AbstractIndexer
         }
 
         $client = $this->getClient();
-        $update = $client->createUpdate();
-        $update->addDeleteQuery($query);
-        $update->addCommit();
+        $update = $client
+            ->createUpdate()
+            ->addDeleteQuery($query)
+            ->addCommit();
         $client->update($update);
         return $this;
     }
@@ -166,9 +166,10 @@ class SolariumIndexer extends AbstractIndexer
     {
         $id = $this->getDocumentId($resourceName, $resourceId);
         $client = $this->getClient();
-        $update = $client->createUpdate();
-        $update->addDeleteById($id);
-        $update->addCommit();
+        $update = $client
+            ->createUpdate()
+            ->addDeleteById($id)
+            ->addCommit();
         $client->update($update);
         return $this;
     }
@@ -293,11 +294,10 @@ class SolariumIndexer extends AbstractIndexer
                 $values = array_slice($values, 0, 1);
             }
 
-            $formatter = $solrMap->settings()['formatter'];
+            $formatter = $solrMap->setting('formatter');
             $valueFormatter = $formatter
-                ? isset($this->formatters[$formatter])
-                    ? $this->formatters[$formatter]
-                    : $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter)
+                // Avoid to load all formatters each time.
+                ? ($this->formatters[$formatter] ?? $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter))
                 : null;
 
             if ($valueFormatter) {
@@ -340,9 +340,10 @@ class SolariumIndexer extends AbstractIndexer
         //  TODO use BufferedAdd plugin?
         $client = $this->getClient();
         try {
-            $update = $client->createUpdate();
-            $update->addDocuments($this->solariumDocuments);
-            $update->addCommit();
+            $update = $client
+                ->createUpdate()
+                ->addDocuments($this->solariumDocuments)
+                ->addCommit();
             $client->update($update);
         } catch (SolariumServerException $e) {
             if (count($this->solariumDocuments) <= 1) {
