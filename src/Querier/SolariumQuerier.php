@@ -191,7 +191,7 @@ class SolariumQuerier extends AbstractQuerier
         if ($indexField) {
             $this->solariumQuery
                 ->createFilterQuery($indexField)
-                ->setQuery($indexField . ':' . $this->index->cleanName());
+                ->setQuery($indexField . ':' . $this->index->shortName());
         }
 
         $filters = $this->query->getFilters();

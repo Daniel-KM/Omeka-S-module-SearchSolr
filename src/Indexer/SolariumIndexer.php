@@ -223,9 +223,11 @@ class SolariumIndexer extends AbstractIndexer
 
     protected function getDocumentId($resourceName, $resourceId)
     {
+        // Adapted Drupal convention to be used for any single or multi-index.
+        // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/solr-conf-templates/8.x/schema.xml#L131-141
         return $this->indexField
-            ? sprintf('%s/%s/%s/%s', $this->serverId, $this->indexName, $resourceName, $resourceId)
-            : sprintf('%s/%s/%s', $this->serverId, $resourceName, $resourceId);
+            ? sprintf('%s-%s-%s/%s', $this->serverId, $this->indexName, $resourceName, $resourceId)
+            : sprintf('%s-%s/%s', $this->serverId, $resourceName, $resourceId);
     }
 
     protected function addResource(Resource $resource)
@@ -433,7 +435,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function getIndexName()
     {
         if (is_null($this->indexName)) {
-            $this->indexName = $this->index->cleanName();
+            $this->indexName = $this->index->shortName();
         }
         return $this->indexName;
     }
