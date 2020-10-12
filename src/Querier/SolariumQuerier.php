@@ -149,7 +149,9 @@ class SolariumQuerier extends AbstractQuerier
         $isPublicField = $solrCoreSettings['is_public_field'];
         $resourceNameField = $solrCoreSettings['resource_name_field'];
         $sitesField = $solrCoreSettings['sites_field'] ?? null;
-        $indexField = $solrCoreSettings['index_field'] ?? null;
+        $indexField = $solrCoreSettings['index_field'] && $this->index->settingAdapter('index_name')
+            ? $solrCoreSettings['index_field']
+            : null;
 
         // TODO Add a param to select DisMaxQuery, standard query, eDisMax, or external query parsers.
 

@@ -138,8 +138,7 @@ class SolariumIndexer extends AbstractIndexer
         // filter queries cannot be used directly. So use them as query part.
 
         // Limit deletion to current search index in case of a multi-index core.
-        $this->getIndexField();
-        $this->getIndexName();
+        $this->prepareIndexFieldAndName();
 
         $isQuery = false;
         if ($query) {
@@ -206,8 +205,7 @@ class SolariumIndexer extends AbstractIndexer
     {
         // Some values should be init to get the document id.
         $this->getServerId();
-        $this->getIndexField();
-        $this->getIndexName();
+        $this->prepareIndexFieldAndName();
 
         $documentId = $this->getDocumentId($resourceName, $resourceId);
         $client = $this->getClient();
@@ -228,8 +226,7 @@ class SolariumIndexer extends AbstractIndexer
     {
         // Some values should be init to get the document id.
         $this->getServerId();
-        $this->getIndexField();
-        $this->getIndexName();
+        $this->prepareIndexFieldAndName();
         $this->getSupportFields();
 
         $services = $this->getServiceLocator();
@@ -423,7 +420,7 @@ class SolariumIndexer extends AbstractIndexer
      * @param mixed $value
      * @return bool
      */
-    protected function isNotNullAndNotEmptyString($value)
+    protected function isNotNullAndNotEmptyString($value): bool
     {
         return !is_null($value) && $value !== '';
     }
@@ -488,6 +485,20 @@ class SolariumIndexer extends AbstractIndexer
         return $this->serverId;
     }
 
+    protected function prepareIndexFieldAndName()
+    {
+        $field = $this->getSolrCore()->setting('index_field') ?: false;
+        $name = $this->index->settingAdapter('index_name') ?: false;
+        if ($field && $name) {
+            $this->indexField = $field;
+            $this->indexName = $name;
+        } else {
+            $this->indexField = false;
+            $this->indexName = false;
+        }
+        return $this;
+    }
+
     /**
      * Get the index field name for the multi-index, if set.
      *
@@ -496,20 +507,20 @@ class SolariumIndexer extends AbstractIndexer
     protected function getIndexField()
     {
         if (is_null($this->indexField)) {
-            $this->indexField = $this->getSolrCore()->setting('index_field') ?: false;
+            $this->prepareIndexFieldAndName();
         }
         return $this->indexField;
     }
 
     /**
-     * Get the index name of the search index page for multi-index.
+     * Get the index name of the search index for multi-index.
      *
-     * @return string
+     * @return string|false
      */
     protected function getIndexName()
     {
         if (is_null($this->indexName)) {
-            $this->indexName = $this->index->shortName();
+            $this->prepareIndexFieldAndName();
         }
         return $this->indexName;
     }

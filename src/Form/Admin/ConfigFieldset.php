@@ -46,7 +46,20 @@ class ConfigFieldset extends Fieldset
                     'value_options' => $this->getSolrCoresOptions(),
                 ],
                 'attributes' => [
+                    'id' => 'solr_core_id',
                     'required' => true,
+                ],
+            ])
+            ->add([
+                'name' => 'index_name',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr index name for shared core', // @translate
+                    'info' => 'May be empty, or may be or may not be the same index name than the third party, depending on its configuration.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'index_name',
+                    'required' => false,
                 ],
             ]);
     }
