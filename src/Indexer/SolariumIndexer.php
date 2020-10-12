@@ -124,28 +124,38 @@ class SolariumIndexer extends AbstractIndexer
 
     public function clearIndex(Query $query = null)
     {
+        // Solr does not use the same query format than the one used for select:
+        // filter queries cannot be used directly. So use them as query part.
+
+        // Limit deletion to current search index in case of a multi-index core.
+        $this->getIndexField();
+        $this->getIndexName();
+
+        $isQuery = false;
         if ($query) {
             /** @var \Solarium\QueryType\Select\Query\Query|null $solariumQuery */
             $solariumQuery = $this->index->querier()
                 ->setQuery($query)
                 ->getPreparedQuery();
-            if (is_null($solariumQuery)) {
-                $query = '*%3A*';
-            } else {
-                $query = $solariumQuery->getQuery();
-            }
-        } else {
-            $query = '*%3A*';
+            $isQuery = !is_null($solariumQuery);
         }
 
-        // Add a filter query to limit deletion to the current search index in
-        // case of a multi-index core.
-        $this->getIndexField();
-        $this->getIndexName();
-        if ($this->indexField
-            && ($query === '*:*' || $query === '*%3A*' || $query === '*')
-        ) {
-           $query = "*%3A*&fq=$this->indexField%3A$this->indexName";
+        if ($isQuery) {
+            $query = $solariumQuery->getQuery() ?: '*:*';
+            $isDefaultQuery = $query === '*:*';
+            $filterQueries = $solariumQuery->getFilterQueries();
+            if (count($filterQueries)) {
+                foreach ($filterQueries as $filterQuery) {
+                    $query .= ' AND ' . $filterQuery->getQuery();
+                }
+                if ($isDefaultQuery) {
+                    $query = mb_substr($query, 8);
+                }
+            }
+        } else {
+            $query = $this->indexField
+                ? "$this->indexField:$this->indexName"
+                : '*:*';
         }
 
         $client = $this->getClient();

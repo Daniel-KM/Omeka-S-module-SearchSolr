@@ -214,6 +214,18 @@ It must be a single-valued, string-based field.', // @translate
                     'required' => false,
                     'placeholder' => 'index_id',
                 ],
+            ])
+            // TODO Replace the checkbox by a button.
+            ->add([
+                'name' => 'clear_full_index',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Clear all indexes, included external ones', // @translate
+                    'info' => 'Warning: this button will clear all indexes on the core, included indexes externally managed if multi-index is set.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'clear_full_index',
+                ],
             ]);
 
         $this->add($settingsFieldset);
@@ -263,7 +275,13 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
 
         $inputFilter = $this->getInputFilter();
         $inputFilter
-            ->get('o:settings')->get('query')->add([
+            ->get('o:settings')
+            ->add([
+                'name' => 'clear_full_index',
+                'required' => false,
+            ])
+            ->get('query')
+            ->add([
                 'name' => 'tie_breaker',
                 'required' => false,
             ]);

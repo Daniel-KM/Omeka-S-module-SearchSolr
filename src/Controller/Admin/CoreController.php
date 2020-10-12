@@ -78,7 +78,10 @@ class CoreController extends AbstractActionController
 
     public function addAction()
     {
+        /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
         $form = $this->getForm(SolrCoreForm::class);
+        $form->get('o:settings')->remove('clear_full_index');
+
         if (!$this->checkPostAndValidForm($form)) {
             return new ViewModel([
                 'form' => $form,
@@ -89,6 +92,7 @@ class CoreController extends AbstractActionController
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
+        unset($data['o:settings']['clear_full_index']);
         $core = $this->api()->create('solr_cores', $data)->getContent();
 
         $result = $this->checkCoreConfig($core);
@@ -108,6 +112,7 @@ class CoreController extends AbstractActionController
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
         $core = $this->api()->read('solr_cores', $id)->getContent();
 
+        /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
         $form = $this->getForm(SolrCoreForm::class);
         $data = $core->jsonSerialize();
         $form->setData($data);
@@ -119,9 +124,12 @@ class CoreController extends AbstractActionController
         }
 
         $data = $form->getData();
+        $clearFullIndex = !empty($data['o:settings']['clear_full_index']);
+
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
+        unset($data['o:settings']['clear_full_index']);
         $this->api()->update('solr_cores', $id, $data);
 
         $result = $this->checkCoreConfig($core);
@@ -131,7 +139,14 @@ class CoreController extends AbstractActionController
         }
 
         $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+        if ($clearFullIndex) {
+            $this->clearFullIndex($core);
+            $this->messenger()->addWarning(new Message('All indexes of core "%s" are been deleted.', $core->name())); // @translate
+        }
         $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this core.'); // @translate
+        if ($clearFullIndex) {
+            $this->messenger()->addWarning('Don’t forget to reindex this core with external indexers.'); // @translate
+        }
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
@@ -344,6 +359,16 @@ class CoreController extends AbstractActionController
         }
 
         return true;
+    }
+
+    protected function clearFullIndex(SolrCoreRepresentation $solrCore)
+    {
+        $solariumClient = $solrCore->solariumClient();
+        $update = $solariumClient
+            ->createUpdate()
+            ->addDeleteQuery('*:*')
+            ->addCommit();
+        $solariumClient ->update($update);
     }
 
     protected function importSolrMapping(SolrCoreRepresentation $solrCore, $filepath, array $options)
