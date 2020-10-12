@@ -142,6 +142,20 @@ specific property, or a group of metadata, with pattern, and even combine them
 together with various joiners (and, or, not, near…). In that particular case, it
 will be required to create multiple index in details.
 
+### Indexation with third party
+
+The module makes possible to store multiple indexes in the same core. This is an
+advanced feature that is useless in most of the cases. It may be used to share
+one core between multiple Omeka install or with another tool or another cms. To
+make it working, you have to fill the field name where the index name will be
+stored in the config of the core. Of course, the fields should be defined
+precisely and in coherence with the other tool that access to it.
+
+With Drupal, the default fields to set in the core form are: `bs_is_public`,
+`ss_resource_name`, `im_site_id`, and `index_id`. The mapping should be created
+according to the config inside Drupal, for example: `ss_title` and `tm_body`.
+The sort fields are automatically managed.
+
 
 TODO
 ----
@@ -150,8 +164,9 @@ TODO
 - [ ] Create automatically multiple index by property (text, string, lower, latin).
 - [ ] Use the search engine directly without search api.
 - [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
-- [ ] Speed up indexation (in module Search too) via direct sql? BulkExport?
+- [ ] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
 - [ ] Replace class Schema and Field with solarium ones.
+- [ ] Rewrite and simplify querier to better handle solarium.
 
 
 Solr install <a id="solr-install"></a>
