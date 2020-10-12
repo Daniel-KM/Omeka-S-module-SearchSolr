@@ -91,6 +91,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * @param string $name
+     * @param mixed $default
+     * @return mixed
+     */
+    public function setting($name, $default = null)
+    {
+        $settings = $this->resource->getSettings();
+        return $settings[$name] ?? $default;
+    }
+
+    /**
      * @return array
      */
     public function clientSettings()

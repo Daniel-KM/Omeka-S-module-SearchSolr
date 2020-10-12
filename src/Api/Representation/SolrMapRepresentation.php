@@ -106,4 +106,15 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     {
         return $this->resource->getSettings();
     }
+
+    /**
+     * @param string $name
+     * @param mixed $default
+     * @return mixed
+     */
+    public function setting($name, $default = null)
+    {
+        $settings = $this->resource->getSettings();
+        return $settings[$name] ?? $default;
+    }
 }
