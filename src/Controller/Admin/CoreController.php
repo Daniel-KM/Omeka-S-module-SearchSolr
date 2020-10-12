@@ -259,6 +259,16 @@ class CoreController extends AbstractActionController
             ])
             ->getContent();
 
+        // Order by resource name first, then by source.
+        $results = [
+            'items' => [],
+            'item_sets' => [],
+        ];
+        foreach ($maps as $map) {
+            $results[$map->resourceName()][] = $map;
+        }
+        $maps = array_merge($results['items'], $results['item_sets']);
+
         foreach ($maps as $map) {
             $settings = $map->settings();
             $mapping = [
