@@ -60,25 +60,11 @@ class CoreController extends AbstractActionController
         ]);
     }
 
-    protected function checkPostAndValidForm(\Zend\Form\Form $form)
-    {
-        if (!$this->getRequest()->isPost()) {
-            return false;
-        }
-
-        $form->setData($this->params()->fromPost());
-        if (!$form->isValid()) {
-            $this->messenger()->addError('There was an error during validation'); // @translate
-            return false;
-        }
-        return true;
-    }
-
     public function addAction()
     {
         /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
         $form = $this->getForm(SolrCoreForm::class);
-        $form->get('o:settings')->remove('clear_full_index');
+        $form->remove('o:settings');
 
         if (!$this->checkPostAndValidForm($form)) {
             return new ViewModel([
@@ -87,39 +73,19 @@ class CoreController extends AbstractActionController
         }
 
         $data = $form->getData();
-        // SolrClient requires a boolean for the option "secure".
-        $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
-        $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
-        $data['o:settings']['site_url'] = $this->getBaseUrl();
-        $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages'])))) ?: ['und'];
-        unset($data['o:settings']['clear_full_index']);
+        $data['o:settings'] = [
+            'client' => [
+                'scheme' => 'http',
+                'host' => 'localhost',
+                'port' => '8983',
+                'path' => '/',
+                'secure' => '0',
+            ],
+        ];
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
         $core = $this->api()->create('solr_cores', $data)->getContent();
-
-        $result = $this->checkCoreConfig($core);
-        if (!$result) {
-            $this->messenger()->addError(new Message('Solr core "%s" created with an incomplete config.', $core->name())); // @translate
-            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
-        }
-
-        if (!empty($data['o:settings']['support'])) {
-            $supportFields = $core->schemaSupport($data['o:settings']['support']);
-            $unsupportedFields = array_filter($supportFields, function($v) {
-                return empty($v);
-            });
-            if (count($unsupportedFields)) {
-                $this->messenger()->addError(new Message(
-                    'Some specific static or dynamic fields are missing or not available for "%s" in the core: "%s".', // @translate
-                    $data['o:settings']['support'], implode('", "', array_keys($unsupportedFields))
-                ));
-            } else {
-                $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
-            }
-        } else {
-            $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
-        }
-        $this->messenger()->addWarning('Don’t forget to index the resources before using it.'); // @translate
-        return $this->redirect()->toRoute('admin/search/solr');
+        $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
+        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
     }
 
     public function editAction()
@@ -315,6 +281,20 @@ class CoreController extends AbstractActionController
             ->addHeaderLine('Pragma: public');
 
         return $response;
+    }
+
+    protected function checkPostAndValidForm(\Zend\Form\Form $form)
+    {
+        if (!$this->getRequest()->isPost()) {
+            return false;
+        }
+
+        $form->setData($this->params()->fromPost());
+        if (!$form->isValid()) {
+            $this->messenger()->addError('There was an error during validation'); // @translate
+            return false;
+        }
+        return true;
     }
 
     /**

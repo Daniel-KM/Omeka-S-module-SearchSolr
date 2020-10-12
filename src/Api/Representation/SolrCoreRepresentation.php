@@ -43,7 +43,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     protected $solariumClient;
 
-    /**
+    /**use Solarium\Exception\HttpException as SolariumException;
+
      * {@inheritDoc}
      */
     public function getJsonLdType()
@@ -106,10 +107,9 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function clientSettings()
     {
-        $settings = $this->resource->getSettings();
         // Currently, the keys from the old module Solr are kept.
         // TODO Convert settings during from old module Solr before saving.
-        $clientSettings = (array) $settings['client'];
+        $clientSettings = (array) $this->setting('client', []);
         $clientSettings['endpoint'] = $this->endpoint();
         return $clientSettings;
     }
@@ -120,11 +120,13 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function endpoint()
     {
-        $settings = $this->resource->getSettings();
-        $clientSettings = (array) $settings['client'];
+        $clientSettings = $this->setting('client') ?: [];
+        if (!is_array($clientSettings)) {
+            $clientSettings = (array) $clientSettings;
+        }
         return [
-            $clientSettings['host'] => array_intersect_key(
-                $clientSettings, [
+            $clientSettings['host'] => array_replace(
+                [
                     'scheme' => null,
                     'host' => null,
                     'port' => null,
@@ -134,7 +136,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                     'core' => null,
                     'username' => null,
                     'password' => null,
-                ]
+                ],
+                $clientSettings
             ),
         ];
     }
@@ -217,15 +220,26 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 $logger->err($message);
                 return $message;
             }
-            $logger->err($e);
+            $message = new Message('Solr core #%d: %s', $this->id(), $e->getMessage()); // @translate
+            $logger->err($message);
+            return $e->getMessage();
+        } catch (\Exception $e) {
+            $message = new Message('Solr core #%d: %s', $this->id(), $e->getMessage()); // @translate
+            $logger->err($message);
             return $e->getMessage();
         }
+
         // Check the schema too, in particular when there are credentials, but
         // the certificate is expired or incomplete.
         try {
             $this->schema()->getSchema();
         } catch (SolariumException $e) {
-            $logger->err($e);
+            $message = new Message('Solr core #%d enpoint: %s', $this->id(), $e->getMessage()); // @translate
+            $logger->err($message);
+            return $e->getMessage();
+        } catch (\Exception $e) {
+            $message = new Message('Solr core #%d: %s', $this->id(), $e->getMessage()); // @translate
+            $logger->err($message);
             return $e->getMessage();
         }
 

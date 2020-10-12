@@ -113,8 +113,7 @@ class SolariumAdapter extends AbstractAdapter
             if (!$schemaField || $schemaField->isMultivalued()) {
                 continue;
             }
-            $mapSettings = $map->settings();
-            $label = isset($mapSettings['label']) ? $mapSettings['label'] : '';
+            $label = $map->setting('label', '');
             foreach ($directionLabel as $direction => $labelDirection) {
                 $name = $fieldName . ' ' . $direction;
                 $sortFields[$name] = [
@@ -142,8 +141,7 @@ class SolariumAdapter extends AbstractAdapter
         $facetFields = [];
         foreach ($solrCore->maps() as $map) {
             $name = $map->fieldName();
-            $mapSettings = $map->settings();
-            $label = isset($mapSettings['label']) ? $mapSettings['label'] : '';
+            $label = $map->setting('label', '');
             $facetFields[$name] = [
                 'name' => $name,
                 'label' => $label,

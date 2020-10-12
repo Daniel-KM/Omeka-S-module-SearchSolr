@@ -312,8 +312,8 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
         $settingsFieldset->add($querySettingsFieldset);
 
         $inputFilter = $this->getInputFilter();
-        $inputFilter
-            ->get('o:settings')
+        $settingFilters = $inputFilter->get('o:settings');
+        $settingFilters
             ->add([
                 'name' => 'clear_full_index',
                 'required' => false,
@@ -321,10 +321,21 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
             ->add([
                 'name' => 'support',
                 'required' => false,
-            ])
+            ]);
+        $settingFilters
             ->get('query')
             ->add([
                 'name' => 'tie_breaker',
+                'required' => false,
+            ]);
+        $settingFilters
+            ->get('client')
+            ->add([
+                'name' => 'secure',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'bypass_certificate_check',
                 'required' => false,
             ]);
     }
