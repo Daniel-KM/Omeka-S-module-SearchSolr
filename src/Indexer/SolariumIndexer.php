@@ -128,6 +128,7 @@ class SolariumIndexer extends AbstractIndexer
         $update->addDeleteQuery($query);
         $update->addCommit();
         $client->update($update);
+        return $this;
     }
 
     public function indexResource(Resource $resource)
@@ -137,12 +138,13 @@ class SolariumIndexer extends AbstractIndexer
         }
         $this->addResource($resource);
         $this->commit();
+        return $this;
     }
 
     public function indexResources(array $resources)
     {
         if (empty($resources)) {
-            return;
+            return $this;
         }
         if (empty($this->api)) {
             $this->init();
@@ -151,6 +153,7 @@ class SolariumIndexer extends AbstractIndexer
             $this->addResource($resource);
         }
         $this->commit();
+        return $this;
     }
 
     public function deleteResource($resourceName, $resourceId)
@@ -161,6 +164,7 @@ class SolariumIndexer extends AbstractIndexer
         $update->addDeleteById($id);
         $update->addCommit();
         $client->update($update);
+        return $this;
     }
 
     /**
@@ -177,6 +181,7 @@ class SolariumIndexer extends AbstractIndexer
         $this->valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $this->valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
         $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();
+        return $this;
     }
 
     protected function getDocumentId($resourceName, $resourceId)
