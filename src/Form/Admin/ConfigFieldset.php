@@ -28,17 +28,15 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace SearchSolr\Form;
+namespace SearchSolr\Form\Admin;
 
 use Zend\Form\Element;
 use Zend\Form\Fieldset;
 
 class ConfigFieldset extends Fieldset
 {
-    public function __construct($name = null, $options = [])
+    public function init()
     {
-        parent::__construct($name, $options);
-
         $this
             ->add([
                 'name' => 'solr_core_id',
@@ -55,10 +53,44 @@ class ConfigFieldset extends Fieldset
 
     protected function getSolrCoresOptions()
     {
-        $options = [];
-        foreach ($this->getOption('solrCores') as $solrCore) {
-            $options[$solrCore->id()] = $solrCore->name();
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation[] $solrCores */
+        $solrCores = $this->getOption('solrCores');
+        if (!count($solrCores)) {
+            return [];
         }
+
+        $searchIndexId = $this->getOption('search_index_id');
+
+        // If the core doesn't support multiple index, it will be unavailable,
+        // except for the current index.
+        $solrCore = reset($solrCores);
+        $services = $solrCore->getServiceLocator();
+        $translator = $services->get('MvcTranslator');
+
+        /** @var \Search\Api\Representation\SearchIndexRepresentation[] $searchIndexes */
+        $searchIndexes = $services->get('Omeka\ApiManager')->search('search_indexes', ['adapter' => 'solarium'])->getContent();
+        $coreIndexes = [];
+        foreach ($searchIndexes as $searchIndex) {
+            $coreId = $searchIndex->settingAdapter('solr_core_id', '');
+            $coreIndexes[$coreId][] = $searchIndex->id();
+        }
+
+        $options = [];
+        foreach ($solrCores as $solrCore) {
+            $option = [
+                'value' => $solrCore->id(),
+                'label' => $solrCore->name(),
+            ];
+            if (isset($coreIndexes[$solrCore->id()])
+                && !$solrCore->setting('index_field')
+                && !in_array($searchIndexId, $coreIndexes[$solrCore->id()])
+            ) {
+                $option['label'] = sprintf($translator->translate('%s (unavailable: option multi-index not set)'), $option['label']); // @translate
+                $option['disabled'] = true;
+            }
+            $options[] = $option;
+        }
+
         return $options;
     }
 }

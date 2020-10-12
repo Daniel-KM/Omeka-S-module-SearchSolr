@@ -33,7 +33,7 @@ namespace SearchSolr\Adapter;
 use Omeka\Api\Manager as ApiManager;
 use Search\Adapter\AbstractAdapter;
 use Search\Api\Representation\SearchIndexRepresentation;
-use SearchSolr\Form\ConfigFieldset;
+use SearchSolr\Form\Admin\ConfigFieldset;
 use Zend\I18n\Translator\TranslatorInterface;
 
 class SolariumAdapter extends AbstractAdapter
@@ -66,7 +66,6 @@ class SolariumAdapter extends AbstractAdapter
     public function getConfigFieldset()
     {
         $solrCores = $this->api->search('solr_cores')->getContent();
-
         return new ConfigFieldset(null, ['solrCores' => $solrCores]);
     }
 

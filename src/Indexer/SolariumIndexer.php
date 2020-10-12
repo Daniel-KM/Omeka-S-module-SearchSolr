@@ -100,6 +100,16 @@ class SolariumIndexer extends AbstractIndexer
     protected $serverId;
 
     /**
+     * @var string|false
+     */
+    protected $indexField;
+
+    /**
+     * @var string
+     */
+    protected $indexName;
+
+    /**
      * @var \Solarium\QueryType\Update\Query\Document[]
      */
     protected $solariumDocuments = [];
@@ -120,12 +130,22 @@ class SolariumIndexer extends AbstractIndexer
                 ->setQuery($query)
                 ->getPreparedQuery();
             if (is_null($solariumQuery)) {
-                $query = '*:*';
+                $query = '*%3A*';
             } else {
                 $query = $solariumQuery->getQuery();
             }
         } else {
-            $query = '*:*';
+            $query = '*%3A*';
+        }
+
+        // Add a filter query to limit deletion to the current search index in
+        // case of a multi-index core.
+        $this->getIndexField();
+        $this->getIndexName();
+        if ($this->indexField
+            && ($query === '*:*' || $query === '*%3A*' || $query === '*')
+        ) {
+           $query = "*%3A*&fq=$this->indexField%3A$this->indexName";
         }
 
         $client = $this->getClient();
@@ -164,6 +184,11 @@ class SolariumIndexer extends AbstractIndexer
 
     public function deleteResource($resourceName, $resourceId)
     {
+        // Some values should be init to get the document id.
+        $this->getServerId();
+        $this->getIndexField();
+        $this->getIndexName();
+
         $id = $this->getDocumentId($resourceName, $resourceId);
         $client = $this->getClient();
         $update = $client
@@ -181,6 +206,11 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function init()
     {
+        // Some values should be init to get the document id.
+        $this->getServerId();
+        $this->getIndexField();
+        $this->getIndexName();
+
         $services = $this->getServiceLocator();
         $this->api = $services->get('Omeka\ApiManager');
         $this->apiAdapters = $services->get('Omeka\ApiAdapterManager');
@@ -188,13 +218,14 @@ class SolariumIndexer extends AbstractIndexer
         $this->valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $this->valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
         $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();
-        $this->getServerId();
         return $this;
     }
 
     protected function getDocumentId($resourceName, $resourceId)
     {
-        return sprintf('%s/%s/%s', $this->serverId, $resourceName, $resourceId);
+        return $this->indexField
+            ? sprintf('%s/%s/%s/%s', $this->serverId, $this->indexName, $resourceName, $resourceId)
+            : sprintf('%s/%s/%s', $this->serverId, $resourceName, $resourceId);
     }
 
     protected function addResource(Resource $resource)
@@ -218,6 +249,10 @@ class SolariumIndexer extends AbstractIndexer
 
         $id = $this->getDocumentId($resourceName, $resourceId);
         $document->addField('id', $id);
+
+        if ($this->indexField) {
+            $document->addField($this->indexField, $this->indexName);
+        }
 
         // Force the indexation of visibility, resource type and sites, even if
         // not selected in mapping, because they are the base of Omeka.
@@ -375,6 +410,32 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
         return $this->serverId;
+    }
+
+    /**
+     * Get the index field name for the multi-index, if set.
+     *
+     * @return string|false
+     */
+    protected function getIndexField()
+    {
+        if (is_null($this->indexField)) {
+            $this->indexField = $this->getSolrCore()->setting('index_field', false) ?: false;
+        }
+        return $this->indexField;
+    }
+
+    /**
+     * Get the index name of the search index page for multi-index.
+     *
+     * @return string
+     */
+    protected function getIndexName()
+    {
+        if (is_null($this->indexName)) {
+            $this->indexName = $this->index->cleanName();
+        }
+        return $this->indexName;
     }
 
     /**

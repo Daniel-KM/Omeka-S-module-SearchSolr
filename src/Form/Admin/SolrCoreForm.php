@@ -199,6 +199,21 @@ It must be a multi-valued, integer-based field (*_is in default solr config).', 
                     'placeholder' => 'site_id_is',
                     'value' => 'site_id_is',
                 ],
+            ])
+            ->add([
+                'name' => 'index_field',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Index field', // @translate
+                    'info' => 'Name of Solr field that will contain the index name in order to support multiple indexes on the same core.
+This is an advanced feature that is not required in most of the cases.
+It must be a single-valued, string-based field.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'index_field',
+                    'required' => false,
+                    'placeholder' => 'index_id',
+                ],
             ]);
 
         $this->add($settingsFieldset);

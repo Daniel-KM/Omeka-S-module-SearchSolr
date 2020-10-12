@@ -38,6 +38,9 @@ use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 
+/**
+ * @todo Rewrite the querier to simplify it and to use all solarium features.
+ */
 class SolariumQuerier extends AbstractQuerier
 {
     use TransliteratorCharacterTrait;
@@ -145,7 +148,8 @@ class SolariumQuerier extends AbstractQuerier
         $solrCoreSettings = $this->solrCore->settings();
         $isPublicField = $solrCoreSettings['is_public_field'];
         $resourceNameField = $solrCoreSettings['resource_name_field'];
-        $sitesField = isset($solrCoreSettings['sites_field']) ? $solrCoreSettings['sites_field'] : null;
+        $sitesField = $solrCoreSettings['sites_field'] ?? null;
+        $indexField = $solrCoreSettings['index_field'] ?? null;
 
         // TODO Add a param to select DisMaxQuery, standard query, eDisMax, or external query parsers.
 
@@ -182,6 +186,12 @@ class SolariumQuerier extends AbstractQuerier
                     ->createFilterQuery($sitesField)
                     ->setQuery("$sitesField:$siteId");
             }
+        }
+
+        if ($indexField) {
+            $this->solariumQuery
+                ->createFilterQuery($indexField)
+                ->setQuery($indexField . ':' . $this->index->cleanName());
         }
 
         $filters = $this->query->getFilters();
@@ -325,7 +335,9 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         if (strlen($q)) {
-            if ($excludedFiles && $q !== '*:*') {
+            if ($excludedFiles
+                && $q !== '*:*' && $q !== '*%3A*' && $q !== '*'
+            ) {
                 $this->mainQueryWithExcludedFields();
             } else {
                 $this->solariumQuery->setQuery($q);
