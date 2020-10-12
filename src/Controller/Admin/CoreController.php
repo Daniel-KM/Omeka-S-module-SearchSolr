@@ -90,6 +90,13 @@ class CoreController extends AbstractActionController
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
         $core = $this->api()->create('solr_cores', $data)->getContent();
+
+        $result = $this->checkCoreConfig($core);
+        if (!$result) {
+            $this->messenger()->addError(new Message('Solr core "%s" created with an incomplete config.', $core->name())); // @translate
+            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
+        }
+
         $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to index the resources before usiing it.'); // @translate
         return $this->redirect()->toRoute('admin/search/solr');
@@ -117,9 +124,14 @@ class CoreController extends AbstractActionController
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
         $this->api()->update('solr_cores', $id, $data);
 
+        $result = $this->checkCoreConfig($core);
+        if (!$result) {
+            $this->messenger()->addError(new Message('The config to manage the Solr core "%s" was updated with an incorrect config.', $core->name())); // @translate
+            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
+        }
+
         $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
         $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this core.'); // @translate
-
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
@@ -297,6 +309,41 @@ class CoreController extends AbstractActionController
             }
         }
         return $result;
+    }
+
+    protected function checkCoreConfig(SolrCoreRepresentation $solrCore)
+    {
+        // Check if the specified fields are available.
+        $fields = [
+            'is_public_field' => true,
+            'resource_name_field' => true,
+            'sites_field' => true,
+            'index_field' => false,
+        ];
+
+        $unavailableFields = [];
+        foreach ($fields as $field => $isRequired) {
+            $fieldName = $solrCore->setting($field);
+            if (empty($fieldName)) {
+                if ($isRequired) {
+                    $unavailableFields[] = $fieldName;
+                }
+                continue;
+            }
+            if (!$solrCore->getSchemaField($fieldName)) {
+                $unavailableFields[] = $fieldName;
+            }
+        }
+
+        if (count($unavailableFields)) {
+            $this->messenger()->addError(new Message(
+                'Some static or dynamic fields are missing or not available in the core: "%s".', // @translate
+                implode('", "', $unavailableFields)
+            ));
+            return false;
+        }
+
+        return true;
     }
 
     protected function importSolrMapping(SolrCoreRepresentation $solrCore, $filepath, array $options)

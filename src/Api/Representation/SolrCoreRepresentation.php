@@ -286,4 +286,9 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $services = $this->getServiceLocator();
         return $services->build(Schema::class, ['solr_core' => $this]);
     }
+
+    public function getSchemaField($field)
+    {
+        return $this->schema()->getField($field);
+    }
 }

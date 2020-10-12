@@ -5,6 +5,9 @@ namespace SearchSolr\Schema;
 use Omeka\Stdlib\Message;
 use Solarium\Exception\HttpException as SolariumException;
 
+/**
+ * @todo Replace by the solarium schema.
+ */
 class Schema
 {
     /**
