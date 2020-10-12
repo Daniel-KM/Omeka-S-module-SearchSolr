@@ -49,7 +49,12 @@ $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
         'id' => $solrCore->id(),
         'action' => 'export',
     ]); ?>
-    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export maps') ?></a>
+    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export mapping') ?></a>
+    <?php $exportUrl = $url('admin/search/solr/core-id', [
+        'id' => $solrCore->id(),
+        'action' => 'import',
+    ]); ?>
+    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.') ?>"><?= $translate('Import mapping') ?></a>
 </div>
 
 <nav class="breadcrumbs">

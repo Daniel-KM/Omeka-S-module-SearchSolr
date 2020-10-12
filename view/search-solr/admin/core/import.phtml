@@ -1,0 +1,43 @@
+<?php
+/**
+ * @var \Zend\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var \SearchSolr\Form\Admin\SolrCoreMappingImportForm $form
+ */
+
+$translate = $this->plugin('translate');
+$url = $this->plugin('url');
+
+$form->prepare();
+?>
+
+<?= $this->pageTitle($translate('Import Solr core mapping')) ?>
+
+<div id="page-actions">
+    <?php $exportUrl = $url('admin/search/solr/core-id', [
+        'id' => $solrCore->id(),
+        'action' => 'export',
+    ]); ?>
+    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export mapping') ?></a>
+    <button type="submit" form="<?= $form->getAttribute('id') ?>"><?= $translate('Submit') ?></button>
+</div>
+
+<nav class="breadcrumbs">
+    <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
+    <?= $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')) ?>
+    <span>
+    <?= sprintf($translate('Import mapping for core "%s"'), $solrCore->name()) ?>
+    </span>
+</nav>
+
+<p>
+    <?= $translate('Warning: To import a mapping will reset the current mapping for all resources of the core. It is recommended to export it first.') ?>
+</p>
+
+<p>
+    <?= $translate('The form should be a spreadsheet with the same headers than the export ones.') ?>
+</p>
+
+<?= $this->form()->openTag($form) ?>
+<?= $this->formCollection($form, false) ?>
+<?= $this->form()->closeTag($form) ?>

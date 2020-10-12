@@ -27,20 +27,32 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
-
 namespace SearchSolr\Controller\Admin;
 
+use finfo;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchIndexRepresentation;
 use Search\Api\Representation\SearchPageRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
+use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
 class CoreController extends AbstractActionController
 {
+    /**
+     * @var array
+     */
+    protected $mappingHeaders = [
+        'resource_name',
+        'field_name',
+        'source',
+        'settings:label',
+        'settings:formatter'
+    ];
+
     public function browseAction()
     {
         $response = $this->api()->search('solr_cores');
@@ -149,6 +161,71 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
+    public function importAction()
+    {
+        $solrCoreId = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+
+        /** @var \SearchSolr\Form\Admin\SolrCoreMappingImportForm $form */
+        $form = $this->getForm(SolrCoreMappingImportForm::class);
+        $form->init();
+
+        $view = new ViewModel([
+            'solrCore' => $solrCore,
+            'form' => $form,
+        ]);
+
+        $request = $this->getRequest();
+        if (!$request->isPost()) {
+            return $view;
+        }
+
+        $files = $request->getFiles()->toArray();
+        if (empty($files)) {
+            $this->messenger()->addError('Missing file.'); // @translate
+            return $view;
+        }
+
+        $post = $this->params()->fromPost();
+        $form->setData($post);
+        if (!$form->isValid()) {
+            $this->messenger()->addError('Wrong request for file.'); // @translate
+            return $view;
+        }
+
+        $file = $files['source'];
+        $fileCheck = $this->checkFile($file);
+        if (!empty($file['error'])) {
+            $this->messenger()->addError('An error occurred when uploading the file.'); // @translate
+        } elseif ($fileCheck === false) {
+            $this->messenger()->addError(new Message(
+                'Wrong media type ("%s") for file.', // @translate
+                $file['type']
+            ));
+        } elseif (empty($file['size'])) {
+            $this->messenger()->addError('The file is empty.'); // @translate
+        } else {
+            $data = $form->getData();
+            $file = $fileCheck;
+            $delimiter = isset($data['delimiter']) ? $data['delimiter'] : ',';
+            $delimiter = $delimiter === 'tabulation' ? "\t" : $delimiter;
+            $enclosure = isset($data['enclosure']) ? $data['enclosure'] : '"';
+            $enclosure = $enclosure === 'empty' ? chr(0) : $enclosure;
+            $result = $this->importSolrMapping($solrCore, $file['tmp_name'], [
+                'type' => $file['type'],
+                'delimiter' => $delimiter,
+                'enclosure' => $enclosure,
+            ]);
+            // Messages are already appended.
+            if ($result) {
+                return $this->redirect()->toRoute('admin/search/solr/core-id-map', ['coreId' => $solrCoreId]);
+            }
+        }
+
+        return $view;
+    }
+
     public function exportAction()
     {
         $solrCoreId = $this->params('id');
@@ -222,6 +299,95 @@ class CoreController extends AbstractActionController
         return $result;
     }
 
+    protected function importSolrMapping(SolrCoreRepresentation $solrCore, $filepath, array $options)
+    {
+        $rows = $this->extractRows($filepath, $options);
+        if (empty($rows)) {
+            $this->messenger()->addError(
+                'The file does not contain any row.' // @translate
+            );
+            return false;
+        }
+
+        $rows = array_values($rows);
+        if (array_values($rows[0]) !== array_values($this->mappingHeaders)) {
+            $this->messenger()->addError(
+                'The headers of the file are not the default ones. You may check the delimiter too.' // @translate
+            );
+            return false;
+        }
+        unset($rows[0]);
+
+        // First loop to check input.
+        $result = [];
+        foreach ($rows as $key => $row) {
+            $current = array_filter($row);
+            if (empty($current)) {
+                unset($rows[$key]);
+            }
+            if (empty($row['resource_name'])
+                || empty($row['field_name'])
+                || empty($row['source'])
+            ) {
+                $this->messenger()->addWarning(new Message(
+                    'The row #%d does not contain required data.', // @translate
+                    $key + 1
+                ));
+                unset($rows[$key]);
+            } elseif (!in_array($row['resource_name'], ['items', 'item_sets'])) {
+                $this->messenger()->addWarning(new Message(
+                    'The row #%d does not manage resource "%s".', // @translate
+                    $key + 1, $row['resource_name']
+                ));
+            } else {
+                $result[] = [
+                    'o:solr_core' => ['o:id' => $solrCore->id()],
+                    'o:resource_name' => $row['resource_name'],
+                    'o:field_name' => $row['field_name'],
+                    'o:source' => $row['source'],
+                    'o:settings' => [
+                        'formatter' => $row['settings:formatter'],
+                        'label' => $row['settings:label'],
+                    ],
+                ];
+            }
+        }
+        if (!count($result)) {
+            $this->messenger()->addError(
+                'The file does not contain any valid data.' // @translate
+            );
+            return false;
+        }
+
+        // Second loop to import data, after removing existing mapping.
+        /** @var \Omeka\Mvc\Controller\Plugin\Api $api */
+        $api = $this->api();
+        $ids = $api->search('solr_maps', ['solr_core_id' => $solrCore->id()], ['initialize' => false, 'returnScalar' => 'id'])->getContent();
+        if ($ids) {
+            $api->batchDelete('solr_maps', $ids);
+            $this->messenger()->addNotice(new Message(
+                'The existing mapping of core "%s" (#%d) has been deleted.', // @translate
+                $solrCore->name(), $solrCore->id()
+            ));
+        }
+
+        $response = $api->batchCreate('solr_maps', $result);
+        if (!$response) {
+            $this->messenger()->addError(new Message(
+                'An error has occurred during import of the mapping for core "%s" (#%d).', // @translate
+                $solrCore->name(), $solrCore->id()
+            ));
+            return false;
+        }
+
+        $this->messenger()->addSuccess(new Message(
+            '%d fields have been mapped for core "%s" (#%d).', // @translate
+            count($result), $solrCore->name(), $solrCore->id()
+        ));
+
+        return true;
+    }
+
     protected function exportFilename(SolrCoreRepresentation $solrCore)
     {
         $base = preg_replace('/[^A-Za-z0-9]/', '_', $solrCore->name());
@@ -240,15 +406,7 @@ class CoreController extends AbstractActionController
         // Prepend the utf-8 bom to support Windows.
         fwrite($stream, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        $headers = [
-            'resource_name',
-            'field_name',
-            'source',
-            'settings:label',
-            'settings:formatter',
-        ];
-
-        $this->appendTsvRow($stream, $headers);
+        $this->appendTsvRow($stream, $this->mappingHeaders);
 
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
         $maps = $this->api()
@@ -290,5 +448,100 @@ class CoreController extends AbstractActionController
     protected function appendTsvRow($stream, array $fields)
     {
         fputcsv($stream, $fields, "\t", chr(0), chr(0));
+    }
+
+    protected function extractRows($filepath, $options)
+    {
+        $options += [
+            'type' => 'text/csv',
+            'delimiter' => ',',
+            'enclosure' => '"',
+        ];
+        if ($options['type'] === 'text/tab-separated-values') {
+            $options['delimiter'] = "\t";
+        }
+        $delimiter = $options['delimiter'];
+        $enclosure = $options['enclosure'];
+
+        // fgetcsv is not used to avoid issues with bom.
+        $content = file_get_contents($filepath);
+        $content = mb_convert_encoding($content, 'UTF-8');
+        if (empty($content)) {
+            return [];
+        }
+
+        $rows = array_map(function($v) use ($delimiter, $enclosure) {
+            return str_getcsv($v, $delimiter, $enclosure);
+        }, array_map('trim', explode("\n", $content)));
+        foreach ($rows as $key => $row) {
+            if (empty(array_filter($row))) {
+                unset($rows[$key]);
+                continue;
+            }
+            if (count($row) < count($this->mappingHeaders)) {
+                $row = array_slice(array_merge($row, ['', '', '', '', '']), 0, 5);
+            } elseif (count($row) > count($this->mappingHeaders)) {
+                $row = array_slice($row, 0, 5);
+            }
+            $rows[$key] = array_combine($this->mappingHeaders, array_map('trim', $row));
+        }
+
+        $rows = array_values(array_filter($rows));
+        if (!isset($rows[0]['resource_name'])) {
+            return [];
+        }
+
+        // Simple fix issue with bom.
+        if (strpos($rows[0]['resource_name'], 'resource_name')) {
+            $rows[0]['resource_name'] = 'resource_name';
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Check the file, according to its media type.
+     *
+     * @todo Use the class TempFile before.
+     *
+     * @param array $fileData
+     *            File data from a post ($_FILES).
+     * @return array|bool
+     */
+    protected function checkFile(array $fileData)
+    {
+        if (empty($fileData) || empty($fileData['tmp_name'])) {
+            return false;
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mediaType = $finfo->file($fileData['tmp_name']);
+        $extension = strtolower(pathinfo($fileData['name'], PATHINFO_EXTENSION));
+        $fileData['extension'] = $extension;
+
+        // Manage an exception for a very common format, undetected by fileinfo.
+        if ($mediaType === 'text/plain' || 'application/octet-stream') {
+            $extensions = [
+                'txt' => 'text/plain',
+                'csv' => 'text/csv',
+                'tab' => 'text/tab-separated-values',
+                'tsv' => 'text/tab-separated-values',
+            ];
+            if (isset($extensions[$extension])) {
+                $mediaType = $extensions[$extension];
+                $fileData['type'] = $mediaType;
+            }
+        }
+
+        $supporteds = [
+            // 'application/vnd.oasis.opendocument.spreadsheet' => true,
+            'text/plain' => true,
+            'text/tab-separated-values' => true,
+        ];
+        if (! isset($supporteds[$mediaType])) {
+            return false;
+        }
+
+        return $fileData;
     }
 }
