@@ -34,6 +34,19 @@ use Omeka\Entity\AbstractEntity;
 
 /**
  * @Entity
+ * @Table(
+ *     indexes={
+ *         @Index(
+ *             columns={"solr_core_id","resource_name"}
+ *         ),
+ *         @Index(
+ *             columns={"solr_core_id","field_name"}
+ *         ),
+ *         @Index(
+ *             columns={"solr_core_id","source"}
+ *         )
+ *     }
+ * )
  */
 class SolrMap extends AbstractEntity
 {
@@ -48,7 +61,8 @@ class SolrMap extends AbstractEntity
     /**
      * @var SolrCore
      * @ManyToOne(
-     *     targetEntity="SearchSolr\Entity\SolrCore"
+     *     targetEntity="SearchSolr\Entity\SolrCore",
+     *     inversedBy="maps"
      * )
      * @JoinColumn(
      *     nullable=false,
@@ -60,8 +74,8 @@ class SolrMap extends AbstractEntity
     /**
      * @var string
      * @Column(
-     *      type="string",
-     *      length=190
+     *     type="string",
+     *     length=190
      * )
      */
     protected $resourceName;
@@ -69,8 +83,8 @@ class SolrMap extends AbstractEntity
     /**
      * @var string
      * @Column(
-     *      type="string",
-     *      length=190
+     *     type="string",
+     *     length=190
      * )
      */
     protected $fieldName;
@@ -78,8 +92,8 @@ class SolrMap extends AbstractEntity
     /**
      * @var string
      * @Column(
-     *      type="string",
-     *      length=190
+     *     type="string",
+     *     length=190
      * )
      */
     protected $source;
@@ -87,7 +101,7 @@ class SolrMap extends AbstractEntity
     /**
      * @var array
      * @Column(
-     *      type="json_array"
+     *     type="json_array"
      * )
      */
     protected $settings;

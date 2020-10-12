@@ -64,10 +64,10 @@ class SolrCore extends \SearchSolr\Entity\SolrCore implements \Doctrine\ORM\Prox
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', 'id', 'name', 'settings'];
+            return ['__isInitialized__', 'id', 'name', 'settings', 'maps'];
         }
 
-        return ['__isInitialized__', 'id', 'name', 'settings'];
+        return ['__isInitialized__', 'id', 'name', 'settings', 'maps'];
     }
 
     /**
@@ -230,6 +230,17 @@ class SolrCore extends \SearchSolr\Entity\SolrCore implements \Doctrine\ORM\Prox
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getSettings', []);
 
         return parent::getSettings();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getMaps()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getMaps', []);
+
+        return parent::getMaps();
     }
 
     /**

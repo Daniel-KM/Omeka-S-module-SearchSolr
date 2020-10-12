@@ -323,4 +323,19 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         return $fields;
     }
+
+    /**
+     * Get the solr mappings by id.
+     *
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
+     */
+    public function maps()
+    {
+        $maps = [];
+        $mapAdapter = $this->getAdapter('solr_maps');
+        foreach ($this->resource->getMaps() as $mapEntity) {
+            $maps[$mapEntity->getId()] = $mapAdapter->getRepresentation($mapEntity);
+        }
+        return $maps;
+    }
 }

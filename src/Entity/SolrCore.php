@@ -30,6 +30,7 @@
 
 namespace SearchSolr\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Omeka\Entity\AbstractEntity;
 
 /**
@@ -48,8 +49,8 @@ class SolrCore extends AbstractEntity
     /**
      * @var string
      * @Column(
-     *      type="string",
-     *      length=190
+     *     type="string",
+     *     length=190
      * )
      */
     protected $name;
@@ -57,10 +58,29 @@ class SolrCore extends AbstractEntity
     /**
      * @var array
      * @Column(
-     *      type="json_array"
+     *     type="json_array"
      * )
      */
     protected $settings;
+
+    /**
+     * @OneToMany(
+     *     targetEntity="SearchSolr\Entity\SolrMap",
+     *     mappedBy="solrCore",
+     *     orphanRemoval=true,
+     *     cascade={"persist", "remove", "detach"},
+     *     indexBy="id"
+     * )
+     * @OrderBy({
+     *     "source" = "ASC"
+     * })
+     */
+    protected $maps;
+
+    public function __construct()
+    {
+        $this->maps = new ArrayCollection;
+    }
 
     public function getId()
     {
@@ -101,5 +121,13 @@ class SolrCore extends AbstractEntity
     public function getSettings()
     {
         return $this->settings;
+    }
+
+    /**
+     * @return \Doctrine\Common\Collections\ArrayCollection
+     */
+    public function getMaps()
+    {
+        return $this->maps;
     }
 }
