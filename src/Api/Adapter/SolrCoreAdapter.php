@@ -61,16 +61,16 @@ class SolrCoreAdapter extends AbstractEntityAdapter
         ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'o:name')) {
-            $entity->setName($request->getValue('o:name'));
+            $entity->setName(trim($request->getValue('o:name')));
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
-            $entity->setSettings($request->getValue('o:settings'));
+            $entity->setSettings($request->getValue('o:settings') ?: []);
         }
     }
 
     public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
     {
-        if (false == $entity->getName()) {
+        if (!trim($entity->getName())) {
             $errorStore->addError('o:name', 'The name cannot be empty.'); // @translate
         }
     }

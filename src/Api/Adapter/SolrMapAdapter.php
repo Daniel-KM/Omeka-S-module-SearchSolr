@@ -65,16 +65,16 @@ class SolrMapAdapter extends AbstractEntityAdapter
         ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'o:resource_name')) {
-            $entity->setResourceName($request->getValue('o:resource_name'));
+            $entity->setResourceName(trim($request->getValue('o:resource_name')));
         }
         if ($this->shouldHydrate($request, 'o:field_name')) {
-            $entity->setFieldName($request->getValue('o:field_name'));
+            $entity->setFieldName(trim($request->getValue('o:field_name')));
         }
         if ($this->shouldHydrate($request, 'o:source')) {
-            $entity->setSource($request->getValue('o:source'));
+            $entity->setSource(trim($request->getValue('o:source')));
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
-            $entity->setSettings($request->getValue('o:settings'));
+            $entity->setSettings($request->getValue('o:settings') ?: []);
         }
 
         $this->hydrateSolrCore($request, $entity);
