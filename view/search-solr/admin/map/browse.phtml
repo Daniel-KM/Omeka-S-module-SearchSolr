@@ -26,29 +26,26 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
-?>
 
-<?php
-/**
+ /**
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
  * @var \SearchSolr\ValueExtractor\ValueExtractorInterface[] $valueExtractors
  */
 
 $translate = $this->plugin('translate');
-?>
-<?php $this->htmlElement('body')->appendAttribute('class', 'solr-map browse'); ?>
 
-<?php
+$this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
 $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
-echo $this->pageTitle($pageTitle);
 ?>
+
+<?= $this->pageTitle($pageTitle) ?>
 
 <nav class="breadcrumbs">
-    <?php echo $this->hyperlink($translate('Search'), $this->url('admin/search')); ?>
-    <?php echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')); ?>
+    <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
+    <?= $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')) ?>
     <span>
-    <?php echo sprintf($translate('Resources list for core "%s"'), $solrCore->name()); ?>
+    <?= sprintf($translate('Resources list for core "%s"'), $solrCore->name()) ?>
     </span>
 </nav>
 
@@ -56,23 +53,21 @@ echo $this->pageTitle($pageTitle);
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
-                <th><?php echo $translate('Name'); ?></th>
+                <th><?= $translate('Name') ?></th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
                 <tr>
                     <td>
-                        <span><?php echo $valueExtractor->getLabel(); ?></span>
+                        <span><?= $valueExtractor->getLabel() ?></span>
                         <ul class="actions">
                             <li>
-                                <?php
-                                    $href = $this->url('admin/search/solr/core-id-map-resource', ['resourceName' => $name, 'coreId' => $solrCore->id()]);
-                                    echo $this->hyperlink('', $href, [
-                                        'class' => 'o-icon-settings',
-                                        'title' => $translate('Rules'),
-                                    ]);
-                                ?>
+                                <?= $this->hyperlink(
+                                    '',
+                                    $this->url('admin/search/solr/core-id-map-resource', ['resourceName' => $name, 'coreId' => $solrCore->id()]),
+                                    ['class' => 'o-icon-settings', 'title' => $translate('Rules')]
+                                ) ?>
                             </li>
                         </ul>
                     </td>

@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright BibLibre, 2016
+ * Copyright Daniel Berthereau, 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -25,38 +26,38 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
-?>
 
-<?php
-/**
+ /**
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Form\Admin\SolrCoreForm $form
  */
 
 $translate = $this->plugin('translate');
+
 $form->prepare();
 ?>
-<?php echo $this->pageTitle($translate('Add Solr core')); ?>
 
-<?php echo $this->form()->openTag($form); ?>
+<?= $this->pageTitle($translate('Add Solr core')) ?>
+
+<?= $this->form()->openTag($form) ?>
 <div id="page-actions">
-    <button><?php echo $translate('Add'); ?></button>
+    <button><?= $translate('Add') ?></button>
 </div>
 <nav class="breadcrumbs">
     <?php
     echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
     echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
     ?>
-    <span><?php echo $translate('Add core'); ?></span>
+    <span><?= $translate('Add core') ?></span>
 </nav>
-<?php echo $this->formCollection($form, false); ?>
+<?= $this->formCollection($form, false) ?>
 <?php $this->trigger('view.add.form.after'); ?>
-<?php echo $this->form()->closeTag(); ?>
+<?= $this->form()->closeTag() ?>
 
 <?php if (!class_exists('SolrDisMaxQuery')): ?>
 <p>
 <?php $solrVersion = class_exists('SolrUtils') ? \SolrUtils::getSolrVersion() : $translate('[unknown]'); ?>
-<?php echo sprintf($translate('To use advanced query options, you need the php-solr library 2.1.0 or above (lastest recommended, current %s).'), $solrVersion); ?>
+<?= sprintf($translate('To use advanced query options, you need the php-solr library 2.1.0 or above (lastest recommended, current %s).'), $solrVersion) ?>
 </p>
 <?php endif; ?>
 

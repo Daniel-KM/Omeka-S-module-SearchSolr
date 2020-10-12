@@ -26,9 +26,7 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
-?>
 
-<?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
@@ -38,7 +36,8 @@
 $translate = $this->plugin('translate');
 $this->htmlElement('body')->appendAttribute('class', 'solr-map create');
 ?>
-<?php echo $this->pageTitle($translate('Add Solr map')); ?>
+
+<?= $this->pageTitle($translate('Add Solr map')) ?>
 <nav class="breadcrumbs">
     <?php
     echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
@@ -46,6 +45,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map create');
     echo $this->hyperlink(sprintf($translate('Resources list for core "%s"'), $solrCore->name()), $this->url('admin/search/solr/core-id-map', ['coreId' => $solrCore->id()], true));
     echo $this->hyperlink(sprintf($translate('Maps for "%s"'), $form->getOption('resource_name')), $this->url('admin/search/solr/core-id-map-resource', ['coreId' => $solrCore->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
     ?>
-    <span><?php echo $translate('Add'); ?></span>
+    <span><?= $translate('Add') ?></span>
 </nav>
-<?php echo $this->partial('search-solr/admin/map/form'); ?>
+<?= $this->partial('search-solr/admin/map/form') ?>

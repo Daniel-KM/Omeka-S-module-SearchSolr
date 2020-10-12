@@ -26,9 +26,7 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
-?>
 
-<?php
 /**
  * @var \Zend\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
@@ -38,10 +36,11 @@
 
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-?>
-<?php $this->htmlElement('body')->appendAttribute('class', 'solr-map browse'); ?>
 
-<?php echo $this->pageTitle(sprintf($translate('Solr maps for "%s"'), $resourceName)); ?>
+$this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
+?>
+
+<?= $this->pageTitle(sprintf($translate('Solr maps for "%s"'), $resourceName)) ?>
 
 <div id="page-actions">
     <?php $addUrl = $this->url('admin/search/solr/core-id-map-resource', [
@@ -49,19 +48,19 @@ $escape = $this->plugin('escapeHtml');
         'resourceName' => $resourceName,
         'action' => 'add',
     ]); ?>
-    <a class="button" href="<?php echo $addUrl ;?>"><?php echo $translate('Add new map'); ?></a>
+    <a class="button" href="<?= $addUrl ;?>"><?= $translate('Add new map') ?></a>
     <?php $completeUrl = $this->url('admin/search/solr/core-id-map-resource', [
         'coreId' => $solrCore->id(),
         'resourceName' => $resourceName,
         'action' => 'complete',
     ]); ?>
-    <a class="button" href="<?php echo $completeUrl; ?>" title="<?php echo $translate('Add a text index to all missing and used properties.'); ?>"><?php echo $translate('Map all used properties'); ?></a>
+    <a class="button" href="<?= $completeUrl ?>" title="<?= $translate('Add a text index to all missing and used properties.') ?>"><?= $translate('Map all used properties') ?></a>
     <?php $cleanUrl = $this->url('admin/search/solr/core-id-map-resource', [
         'coreId' => $solrCore->id(),
         'resourceName' => $resourceName,
         'action' => 'clean',
     ]); ?>
-    <a class="button" href="<?php echo $cleanUrl; ?>" title="<?php echo $translate('Remove maps of properties that are not used.'); ?>"><?php echo $translate('Remove unused properties'); ?></a>
+    <a class="button" href="<?= $cleanUrl ?>" title="<?= $translate('Remove maps of properties that are not used.') ?>"><?= $translate('Remove unused properties') ?></a>
 </div>
 
 <nav class="breadcrumbs">
@@ -77,9 +76,9 @@ $escape = $this->plugin('escapeHtml');
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
-                <th><?php echo $translate('Solr field'); ?></th>
-                <th><?php echo $translate('Source'); ?></th>
-                <th><?php echo $translate('Translated default label'); ?></th>
+                <th><?= $translate('Solr field') ?></th>
+                <th><?= $translate('Source') ?></th>
+                <th><?= $translate('Translated default label') ?></th>
             </tr>
         </thead>
         <tbody>
@@ -87,27 +86,24 @@ $escape = $this->plugin('escapeHtml');
                 <?php $mapSettings = $map->settings(); ?>
                 <tr>
                     <td>
-                        <span><?php echo $map->fieldName(); ?></span>
+                        <span><?= $map->fieldName() ?></span>
                         <ul class="actions">
                             <li>
-                                <?php
-                                    $href = $map->adminUrl('edit');
-                                    echo $this->hyperlink('', $href, [
-                                        'class' => 'o-icon-edit',
-                                        'title' => $translate('Edit'),
-                                    ]);
-                                ?>
+                                <?= $this->hyperlink('', $map->adminUrl('edit'), [
+                                    'class' => 'o-icon-edit',
+                                    'title' => $translate('Edit'),
+                                ]) ?>
                             </li>
                             <li>
                                 <a href="#"
-                                data-sidebar-content-url="<?php echo $escape($map->url('delete-confirm')); ?>"
+                                data-sidebar-content-url="<?= $escape($map->url('delete-confirm')) ?>"
                                 class="o-icon-delete sidebar-content"
-                                aria-label="<?php echo $escape($translate('Delete')); ?>"
-                                title="<?php echo $escape($translate('Delete')); ?>"></a>
+                                aria-label="<?= $escape($translate('Delete')) ?>"
+                                title="<?= $escape($translate('Delete')) ?>"></a>
                             </li>
                         </ul>
                     </td>
-                    <td><?php echo $map->source(); ?></td>
+                    <td><?= $map->source() ?></td>
                     <td><?php if (!empty($mapSettings['label'])) echo $translate($mapSettings['label']); ?></td>
                 </tr>
             <?php endforeach; ?>
@@ -115,15 +111,15 @@ $escape = $this->plugin('escapeHtml');
     </table>
 <?php else: ?>
     <p>
-        <?php echo $translate('There is no maps defined yet.'); ?>
-        <a href="<?php echo $escape($addUrl); ?>"><?php echo $translate('Add a new map'); ?></a>
+        <?= $translate('There is no maps defined yet.') ?>
+        <a href="<?= $escape($addUrl) ?>"><?= $translate('Add a new map') ?></a>
     </p>
 <?php endif; ?>
 
 <div class="sidebar">
     <a href="#"
         class="sidebar-close o-icon-close"
-        aria-label="<?php echo $escape($translate('Close')); ?>"
-        title="<?php echo $escape($translate('Close')); ?>"></a>
+        aria-label="<?= $escape($translate('Close')) ?>"
+        title="<?= $escape($translate('Close')) ?>"></a>
     <div class="sidebar-content"></div>
 </div>

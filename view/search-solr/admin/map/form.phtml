@@ -7,18 +7,20 @@
  */
 
 $translate = $this->plugin('translate');
+
 $this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()->appendScript(
     'var schema = ' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
 var sourceLabels = ' . json_encode($sourceLabels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';'
 );
 $this->headScript()->appendFile($this->assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
+
+$form->prepare();
 ?>
 
-<?php $form->prepare(); ?>
-<?php echo $this->form()->openTag($form); ?>
+<?= $this->form()->openTag($form) ?>
 <div id="page-actions">
-    <button><?php echo $translate('Save'); ?></button>
+    <button><?= $translate('Save') ?></button>
 </div>
 <?php
 echo $this->formRow($form->get('o:source'));
@@ -28,6 +30,6 @@ echo $this->formRow($form->get('csrf'));
 
 $this->trigger('view.add.form.after');
 ?>
-<?php echo $this->form()->closeTag(); ?>
+<?= $this->form()->closeTag() ?>
 
 <?php $this->trigger('view.add.after'); ?>
