@@ -32,9 +32,9 @@ namespace SearchSolr\Controller\Admin;
 use finfo;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
+use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
-use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
@@ -48,7 +48,7 @@ class CoreController extends AbstractActionController
         'field_name',
         'source',
         'settings:label',
-        'settings:formatter'
+        'settings:formatter',
     ];
 
     public function browseAction()
@@ -124,7 +124,7 @@ class CoreController extends AbstractActionController
 
         if (!empty($data['o:settings']['support'])) {
             $supportFields = $core->schemaSupport($data['o:settings']['support']);
-            $unsupportedFields = array_filter($supportFields, function($v) {
+            $unsupportedFields = array_filter($supportFields, function ($v) {
                 return empty($v);
             });
             if (count($unsupportedFields)) {
@@ -352,7 +352,7 @@ class CoreController extends AbstractActionController
             ->createUpdate()
             ->addDeleteQuery('*:*')
             ->addCommit();
-        $solariumClient ->update($update);
+        $solariumClient->update($update);
     }
 
     protected function importSolrMapping(SolrCoreRepresentation $solrCore, $filepath, array $options)
@@ -508,7 +508,7 @@ class CoreController extends AbstractActionController
             return [];
         }
 
-        $rows = array_map(function($v) use ($delimiter, $enclosure) {
+        $rows = array_map(function ($v) use ($delimiter, $enclosure) {
             return str_getcsv($v, $delimiter, $enclosure);
         }, array_map('trim', explode("\n", $content)));
         foreach ($rows as $key => $row) {

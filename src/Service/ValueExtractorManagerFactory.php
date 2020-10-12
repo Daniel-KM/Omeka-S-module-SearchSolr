@@ -29,8 +29,8 @@
 
 namespace SearchSolr\Service;
 
-use Zend\Mvc\Service\AbstractPluginManagerFactory;
 use SearchSolr\ValueExtractor\Manager;
+use Zend\Mvc\Service\AbstractPluginManagerFactory;
 
 class ValueExtractorManagerFactory extends AbstractPluginManagerFactory
 {

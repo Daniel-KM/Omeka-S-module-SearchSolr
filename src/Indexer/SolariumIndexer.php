@@ -127,7 +127,6 @@ class SolariumIndexer extends AbstractIndexer
 
     public function canIndex($resourceName)
     {
-        /** @see \SearchSolr\ValueExtractor\Manager */
         return $this->getServiceLocator()
             ->get('SearchSolr\ValueExtractorManager')
             ->has($resourceName);

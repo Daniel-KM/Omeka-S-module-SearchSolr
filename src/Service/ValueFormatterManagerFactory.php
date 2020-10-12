@@ -29,8 +29,8 @@
 
 namespace SearchSolr\Service;
 
-use Zend\Mvc\Service\AbstractPluginManagerFactory;
 use SearchSolr\ValueFormatter\Manager;
+use Zend\Mvc\Service\AbstractPluginManagerFactory;
 
 class ValueFormatterManagerFactory extends AbstractPluginManagerFactory
 {

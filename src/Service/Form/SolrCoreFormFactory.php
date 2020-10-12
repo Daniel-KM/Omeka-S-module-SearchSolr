@@ -2,8 +2,8 @@
 namespace SearchSolr\Service\Form;
 
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
 use SearchSolr\Form\Admin\SolrCoreForm;
+use Zend\ServiceManager\Factory\FactoryInterface;
 
 class SolrCoreFormFactory implements FactoryInterface
 {

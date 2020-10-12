@@ -30,8 +30,8 @@
 namespace SearchSolr\Service\Controller;
 
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
 use SearchSolr\Controller\Admin\MapController;
+use Zend\ServiceManager\Factory\FactoryInterface;
 
 class MapControllerFactory implements FactoryInterface
 {

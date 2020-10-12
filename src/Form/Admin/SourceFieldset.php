@@ -2,8 +2,8 @@
 
 namespace SearchSolr\Form\Admin;
 
-use Zend\Form\Fieldset;
 use Zend\Form\Element;
+use Zend\Form\Fieldset;
 use Zend\InputFilter\InputFilterProviderInterface;
 
 class SourceFieldset extends Fieldset implements InputFilterProviderInterface

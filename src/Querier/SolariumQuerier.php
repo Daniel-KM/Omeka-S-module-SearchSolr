@@ -32,9 +32,9 @@ namespace SearchSolr\Querier;
 
 use Search\Querier\AbstractQuerier;
 use Search\Querier\Exception\QuerierException;
-use SearchSolr\Feature\TransliteratorCharacterTrait;
 use Search\Response;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
+use SearchSolr\Feature\TransliteratorCharacterTrait;
 use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 

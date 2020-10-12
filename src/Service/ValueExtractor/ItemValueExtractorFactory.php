@@ -30,8 +30,8 @@
 namespace SearchSolr\Service\ValueExtractor;
 
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
 use SearchSolr\ValueExtractor\ItemValueExtractor;
+use Zend\ServiceManager\Factory\FactoryInterface;
 
 class ItemValueExtractorFactory implements FactoryInterface
 {
