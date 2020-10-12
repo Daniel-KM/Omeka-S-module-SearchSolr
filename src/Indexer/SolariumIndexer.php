@@ -86,11 +86,6 @@ class SolariumIndexer extends AbstractIndexer
     protected $formatters = [];
 
     /**
-     * @var array Array of SolrMapRepresentation by resource name.
-     */
-    protected $solrMaps;
-
-    /**
      * @var int[]
      */
     protected $siteIds;
@@ -265,7 +260,6 @@ class SolariumIndexer extends AbstractIndexer
 
         $solrCore = $this->getSolrCore();
         $solrCoreSettings = $solrCore->settings();
-        $solrMaps = $this->getSolrMaps($resourceName);
         $schema = $solrCore->schema();
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
@@ -322,7 +316,7 @@ class SolariumIndexer extends AbstractIndexer
                 return;
         }
 
-        foreach ($solrMaps as $solrMap) {
+        foreach ($solrCore->mapsByResourceName($resourceName) as $solrMap) {
             $solrField = $solrMap->fieldName();
             $source = $solrMap->source();
 
@@ -580,7 +574,7 @@ class SolariumIndexer extends AbstractIndexer
             // In Drupal, dynamic fields are in schema.xml, except text ones, in
             // schema_extra_fields.xml.
             $dynamicFields = $this->solrCore->schema()->getDynamicFieldsMapByMainPart('prefix');
-            foreach ($this->solrMaps as $resourceName => $solrMaps) {
+            foreach ($this->solrCore->mapsByResourceName() as $resourceName => $solrMaps) {
                 $this->vars['solr_maps'][$resourceName] = [];
                 foreach ($solrMaps as $solrMap) {
                     $source = $solrMap->source();
@@ -670,24 +664,5 @@ class SolariumIndexer extends AbstractIndexer
             $this->solariumClient = $this->getSolrCore()->solariumClient();
         }
         return $this->solariumClient;
-    }
-
-    /**
-     * Get the solr mappings for a resource type.
-     *
-     * @param string $resourceName
-     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
-     */
-    protected function getSolrMaps($resourceName)
-    {
-        if (!isset($this->solrMaps[$resourceName])) {
-            $solrCore = $this->getSolrCore();
-            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-            $this->solrMaps[$resourceName] = $api->search('solr_maps', [
-                'resource_name' => $resourceName,
-                'solr_core_id' => $solrCore->id(),
-            ])->getContent();
-        }
-        return $this->solrMaps[$resourceName];
     }
 }

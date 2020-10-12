@@ -88,12 +88,7 @@ class MapController extends AbstractActionController
 
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
-        $maps = $this->api()->search('solr_maps', [
-            'solr_core_id' => $solrCore->id(),
-            'resource_name' => $resourceName,
-            'sort_by' => 'source',
-            'sort_order' => 'asc',
-        ])->getContent();
+        $maps = $solrCore->mapsByResourceName($resourceName);
 
         if (!$solrCore->schema()->checkDefaultField()) {
             $this->messenger()->addWarning(new Message(
@@ -119,10 +114,7 @@ class MapController extends AbstractActionController
 
         // Get all existing indexed properties.
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
-        $maps = $api->search('solr_maps', [
-            'solr_core_id' => $solrCore->id(),
-            'resource_name' => $resourceName,
-        ])->getContent();
+        $maps = $solrCore->mapsByResourceName($resourceName);
         // Keep only the source.
         $maps = array_map(function ($v) {
             return $v->source();
@@ -173,17 +165,13 @@ class MapController extends AbstractActionController
     {
         $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
-
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
-
         $api = $this->api();
 
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
+
         // Get all existing indexed properties.
-        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
-        $maps = $api->search('solr_maps', [
-            'solr_core_id' => $solrCore->id(),
-            'resource_name' => $resourceName,
-        ])->getContent();
+        $maps = $solrCore->mapsByResourceName($resourceName);
         // Map as associative array by map id and keep only the source.
         $mapList = [];
         foreach ($maps as $map) {
@@ -336,7 +324,7 @@ class MapController extends AbstractActionController
         $response = $this->api()->read('solr_maps', $id);
         $map = $response->getContent();
 
-        $searchPages = $this->searchSearchPages($map->solrCore());
+        $searchPages = $map->solrCore()->searchPages();
         $searchPagesUsingMap = [];
         foreach ($searchPages as $searchPage) {
             if ($this->doesSearchPageUseMap($searchPage, $map)) {
@@ -408,49 +396,6 @@ class MapController extends AbstractActionController
 
         $sourceLabels += $propertyLabels;
         return $sourceLabels;
-    }
-
-    /**
-     * Find all search indexes related to a specific solr core.
-     *
-     * @todo Factorize with CoreController::searchSearchIndexes()
-     * @param SolrCoreRepresentation $solrCore
-     * @return SearchIndexRepresentation[] Result is indexed by id.
-     */
-    protected function searchSearchIndexes(SolrCoreRepresentation $solrCore)
-    {
-        $result = [];
-        $api = $this->api();
-        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solarium'])->getContent();
-        foreach ($searchIndexes as $searchIndex) {
-            $searchIndexSettings = $searchIndex->settings();
-            if ($solrCore->id() == $searchIndexSettings['adapter']['solr_core_id']) {
-                $result[$searchIndex->id()] = $searchIndex;
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Find all search pages related to a specific solr core.
-     *
-     * @todo Factorize with CoreController::searchSearchPages()
-     * @param SolrCoreRepresentation $solrCore
-     * @return SearchPageRepresentation[] Result is indexed by id.
-     */
-    protected function searchSearchPages(SolrCoreRepresentation $solrCore)
-    {
-        // TODO Use entity manager to simplify search of pages from core.
-        $result = [];
-        $api = $this->api();
-        $searchIndexes = $this->searchSearchIndexes($solrCore);
-        foreach ($searchIndexes as $searchIndex) {
-            $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
-            foreach ($searchPages as $searchPage) {
-                $result[$searchPage->id()] = $searchPage;
-            }
-        }
-        return $result;
     }
 
     /**

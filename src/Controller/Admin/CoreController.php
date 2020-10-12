@@ -32,8 +32,6 @@ namespace SearchSolr\Controller\Admin;
 use finfo;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
-use Search\Api\Representation\SearchIndexRepresentation;
-use Search\Api\Representation\SearchPageRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
@@ -188,12 +186,13 @@ class CoreController extends AbstractActionController
     public function deleteConfirmAction()
     {
         $id = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
         $response = $this->api()->read('solr_cores', $id);
         $core = $response->getContent();
 
-        $searchIndexes = $this->searchSearchIndexes($core);
-        $searchPages = $this->searchSearchPages($core);
-        $solrMaps = $this->api()->search('solr_maps', ['solr_core_id' => $core->id()])->getContent();
+        $searchIndexes = $core->searchIndexes();
+        $searchPages = $core->searchPages();
+        $solrMaps = $core->maps();
 
         $view = new ViewModel([
             'resourceLabel' => 'Solr core', // @translate
@@ -319,49 +318,6 @@ class CoreController extends AbstractActionController
     }
 
     /**
-     * Find all search indexes related to a specific solr core.
-     *
-     * @todo Factorize with MapController::searchSearchIndexes()
-     * @param SolrCoreRepresentation $solrCore
-     * @return SearchIndexRepresentation[] Result is indexed by id.
-     */
-    protected function searchSearchIndexes(SolrCoreRepresentation $solrCore)
-    {
-        $result = [];
-        $api = $this->api();
-        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solarium'])->getContent();
-        foreach ($searchIndexes as $searchIndex) {
-            $searchIndexSettings = $searchIndex->settings();
-            if ($solrCore->id() == $searchIndexSettings['adapter']['solr_core_id']) {
-                $result[$searchIndex->id()] = $searchIndex;
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Find all search pages related to a specific solr core.
-     *
-     * @todo Factorize with MapController::searchSearchPages()
-     * @param SolrCoreRepresentation $solrCore
-     * @return SearchPageRepresentation[] Result is indexed by id.
-     */
-    protected function searchSearchPages(SolrCoreRepresentation $solrCore)
-    {
-        // TODO Use entity manager to simplify search of pages from core.
-        $result = [];
-        $api = $this->api();
-        $searchIndexes = $this->searchSearchIndexes($solrCore);
-        foreach ($searchIndexes as $searchIndex) {
-            $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
-            foreach ($searchPages as $searchPage) {
-                $result[$searchPage->id()] = $searchPage;
-            }
-        }
-        return $result;
-    }
-
-    /**
      * Get the base url of the server.
      *
      * This value avoids issue in background job.
@@ -482,9 +438,9 @@ class CoreController extends AbstractActionController
         // Second loop to import data, after removing existing mapping.
         /** @var \Omeka\Mvc\Controller\Plugin\Api $api */
         $api = $this->api();
-        $ids = $api->search('solr_maps', ['solr_core_id' => $solrCore->id()], ['initialize' => false, 'returnScalar' => 'id'])->getContent();
-        if ($ids) {
-            $api->batchDelete('solr_maps', $ids);
+        $maps = $solrCore->maps();
+        if (count($maps)) {
+            $api->batchDelete('solr_maps', array_keys($maps));
             $this->messenger()->addNotice(new Message(
                 'The existing mapping of core "%s" (#%d) has been deleted.', // @translate
                 $solrCore->name(), $solrCore->id()
@@ -528,35 +484,17 @@ class CoreController extends AbstractActionController
 
         $this->appendTsvRow($stream, $this->mappingHeaders);
 
-        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
-        $maps = $this->api()
-            ->search('solr_maps', [
-                'solr_core_id' => $solrCore->id(),
-                'sort_by' => 'source',
-                'sort_order' => 'asc',
-            ])
-            ->getContent();
-
-        // Order by resource name first, then by source.
-        $results = [
-            'items' => [],
-            'item_sets' => [],
-        ];
-        foreach ($maps as $map) {
-            $results[$map->resourceName()][] = $map;
-        }
-        $maps = array_merge($results['items'], $results['item_sets']);
-
-        foreach ($maps as $map) {
-            $settings = $map->settings();
-            $mapping = [
-                $map->resourceName(),
-                $map->fieldName(),
-                $map->source(),
-                $settings['label'],
-                $settings['formatter'],
-            ];
-            $this->appendTsvRow($stream, $mapping);
+        foreach ($solrCore->mapsByResourceName() as $resourceName => $maps) {
+            foreach ($maps as $map) {
+                $mapping = [
+                    $resourceName,
+                    $map->fieldName(),
+                    $map->source(),
+                    $map->setting('label', ''),
+                    $map->setting('formatter', ''),
+                ];
+                $this->appendTsvRow($stream, $mapping);
+            }
         }
 
         rewind($stream);

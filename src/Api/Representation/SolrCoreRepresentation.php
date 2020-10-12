@@ -333,9 +333,73 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         $maps = [];
         $mapAdapter = $this->getAdapter('solr_maps');
+        /** @var \SearchSolr\Entity\SolrMap $mapEntity */
         foreach ($this->resource->getMaps() as $mapEntity) {
             $maps[$mapEntity->getId()] = $mapAdapter->getRepresentation($mapEntity);
         }
         return $maps;
+    }
+
+    /**
+     * Get the solr mappings by resource type.
+     *
+     * @param string $resourceName
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
+     */
+    public function mapsByResourceName($resourceName = null)
+    {
+        static $maps;
+
+        if (!isset($maps)) {
+            $maps = [];
+            $mapAdapter = $this->getAdapter('solr_maps');
+            /** @var \SearchSolr\Entity\SolrMap $mapEntity */
+            foreach ($this->resource->getMaps() as $mapEntity) {
+                $maps[$mapEntity->getResourceName()][] = $mapAdapter->getRepresentation($mapEntity);
+            }
+        }
+
+        return $resourceName
+            ? $maps[$resourceName] ?? []
+            : $maps;
+    }
+
+    /**
+     * Get all search indexes related to the core, indexed by id.
+     *
+     * @return \Search\Api\Representation\SearchIndexRepresentation[]
+     */
+    public function searchIndexes()
+    {
+        // TODO Use entity manager to simplify search of indexes from core.
+        $result = [];
+        /** @var \Search\Api\Representation\SearchIndexRepresentation[] $searchIndexes */
+        $searchIndexes = $this->getServiceLocator()->get('Omeka\ApiManager')->search('search_indexes', ['adapter' => 'solarium'])->getContent();
+        $id = $this->id();
+        foreach ($searchIndexes as $searchIndex) {
+            if ($searchIndex->settingAdapter('solr_core_id') == $id) {
+                $result[$searchIndex->id()] = $searchIndex;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Find all search pages related to the core, indexed by id.
+     *
+     * @return \Search\Api\Representation\SearchPageRepresentation[]
+     */
+    public function searchPages()
+    {
+        // TODO Use entity manager to simplify search of pages from core.
+        $result = [];
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        foreach (array_keys($this->searchIndexes()) as $searchIndexId) {
+            $searchPages = $api->search('search_pages', ['index_id' => $searchIndexId])->getContent();
+            foreach ($searchPages as $searchPage) {
+                $result[$searchPage->id()] = $searchPage;
+            }
+        }
+        return $result;
     }
 }

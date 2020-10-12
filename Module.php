@@ -328,10 +328,10 @@ SQL;
     {
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        /** @var \Search\Api\Representation\SearchIndexRepresentation[] $searchIndexes */
         $searchIndexes = $api->search('search_indexes', ['adapter' => 'solarium'])->getContent();
         foreach ($searchIndexes as $searchIndex) {
-            $searchIndexSettings = $searchIndex->settings();
-            if ($solrCoreId == $searchIndexSettings['adapter']['solr_core_id']) {
+            if ($searchIndex->settingAdapter('solr_core_id') == $solrCoreId) {
                 $result[$searchIndex->id()] = $searchIndex;
             }
         }

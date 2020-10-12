@@ -86,8 +86,7 @@ class SolariumAdapter extends AbstractAdapter
 
     public function getAvailableSortFields(SearchIndexRepresentation $index)
     {
-        $settings = $index->settings();
-        $solrCoreId = $settings['adapter']['solr_core_id'];
+        $solrCoreId = $index->settingAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -95,11 +94,6 @@ class SolariumAdapter extends AbstractAdapter
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
         $schema = $solrCore->schema();
-
-        $response = $this->api->search('solr_maps', [
-            'solr_core_id' => $solrCoreId,
-        ]);
-        $maps = $response->getContent();
 
         $sortFields = [
             'score desc' => [
@@ -113,7 +107,7 @@ class SolariumAdapter extends AbstractAdapter
             'desc' => $this->translator->translate('Desc'),
         ];
 
-        foreach ($maps as $map) {
+        foreach ($solrCore->maps() as $map) {
             $fieldName = $map->fieldName();
             $schemaField = $schema->getField($fieldName);
             if (!$schemaField || $schemaField->isMultivalued()) {
@@ -137,19 +131,16 @@ class SolariumAdapter extends AbstractAdapter
 
     public function getAvailableFields(SearchIndexRepresentation $index)
     {
-        $settings = $index->settings();
-        $solrCoreId = $settings['adapter']['solr_core_id'];
+        $solrCoreId = $index->settingAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
 
-        $response = $this->api->search('solr_maps', [
-            'solr_core_id' => $solrCoreId,
-        ]);
-        $maps = $response->getContent();
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
 
         $facetFields = [];
-        foreach ($maps as $map) {
+        foreach ($solrCore->maps() as $map) {
             $name = $map->fieldName();
             $mapSettings = $map->settings();
             $label = isset($mapSettings['label']) ? $mapSettings['label'] : '';
