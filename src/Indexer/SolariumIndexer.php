@@ -31,6 +31,7 @@
 namespace SearchSolr\Indexer;
 
 use Omeka\Entity\Resource;
+use Omeka\Stdlib\Message;
 use Search\Indexer\AbstractIndexer;
 use Search\Query;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
@@ -214,11 +215,11 @@ class SolariumIndexer extends AbstractIndexer
         $this->getIndexField();
         $this->getIndexName();
 
-        $id = $this->getDocumentId($resourceName, $resourceId);
+        $documentId = $this->getDocumentId($resourceName, $resourceId);
         $client = $this->getClient();
         $update = $client
             ->createUpdate()
-            ->addDeleteById($id)
+            ->addDeleteById($documentId)
             ->addCommit();
         $client->update($update);
         return $this;
@@ -275,8 +276,8 @@ class SolariumIndexer extends AbstractIndexer
 
         $document = new SolariumInputDocument;
 
-        $id = $this->getDocumentId($resourceName, $resourceId);
-        $document->addField('id', $id);
+        $documentId = $this->getDocumentId($resourceName, $resourceId);
+        $document->addField('id', $documentId);
 
         if ($this->indexField) {
             $document->addField($this->indexField, $this->indexName);
@@ -386,7 +387,7 @@ class SolariumIndexer extends AbstractIndexer
 
         $this->appendSupportedFields($resource, $document);
 
-        $this->solariumDocuments[] = $document;
+        $this->solariumDocuments[$documentId] = $document;
     }
 
     protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document)
@@ -432,7 +433,9 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function commit()
     {
-        if (!$this->solariumDocuments) {
+        static $warnMsg;
+
+        if (!count($this->solariumDocuments)) {
             $this->getLogger()->notice('No document to commit in Solr.'); // @translate
             return;
         }
@@ -447,12 +450,24 @@ class SolariumIndexer extends AbstractIndexer
                 ->addCommit();
             $client->update($update);
         } catch (SolariumServerException $e) {
-            if (count($this->solariumDocuments) <= 1) {
-                $this->getLogger()->err('Indexing of resource failed'); // @translate
+            $error = json_decode($e->getBody(), true);
+            if (is_array($error) && isset($error['error']['msg'])) {
+                $isSingle = count($this->solariumDocuments) <= 1;
+                $message = $isSingle
+                    ? 'Indexing of resource failed: %s' // @translate
+                    : 'Indexing of resources failed: %s'; // @translate
+                $message = new Message($message, $error['error']['msg']);
+                $this->getLogger()->err($message);
+                if (!$isSingle && !$warnMsg) {
+                    $warnMsg = true;
+                    $message = new Message('Warning: When an error occurs, all documents of the current set are skipped.'); // @translate
+                    $this->getLogger()->warn($message);
+                }
             } else {
-                $this->getLogger()->err('Indexing of resources failed'); // @translate
+                $this->getLogger()->err($e->getMessage());
             }
-            $this->getLogger()->err($e);
+        } catch (\Exception $e) {
+            $this->getLogger()->err($e->getMessage());
         }
 
         $this->solariumDocuments = [];
