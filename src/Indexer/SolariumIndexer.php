@@ -430,8 +430,6 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function commit()
     {
-        static $warnMsg;
-
         if (!count($this->solariumDocuments)) {
             $this->getLogger()->notice('No document to commit in Solr.'); // @translate
             return;
@@ -446,25 +444,36 @@ class SolariumIndexer extends AbstractIndexer
                 ->addDocuments($this->solariumDocuments)
                 ->addCommit();
             $client->update($update);
-        } catch (SolariumServerException $e) {
-            $error = json_decode($e->getBody(), true);
-            if (is_array($error) && isset($error['error']['msg'])) {
-                $isSingle = count($this->solariumDocuments) <= 1;
-                $message = $isSingle
-                    ? 'Indexing of resource failed: %s' // @translate
-                    : 'Indexing of resources failed: %s'; // @translate
-                $message = new Message($message, $error['error']['msg']);
-                $this->getLogger()->err($message);
-                if (!$isSingle && !$warnMsg) {
-                    $warnMsg = true;
-                    $message = new Message('Warning: When an error occurs, all documents of the current set are skipped.'); // @translate
-                    $this->getLogger()->warn($message);
+        } catch (\Exception $e) {
+            // Index documents by one to avoid to skip well formatted documents.
+            $isMultiple = count($this->solariumDocuments) > 1;
+            if ($isMultiple) {
+                foreach ($this->solariumDocuments as $documentId => $document) {
+                    try {
+                        $update = $client
+                            ->createUpdate()
+                            ->addDocument($document)
+                            ->addCommit();
+                        $client->update($update);
+                    } catch (SolariumServerException $e) {
+                        $dId = explode('-', $documentId);
+                        $error = json_decode($e->getBody(), true);
+                        $message = is_array($error) && isset($error['error']['msg']) ? $error['error']['msg'] : $e->getMessage();
+                        $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $message);
+                        $this->getLogger()->err($message);
+                    } catch (\Exception $e) {
+                        $dId = explode('-', $documentId);
+                        $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $e->getMessage());
+                        $this->getLogger()->err($message);
+                    }
                 }
             } else {
-                $this->getLogger()->err($e->getMessage());
+                $dId = explode('-', key($this->solariumDocuments));
+                $error = json_decode($e->getBody(), true);
+                $message = is_array($error) || isset($error['error']['msg']) ? $error['error']['msg'] : $e->getMessage();
+                $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $message);
+                $this->getLogger()->err($message);
             }
-        } catch (\Exception $e) {
-            $this->getLogger()->err($e->getMessage());
         }
 
         $this->solariumDocuments = [];
