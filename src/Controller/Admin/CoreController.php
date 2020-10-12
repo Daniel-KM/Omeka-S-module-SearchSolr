@@ -237,6 +237,9 @@ class CoreController extends AbstractActionController
         // Because the output is always small, create it in memory in realtime.
         $stream = fopen('php://temp', 'w+');
 
+        // Prepend the utf-8 bom to support Windows.
+        fwrite($stream, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
         $headers = [
             'resource_name',
             'field_name',
