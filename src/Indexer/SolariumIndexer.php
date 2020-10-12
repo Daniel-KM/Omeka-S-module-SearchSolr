@@ -365,6 +365,9 @@ class SolariumIndexer extends AbstractIndexer
             if ($valueFormatter) {
                 foreach ($values as $value) {
                     $value = $valueFormatter->format($value);
+                    if (is_null($value) || $value === '') {
+                        continue;
+                    }
                     $document->addField($solrField, $value);
                     if ($first) {
                         $first = false;
@@ -422,7 +425,8 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function isNotNullAndNotEmptyString($value): bool
     {
-        return !is_null($value) && $value !== '';
+        return !is_null($value)
+            && (string) $value !== '';
     }
 
     /**

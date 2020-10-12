@@ -227,6 +227,7 @@ return [
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
             'plain_text' => ValueFormatter\PlainText::class,
+            'point' => ValueFormatter\Point::class,
         ],
     ],
 ];

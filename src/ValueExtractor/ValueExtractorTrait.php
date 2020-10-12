@@ -42,7 +42,7 @@ trait ValueExtractorTrait
      *
      * @param AbstractResourceEntityRepresentation $representation
      * @param string $source Property (RDF term).
-     * @return string[] Human-readable values.
+     * @return stringable[] Human-readable stringable values.
      */
     protected function extractPropertyValue(
         AbstractResourceEntityRepresentation $representation,
@@ -86,7 +86,7 @@ trait ValueExtractorTrait
             if ($mainType === 'resource') {
                 $this->extractPropertyResourceValue($extractedValues, $value, $subField);
             } else {
-                $extractedValues[] = (string) $value;
+                $extractedValues[] = $value;
             }
         }
 
