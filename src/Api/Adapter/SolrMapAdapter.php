@@ -82,15 +82,13 @@ class SolrMapAdapter extends AbstractEntityAdapter
 
     public function buildQuery(QueryBuilder $qb, array $query): void
     {
-        $isOldOmeka = \Omeka\Module::VERSION < 2;
-        $alias = $isOldOmeka ? $this->getEntityClass() : 'omeka_root';
         $expr = $qb->expr();
 
         if (isset($query['solr_core_id'])) {
             $coreAlias = $this->createAlias();
             $qb
                 ->innerJoin(
-                    $alias . '.solrCore',
+                    'omeka_root.solrCore',
                     $coreAlias
                 )
                 ->andWhere($expr->eq(
@@ -100,7 +98,7 @@ class SolrMapAdapter extends AbstractEntityAdapter
         }
         if (isset($query['resource_name'])) {
             $qb->andWhere($expr->eq(
-                $alias . '.resourceName',
+                'omeka_root.resourceName',
                 $this->createNamedParameter($qb, $query['resource_name'])
             ));
         }

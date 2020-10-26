@@ -78,7 +78,7 @@ trait ValueExtractorTrait
 
         $extractedValues = [];
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
-        $values = $representation->value($field, ['all' => true, 'default' => []]);
+        $values = $representation->value($field, ['all' => true]);
         foreach ($values as $value) {
             // Manage standard types and special types from modules RdfDatatype,
             // CustomVocab, ValueSuggest, etc.

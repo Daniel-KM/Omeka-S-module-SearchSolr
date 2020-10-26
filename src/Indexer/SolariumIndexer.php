@@ -40,8 +40,8 @@ use Solarium\Exception\HttpException as SolariumServerException;
 use Solarium\QueryType\Update\Query\Document as SolariumInputDocument;
 
 /**
- * @url https://solarium.readthedocs.io/en/stable/getting-started/
- * @url https://solarium.readthedocs.io/en/stable/documents/
+ * @link https://solarium.readthedocs.io/en/stable/getting-started/
+ * @link https://solarium.readthedocs.io/en/stable/documents/
  */
 class SolariumIndexer extends AbstractIndexer
 {
