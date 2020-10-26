@@ -531,16 +531,16 @@ The module [Search adapter for Solr] is built for the future [digital library Ma
 of [Université des Antilles et de la Guyane], currently managed with [Greenstone].
 
 
-[Search adapter for Solr]: https://github.com/Daniel-KM/Omeka-S-module-SearchSolr
+[Search adapter for Solr]: https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr
 [Omeka S]: https://omeka.org/s
-[Solr]: https://github.com/Daniel-KM/Omeka-S-module-Solr
+[Solr]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr
 [Solr by BibLibre]: https://github.com/biblibre/omeka-s-module-Solr
-[Search]: https://github.com/Daniel-KM/omeka-s-module-Search
+[Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-Search
 [Search by BibLibre]: https://github.com/biblibre/omeka-s-module-search
 [Apache Solr]: https://lucene.apache.org/solr/
 [Solarium]: https://www.solarium-project.org/
 [full documentation]: https://solarium.readthedocs.io/en/stable/
-[Generic]: https://github.com/Daniel-KM/omeka-s-module-Generic
+[Generic]: https://gitlab.com/Daniel-KM/Omeka-S-module-Generic
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
 [documentation]: https://lucene.apache.org/solr/guide/the-dismax-query-parser.html#q-alt-parameter
 [this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
@@ -555,7 +555,7 @@ of [Université des Antilles et de la Guyane], currently managed with [Greenston
 [solr service gist]: https://gist.github.com/Daniel-KM/1fb475a47340d7945fa6c47c945707d0
 [Solr documentation]: https://lucene.apache.org/solr/resources.html
 [Solr Basic Authentication]: https://lucene.apache.org/solr/guide/basic-authentication-plugin.html#basic-authentication-plugin
-[module issues]: https://github.com/Daniel-KM/Omeka-S-module-Solr/issues
+[module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org
@@ -567,4 +567,4 @@ of [Université des Antilles et de la Guyane], currently managed with [Greenston
 [Greenstone]: http://www.greenstone.org
 [BibLibre]: https://github.com/biblibre
 [GitLab]: https://gitlab.com/Daniel-KM
-[Daniel-KM]: https://github.com/Daniel-KM "Daniel Berthereau"
+[Daniel-KM]: https://gitlab.com/Daniel-KM "Daniel Berthereau"
