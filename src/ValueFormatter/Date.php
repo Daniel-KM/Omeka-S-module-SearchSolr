@@ -8,7 +8,7 @@ use Omeka\Api\Representation\ValueRepresentation;
 
 class Date implements ValueFormatterInterface
 {
-    public function getLabel()
+    public function getLabel(): string
     {
         return 'Date'; // @translate
     }

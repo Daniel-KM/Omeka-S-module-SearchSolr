@@ -35,7 +35,7 @@ interface ValueFormatterInterface
     /**
      * @return string
      */
-    public function getLabel();
+    public function getLabel(): string;
 
     /**
      * @param mixed $value

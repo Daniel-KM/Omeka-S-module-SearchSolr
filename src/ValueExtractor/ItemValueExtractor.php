@@ -78,7 +78,7 @@ class ItemValueExtractor implements ValueExtractorInterface
         $this->logger = $logger;
     }
 
-    public function getLabel()
+    public function getLabel(): string
     {
         return 'Item'; // @translate
     }

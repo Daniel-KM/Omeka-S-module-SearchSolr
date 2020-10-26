@@ -6,7 +6,7 @@ use Omeka\Api\Representation\ValueRepresentation;
 
 class Point implements ValueFormatterInterface
 {
-    public function getLabel()
+    public function getLabel(): string
     {
         return 'Point'; // @translate
     }

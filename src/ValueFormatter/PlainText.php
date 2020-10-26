@@ -7,7 +7,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class PlainText implements ValueFormatterInterface
 {
-    public function getLabel()
+    public function getLabel(): string
     {
         return 'Plain text'; // @translate
     }

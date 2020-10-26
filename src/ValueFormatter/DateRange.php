@@ -32,7 +32,7 @@ namespace SearchSolr\ValueFormatter;
 
 class DateRange implements ValueFormatterInterface
 {
-    public function getLabel()
+    public function getLabel(): string
     {
         return 'Date range'; // @translate
     }

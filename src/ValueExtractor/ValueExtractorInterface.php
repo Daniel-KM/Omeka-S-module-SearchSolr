@@ -37,7 +37,7 @@ interface ValueExtractorInterface
     /**
      * @return string
      */
-    public function getLabel();
+    public function getLabel(): string;
 
     /**
      * @return array Associative array of fields with field name as key and an
