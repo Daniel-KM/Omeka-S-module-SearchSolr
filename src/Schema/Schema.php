@@ -76,7 +76,7 @@ class Schema
                         $url
                     );
                 }
-                throw new SolariumException($message);
+                throw new SolariumException((string) $message);
             }
 
             $response = json_decode($contents, true);

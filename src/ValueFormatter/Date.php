@@ -36,7 +36,7 @@ class Date implements ValueFormatterInterface
      * @see \NumericDataTypes\DataType\AbstractDateTimeDataType::getDateTimeFromValue()
      *
      * @param string $value
-     * @return array
+     * @return array|null
      */
     protected function getDateTimeFromValue($value)
     {

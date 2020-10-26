@@ -14,6 +14,6 @@ class PlainText implements ValueFormatterInterface
 
     public function format($value)
     {
-        return strip_tags($value);
+        return strip_tags((string) $value);
     }
 }
