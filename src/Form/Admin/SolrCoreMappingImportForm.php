@@ -1,7 +1,7 @@
 <?php
 namespace SearchSolr\Form\Admin;
 
-use Zend\Form\Form;
+use Laminas\Form\Form;
 
 class SolrCoreMappingImportForm extends Form
 {

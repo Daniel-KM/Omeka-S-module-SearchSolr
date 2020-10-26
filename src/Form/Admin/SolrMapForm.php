@@ -30,12 +30,12 @@
 
 namespace SearchSolr\Form\Admin;
 
+use Laminas\Form\Element;
+use Laminas\Form\Fieldset;
+use Laminas\Form\Form;
 use Omeka\Api\Manager as ApiManager;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 use SearchSolr\ValueFormatter\Manager as ValueFormatterManager;
-use Zend\Form\Element;
-use Zend\Form\Fieldset;
-use Zend\Form\Form;
 
 class SolrMapForm extends Form
 {

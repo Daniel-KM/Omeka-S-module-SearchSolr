@@ -31,8 +31,8 @@
 namespace SearchSolr\Service\Adapter;
 
 use Interop\Container\ContainerInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use SearchSolr\Adapter\SolariumAdapter;
-use Zend\ServiceManager\Factory\FactoryInterface;
 
 class SolariumAdapterFactory implements FactoryInterface
 {

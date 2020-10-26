@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
+ * Copyright Daniel Berthereau, 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -29,8 +30,8 @@
 
 namespace SearchSolr\Service;
 
+use Laminas\Mvc\Service\AbstractPluginManagerFactory;
 use SearchSolr\ValueFormatter\Manager;
-use Zend\Mvc\Service\AbstractPluginManagerFactory;
 
 class ValueFormatterManagerFactory extends AbstractPluginManagerFactory
 {

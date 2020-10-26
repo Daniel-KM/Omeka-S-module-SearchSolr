@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -30,8 +31,8 @@
 namespace SearchSolr\Service\ValueExtractor;
 
 use Interop\Container\ContainerInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use SearchSolr\ValueExtractor\ItemSetValueExtractor;
-use Zend\ServiceManager\Factory\FactoryInterface;
 
 class ItemSetValueExtractorFactory implements FactoryInterface
 {

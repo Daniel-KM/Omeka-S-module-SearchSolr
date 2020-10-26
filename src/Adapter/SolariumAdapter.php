@@ -30,11 +30,11 @@
 
 namespace SearchSolr\Adapter;
 
+use Laminas\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
 use Search\Adapter\AbstractAdapter;
 use Search\Api\Representation\SearchIndexRepresentation;
 use SearchSolr\Form\Admin\ConfigFieldset;
-use Zend\I18n\Translator\TranslatorInterface;
 
 class SolariumAdapter extends AbstractAdapter
 {

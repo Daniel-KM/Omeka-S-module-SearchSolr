@@ -97,7 +97,7 @@ return [
                 'child_routes' => [
                     'search' => [
                         // Kept to simplify upgrade.
-                        'type' => \Zend\Router\Http\Literal::class,
+                        'type' => \Laminas\Router\Http\Literal::class,
                         'options' => [
                             'route' => '/search-manager',
                             'defaults' => [
@@ -109,7 +109,7 @@ return [
                         'may_terminate' => true,
                         'child_routes' => [
                             'solr' => [
-                                'type' => \Zend\Router\Http\Segment::class,
+                                'type' => \Laminas\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/solr',
                                     'defaults' => [
@@ -121,7 +121,7 @@ return [
                                 'may_terminate' => true,
                                 'child_routes' => [
                                     'core' => [
-                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core[/:action]',
                                             'defaults' => [
@@ -130,7 +130,7 @@ return [
                                         ],
                                     ],
                                     'core-id' => [
-                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core/:id[/:action]',
                                             'constraints' => [
@@ -142,7 +142,7 @@ return [
                                         ],
                                     ],
                                     'core-id-map' => [
-                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core/:coreId/map',
                                             'constraints' => [
@@ -155,7 +155,7 @@ return [
                                         ],
                                     ],
                                     'core-id-map-resource' => [
-                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core/:coreId/map/:resourceName[/:action]',
                                             'constraints' => [
@@ -168,7 +168,7 @@ return [
                                         ],
                                     ],
                                     'core-id-map-resource-id' => [
-                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core/:coreId/map/:resourceName/:id[/:action]',
                                             'constraints' => [

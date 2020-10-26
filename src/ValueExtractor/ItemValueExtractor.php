@@ -30,10 +30,10 @@
 
 namespace SearchSolr\ValueExtractor;
 
+use Laminas\Log\LoggerInterface;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
-use Zend\Log\LoggerInterface;
 
 class ItemValueExtractor implements ValueExtractorInterface
 {

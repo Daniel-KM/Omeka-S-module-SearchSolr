@@ -30,13 +30,13 @@
 namespace SearchSolr\Controller\Admin;
 
 use finfo;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
 
 class CoreController extends AbstractActionController
 {
@@ -271,7 +271,7 @@ class CoreController extends AbstractActionController
         $response = $this->getResponse();
         $response->setContent($content);
 
-        // @see \Zend\Http\Headers
+        // @see \Laminas\Http\Headers
         $response
             ->getHeaders()
             ->addHeaderLine('Content-Disposition: attachment; filename=' . $filename)
@@ -288,7 +288,7 @@ class CoreController extends AbstractActionController
         return $response;
     }
 
-    protected function checkPostAndValidForm(\Zend\Form\Form $form)
+    protected function checkPostAndValidForm(\Laminas\Form\Form $form)
     {
         if (!$this->getRequest()->isPost()) {
             return false;

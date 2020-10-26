@@ -2,9 +2,9 @@
 
 namespace SearchSolr\Form\Admin;
 
-use Zend\Form\Element;
-use Zend\Form\Fieldset;
-use Zend\InputFilter\InputFilterProviderInterface;
+use Laminas\Form\Element;
+use Laminas\Form\Fieldset;
+use Laminas\InputFilter\InputFilterProviderInterface;
 
 class SourceFieldset extends Fieldset implements InputFilterProviderInterface
 {

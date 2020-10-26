@@ -31,8 +31,8 @@
 namespace SearchSolr\Service;
 
 use Interop\Container\ContainerInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use SearchSolr\Schema\Schema;
-use Zend\ServiceManager\Factory\FactoryInterface;
 
 class SchemaFactory implements FactoryInterface
 {
