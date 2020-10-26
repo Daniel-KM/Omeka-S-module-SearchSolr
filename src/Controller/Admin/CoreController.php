@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016
@@ -350,7 +350,7 @@ class CoreController extends AbstractActionController
         return true;
     }
 
-    protected function clearFullIndex(SolrCoreRepresentation $solrCore)
+    protected function clearFullIndex(SolrCoreRepresentation $solrCore): void
     {
         $solariumClient = $solrCore->solariumClient();
         $update = $solariumClient
@@ -488,7 +488,7 @@ class CoreController extends AbstractActionController
         return $output;
     }
 
-    protected function appendTsvRow($stream, array $fields)
+    protected function appendTsvRow($stream, array $fields): void
     {
         fputcsv($stream, $fields, "\t", chr(0), chr(0));
     }

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016
@@ -59,7 +59,7 @@ class SolrCoreAdapter extends AbstractEntityAdapter
 
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
-    ) {
+    ): void {
         if ($this->shouldHydrate($request, 'o:name')) {
             $entity->setName(trim($request->getValue('o:name')));
         }
@@ -68,7 +68,7 @@ class SolrCoreAdapter extends AbstractEntityAdapter
         }
     }
 
-    public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
+    public function validateEntity(EntityInterface $entity, ErrorStore $errorStore): void
     {
         if (!trim($entity->getName())) {
             $errorStore->addError('o:name', 'The name cannot be empty.'); // @translate

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace SearchSolrTest\Controller\Admin;
 
@@ -6,7 +6,7 @@ use SolrTest\Controller\SolrControllerTestCase;
 
 class MapControllerTest extends SolrControllerTestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -14,37 +14,37 @@ class MapControllerTest extends SolrControllerTestCase
         $schema->setSchema([]);
     }
 
-    public function testBrowseAction()
+    public function testBrowseAction(): void
     {
         $this->dispatch($this->solrCore->mapUrl('browse'));
         $this->assertResponseStatusCode(200);
     }
 
-    public function testResourceBrowseAction()
+    public function testResourceBrowseAction(): void
     {
         $this->dispatch($this->solrCore->resourceMapUrl('items', 'browse'));
         $this->assertResponseStatusCode(200);
     }
 
-    public function testAddAction()
+    public function testAddAction(): void
     {
         $this->dispatch($this->solrCore->resourceMapUrl('items', 'add'));
         $this->assertResponseStatusCode(200);
     }
 
-    public function testEditAction()
+    public function testEditAction(): void
     {
         $this->dispatch($this->solrMap->adminUrl('edit'));
         $this->assertResponseStatusCode(200);
     }
 
-    public function testDeleteConfirmAction()
+    public function testDeleteConfirmAction(): void
     {
         $this->dispatch($this->solrMap->adminUrl('delete-confirm'));
         $this->assertResponseStatusCode(200);
     }
 
-    public function testDeleteAction()
+    public function testDeleteAction(): void
     {
         $solrMap = $this->api()->create('solr_maps', [
             'o:solr_core' => [

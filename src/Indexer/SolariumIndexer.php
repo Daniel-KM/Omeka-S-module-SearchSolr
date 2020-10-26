@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016-2017
@@ -254,7 +254,7 @@ class SolariumIndexer extends AbstractIndexer
             : sprintf('%s-%s-%s/%07s', $this->serverId, $this->indexName, $resourceName, $resourceId);
     }
 
-    protected function addResource(Resource $resource)
+    protected function addResource(Resource $resource): void
     {
         $resourceName = $resource->getResourceName();
         $resourceId = $resource->getId();
@@ -390,7 +390,7 @@ class SolariumIndexer extends AbstractIndexer
         $this->solariumDocuments[$documentId] = $document;
     }
 
-    protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document)
+    protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document): void
     {
         foreach ($this->supportFields as $solrField => $value) switch ($solrField) {
             // Drupal.
@@ -432,7 +432,7 @@ class SolariumIndexer extends AbstractIndexer
     /**
      * Commit the prepared documents.
      */
-    protected function commit()
+    protected function commit(): void
     {
         if (!count($this->solariumDocuments)) {
             $this->getLogger()->notice('No document to commit in Solr.'); // @translate

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 // Example of a generic mapping for Solr.
 // It should be adapted to specific data, in particular when they are normalized,
 // for example for dates.

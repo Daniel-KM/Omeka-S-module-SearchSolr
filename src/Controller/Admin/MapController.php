@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2017
@@ -37,7 +37,6 @@ use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
 use Search\Api\Representation\SearchPageRepresentation;
-use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use SearchSolr\Form\Admin\SolrMapForm;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
@@ -54,12 +53,12 @@ class MapController extends AbstractActionController
      */
     protected $connection;
 
-    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
+    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager): void
     {
         $this->valueExtractorManager = $valueExtractorManager;
     }
 
-    public function setConnection(Connection $connection)
+    public function setConnection(Connection $connection): void
     {
         $this->connection = $connection;
     }

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 namespace SearchSolr\Form\Admin;
 
 use Laminas\Form\Form;
@@ -29,7 +29,7 @@ class SolrCoreMappingImportForm extends Form
         'empty' => 'empty', // @translate
     ];
 
-    public function init()
+    public function init(): void
     {
         $this
             ->setAttribute('id', 'solr-core-mapping-import-form');

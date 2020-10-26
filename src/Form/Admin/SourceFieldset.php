@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace SearchSolr\Form\Admin;
 
@@ -14,7 +14,7 @@ class SourceFieldset extends Fieldset implements InputFilterProviderInterface
         $this->init();
     }
 
-    public function init()
+    public function init(): void
     {
         $this
             ->add([

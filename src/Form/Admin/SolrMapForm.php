@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2017
@@ -54,7 +54,7 @@ class SolrMapForm extends Form
      */
     protected $apiManager;
 
-    public function init()
+    public function init(): void
     {
         $this
             ->add([

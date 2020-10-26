@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016-2017
@@ -52,7 +52,7 @@ class ItemSetValueExtractor implements ValueExtractorInterface
     /**
      * @param ApiManager $api
      */
-    public function setApiManager(ApiManager $api)
+    public function setApiManager(ApiManager $api): void
     {
         $this->api = $api;
     }
@@ -60,7 +60,7 @@ class ItemSetValueExtractor implements ValueExtractorInterface
     /**
      * @param LoggerInterface $logger
      */
-    public function setLogger(LoggerInterface $logger)
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }

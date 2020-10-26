@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace SearchSolrTest\Controller\Admin;
 
@@ -6,7 +6,7 @@ use SolrTest\Controller\SolrControllerTestCase;
 
 class CoreControllerTest extends SolrControllerTestCase
 {
-    public function testBrowseAction()
+    public function testBrowseAction(): void
     {
         $this->dispatch('/admin/search/solr');
         $this->assertResponseStatusCode(200);
@@ -14,7 +14,7 @@ class CoreControllerTest extends SolrControllerTestCase
         $this->assertXpathQueryContentRegex('//table//td[1]', '/default/');
     }
 
-    public function testAddGetAction()
+    public function testAddGetAction(): void
     {
         $this->dispatch('/admin/search/solr/core/add');
         $this->assertResponseStatusCode(200);
@@ -26,7 +26,7 @@ class CoreControllerTest extends SolrControllerTestCase
         $this->assertQuery('input[name="o:settings[resource_name_field]"]');
     }
 
-    public function testAddPostAction()
+    public function testAddPostAction(): void
     {
         $forms = $this->getServiceLocator()->get('FormElementManager');
         $form = $forms->get('Solr\Form\Admin\SolrCoreForm');
@@ -46,19 +46,19 @@ class CoreControllerTest extends SolrControllerTestCase
         $this->assertRedirectTo('/admin/search/solr');
     }
 
-    public function testEditAction()
+    public function testEditAction(): void
     {
         $this->dispatch($this->solrCore->adminUrl('edit'));
         $this->assertResponseStatusCode(200);
     }
 
-    public function testDeleteConfirmAction()
+    public function testDeleteConfirmAction(): void
     {
         $this->dispatch($this->solrCore->adminUrl('delete-confirm'));
         $this->assertResponseStatusCode(200);
     }
 
-    public function testDeleteAction()
+    public function testDeleteAction(): void
     {
         $solrCore3 = $this->api()->create('solr_cores', [
             'o:name' => 'TestCore3',

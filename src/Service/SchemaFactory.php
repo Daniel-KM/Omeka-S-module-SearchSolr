@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2017
@@ -66,7 +66,7 @@ class SchemaFactory implements FactoryInterface
      * @param Schema $schema
      * @param string $schemaUrl
      */
-    protected function setSchemaConfig(Schema $schema, $schemaUrl)
+    protected function setSchemaConfig(Schema $schema, $schemaUrl): void
     {
         $streamContextOptions = [
             'ssl' => [

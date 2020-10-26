@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016-2017
@@ -195,7 +195,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
 
-        if (!file_exists(dirname(dirname(dirname(__DIR__))) . '/vendor/solarium/solarium/src/Client.php')) {
+        if (!file_exists(dirname(__DIR__, 3) . '/vendor/solarium/solarium/src/Client.php')) {
             $message = new Message('The composer library "%s" is not installed. See readme.', 'Solarium'); // @translate
             $logger->err($message);
             return $message;

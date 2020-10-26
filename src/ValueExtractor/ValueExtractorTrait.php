@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /*
  * Copyright Daniel Berthereau, 2018-2020
  * Copyright Paul Sarrassat, 2018
@@ -107,7 +107,7 @@ trait ValueExtractorTrait
         array &$extractedValues,
         ValueRepresentation $value,
         $property
-    ) {
+    ): void {
         if (isset($property)) {
             $extractedValues = array_merge(
                 $extractedValues,

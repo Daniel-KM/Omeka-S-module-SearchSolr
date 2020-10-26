@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016-2017
@@ -51,7 +51,7 @@ class Module extends AbstractModule
 
     protected $dependency = 'Search';
 
-    public function init(ModuleManager $moduleManager)
+    public function init(ModuleManager $moduleManager): void
     {
         require_once __DIR__ . '/vendor/autoload.php';
 
@@ -76,7 +76,7 @@ class Module extends AbstractModule
         );
     }
 
-    public function onBootstrap(MvcEvent $event)
+    public function onBootstrap(MvcEvent $event): void
     {
         parent::onBootstrap($event);
 
@@ -90,7 +90,7 @@ class Module extends AbstractModule
         $this->addAclRules();
     }
 
-    protected function preInstall()
+    protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
         if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
@@ -100,7 +100,7 @@ class Module extends AbstractModule
         }
     }
 
-    protected function postInstall()
+    protected function postInstall(): void
     {
         $services = $this->getServiceLocator();
 
@@ -152,7 +152,7 @@ SQL;
         }
     }
 
-    protected function preUninstall()
+    protected function preUninstall(): void
     {
         $serviceLocator = $this->getServiceLocator();
         $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
@@ -172,7 +172,7 @@ SQL;
     /**
      * Add ACL rules for this module.
      */
-    protected function addAclRules()
+    protected function addAclRules(): void
     {
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $acl->allow(null, [
@@ -182,7 +182,7 @@ SQL;
         $acl->allow(null, \SearchSolr\Entity\SolrCore::class, 'read');
     }
 
-    public function attachListeners(SharedEventManagerInterface $sharedEventManager)
+    public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
         $sharedEventManager->attach(
             Api\Adapter\SolrCoreAdapter::class,
@@ -211,7 +211,7 @@ SQL;
         );
     }
 
-    public function deletePostSolrCore(Event $event)
+    public function deletePostSolrCore(Event $event): void
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
@@ -223,7 +223,7 @@ SQL;
         $api->batchDelete('search_indexes', array_keys($searchIndexes), [], ['continueOnError' => true]);
     }
 
-    public function preSolrMap(Event $event)
+    public function preSolrMap(Event $event): void
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
@@ -239,7 +239,7 @@ SQL;
         $request->setContent($data);
     }
 
-    public function updatePostSolrMap(Event $event)
+    public function updatePostSolrMap(Event $event): void
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
@@ -287,7 +287,7 @@ SQL;
         }
     }
 
-    public function deletePostSolrMap(Event $event)
+    public function deletePostSolrMap(Event $event): void
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');

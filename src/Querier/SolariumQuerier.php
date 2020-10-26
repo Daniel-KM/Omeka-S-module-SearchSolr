@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016
@@ -200,7 +200,7 @@ class SolariumQuerier extends AbstractQuerier
         foreach ($filters as $name => $values) {
             if ($name === 'id') {
                 $value = [];
-                array_walk_recursive($values, function ($v) use (&$value) {
+                array_walk_recursive($values, function ($v) use (&$value): void {
                     $value[] = $v;
                 });
                 $values = array_unique(array_map('intval', $value));
@@ -318,7 +318,7 @@ class SolariumQuerier extends AbstractQuerier
         return true;
     }
 
-    protected function mainQuery()
+    protected function mainQuery(): void
     {
         $q = $this->query->getQuery();
         $excludedFiles = $this->query->getExcludedFields();
@@ -350,7 +350,7 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Only called from mainQuery(). $q is never empty.
      */
-    protected function mainQueryWithExcludedFields()
+    protected function mainQueryWithExcludedFields(): void
     {
         // Currently, the only way to exclude fields is to search in all other
         // fields.
@@ -369,7 +369,7 @@ class SolariumQuerier extends AbstractQuerier
         $this->solariumQuery->setQuery(implode(' ', $qq));
     }
 
-    protected function addFilterQueries()
+    protected function addFilterQueries(): void
     {
         $filters = $this->query->getFilterQueries();
         if (!$filters) {

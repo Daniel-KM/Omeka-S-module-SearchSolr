@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016
@@ -36,7 +36,7 @@ use Laminas\Form\Form;
 
 class SolrCoreForm extends Form
 {
-    public function init()
+    public function init(): void
     {
         $this
             ->add([
@@ -239,7 +239,7 @@ It must be a single-valued, string-based field.', // @translate
                     'label' => 'Server id for shared core', // @translate
                     'info' => sprintf('May be empty, or may be or may not be the same unique id than the third party, depending on its configuration. For information, the unique id of the install is "%s".', // @translate
                         $this->getOption('server_id')
-                    )
+                    ),
                 ],
                 'attributes' => [
                     'id' => 'server_id',

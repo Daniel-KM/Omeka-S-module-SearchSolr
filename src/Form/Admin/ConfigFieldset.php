@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /*
  * Copyright BibLibre, 2016
@@ -35,7 +35,7 @@ use Laminas\Form\Fieldset;
 
 class ConfigFieldset extends Fieldset
 {
-    public function init()
+    public function init(): void
     {
         $this
             ->add([
