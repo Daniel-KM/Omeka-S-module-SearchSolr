@@ -18,7 +18,7 @@ class Date implements ValueFormatterInterface
         if ($value instanceof ValueRepresentation && $value->type() === 'numeric:interval') {
             $value = strtok((string) $value, '/');
         } else {
-            $value =(string) $value;
+            $value = (string) $value;
             // Manage "1914/1918" and the common but unstandard case "1914-1918".
             if (strpos($value, '/') > 0) {
                 $value = strtok($value, '/');
@@ -42,7 +42,7 @@ class Date implements ValueFormatterInterface
     {
         $yearMin = -292277022656;
         $yearMax = 292277026595;
-        $patternIso8601 = '^(?<date>(?<year>-?\d{4,})(-(?<month>\d{2}))?(-(?<day>\d{2}))?)(?<time>(T(?<hour>\d{2}))?(:(?<minute>\d{2}))?(:(?<second>\d{2}))?)(?<offset>((?<offset_hour>[+-]\d{2})?(:(?<offset_minute>\d{2}))?)|Z?)$';
+        $patternIso8601 = '^(?<date>(?<year>-?\d{4,})(-(?<month>\d{1,2}))?(-(?<day>\d{1,2}))?)(?<time>(T(?<hour>\d{1,2}))?(:(?<minute>\d{1,2}))?(:(?<second>\d{1,2}))?)(?<offset>((?<offset_hour>[+-]\d{1,2})?(:(?<offset_minute>\d{1,2}))?)|Z?)$';
         static $dateTimes = [];
 
         if (array_key_exists($value, $dateTimes)) {
@@ -74,8 +74,8 @@ class Date implements ValueFormatterInterface
         $dateTime = [
             'value' => $value,
             'date_value' => $matches['date'],
-            'time_value' => isset($matches['time']) ? $matches['time'] : null,
-            'offset_value' => isset($matches['offset']) ? $matches['offset'] : null,
+            'time_value' => $matches['time'] ?? null,
+            'offset_value' => $matches['offset'] ?? null,
             'year' => (int) $matches['year'],
             'month' => isset($matches['month']) ? (int) $matches['month'] : null,
             'day' => isset($matches['day']) ? (int) $matches['day'] : null,
@@ -88,22 +88,14 @@ class Date implements ValueFormatterInterface
 
         // Set the normalized datetime components. Each component not included
         // in the passed value is given a default value.
-        $dateTime['month_normalized'] = isset($dateTime['month'])
-            ? $dateTime['month'] : 1;
+        $dateTime['month_normalized'] = $dateTime['month'] ?? 1;
         // The last day takes special handling, as it depends on year/month.
-        $dateTime['day_normalized'] = isset($dateTime['day'])
-            ? $dateTime['day']
-            : 1;
-        $dateTime['hour_normalized'] = isset($dateTime['hour'])
-            ? $dateTime['hour'] : 0;
-        $dateTime['minute_normalized'] = isset($dateTime['minute'])
-            ? $dateTime['minute'] : 0;
-        $dateTime['second_normalized'] = isset($dateTime['second'])
-            ? $dateTime['second'] : 0;
-        $dateTime['offset_hour_normalized'] = isset($dateTime['offset_hour'])
-            ? $dateTime['offset_hour'] : 0;
-        $dateTime['offset_minute_normalized'] = isset($dateTime['offset_minute'])
-            ? $dateTime['offset_minute'] : 0;
+        $dateTime['day_normalized'] = $dateTime['day'] ?? 1;
+        $dateTime['hour_normalized'] = $dateTime['hour'] ?? 0;
+        $dateTime['minute_normalized'] = $dateTime['minute'] ?? 0;
+        $dateTime['second_normalized'] = $dateTime['second'] ?? 0;
+        $dateTime['offset_hour_normalized'] = $dateTime['offset_hour'] ?? 0;
+        $dateTime['offset_minute_normalized'] = $dateTime['offset_minute'] ?? 0;
         // Set the UTC offset (+00:00) if no offset is provided.
         $dateTime['offset_normalized'] = isset($dateTime['offset_value'])
             ? ('Z' === $dateTime['offset_value'] ? '+00:00' : $dateTime['offset_value'])
@@ -134,50 +126,6 @@ class Date implements ValueFormatterInterface
         if ((0 > $dateTime['offset_minute_normalized']) || (59 < $dateTime['offset_minute_normalized'])) {
             return null;
         }
-
-        // Set the ISO 8601 format.
-        if (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute']) && isset($dateTime['second']) && isset($dateTime['offset_value'])) {
-            $format = 'Y-m-d\TH:i:sP';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute']) && isset($dateTime['offset_value'])) {
-            $format = 'Y-m-d\TH:iP';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['offset_value'])) {
-            $format = 'Y-m-d\THP';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute']) && isset($dateTime['second'])) {
-            $format = 'Y-m-d\TH:i:s';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute'])) {
-            $format = 'Y-m-d\TH:i';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour'])) {
-            $format = 'Y-m-d\TH';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day'])) {
-            $format = 'Y-m-d';
-        } elseif (isset($dateTime['month'])) {
-            $format = 'Y-m';
-        } else {
-            $format = 'Y';
-        }
-        $dateTime['format_iso8601'] = $format;
-
-        // Set the render format.
-        if (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute']) && isset($dateTime['second']) && isset($dateTime['offset_value'])) {
-            $format = 'F j, Y H:i:s P';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute']) && isset($dateTime['offset_value'])) {
-            $format = 'F j, Y H:i P';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['offset_value'])) {
-            $format = 'F j, Y H P';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute']) && isset($dateTime['second'])) {
-            $format = 'F j, Y H:i:s';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour']) && isset($dateTime['minute'])) {
-            $format = 'F j, Y H:i';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day']) && isset($dateTime['hour'])) {
-            $format = 'F j, Y H';
-        } elseif (isset($dateTime['month']) && isset($dateTime['day'])) {
-            $format = 'F j, Y';
-        } elseif (isset($dateTime['month'])) {
-            $format = 'F Y';
-        } else {
-            $format = 'Y';
-        }
-        $dateTime['format_render'] = $format;
 
         // Adding the DateTime object here to reduce code duplication. To ensure
         // consistency, use Coordinated Universal Time (UTC) if no offset is
