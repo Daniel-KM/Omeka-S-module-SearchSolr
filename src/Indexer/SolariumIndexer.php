@@ -376,6 +376,7 @@ class SolariumIndexer extends AbstractIndexer
                 }
             } else {
                 foreach ($values as $value) {
+                    $value = (string) $value;
                     $document->addField($solrField, $value);
                     if ($first) {
                         $first = false;
@@ -461,7 +462,7 @@ class SolariumIndexer extends AbstractIndexer
                         $client->update($update);
                     } catch (SolariumServerException $e) {
                         $dId = explode('-', $documentId);
-                        $error = json_decode($e->getBody(), true);
+                        $error = json_decode((string) $e->getBody(), true);
                         $message = is_array($error) && isset($error['error']['msg']) ? $error['error']['msg'] : $e->getMessage();
                         $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $message);
                         $this->getLogger()->err($message);
@@ -473,7 +474,7 @@ class SolariumIndexer extends AbstractIndexer
                 }
             } else {
                 $dId = explode('-', key($this->solariumDocuments));
-                $error = json_decode($e->getBody(), true);
+                $error = json_decode((string) $e->getBody(), true);
                 $message = is_array($error) || isset($error['error']['msg']) ? $error['error']['msg'] : $e->getMessage();
                 $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $message);
                 $this->getLogger()->err($message);
@@ -648,7 +649,7 @@ class SolariumIndexer extends AbstractIndexer
             foreach ($this->vars['locales'] as $locale) {
                 $field = 'sort_X3b_' . $locale . '_' . $this->vars['solr_maps'][$resourceName][$solrField]['name'];
                 if (!$document->{$field}) {
-                    $value = mb_substr($value, 0, 128);
+                    $value = mb_substr((string) $value, 0, 128);
                     $document->addField($field, $value);
                 }
             }
