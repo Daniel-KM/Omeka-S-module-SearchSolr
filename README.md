@@ -170,6 +170,7 @@ TODO
 - [ ] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
 - [ ] Replace class Schema and Field with solarium ones.
 - [ ] Rewrite and simplify querier to better handle solarium.
+- [ ] Improve management of value resources and uris, and other special types.
 
 
 Solr install <a id="solr-install"></a>
