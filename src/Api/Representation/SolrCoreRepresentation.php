@@ -362,20 +362,21 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function mapsByResourceName($resourceName = null)
     {
-        static $maps;
+        static $maps = [];
 
-        if (!isset($maps)) {
-            $maps = [];
+        $id = $this->id();
+        if (!isset($maps[$id])) {
+            $maps[$id] = [];
             $mapAdapter = $this->getAdapter('solr_maps');
             /** @var \SearchSolr\Entity\SolrMap $mapEntity */
             foreach ($this->resource->getMaps() as $mapEntity) {
-                $maps[$mapEntity->getResourceName()][] = $mapAdapter->getRepresentation($mapEntity);
+                $maps[$id][$mapEntity->getResourceName()][] = $mapAdapter->getRepresentation($mapEntity);
             }
         }
 
         return $resourceName
-            ? $maps[$resourceName] ?? []
-            : $maps;
+            ? $maps[$id][$resourceName] ?? []
+            : $maps[$id];
     }
 
     /**
