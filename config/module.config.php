@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace SearchSolr;
 
 return [
@@ -30,6 +31,7 @@ return [
         'factories' => [
             Form\Admin\SolrCoreForm::class => Service\Form\SolrCoreFormFactory::class,
             Form\Admin\SolrMapForm::class => Service\Form\SolrMapFormFactory::class,
+            'Omeka\Form\Element\DataTypeSelect' => Service\Form\Element\DataTypeSelectFactory::class,
         ],
     ],
     'controllers' => [
