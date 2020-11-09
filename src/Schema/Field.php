@@ -36,12 +36,8 @@ class Field
      */
     public function isMultivalued()
     {
-        $multiValued = false;
-        if (isset($this->field['multiValued'])) {
-            $multiValued = $this->field['multiValued'];
-        } elseif (isset($this->type['multiValued'])) {
-            $multiValued = $this->type['multiValued'];
-        }
-        return $multiValued;
+        return $this->field['multiValued']
+            ?? $this->type['multiValued']
+            ?? false;
     }
 }

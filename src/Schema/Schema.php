@@ -43,7 +43,7 @@ class Schema
     /**
      * @param string $schemaUrl
      */
-    public function __construct($schemaUrl)
+    public function __construct(string $schemaUrl)
     {
         $this->schemaUrl = $schemaUrl;
     }
@@ -56,7 +56,7 @@ class Schema
      * @throws \Solarium\Exception\HttpException
      * @return array
      */
-    public function getSchema()
+    public function getSchema(): array
     {
         if (!isset($this->schema)) {
             $contents = @file_get_contents($this->schemaUrl);
@@ -89,19 +89,20 @@ class Schema
     /**
      * @param array $schema
      */
-    public function setSchema($schema): void
+    public function setSchema(array $schema): Schema
     {
         $this->schema = $schema;
+        return $this;
     }
 
     /**
      * @param string $name
-     * @return mixed
+     * @return Field|null
      */
-    public function getField($name)
+    public function getField(string $name): ?Field
     {
         // Fill fields only when needed.
-        if (!isset($this->fields[$name])) {
+        if (!array_key_exists($name, $this->fields)) {
             $fieldsByName = $this->getFieldsByName();
             $field = $fieldsByName[$name] ?? $this->getDynamicFieldFor($name);
             if ($field) {
@@ -114,9 +115,9 @@ class Schema
     }
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function getFieldsByName()
+    public function getFieldsByName(): array
     {
         if (!isset($this->fieldsByName)) {
             $this->fieldsByName = [];
@@ -134,15 +135,15 @@ class Schema
 
     /**
      * @param string $name
-     * @return string
+     * @return array
      */
-    public function getDynamicFieldFor($name)
+    public function getDynamicFieldFor(string $name): ?array
     {
-        $dynamicFieldsMap = $this->getDynamicFieldsMap();
+        $map = $this->getDynamicFieldsMap();
 
         $firstChar = $name[0];
-        if (isset($dynamicFieldsMap['prefix'][$firstChar])) {
-            foreach ($dynamicFieldsMap['prefix'][$firstChar] as $field) {
+        if (isset($map['prefix'][$firstChar])) {
+            foreach ($map['prefix'][$firstChar] as $field) {
                 $prefix = substr($field['name'], 0, strlen($field['name']) - 1);
                 if (0 === substr_compare($name, $prefix, 0, strlen($prefix))) {
                     return $field;
@@ -151,8 +152,8 @@ class Schema
         }
 
         $lastChar = $name[strlen($name) - 1];
-        if (isset($dynamicFieldsMap['suffix'][$lastChar])) {
-            foreach ($dynamicFieldsMap['suffix'][$lastChar] as $field) {
+        if (isset($map['suffix'][$lastChar])) {
+            foreach ($map['suffix'][$lastChar] as $field) {
                 $suffix = substr($field['name'], 1);
                 $suffixLen = strlen($suffix);
                 $offset = strlen($name) - $suffixLen;
@@ -164,12 +165,13 @@ class Schema
                 }
             }
         }
+        return null;
     }
 
     /**
-     * @return array
+     * @return array[]
      */
-    public function getDynamicFieldsMap()
+    public function getDynamicFieldsMap(): array
     {
         if (!isset($this->dynamicFieldsMap)) {
             $this->dynamicFieldsMap = [];
@@ -197,7 +199,7 @@ class Schema
      * @param string $fieldNameType "prefix", "suffix", or all fields.
      * @return array
      */
-    public function getDynamicFieldsMapByMainPart($fieldNameType = null)
+    public function getDynamicFieldsMapByMainPart(?string $fieldNameType = null): array
     {
         static $dynamicFieldsMapBy;
         if (!isset($dynamicFieldsMapBy)) {
@@ -231,21 +233,17 @@ class Schema
 
     /**
      * @param string $name
-     * @return string|null
+     * @return array|null
      */
-    public function getType($name)
+    public function getType(string $name): ?array
     {
-        $typesByName = $this->getTypesByName();
-        if (isset($typesByName[$name])) {
-            return $typesByName[$name];
-        }
-        return null;
+        return $this->getTypesByName()[$name] ?? null;
     }
 
     /**
      * @return array
      */
-    public function getTypesByName()
+    public function getTypesByName(): array
     {
         if (!isset($this->typesByName)) {
             $this->typesByName = [];
@@ -271,7 +269,7 @@ class Schema
      * @link https://lucene.apache.org/solr/guide/solr-tutorial.html#create-a-catchall-copy-field
      * @return bool
      */
-    public function checkDefaultField()
+    public function checkDefaultField(): bool
     {
         $hasDefaultField = false;
         $solrSchema = $this->getSchema();
