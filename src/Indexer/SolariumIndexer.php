@@ -229,12 +229,6 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function init()
     {
-        // Some values should be init to get the document id.
-        $this->getServerId();
-        $this->prepareIndexFieldAndName();
-        $this->prepareSingleValuedFields();
-        $this->getSupportFields();
-
         $services = $this->getServiceLocator();
         $this->api = $services->get('Omeka\ApiManager');
         $this->apiAdapters = $services->get('Omeka\ApiAdapterManager');
@@ -242,6 +236,14 @@ class SolariumIndexer extends AbstractIndexer
         $this->valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $this->valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
         $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();
+
+        // Some values should be init to get the document id.
+        $this->getServerId();
+        $this->prepareIndexFieldAndName();
+        $this->prepareSingleValuedFields();
+        $this->getSupportFields();
+        $this->prepareFomatters();
+
         return $this;
     }
 
@@ -357,11 +359,7 @@ class SolariumIndexer extends AbstractIndexer
                 $values = array_slice($values, 0, 1);
             }
 
-            $formatter = $solrMap->setting('formatter');
-            $valueFormatter = $formatter
-                // Avoid to load all formatters each time.
-                ? ($this->formatters[$formatter] ?? $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter))
-                : null;
+            $valueFormatter = $this->formatters[$solrMap->setting('formatter', '')] ?? null;
 
             $first = true;
             if ($valueFormatter) {
@@ -572,6 +570,14 @@ class SolariumIndexer extends AbstractIndexer
                 $schemaField = $schema->getField($solrField);
                 $this->isSingleValuedFields[$resourceName][$solrField] = $schemaField && !$schemaField->isMultivalued();
             }
+        }
+    }
+
+    protected function prepareFomatters(): void
+    {
+        $this->formatters = ['' => null];
+        foreach ($this->valueFormatterManager->getRegisteredNames() as $formatter) {
+            $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter);
         }
     }
 
