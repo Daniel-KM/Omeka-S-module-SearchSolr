@@ -239,7 +239,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $extractedValues = [];
 
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
-        $values = $resource->value($solrMap->firstSource(), ['all' => true]);
+        $values = $resource->value($solrMap->firstSource(), ['all' => true, 'type' => $solrMap->dataTypes()]);
 
         // Only value resources are managed here: other types are managed with
         // the formatter.
