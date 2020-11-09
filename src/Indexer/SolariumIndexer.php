@@ -38,6 +38,7 @@ use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use Solarium\Client as SolariumClient;
 use Solarium\Exception\HttpException as SolariumServerException;
 use Solarium\QueryType\Update\Query\Document as SolariumInputDocument;
+use SearchSolr\Api\Representation\SolrMapRepresentation;
 
 /**
  * @link https://solarium.readthedocs.io/en/stable/getting-started/
@@ -79,6 +80,11 @@ class SolariumIndexer extends AbstractIndexer
      * @var \SearchSolr\ValueFormatter\Manager
      */
     protected $valueFormatterManager;
+
+    /**
+     * @var \Solarium\Core\Query\Helper
+     */
+    protected $solariumHelpers;
 
     /**
      * @var array
@@ -244,6 +250,9 @@ class SolariumIndexer extends AbstractIndexer
         $this->getSupportFields();
         $this->prepareFomatters();
 
+        $doc = new SolariumInputDocument();
+        $this->solariumHelpers = $doc->getHelper();
+
         return $this;
     }
 
@@ -355,48 +364,42 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            if ($this->isSingleValuedFields[$resourceName][$solrField]) {
-                $values = array_slice($values, 0, 1);
+            $values = $this->formatValues($values, $solrMap);
+            if (!count($values)) {
+                continue;
             }
 
-            $valueFormatter = $this->formatters[$solrMap->setting('formatter', '')] ?? null;
-
-            $first = true;
-            if ($valueFormatter) {
-                foreach ($values as $value) {
-                    $value = $valueFormatter->format($value);
-                    if (is_null($value) || $value === '') {
-                        continue;
-                    }
-                    $document->addField($solrField, $value);
-                    if ($first) {
-                        $first = false;
-                        $isSingleFieldFilled[$solrField] = $this->isSingleValuedFields[$resourceName][$solrField];
-                        // Drupal values are filled only once.
-                        if ($this->support === 'drupal') {
-                            $this->appendDrupalValues($resource, $document, $solrField, $value);
-                        }
-                    }
-                }
+            if ($this->isSingleValuedFields[$resourceName][$solrField]) {
+                $isSingleFieldFilled[$solrField] = true;
+                $document->addField($solrField, reset($values));
             } else {
                 foreach ($values as $value) {
                     $value = (string) $value;
                     $document->addField($solrField, $value);
-                    if ($first) {
-                        $first = false;
-                        $isSingleFieldFilled[$solrField] = $this->isSingleValuedFields[$resourceName][$solrField];
-                        // Drupal values are filled only once.
-                        if ($this->support === 'drupal') {
-                            $this->appendDrupalValues($resource, $document, $solrField, $value);
-                        }
-                    }
                 }
+            }
+
+            if ($this->support === 'drupal') {
+                // Only one value is filled for special values of Drupal.
+                $this->appendDrupalValues($resource, $document, $solrField, reset($values));
             }
         }
 
         $this->appendSupportedFields($resource, $document);
 
         $this->solariumDocuments[$documentId] = $document;
+    }
+
+    protected function formatValues(array $values, SolrMapRepresentation $solrMap)
+    {
+        $valueFormatter = $this->formatters[$solrMap->setting('formatter', '')] ?: $this->formatters['standard'];
+        foreach ($values as $key => $value) {
+            $values[$key] = $valueFormatter->format($value);
+            if (is_null($values[$key]) || (string) $values[$key] === '') {
+                unset($values[$key]);
+            }
+        }
+        return $values;
     }
 
     protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document): void
@@ -579,6 +582,7 @@ class SolariumIndexer extends AbstractIndexer
         foreach ($this->valueFormatterManager->getRegisteredNames() as $formatter) {
             $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter);
         }
+        $this->formatters[''] = $this->formatters['standard'];
     }
 
     /**
