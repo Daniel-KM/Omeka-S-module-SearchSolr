@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2020
+ * Copyright BibLibre, 2016-2017
+ * Copyright Daniel Berthereau, 2018-2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,26 +28,12 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace SearchSolr\Service\ValueExtractor;
+namespace SearchSolr\ValueExtractor;
 
-use Interop\Container\ContainerInterface;
-use Laminas\ServiceManager\Factory\FactoryInterface;
-
-class ResourceValueExtractorFactory implements FactoryInterface
+class MediaValueExtractor extends AbstractResourceEntityValueExtractor
 {
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function getLabel(): string
     {
-        $config = $services->get('Config');
-        $baseFilepath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
-        $requestedNames = [
-            'items' => \SearchSolr\ValueExtractor\ItemValueExtractor::class,
-            'item_sets' => \SearchSolr\ValueExtractor\ItemSetValueExtractor::class,
-            'media' => \SearchSolr\ValueExtractor\MediaValueExtractor::class,
-        ];
-        return new $requestedNames[$requestedName](
-            $services->get('Omeka\ApiManager'),
-            $services->get('Omeka\Logger'),
-            $baseFilepath
-        );
+        return 'Media'; // @translate
     }
 }

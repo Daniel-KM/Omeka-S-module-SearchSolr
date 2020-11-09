@@ -220,6 +220,7 @@ return [
         'factories' => [
             'items' => Service\ValueExtractor\ResourceValueExtractorFactory::class,
             'item_sets' => Service\ValueExtractor\ResourceValueExtractorFactory::class,
+            'media' => Service\ValueExtractor\ResourceValueExtractorFactory::class,
         ],
     ],
     'searchsolr_value_formatters' => [
