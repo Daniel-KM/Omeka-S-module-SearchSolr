@@ -138,6 +138,7 @@ class MapController extends AbstractActionController
             $data['o:resource_name'] = $resourceName;
             $data['o:field_name'] = str_replace(':', '_', $term) . '_txt';
             $data['o:source'] = $term;
+            $data['o:data_type'] = [];
             $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
             $api->create('solr_maps', $data);
 

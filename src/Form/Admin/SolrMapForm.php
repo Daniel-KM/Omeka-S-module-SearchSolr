@@ -75,6 +75,18 @@ class SolrMapForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'o:data_type',
+                'type' => 'Omeka\Form\Element\DataTypeSelect',
+                'options' => [
+                    'label' => 'Limit to data types', // @translate
+                ],
+                'attributes' => [
+                    'data-placeholder' => 'Select data types…', // @translate
+                    'multiple' => true,
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'o:field_name',
                 'type' => Element\Text::class,
                 'options' => [
