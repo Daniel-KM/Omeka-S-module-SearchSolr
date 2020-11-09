@@ -332,7 +332,7 @@ class SolariumQuerier extends AbstractQuerier
                 $dismax->setMinimumMatch($queryConfig['minimum_match']);
             }
             if (isset($queryConfig['tie_breaker'])) {
-                $dismax->setTie($queryConfig['tie_breaker']);
+                $dismax->setTie((float) $queryConfig['tie_breaker']);
             }
         }
 
