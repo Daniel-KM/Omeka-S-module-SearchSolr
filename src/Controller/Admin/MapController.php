@@ -118,7 +118,7 @@ class MapController extends AbstractActionController
             return $v->source();
         }, $maps);
 
-        // Add all missing maps.
+        // Add all missing maps with a generic multivalued text field.
         $result = [];
         $properties = $api->search('properties')->getContent();
         $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
@@ -136,7 +136,7 @@ class MapController extends AbstractActionController
             $data = [];
             $data['o:solr_core']['o:id'] = $solrCoreId;
             $data['o:resource_name'] = $resourceName;
-            $data['o:field_name'] = str_replace(':', '_', $term) . '_t';
+            $data['o:field_name'] = str_replace(':', '_', $term) . '_txt';
             $data['o:source'] = $term;
             $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
             $api->create('solr_maps', $data);
