@@ -86,6 +86,11 @@ class SolariumIndexer extends AbstractIndexer
     protected $formatters = [];
 
     /**
+     * @var array
+     */
+    protected $isSingleValuedFields = [];
+
+    /**
      * @var int[]
      */
     protected $siteIds;
@@ -227,6 +232,7 @@ class SolariumIndexer extends AbstractIndexer
         // Some values should be init to get the document id.
         $this->getServerId();
         $this->prepareIndexFieldAndName();
+        $this->prepareSingleValuedFields();
         $this->getSupportFields();
 
         $services = $this->getServiceLocator();
@@ -258,17 +264,20 @@ class SolariumIndexer extends AbstractIndexer
     {
         $resourceName = $resource->getResourceName();
         $resourceId = $resource->getId();
-        $this->getLogger()->info(sprintf('Indexing resource #%1$s (%2$s)', $resourceId, $resourceName));
+        $this->getLogger()->info(new Message(
+            'Indexing %1$s #%2$s in Solr core %3$s', // @translate
+            $resourceName, $resourceId, $this->solrCore->name()
+        ));
 
-        $solrCore = $this->getSolrCore();
-        $solrCoreSettings = $solrCore->settings();
-        $schema = $solrCore->schema();
+        $solrCoreSettings = $this->solrCore->settings();
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
 
         /** @var \Omeka\Api\Representation\AbstractResourceRepresentation $representation */
         $adapter = $this->apiAdapters->get($resourceName);
         $representation = $adapter->getRepresentation($resource);
+
+        $isSingleFieldFilled = [];
 
         $document = new SolariumInputDocument;
 
@@ -308,7 +317,7 @@ class SolariumIndexer extends AbstractIndexer
                 return;
         }
 
-        foreach ($solrCore->mapsByResourceName($resourceName) as $solrMap) {
+        foreach ($this->solrCore->mapsByResourceName($resourceName) as $solrMap) {
             $solrField = $solrMap->fieldName();
             $source = $solrMap->source();
 
@@ -326,6 +335,11 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
+            // Check if the value is a single valued field already filled.
+            if (!empty($isSingleFieldFilled[$solrField])) {
+                continue;
+            }
+
             $values = $valueExtractor->extractValue($representation, $source);
 
             // Simplify the loop process for single or multiple values.
@@ -339,8 +353,7 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            $schemaField = $schema->getField($solrField);
-            if ($schemaField && !$schemaField->isMultivalued()) {
+            if ($this->isSingleValuedFields[$resourceName][$solrField]) {
                 $values = array_slice($values, 0, 1);
             }
 
@@ -350,7 +363,7 @@ class SolariumIndexer extends AbstractIndexer
                 ? ($this->formatters[$formatter] ?? $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter))
                 : null;
 
-            $first = $this->support === 'drupal';
+            $first = true;
             if ($valueFormatter) {
                 foreach ($values as $value) {
                     $value = $valueFormatter->format($value);
@@ -360,7 +373,11 @@ class SolariumIndexer extends AbstractIndexer
                     $document->addField($solrField, $value);
                     if ($first) {
                         $first = false;
-                        $this->appendDrupalValues($resource, $document, $solrField, $value);
+                        $isSingleFieldFilled[$solrField] = $this->isSingleValuedFields[$resourceName][$solrField];
+                        // Drupal values are filled only once.
+                        if ($this->support === 'drupal') {
+                            $this->appendDrupalValues($resource, $document, $solrField, $value);
+                        }
                     }
                 }
             } else {
@@ -369,7 +386,11 @@ class SolariumIndexer extends AbstractIndexer
                     $document->addField($solrField, $value);
                     if ($first) {
                         $first = false;
-                        $this->appendDrupalValues($resource, $document, $solrField, $value);
+                        $isSingleFieldFilled[$solrField] = $this->isSingleValuedFields[$resourceName][$solrField];
+                        // Drupal values are filled only once.
+                        if ($this->support === 'drupal') {
+                            $this->appendDrupalValues($resource, $document, $solrField, $value);
+                        }
                     }
                 }
             }
@@ -429,7 +450,10 @@ class SolariumIndexer extends AbstractIndexer
             return;
         }
 
-        $this->getLogger()->info('Commit index in Solr.'); // @translate
+        $this->getLogger()->info(new Message(
+            'Commit index in Solr core %s.', // @translate
+            $this->getSolrCore()->name()
+        ));
         //  TODO use BufferedAdd plugin?
         $client = $this->getClient();
         try {
@@ -526,6 +550,29 @@ class SolariumIndexer extends AbstractIndexer
             $this->prepareIndexFieldAndName();
         }
         return $this->indexName;
+    }
+
+    /**
+     * The mapper allows to prepare multiple maps to the same Solr field.
+     * But this Solr field may be single valued, so a check should be done when
+     * a multi-mapped single-value field is already filled in order not to send
+     * multiple values to a single valued field.
+     *
+     * @todo Move the single valued check inside Solr core settings to do it one time.
+     */
+    protected function prepareSingleValuedFields(): void
+    {
+        $solrCore = $this->getSolrCore();
+        $schema = $solrCore->schema();
+        $this->isSingleValuedFields = [];
+        foreach ($this->getSolrCore()->mapsByResourceName() as $resourceName => $solrMaps) {
+            $this->isSingleValuedFields[$resourceName] = [];
+            foreach ($solrMaps as $solrMap) {
+                $solrField = $solrMap->fieldName();
+                $schemaField = $schema->getField($solrField);
+                $this->isSingleValuedFields[$resourceName][$solrField] = $schemaField && !$schemaField->isMultivalued();
+            }
+        }
     }
 
     /**
