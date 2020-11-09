@@ -218,8 +218,8 @@ return [
     ],
     'searchsolr_value_extractors' => [
         'factories' => [
-            'items' => Service\ValueExtractor\ItemValueExtractorFactory::class,
-            'item_sets' => Service\ValueExtractor\ItemSetValueExtractorFactory::class,
+            'items' => Service\ValueExtractor\ResourceValueExtractorFactory::class,
+            'item_sets' => Service\ValueExtractor\ResourceValueExtractorFactory::class,
         ],
     ],
     'searchsolr_value_formatters' => [

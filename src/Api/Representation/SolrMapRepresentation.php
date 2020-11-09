@@ -117,4 +117,25 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         $settings = $this->resource->getSettings();
         return $settings[$name] ?? $default;
     }
+
+    public function firstSource(): string
+    {
+        $source = (string) $this->source();
+        return strpos($source, '/') === false
+            ? $source
+            : strtok($source, '/');
+    }
+
+    public function subMap(): ?SolrSubMap
+    {
+        $source = $this->source();
+        if (strpos($source, '/') === false) {
+            $subField = '';
+        } else {
+            list(, $subField) = explode('/', $source, 2);
+        }
+        $subMap = new SolrSubMap($this->resource, $this->adapter);
+        return $subMap
+            ->setSubSource($subField);
+    }
 }

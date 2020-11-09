@@ -32,18 +32,21 @@ namespace SearchSolr\Service\ValueExtractor;
 
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use SearchSolr\ValueExtractor\ItemSetValueExtractor;
 
-class ItemSetValueExtractorFactory implements FactoryInterface
+class ResourceValueExtractorFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $api = $services->get('Omeka\ApiManager');
-        $logger = $services->get('Omeka\Logger');
-
-        $itemSetValueExtractor = new ItemSetValueExtractor;
-        $itemSetValueExtractor->setApiManager($api);
-        $itemSetValueExtractor->setLogger($logger);
-        return $itemSetValueExtractor;
+        $config = $services->get('Config');
+        $baseFilepath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
+        $requestedNames = [
+            'items' => \SearchSolr\ValueExtractor\ItemValueExtractor::class,
+            'item_sets' => \SearchSolr\ValueExtractor\ItemSetValueExtractor::class,
+        ];
+        return new $requestedNames[$requestedName](
+            $services->get('Omeka\ApiManager'),
+            $services->get('Omeka\Logger'),
+            $baseFilepath
+        );
     }
 }

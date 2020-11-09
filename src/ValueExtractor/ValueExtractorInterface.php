@@ -31,6 +31,7 @@
 namespace SearchSolr\ValueExtractor;
 
 use Omeka\Api\Representation\AbstractResourceRepresentation;
+use SearchSolr\Api\Representation\SolrMapRepresentation;
 
 interface ValueExtractorInterface
 {
@@ -40,16 +41,24 @@ interface ValueExtractorInterface
     public function getLabel(): string;
 
     /**
-     * @return array Associative array of fields with field name as key and an
-     * associative array as value, with at least the label of the field.
+     * Associative list of fields with field name as key and an associative
+     * array as value, with at least the label of the field.
+     *
+     * @return array
      */
-    public function getAvailableFields();
+    public function getMapFields(): array;
 
     /**
+     * Select the resource values to index according to the mapping of a field.
+     *
      * @param AbstractResourceRepresentation $resource
-     * @param string $field
-     * @return stringable[]|stringable|null A single value or list of values,
-     * that must be stringable.
+     * @param SolrMapRepresentation $solrMap Generally a property term.
+     * @return mixed[]|\Omeka\Api\Representation\ValueRepresentation[]
+     * Null values and empty strings should be skipped. Value representation
+     * with value resources must not be included, but the sub-values returned.
      */
-    public function extractValue(AbstractResourceRepresentation $resource, $field);
+    public function extractValue(
+        AbstractResourceRepresentation $resource,
+        SolrMapRepresentation $solrMap
+    ): array;
 }

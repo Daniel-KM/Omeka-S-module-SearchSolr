@@ -35,10 +35,10 @@ use Omeka\Stdlib\Message;
 use Search\Indexer\AbstractIndexer;
 use Search\Query;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
+use SearchSolr\Api\Representation\SolrMapRepresentation;
 use Solarium\Client as SolariumClient;
 use Solarium\Exception\HttpException as SolariumServerException;
 use Solarium\QueryType\Update\Query\Document as SolariumInputDocument;
-use SearchSolr\Api\Representation\SolrMapRepresentation;
 
 /**
  * @link https://solarium.readthedocs.io/en/stable/getting-started/
@@ -351,16 +351,8 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            $values = $valueExtractor->extractValue($representation, $source);
-
-            // Simplify the loop process for single or multiple values.
-            if (!is_array($values)) {
-                $values = [$values];
-            }
-
-            // Skip null (no resource class...) and empty strings (error).
-            $values = array_filter($values, [$this, 'isNotNullAndNotEmptyString']);
-            if (empty($values)) {
+            $values = $valueExtractor->extractValue($representation, $solrMap);
+            if (!count($values)) {
                 continue;
             }
 
@@ -374,7 +366,6 @@ class SolariumIndexer extends AbstractIndexer
                 $document->addField($solrField, reset($values));
             } else {
                 foreach ($values as $value) {
-                    $value = (string) $value;
                     $document->addField($solrField, $value);
                 }
             }
@@ -488,7 +479,7 @@ class SolariumIndexer extends AbstractIndexer
                 }
             } else {
                 $dId = explode('-', key($this->solariumDocuments));
-                $error = json_decode((string) $e->getBody(), true);
+                $error = json_decode((string) $e->getMessage(), true);
                 $message = is_array($error) || isset($error['error']['msg']) ? $error['error']['msg'] : $e->getMessage();
                 $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $message);
                 $this->getLogger()->err($message);

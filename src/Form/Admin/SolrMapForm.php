@@ -179,7 +179,7 @@ class SolrMapForm extends Form
             return null;
         }
 
-        return $this->getFieldsOptions($valueExtractor->getAvailableFields());
+        return $this->getFieldsOptions($valueExtractor->getMapFields());
     }
 
     /**
