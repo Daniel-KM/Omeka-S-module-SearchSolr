@@ -33,12 +33,12 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 
 class SolrMapRepresentation extends AbstractEntityRepresentation
 {
-    public function getJsonLdType()
+    public function getJsonLdType(): string
     {
         return 'o:SolrMap';
     }
 
-    public function getJsonLd()
+    public function getJsonLd(): array
     {
         $entity = $this->resource;
         return [
@@ -50,7 +50,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         ];
     }
 
-    public function adminUrl($action = null, $canonical = false)
+    public function adminUrl($action = null, $canonical = false): string
     {
         $url = $this->getViewHelper('Url');
         $params = [
@@ -69,7 +69,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     /**
      * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
      */
-    public function solrCore()
+    public function solrCore(): ?SolrCoreRepresentation
     {
         $solrCore = $this->resource->getSolrCore();
         return $this->getAdapter('solr_cores')->getRepresentation($solrCore);
@@ -78,7 +78,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     /**
      * @return string
      */
-    public function resourceName()
+    public function resourceName(): string
     {
         return $this->resource->getResourceName();
     }
@@ -86,7 +86,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     /**
      * @return string
      */
-    public function fieldName()
+    public function fieldName(): string
     {
         return $this->resource->getFieldName();
     }
@@ -94,7 +94,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     /**
      * @return string
      */
-    public function source()
+    public function source(): string
     {
         return $this->resource->getSource();
     }
@@ -102,7 +102,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     /**
      * @return array
      */
-    public function settings()
+    public function settings(): array
     {
         return $this->resource->getSettings();
     }
