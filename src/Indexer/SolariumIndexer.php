@@ -291,28 +291,17 @@ class SolariumIndexer extends AbstractIndexer
         $sitesField = $solrCoreSettings['sites_field'];
         switch ($resourceName) {
             case 'items':
-                // There is no method to get the list of sites of an item.
-                // TODO Get sites of an items in Omeka 2.2/3.
-                foreach ($this->siteIds as $siteId) {
-                    $query = ['id' => $resourceId, 'site_id' => $siteId];
-                    $res = $this->api->search('items', $query, ['returnScalar' => 'id'])->getContent();
-                    if (!empty($res)) {
-                        $document->addField($sitesField, $siteId);
-                    }
-                }
+                $sites = array_map(function ($v) {
+                    return $v->getId();
+                }, $resource->getSites()->toArray());
+                $document->addField($sitesField, array_values($sites));
                 break;
 
             case 'item_sets':
-                // There is no method to get the list of sites of an item set.
-                $qb = $this->entityManager->createQueryBuilder();
-                $qb->select('siteItemSet')
-                    ->from(\Omeka\Entity\SiteItemSet::class, 'siteItemSet')
-                    ->innerJoin('siteItemSet.itemSet', 'itemSet')
-                    ->where($qb->expr()->eq('itemSet.id', $resourceId));
-                $siteItemSets = $qb->getQuery()->getResult();
-                foreach ($siteItemSets as $siteItemSet) {
-                    $document->addField($sitesField, $siteItemSet->getSite()->getId());
-                }
+                $sites = array_map(function ($v) {
+                    return $v->getId();
+                }, $resource->getSiteItemSets()->toArray());
+                $document->addField($sitesField, $sites);
                 break;
 
             default:

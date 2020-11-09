@@ -240,9 +240,9 @@ class CoreController extends AbstractActionController
         } else {
             $data = $form->getData();
             $file = $fileCheck;
-            $delimiter = isset($data['delimiter']) ? $data['delimiter'] : ',';
+            $delimiter = $data['delimiter'] ?? ',';
             $delimiter = $delimiter === 'tabulation' ? "\t" : $delimiter;
-            $enclosure = isset($data['enclosure']) ? $data['enclosure'] : '"';
+            $enclosure = $data['enclosure'] ?? '"';
             $enclosure = $enclosure === 'empty' ? chr(0) : $enclosure;
             $result = $this->importSolrMapping($solrCore, $file['tmp_name'], [
                 'type' => $file['type'],
