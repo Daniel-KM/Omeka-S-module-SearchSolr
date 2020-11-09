@@ -171,6 +171,7 @@ TODO
 - [ ] Replace class Schema and Field with solarium ones.
 - [ ] Rewrite and simplify querier to better handle solarium.
 - [ ] Improve management of value resources and uris, and other special types.
+- [ ] Added an indexer for medias.
 
 
 Solr install <a id="solr-install"></a>
@@ -371,6 +372,17 @@ sudo systemctl restart solr
 Of course, the user `omeka_admin` and the password should be setin the config of
 the core in the Solr page inside Omeka.
 
+### Taking Solr to production
+
+See [taking Solr to production].
+
+```sh
+sudo echo "solr    hard    nofile  65000" >> /etc/security/limits.d/200-solr.conf
+sudo echo "solr    hard    nproc  65000" >> /etc/security/limits.d/200-solr.conf
+sudo echo "solr    soft    nofile  65000" >> /etc/security/limits.d/200-solr.conf
+sudo echo "solr    soft    nproc  65000" >> /etc/security/limits.d/200-solr.conf
+```
+
 ### Upgrade Solr
 
 Before upgrade, **you should backup the folder `/var/solr` and check the backup**
@@ -556,6 +568,7 @@ of [Université des Antilles et de la Guyane], currently managed with [Greenston
 [solr service gist]: https://gist.github.com/Daniel-KM/1fb475a47340d7945fa6c47c945707d0
 [Solr documentation]: https://lucene.apache.org/solr/resources.html
 [Solr Basic Authentication]: https://lucene.apache.org/solr/guide/basic-authentication-plugin.html#basic-authentication-plugin
+[taking Solr to production]: https://lucene.apache.org/solr/guide/taking-solr-to-production.html
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
