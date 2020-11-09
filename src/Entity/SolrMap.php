@@ -104,6 +104,14 @@ class SolrMap extends AbstractEntity
      *     type="json_array"
      * )
      */
+    protected $dataTypes;
+
+    /**
+     * @var array
+     * @Column(
+     *     type="json_array"
+     * )
+     */
     protected $settings;
 
     public function getId()
@@ -181,6 +189,24 @@ class SolrMap extends AbstractEntity
     public function getSource()
     {
         return $this->source;
+    }
+
+    /**
+     * @param array $dataTypes
+     * @return self
+     */
+    public function setDataTypes(array $dataTypes)
+    {
+        $this->dataTypes = $dataTypes;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getDataTypes()
+    {
+        return $this->dataTypes;
     }
 
     /**

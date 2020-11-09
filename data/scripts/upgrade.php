@@ -41,3 +41,24 @@ SQL;
     $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
     $messenger->addWarning('You should reindex your Solr cores.'); // @translate
 }
+
+if (version_compare($oldVersion, '3.5.15.3.6', '<')) {
+    $sql = <<<SQL
+ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
+SQL;
+    $connection->exec($sql);
+
+    $sql = <<<SQL
+UPDATE `solr_map` SET `data_types` = "[]";
+SQL;
+    $connection->exec($sql);
+
+    $sql = <<<SQL
+UPDATE `solr_map` SET `source` = REPLACE(`source`, "item_set", "item_sets") WHERE `source` LIKE "%item_set%";
+SQL;
+    $connection->exec($sql);
+
+    $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
+    $messenger->addNotice('Now, values can be indexed differently for each data type, if wanted.'); // @translate
+    $messenger->addNotice('Use the new import/export tool to simplify config.'); // @translate
+}

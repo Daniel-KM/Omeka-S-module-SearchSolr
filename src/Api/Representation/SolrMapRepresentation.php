@@ -2,6 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
+ * Copyright Daniel Berthereau, 2020
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -46,6 +47,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             'o:resource_name' => $entity->getResourceName(),
             'o:field_name' => $entity->getFieldName(),
             'o:source' => $entity->getSource(),
+            'o:data_type' => $this->dataTypes(),
             'o:settings' => $entity->getSettings(),
         ];
     }
@@ -97,6 +99,26 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     public function source(): string
     {
         return $this->resource->getSource();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function dataTypes(): array
+    {
+        // Check the data type against the list of registered data types.
+        $dataTypes = $this->resource->getDataTypes();
+        if (empty($dataTypes)) {
+            return [];
+        }
+        $dataTypeManager = $this->getServiceLocator()->get('Omeka\DataTypeManager');
+        $result = [];
+        foreach ($dataTypes as $dataType) {
+            if ($dataTypeManager->has($dataType)) {
+                $result[] = $dataType;
+            }
+        }
+        return $result;
     }
 
     /**
