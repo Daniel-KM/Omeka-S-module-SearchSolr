@@ -229,6 +229,8 @@ return [
             'plain_text' => ValueFormatter\PlainText::class,
             'point' => ValueFormatter\Point::class,
             'standard' => ValueFormatter\Standard::class,
+            'standard_no_uri' => ValueFormatter\StandardNoUri::class,
+            'uri_only' => ValueFormatter\UriOnly::class,
         ],
     ],
 ];
