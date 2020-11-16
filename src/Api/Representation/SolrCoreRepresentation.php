@@ -188,9 +188,21 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Check if Solr is working.
      *
-     * @return string
+     * @todo Add a true status check and use it for status message.
+     *
+     * @return bool
      */
     public function status()
+    {
+        return $this->statusMessage() === 'OK';
+    }
+
+    /**
+     * Check if Solr is working.
+     *
+     * @return string
+     */
+    public function statusMessage()
     {
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
@@ -202,13 +214,13 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         }
 
         $clientSettings = $this->clientSettings();
-        $solariumClient = $this->solariumClient();
+        $client = $this->solariumClient();
 
         try {
             // Create a ping query.
-            $query = $solariumClient->createPing();
+            $query = $client->createPing();
             // Execute the ping query. Result is not checked, bug use exception.
-            $solariumClient->ping($query);
+            $client->ping($query);
         } catch (SolariumException $e) {
             if ($e->getCode() === 404) {
                 $message = new Message('Solr core not found. Check your url.'); // @translate

@@ -25,3 +25,10 @@
 .solr-mapping.create form .field.required .inputs fieldset legend {
     display: none;
 }
+
+.solr-core .actions .disabled {
+    color: currentColor;
+    cursor: not-allowed;
+    opacity: 0.5;
+    text-decoration: none;
+}

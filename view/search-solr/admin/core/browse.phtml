@@ -34,6 +34,8 @@
 
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
+
+$this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 ?>
 
 <?php $this->htmlElement('body')->appendAttribute('class', 'solr-core browse'); ?>
@@ -62,6 +64,7 @@ $escape = $this->plugin('escapeHtml');
         </thead>
         <tbody>
             <?php foreach ($cores as $core): ?>
+                <?php $status = $core->status(); ?>
                 <tr>
                     <td>
                         <span><?= $core->name() ?></span>
@@ -79,10 +82,16 @@ $escape = $this->plugin('escapeHtml');
                                 ]) ?>
                             </li>
                             <li>
-                                <?= $this->hyperlink('', $core->mapUrl(), [
-                                    'class' => 'o-icon- fa fa-sliders fa-sliders-h',
-                                    'title' => $translate('Map'),
-                                ]) ?>
+                                <?= $status
+                                    ? $this->hyperlink('', $core->mapUrl(), [
+                                        'class' => 'o-icon- fa fa-sliders fa-sliders-h',
+                                        'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
+                                    ])
+                                    : $this->hyperlink('', '#', [
+                                        'class' => 'o-icon- fa fa-sliders fa-sliders-h disabled',
+                                        'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
+                                    ])
+                                ?>
                             </li>
                             <li>
                                 <a href="#"
@@ -94,7 +103,7 @@ $escape = $this->plugin('escapeHtml');
                         </ul>
                     </td>
                     <td><?= $core->clientUrlAdmin() ?></td>
-                    <td><?= $core->status() ?></td>
+                    <td><?= $core->statusMessage() ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
