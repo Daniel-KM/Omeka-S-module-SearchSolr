@@ -39,6 +39,7 @@ class DateRange implements ValueFormatterInterface
 
     public function format($value)
     {
+        $value = (string) $value;
         $matches = [];
         // A range like 1914-1918 or 1914/1918.
         if (preg_match('|^\s*(\d+)\s*[-/]\s*(\d+)\s*$|', $value, $matches)) {

@@ -149,7 +149,7 @@ class SolariumQuerier extends AbstractQuerier
         $isPublicField = $solrCoreSettings['is_public_field'];
         $resourceNameField = $solrCoreSettings['resource_name_field'];
         $sitesField = $solrCoreSettings['sites_field'] ?? null;
-        $indexField = $solrCoreSettings['index_field'] && $this->index->settingAdapter('index_name')
+        $indexField = ($solrCoreSettings['index_field'] ?? null) && $this->index->settingAdapter('index_name')
             ? $solrCoreSettings['index_field']
             : null;
 
@@ -636,7 +636,7 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function enclose($string)
     {
-        return '"' . addcslashes($string, '"') . '"';
+        return '"' . addcslashes((string) $string, '"') . '"';
     }
 
     /**
@@ -647,7 +647,7 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function escape($string)
     {
-        return preg_replace('/([+\-&|!(){}[\]\^"~*?:])/', '\\\\$1', $string);
+        return preg_replace('/([+\-&|!(){}[\]\^"~*?:])/', '\\\\$1', (string) $string);
     }
 
     protected function escapeSolrQuery($q)
@@ -676,7 +676,7 @@ class SolariumQuerier extends AbstractQuerier
         return str_replace(
             array_keys($reservedCharacters),
             array_values($reservedCharacters),
-            $q
+            (string) $q
         );
     }
 
