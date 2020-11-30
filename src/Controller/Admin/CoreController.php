@@ -48,6 +48,7 @@ class CoreController extends AbstractActionController
         'field_name',
         'source',
         'pool:data_types',
+        'pool:data_types_exclude',
         'settings:label',
         'settings:formatter',
     ];
@@ -409,6 +410,7 @@ class CoreController extends AbstractActionController
                     'o:source' => $row['source'],
                     'o:pool' => [
                         'data_types' => array_filter(array_map('trim', explode('|', $row['pool:data_types']))),
+                        'data_types_exclude' => array_filter(array_map('trim', explode('|', $row['pool:data_types_exclude']))),
                     ],
                     'o:settings' => [
                         'formatter' => $row['settings:formatter'],
@@ -480,6 +482,7 @@ class CoreController extends AbstractActionController
                     $map->fieldName(),
                     $map->source(),
                     implode(' | ', $map->pool('data_types')),
+                    implode(' | ', $map->pool('data_types_exclude')),
                     $map->setting('label', ''),
                     $map->setting('formatter', ''),
                 ];
@@ -518,6 +521,7 @@ class CoreController extends AbstractActionController
             return [];
         }
 
+        $countHeaders = count($this->mappingHeaders);
         $rows = array_map(function ($v) use ($delimiter, $enclosure) {
             return str_getcsv($v, $delimiter, $enclosure);
         }, array_map('trim', explode("\n", $content)));
@@ -527,9 +531,9 @@ class CoreController extends AbstractActionController
                 continue;
             }
             if (count($row) < count($this->mappingHeaders)) {
-                $row = array_slice(array_merge($row, ['', '', '', '', '', '']), 0, 6);
+                $row = array_slice(array_merge($row, array_fill(0, $countHeaders, '')), 0, $countHeaders);
             } elseif (count($row) > count($this->mappingHeaders)) {
-                $row = array_slice($row, 0, 6);
+                $row = array_slice($row, 0, $countHeaders);
             }
             $rows[$key] = array_combine($this->mappingHeaders, array_map('trim', $row));
         }

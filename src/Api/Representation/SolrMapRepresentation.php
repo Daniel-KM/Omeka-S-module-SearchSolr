@@ -118,19 +118,18 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         $this->pool = $this->resource->getPool();
 
         // To avoid issues with updating/removing, check the data types.
-        $dataTypes = $this->pool['data_types'] ?? [];
-        if ($dataTypes) {
+        $dataTypeManager = $this->getServiceLocator()->get('Omeka\DataTypeManager');
+        foreach (['data_types', 'data_types_exclude'] as $dataTypeName) {
+            $dataTypes = $this->pool[$dataTypeName] ?? [];
             // Check the data type against the list of registered data types.
-            $dataTypeManager = $this->getServiceLocator()->get('Omeka\DataTypeManager');
             $result = [];
             foreach ($dataTypes as $dataType) {
                 if ($dataTypeManager->has($dataType)) {
                     $result[] = $dataType;
                 }
             }
-            $dataTypes = $result;
+            $this->pool[$dataTypeName] = $result;
         }
-        $this->pool['data_types'] = $dataTypes;
 
         return $name ? $this->pool[$name] ?? $default : $this->pool;
     }

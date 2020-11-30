@@ -105,6 +105,19 @@ class SolrMapForm extends Form
                     'multiple' => true,
                     'required' => false,
                 ],
+            ])
+            ->add([
+                'name' => 'data_types_exclude',
+                'type' => 'Omeka\Form\Element\DataTypeSelect',
+                'options' => [
+                    'label' => 'Exclude data types', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'data_types_exclude',
+                    'data-placeholder' => 'Select data types to exclude…', // @translate
+                    'multiple' => true,
+                    'required' => false,
+                ],
             ]);
 
         $settingsFieldset = new Fieldset('o:settings');

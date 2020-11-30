@@ -57,6 +57,7 @@ class SolrCoreMappingImportForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'delimiter',
+                    'value' => 'tabulation',
                 ],
             ])
             ->add([
@@ -69,6 +70,7 @@ class SolrCoreMappingImportForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'enclosure',
+                    'value' => 'empty',
                 ],
             ]);
 
