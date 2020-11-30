@@ -14,8 +14,9 @@ class StandardNoUri implements ValueFormatterInterface
         return 'Standard (no uri)'; // @translate
     }
 
-    public function format($value)
+    public function format($value): array
     {
-        return (string) $value;
+        $value = trim((string) $value);
+        return strlen($value) ? [$value] : $value;
     }
 }

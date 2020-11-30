@@ -37,7 +37,7 @@ class DateRange implements ValueFormatterInterface
         return 'Date range'; // @translate
     }
 
-    public function format($value)
+    public function format($value): array
     {
         $value = (string) $value;
         $matches = [];
@@ -52,9 +52,9 @@ class DateRange implements ValueFormatterInterface
         }
 
         if (!isset($start) || !isset($end)) {
-            return null;
+            return [];
         }
 
-        return "[$start TO $end]";
+        return ["[$start TO $end]"];
     }
 }

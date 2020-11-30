@@ -11,7 +11,7 @@ class Point implements ValueFormatterInterface
         return 'Point'; // @translate
     }
 
-    public function format($value)
+    public function format($value): array
     {
         if ($value instanceof ValueRepresentation) {
             switch ($value->type()) {
@@ -19,15 +19,15 @@ class Point implements ValueFormatterInterface
                 case 'geometry:geography':
                     $val = (string) $value;
                     return strpos($val, 'POINT(') === 0
-                        ? preg_replace('~[^\d.]~', ',', $val)
-                        : null;
+                        ? [preg_replace('~[^\d.]~', ',', $val)]
+                        : [];
 
                 case 'place':
                     $val = json_decode($value->value(), true);
                     if (!$val || !is_array($val) || !array_key_exists('latitude', $val) || !array_key_exists('longitude', $val)) {
-                        return null;
+                        return [];
                     }
-                    return $val['latitude'] . ',' . $val['longitude'];
+                    return [$val['latitude'] . ',' . $val['longitude']];
 
                 case 'geometry:geometry':
                     // Geometry should be checked as any other data, because
@@ -46,7 +46,7 @@ class Point implements ValueFormatterInterface
             && $val[0] <= 90
             && $val[1] >= -180
             && $val[1] <= 180
-            ? $val[0] . ',' . $val[1]
-            : null;
+            ? [$val[0] . ',' . $val[1]]
+            : [];
     }
 }

@@ -13,7 +13,7 @@ class Date implements ValueFormatterInterface
         return 'Date'; // @translate
     }
 
-    public function format($value)
+    public function format($value): array
     {
         if ($value instanceof ValueRepresentation && $value->type() === 'numeric:interval') {
             $value = strtok((string) $value, '/');
@@ -26,7 +26,8 @@ class Date implements ValueFormatterInterface
                 $value = strtok($value, '-');
             }
         }
-        return $this->getDateTimeFromValue((string) $value);
+        $result = (string) $this->getDateTimeFromValue((string) $value);
+        return strlen($result) ? [$result] : [];
     }
 
     /**
@@ -36,7 +37,7 @@ class Date implements ValueFormatterInterface
      * @see \NumericDataTypes\DataType\AbstractDateTimeDataType::getDateTimeFromValue()
      *
      * @param string $value
-     * @return array|null
+     * @return string|null
      */
     protected function getDateTimeFromValue($value)
     {

@@ -38,8 +38,10 @@ interface ValueFormatterInterface
     public function getLabel(): string;
 
     /**
+     * Most of the time, a value is formatted into one string.
+     *
      * @param mixed $value
-     * @return string|null
+     * @return array
      */
-    public function format($value);
+    public function format($value): array;
 }

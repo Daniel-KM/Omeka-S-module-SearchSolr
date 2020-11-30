@@ -12,8 +12,9 @@ class PlainText implements ValueFormatterInterface
         return 'Plain text'; // @translate
     }
 
-    public function format($value)
+    public function format($value): array
     {
-        return strip_tags((string) $value);
+        $value = strip_tags((string) $value);
+        return strlen($value) ? [$value] : [];
     }
 }

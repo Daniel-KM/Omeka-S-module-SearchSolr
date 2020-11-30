@@ -383,14 +383,13 @@ class SolariumIndexer extends AbstractIndexer
 
     protected function formatValues(array $values, SolrMapRepresentation $solrMap)
     {
+        /** @var \SearchSolr\ValueFormatter\ValueFormatterInterface $valueFormatter */
         $valueFormatter = $this->formatters[$solrMap->setting('formatter', '')] ?: $this->formatters['standard'];
-        foreach ($values as $key => $value) {
-            $values[$key] = $valueFormatter->format($value);
-            if (is_null($values[$key]) || (string) $values[$key] === '') {
-                unset($values[$key]);
-            }
+        $result = [];
+        foreach ($values as $value) {
+            $result = array_merge($result, $valueFormatter->format($value));
         }
-        return $values;
+        return $result;
     }
 
     protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document): void

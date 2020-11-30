@@ -15,13 +15,13 @@ class Standard implements ValueFormatterInterface
         return 'Standard'; // @translate
     }
 
-    public function format($value)
+    public function format($value): array
     {
         if (is_object($value) && $value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-            $valueUri = $value->uri();
-            $valueString = (string) $value;
-            return trim($valueUri . ' ' . $valueString);
+            $result = trim((string) $value->uri() . ' ' . (string) $value);
+            return strlen($result) ? [$result] : [];
         }
-        return (string) $value;
+        $value = trim((string) $value);
+        return strlen($value) ? [$value] : [];
     }
 }

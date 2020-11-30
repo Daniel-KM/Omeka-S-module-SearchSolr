@@ -12,11 +12,14 @@ class UriOnly implements ValueFormatterInterface
         return 'Uri only'; // @translate
     }
 
-    public function format($value)
+    public function format($value): array
     {
         if (is_object($value) && $value instanceof \Omeka\Api\Representation\ValueRepresentation) {
             $value = $value->uri();
         }
-        return filter_var((string) $value, FILTER_VALIDATE_URL) ?: '';
+        $value = (string) $value;
+        return filter_var($value, FILTER_VALIDATE_URL)
+            ? [$value]
+            : [];
     }
 }
