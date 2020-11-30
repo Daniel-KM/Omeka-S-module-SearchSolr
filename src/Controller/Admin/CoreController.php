@@ -47,7 +47,7 @@ class CoreController extends AbstractActionController
         'resource_name',
         'field_name',
         'source',
-        'data_types',
+        'pool:data_types',
         'settings:label',
         'settings:formatter',
     ];
@@ -407,7 +407,9 @@ class CoreController extends AbstractActionController
                     'o:resource_name' => $row['resource_name'],
                     'o:field_name' => $row['field_name'],
                     'o:source' => $row['source'],
-                    'o:data_type' => array_filter(array_map('trim', explode('|', $row['data_types']))),
+                    'o:pool' => [
+                        'data_types' => array_filter(array_map('trim', explode('|', $row['pool:data_types']))),
+                    ],
                     'o:settings' => [
                         'formatter' => $row['settings:formatter'],
                         'label' => $row['settings:label'],
@@ -477,7 +479,7 @@ class CoreController extends AbstractActionController
                     $resourceName,
                     $map->fieldName(),
                     $map->source(),
-                    implode(' | ', $map->dataTypes()),
+                    implode(' | ', $map->pool('data_types')),
                     $map->setting('label', ''),
                     $map->setting('formatter', ''),
                 ];

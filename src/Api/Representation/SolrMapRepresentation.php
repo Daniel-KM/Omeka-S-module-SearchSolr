@@ -34,6 +34,11 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 
 class SolrMapRepresentation extends AbstractEntityRepresentation
 {
+    /**
+     * @var array
+     */
+    protected $pool;
+
     public function getJsonLdType(): string
     {
         return 'o:SolrMap';
@@ -41,14 +46,13 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
 
     public function getJsonLd(): array
     {
-        $entity = $this->resource;
         return [
             'o:solr_core' => $this->solrCore()->getReference(),
-            'o:resource_name' => $entity->getResourceName(),
-            'o:field_name' => $entity->getFieldName(),
-            'o:source' => $entity->getSource(),
-            'o:data_type' => $this->dataTypes(),
-            'o:settings' => $entity->getSettings(),
+            'o:resource_name' => $this->resource->getResourceName(),
+            'o:field_name' => $this->resource->getFieldName(),
+            'o:source' => $this->resource->getSource(),
+            'o:pool' => $this->resource->getPool(),
+            'o:settings' => $this->resource->getSettings(),
         ];
     }
 
@@ -64,7 +68,6 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         $options = [
             'force_canonical' => $canonical,
         ];
-
         return $url('admin/search/solr/core-id-map-resource-id', $params, $options);
     }
 
@@ -102,23 +105,34 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     }
 
     /**
-     * @return string[]
+     * @param string $name
+     * @param mixed $default
+     * @return array
      */
-    public function dataTypes(): array
+    public function pool(?string $name = null, $default = null): array
     {
-        // Check the data type against the list of registered data types.
-        $dataTypes = $this->resource->getDataTypes();
-        if (empty($dataTypes)) {
-            return [];
+        if (!is_null($this->pool)) {
+            return $name ? $this->pool[$name] ?? $default : $this->pool;
         }
-        $dataTypeManager = $this->getServiceLocator()->get('Omeka\DataTypeManager');
-        $result = [];
-        foreach ($dataTypes as $dataType) {
-            if ($dataTypeManager->has($dataType)) {
-                $result[] = $dataType;
+
+        $this->pool = $this->resource->getPool();
+
+        // To avoid issues with updating/removing, check the data types.
+        $dataTypes = $this->pool['data_types'] ?? [];
+        if ($dataTypes) {
+            // Check the data type against the list of registered data types.
+            $dataTypeManager = $this->getServiceLocator()->get('Omeka\DataTypeManager');
+            $result = [];
+            foreach ($dataTypes as $dataType) {
+                if ($dataTypeManager->has($dataType)) {
+                    $result[] = $dataType;
+                }
             }
+            $dataTypes = $result;
         }
-        return $result;
+        $this->pool['data_types'] = $dataTypes;
+
+        return $name ? $this->pool[$name] ?? $default : $this->pool;
     }
 
     /**

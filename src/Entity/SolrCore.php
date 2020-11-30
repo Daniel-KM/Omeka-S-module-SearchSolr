@@ -30,7 +30,7 @@
 
 namespace SearchSolr\Entity;
 
-use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\PersistentCollection;
 use Omeka\Entity\AbstractEntity;
 
 /**
@@ -58,10 +58,11 @@ class SolrCore extends AbstractEntity
     /**
      * @var array
      * @Column(
-     *     type="json"
+     *     type="json",
+     *     nullable=false
      * )
      */
-    protected $settings;
+    protected $settings = [];
 
     /**
      * @OneToMany(
@@ -79,7 +80,7 @@ class SolrCore extends AbstractEntity
 
     public function __construct()
     {
-        $this->maps = new ArrayCollection;
+        $this->maps = new PersistentCollection;
     }
 
     public function getId()
@@ -100,7 +101,7 @@ class SolrCore extends AbstractEntity
     /**
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -118,15 +119,15 @@ class SolrCore extends AbstractEntity
     /**
      * @return array
      */
-    public function getSettings()
+    public function getSettings(): array
     {
         return $this->settings;
     }
 
     /**
-     * @return \Doctrine\Common\Collections\ArrayCollection
+     * @return \Doctrine\ORM\PersistentCollection
      */
-    public function getMaps()
+    public function getMaps(): PersistentCollection
     {
         return $this->maps;
     }

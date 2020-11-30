@@ -71,20 +71,13 @@ class SolrMapForm extends Form
                     ]),
                 ],
                 'attributes' => [
+                    'id' => 'o:source',
                     'required' => true,
                 ],
             ])
             ->add([
-                'name' => 'o:data_type',
-                'type' => 'Omeka\Form\Element\DataTypeSelect',
-                'options' => [
-                    'label' => 'Limit to data types', // @translate
-                ],
-                'attributes' => [
-                    'data-placeholder' => 'Select data types…', // @translate
-                    'multiple' => true,
-                    'required' => false,
-                ],
+                'name' => 'o:pool',
+                'type' => Fieldset::class,
             ])
             ->add([
                 'name' => 'o:field_name',
@@ -93,7 +86,24 @@ class SolrMapForm extends Form
                     'label' => 'Solr field', // @translate
                 ],
                 'attributes' => [
+                    'id' => 'o:pool',
                     'required' => true,
+                ],
+            ]);
+
+        $this
+            ->get('o:pool')
+            ->add([
+                'name' => 'data_types',
+                'type' => 'Omeka\Form\Element\DataTypeSelect',
+                'options' => [
+                    'label' => 'Limit to data types', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'data_types',
+                    'data-placeholder' => 'Select data types…', // @translate
+                    'multiple' => true,
+                    'required' => false,
                 ],
             ]);
 
@@ -107,6 +117,9 @@ class SolrMapForm extends Form
                     'value_options' => $this->getFormatterOptions(),
                     'empty_option' => 'None', // @translate
                 ],
+                'attributes' => [
+                    'id' => 'formatter',
+                ],
             ])
             ->add([
                 'name' => 'label',
@@ -114,6 +127,9 @@ class SolrMapForm extends Form
                 'options' => [
                     'label' => 'Default label', // @translate
                     'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'label',
                 ],
             ]);
         $this->add($settingsFieldset);

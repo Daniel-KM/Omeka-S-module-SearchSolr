@@ -72,8 +72,22 @@ SQL;
 
     $sql = <<<SQL
 ALTER TABLE `solr_map`
-CHANGE `data_types` `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json)'
+CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
 CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+SQL;
+    $connection->exec($sql);
+
+    $sql = <<<SQL
+UPDATE `solr_map`
+SET `pool` = "[]"
+WHERE `pool` = "[]" OR `pool` = "{}" OR `pool` = "" OR `pool` IS NULL;
+SQL;
+    $connection->exec($sql);
+
+    $sql = <<<SQL
+UPDATE `solr_map`
+SET `pool` = CONCAT('{"data_types":', `pool`, "}")
+WHERE `pool` != "[]" AND `pool` IS NOT NULL;
 SQL;
     $connection->exec($sql);
 }

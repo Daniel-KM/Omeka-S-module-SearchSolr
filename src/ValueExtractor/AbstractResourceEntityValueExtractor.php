@@ -57,11 +57,6 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
      */
     protected $baseFilepath;
 
-    /**
-     * @var array
-     */
-    protected $dataTypes = [];
-
     public function __construct(ApiManager $api, LoggerInterface $logger, $baseFilepath)
     {
         $this->api = $api;
@@ -239,7 +234,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $extractedValues = [];
 
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
-        $values = $resource->value($solrMap->firstSource(), ['all' => true, 'type' => $solrMap->dataTypes()]);
+        $values = $resource->value($solrMap->firstSource(), ['all' => true, 'type' => $solrMap->pool('data_types')]);
 
         // Only value resources are managed here: other types are managed with
         // the formatter.

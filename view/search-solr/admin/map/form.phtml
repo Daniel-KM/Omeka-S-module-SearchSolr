@@ -22,11 +22,16 @@ $form->prepare();
 <div id="page-actions">
     <button><?= $translate('Save') ?></button>
 </div>
+<h4><?= $translate('Metadata to extract') ?></h4>
 <?php
 echo $this->formRow($form->get('o:source'));
-echo $this->formRow($form->get('o:data_type'));
+echo $this->formCollection($form->get('o:pool'));
+?>
+<h4><?= $translate('Metadata to index') ?></h4>
+<?php
 echo $this->formRow($form->get('o:field_name'));
 echo $this->formCollection($form->get('o:settings'));
+
 echo $this->formRow($form->get('csrf'));
 
 $this->trigger('view.add.form.after');

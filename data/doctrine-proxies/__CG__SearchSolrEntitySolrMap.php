@@ -66,10 +66,10 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', 'id', 'solrCore', 'resourceName', 'fieldName', 'source', 'dataTypes', 'settings'];
+            return ['__isInitialized__', 'id', 'solrCore', 'resourceName', 'fieldName', 'source', 'pool', 'settings'];
         }
 
-        return ['__isInitialized__', 'id', 'solrCore', 'resourceName', 'fieldName', 'source', 'dataTypes', 'settings'];
+        return ['__isInitialized__', 'id', 'solrCore', 'resourceName', 'fieldName', 'source', 'pool', 'settings'];
     }
 
     /**
@@ -205,7 +205,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function getSolrCore()
+    public function getSolrCore(): \SearchSolr\Entity\SolrCore
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getSolrCore', []);
@@ -227,7 +227,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function getResourceName()
+    public function getResourceName(): string
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getResourceName', []);
@@ -249,7 +249,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function getFieldName()
+    public function getFieldName(): string
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getFieldName', []);
@@ -271,7 +271,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function getSource()
+    public function getSource(): string
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getSource', []);
@@ -282,23 +282,23 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setDataTypes(array $dataTypes)
+    public function setPool(array $pool)
     {
 
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setDataTypes', [$dataTypes]);
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setPool', [$pool]);
 
-        return parent::setDataTypes($dataTypes);
+        return parent::setPool($pool);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function getDataTypes()
+    public function getPool(): array
     {
 
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getDataTypes', []);
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getPool', []);
 
-        return parent::getDataTypes();
+        return parent::getPool();
     }
 
     /**
@@ -315,7 +315,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function getSettings()
+    public function getSettings(): array
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getSettings', []);

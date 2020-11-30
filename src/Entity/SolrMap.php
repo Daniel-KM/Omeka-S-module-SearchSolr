@@ -101,18 +101,20 @@ class SolrMap extends AbstractEntity
     /**
      * @var array
      * @Column(
-     *     type="json"
+     *     type="json",
+     *     nullable=false
      * )
      */
-    protected $dataTypes;
+    protected $pool = [];
 
     /**
      * @var array
      * @Column(
-     *     type="json"
+     *     type="json",
+     *     nullable=false
      * )
      */
-    protected $settings;
+    protected $settings = [];
 
     public function getId()
     {
@@ -132,7 +134,7 @@ class SolrMap extends AbstractEntity
     /**
      * @return \SearchSolr\Entity\SolrCore
      */
-    public function getSolrCore()
+    public function getSolrCore(): SolrCore
     {
         return $this->solrCore;
     }
@@ -150,7 +152,7 @@ class SolrMap extends AbstractEntity
     /**
      * @return string
      */
-    public function getResourceName()
+    public function getResourceName(): string
     {
         return $this->resourceName;
     }
@@ -168,7 +170,7 @@ class SolrMap extends AbstractEntity
     /**
      * @return string
      */
-    public function getFieldName()
+    public function getFieldName(): string
     {
         return $this->fieldName;
     }
@@ -186,27 +188,27 @@ class SolrMap extends AbstractEntity
     /**
      * @return string
      */
-    public function getSource()
+    public function getSource(): string
     {
         return $this->source;
     }
 
     /**
-     * @param array $dataTypes
+     * @param array $pool
      * @return self
      */
-    public function setDataTypes(array $dataTypes)
+    public function setPool(array $pool)
     {
-        $this->dataTypes = $dataTypes;
+        $this->pool = $pool;
         return $this;
     }
 
     /**
      * @return array
      */
-    public function getDataTypes()
+    public function getPool(): array
     {
-        return $this->dataTypes;
+        return $this->pool;
     }
 
     /**
@@ -222,7 +224,7 @@ class SolrMap extends AbstractEntity
     /**
      * @return array
      */
-    public function getSettings()
+    public function getSettings(): array
     {
         return $this->settings;
     }

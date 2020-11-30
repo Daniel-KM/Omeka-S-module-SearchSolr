@@ -73,8 +73,8 @@ class SolrMapAdapter extends AbstractEntityAdapter
         if ($this->shouldHydrate($request, 'o:source')) {
             $entity->setSource(trim($request->getValue('o:source')));
         }
-        if ($this->shouldHydrate($request, 'o:data_type')) {
-            $entity->setDataTypes($request->getValue('o:data_type') ?: []);
+        if ($this->shouldHydrate($request, 'o:pool')) {
+            $entity->setPool($request->getValue('o:pool') ?: []);
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
             $entity->setSettings($request->getValue('o:settings') ?: []);

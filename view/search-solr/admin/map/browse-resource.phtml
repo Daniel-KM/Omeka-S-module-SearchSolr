@@ -105,7 +105,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                         </ul>
                     </td>
                     <td><?= $map->source() ?></td>
-                    <td><?= implode(' ‧ ', $map->dataTypes()) ?></td>
+                    <td><?= implode(' ‧ ', $map->pool('data_types')) ?></td>
                     <td><?php if (!empty($mapSettings['label'])) echo $translate($mapSettings['label']); ?></td>
                 </tr>
             <?php endforeach; ?>
