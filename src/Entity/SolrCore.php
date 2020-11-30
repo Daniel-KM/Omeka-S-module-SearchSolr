@@ -58,7 +58,7 @@ class SolrCore extends AbstractEntity
     /**
      * @var array
      * @Column(
-     *     type="json_array"
+     *     type="json"
      * )
      */
     protected $settings;

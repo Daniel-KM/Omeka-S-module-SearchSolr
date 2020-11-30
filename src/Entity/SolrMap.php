@@ -101,7 +101,7 @@ class SolrMap extends AbstractEntity
     /**
      * @var array
      * @Column(
-     *     type="json_array"
+     *     type="json"
      * )
      */
     protected $dataTypes;
@@ -109,7 +109,7 @@ class SolrMap extends AbstractEntity
     /**
      * @var array
      * @Column(
-     *     type="json_array"
+     *     type="json"
      * )
      */
     protected $settings;

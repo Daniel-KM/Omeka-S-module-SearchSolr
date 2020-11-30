@@ -62,3 +62,18 @@ SQL;
     $messenger->addNotice('Now, values can be indexed differently for each data type, if wanted.'); // @translate
     $messenger->addNotice('Use the new import/export tool to simplify config.'); // @translate
 }
+
+if (version_compare($oldVersion, '3.5.16.3', '<')) {
+    $sql = <<<SQL
+ALTER TABLE `solr_core`
+CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+SQL;
+    $connection->exec($sql);
+
+    $sql = <<<SQL
+ALTER TABLE `solr_map`
+CHANGE `data_types` `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json)'
+CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+SQL;
+    $connection->exec($sql);
+}
