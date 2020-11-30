@@ -2,7 +2,8 @@ Search adapter for Solr (module for Omeka S)
 ============================================
 
 > __New versions of this module and support for Omeka S version 3.0 and above
-> are available on [GitLab], which seems to respect users and privacy better.__
+> are available on [GitLab], which seems to respect users and privacy better
+> than the previous repository.__
 
 [Search adapter for Solr] is a module for [Omeka S] that provides a [Search]
 adapter for [Apache Solr], so it is possible to get the power of a full search
@@ -112,7 +113,8 @@ Quick start
 5. In Solr dashboard
     1. In the case the search doesn’t return any results, check the config of
        the core in the Solr Dashboard and see [this issue on omeka.org] to set
-       and fill the default field.
+       and fill the default field. Or check if there is a field "`*`" in the
+       schema that is ignored.
 
 The search form should appear. Type some text then submit the form to display
 the results as grid or as list. The page can be themed.
@@ -171,7 +173,7 @@ TODO
 - [ ] Replace class Schema and Field with solarium ones.
 - [ ] Rewrite and simplify querier to better handle solarium.
 - [ ] Improve management of value resources and uris, and other special types.
-- [ ] Added an indexer for medias.
+- [ ] Add a separate indexer for medias.
 
 
 Solr install <a id="solr-install"></a>
