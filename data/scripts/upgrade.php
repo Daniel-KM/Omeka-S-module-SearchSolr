@@ -90,4 +90,18 @@ SET `pool` = CONCAT('{"data_types":', `pool`, "}")
 WHERE `pool` != "[]" AND `pool` IS NOT NULL;
 SQL;
     $connection->exec($sql);
+
+    // Keep the standard formatter to simplify improvment.
+    $sql = <<<SQL
+UPDATE `solr_map`
+SET `settings` = REPLACE(`settings`, '"formatter":"standard_no_uri"', '"formatter":"standard_without_uri"')
+WHERE `settings` LIKE '%"formatter":"standard_no_uri"%';
+SQL;
+    $connection->exec($sql);
+    $sql = <<<SQL
+UPDATE `solr_map`
+SET `settings` = REPLACE(`settings`, '"formatter":"uri_only"', '"formatter":"uri"')
+WHERE `settings` LIKE '%"formatter":"uri_only"%';
+SQL;
+    $connection->exec($sql);
 }

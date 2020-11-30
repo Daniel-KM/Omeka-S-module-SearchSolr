@@ -124,7 +124,7 @@ class SolrMapForm extends Form
         $settingsFieldset
             ->add([
                 'name' => 'formatter',
-                'type' => Element\Select::class,
+                'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Formatter', // @translate
                     'value_options' => $this->getFormatterOptions(),
@@ -132,6 +132,7 @@ class SolrMapForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'formatter',
+                    'value' => '',
                 ],
             ])
             ->add([

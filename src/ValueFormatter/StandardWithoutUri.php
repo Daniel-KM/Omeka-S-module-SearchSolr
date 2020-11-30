@@ -7,16 +7,18 @@ namespace SearchSolr\ValueFormatter;
  *
  * Values with a resource are already converted via display title.
  */
-class StandardNoUri implements ValueFormatterInterface
+class StandardWithoutUri implements ValueFormatterInterface
 {
     public function getLabel(): string
     {
-        return 'Standard (no uri)'; // @translate
+        return 'Standard without uri'; // @translate
     }
 
     public function format($value): array
     {
-        $value = trim((string) $value);
+        $value = is_object($value) && $value instanceof \Omeka\Api\Representation\ValueRepresentation
+            ? trim((string) $value->value())
+            : trim((string) $value);
         return strlen($value) ? [$value] : $value;
     }
 }
