@@ -276,7 +276,7 @@ class SolariumIndexer extends AbstractIndexer
         $resourceName = $resource->getResourceName();
         $resourceId = $resource->getId();
         $this->getLogger()->info(new Message(
-            'Indexing %1$s #%2$s in Solr core %3$s', // @translate
+            'Indexing %1$s #%2$s in Solr core "%3$s"', // @translate
             $resourceName, $resourceId, $this->solrCore->name()
         ));
 
@@ -443,7 +443,7 @@ class SolariumIndexer extends AbstractIndexer
         }
 
         $this->getLogger()->info(new Message(
-            'Commit index in Solr core %s.', // @translate
+            'Commit index in Solr core "%s".', // @translate
             $this->getSolrCore()->name()
         ));
         //  TODO use BufferedAdd plugin?
