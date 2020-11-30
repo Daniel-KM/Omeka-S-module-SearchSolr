@@ -311,15 +311,15 @@ class SolariumIndexer extends AbstractIndexer
         $sitesField = $solrCoreSettings['sites_field'];
         switch ($resourceName) {
             case 'items':
-                $sites = array_map(function ($v) {
+                $sites = array_map(function (\Omeka\Entity\Site $v) {
                     return $v->getId();
                 }, $resource->getSites()->toArray());
                 $document->addField($sitesField, array_values($sites));
                 break;
 
             case 'item_sets':
-                $sites = array_map(function ($v) {
-                    return $v->getId();
+                $sites = array_map(function (\Omeka\Entity\SiteItemSet $v) {
+                    return $v->getSite()->getId();
                 }, $resource->getSiteItemSets()->toArray());
                 $document->addField($sitesField, $sites);
                 break;

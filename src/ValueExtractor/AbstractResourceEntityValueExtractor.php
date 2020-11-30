@@ -175,7 +175,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 ? $this->extractItemMediasValue($resource, $solrMap)
                 : [];
         }
-        if ($field === 'item_sets') {
+        if ($field === 'item_set') {
             return $resource instanceof ItemRepresentation
                 ? $this->extractItemItemSetsValue($resource, $solrMap)
                 : [];
