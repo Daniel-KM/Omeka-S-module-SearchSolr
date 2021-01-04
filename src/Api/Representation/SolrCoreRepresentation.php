@@ -148,7 +148,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function solariumClient()
     {
         if (!isset($this->solariumClient)) {
-            $this->solariumClient = new SolariumClient(['endpoint' => $this->endpoint()]);
+            try {
+                $this->solariumClient = new SolariumClient(['endpoint' => $this->endpoint()]);
+            } catch (\Solarium\Exception\InvalidArgumentException $e) {
+
+            }
         }
         return $this->solariumClient;
     }
@@ -215,6 +219,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         $clientSettings = $this->clientSettings();
         $client = $this->solariumClient();
+
+        if (!$client) {
+            $message = new Message('Solr core #%d: incorrect or incomplete configuration.', $this->id()); // @translate
+            $logger->err($message);
+            return $message;
+        }
 
         try {
             // Create a ping query.
