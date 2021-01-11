@@ -20,6 +20,7 @@ $form->prepare();
 
 <?= $this->form()->openTag($form) ?>
 <div id="page-actions">
+    <?= $this->cancelButton() ?>
     <button><?= $translate('Save') ?></button>
 </div>
 <h4><?= $translate('Metadata to extract') ?></h4>
