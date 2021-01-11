@@ -138,8 +138,8 @@ SQL;
         $connection->executeQuery($sql, [json_encode($defaultSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
 
         $sql = <<<'SQL'
-INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `data_types`, `settings`)
-VALUES (1, ?, ?, ?, "{}", ?);
+INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+VALUES (1, ?, ?, ?, ?, ?);
 SQL;
         $defaultMaps = $this->getDefaultSolrMaps();
         foreach ($defaultMaps as $map) {
@@ -147,6 +147,7 @@ SQL;
                 $map['resource_name'],
                 $map['field_name'],
                 $map['source'],
+                json_encode($map['pool'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                 json_encode($map['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
             ]);
         }
