@@ -71,44 +71,27 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         return $url('admin/search/solr/core-id-map-resource-id', $params, $options);
     }
 
-    /**
-     * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
-     */
     public function solrCore(): ?SolrCoreRepresentation
     {
         $solrCore = $this->resource->getSolrCore();
         return $this->getAdapter('solr_cores')->getRepresentation($solrCore);
     }
 
-    /**
-     * @return string
-     */
     public function resourceName(): string
     {
         return $this->resource->getResourceName();
     }
 
-    /**
-     * @return string
-     */
     public function fieldName(): string
     {
         return $this->resource->getFieldName();
     }
 
-    /**
-     * @return string
-     */
     public function source(): string
     {
         return $this->resource->getSource();
     }
 
-    /**
-     * @param string $name
-     * @param mixed $default
-     * @return array
-     */
     public function pool(?string $name = null, $default = null): array
     {
         if (!is_null($this->pool)) {
@@ -134,19 +117,11 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         return $name ? $this->pool[$name] ?? $default : $this->pool;
     }
 
-    /**
-     * @return array
-     */
     public function settings(): array
     {
         return $this->resource->getSettings();
     }
 
-    /**
-     * @param string $name
-     * @param mixed $default
-     * @return mixed
-     */
     public function setting($name, $default = null)
     {
         $settings = $this->resource->getSettings();

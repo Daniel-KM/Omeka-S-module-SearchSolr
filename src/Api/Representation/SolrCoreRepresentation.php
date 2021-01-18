@@ -75,18 +75,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $url('admin/search/solr/core-id', $params, $options);
     }
 
-    /**
-     * @return string
-     */
-    public function name()
+    public function name(): string
     {
         return $this->resource->getName();
     }
 
-    /**
-     * @return array
-     */
-    public function settings()
+    public function settings(): array
     {
         return $this->resource->getSettings();
     }
@@ -102,10 +96,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $settings[$name] ?? $default;
     }
 
-    /**
-     * @return array
-     */
-    public function clientSettings()
+    public function clientSettings(): array
     {
         // Currently, the keys from the old module Solr are kept.
         // TODO Convert settings during from old module Solr before saving.
@@ -116,9 +107,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
     /**
      * @see \Solarium\Core\Client\Endpoint
-     * @return array
      */
-    public function endpoint()
+    public function endpoint(): array
     {
         $clientSettings = $this->setting('client') ?: [];
         if (!is_array($clientSettings)) {
@@ -142,25 +132,19 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         ];
     }
 
-    /**
-     * @return \Solarium\Client
-     */
-    public function solariumClient()
+    public function solariumClient(): ?SolariumClient
     {
         if (!isset($this->solariumClient)) {
             try {
                 $this->solariumClient = new SolariumClient(['endpoint' => $this->endpoint()]);
             } catch (\Solarium\Exception\InvalidArgumentException $e) {
-
+                // Nothing.
             }
         }
         return $this->solariumClient;
     }
 
-    /**
-     * @return string
-     */
-    public function clientUrl()
+    public function clientUrl(): string
     {
         $settings = $this->clientSettings();
         $user = empty($settings['username']) ? '' : $settings['username'];
@@ -171,19 +155,14 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
     /**
      * Get the url to the core without credentials.
-     *
-     * @return string
      */
-    public function clientUrlAdmin()
+    public function clientUrlAdmin(): string
     {
         $settings = $this->clientSettings();
         return $settings['scheme'] . '://' . $settings['host'] . ':' . $settings['port'] . '/solr/' . $settings['core'];
     }
 
-    /**
-     * @return string
-     */
-    public function clientUrlAdminBoard()
+    public function clientUrlAdminBoard(): string
     {
         $settings = $this->clientSettings();
         if ($settings['host'] === 'localhost' || $settings['host'] === '127.0.0.1') {
@@ -198,20 +177,16 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      * Check if Solr is working.
      *
      * @todo Add a true status check and use it for status message.
-     *
-     * @return bool
      */
-    public function status()
+    public function status(): bool
     {
         return $this->statusMessage() === 'OK';
     }
 
     /**
      * Check if Solr is working.
-     *
-     * @return string
      */
-    public function statusMessage()
+    public function statusMessage(): string
     {
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
@@ -279,12 +254,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return 'OK'; // @translate
     }
 
-    /**
-     * @param string $action
-     * @param bool $canonical
-     * @return string
-     */
-    public function mapUrl($action = null, $canonical = false)
+    public function mapUrl(?string $action = null, $canonical = false): string
     {
         $url = $this->getViewHelper('Url');
         $params = [
@@ -297,13 +267,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $url('admin/search/solr/core-id-map', $params, $options);
     }
 
-    /**
-     * @param string $resourceName
-     * @param string $action
-     * @param bool $canonical
-     * @return string
-     */
-    public function resourceMapUrl($resourceName, $action = null, $canonical = false)
+    public function resourceMapUrl(?string $resourceName, ?string $action = null, $canonical = false): string
     {
         $url = $this->getViewHelper('Url');
         $params = [
@@ -319,13 +283,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
     /**
      * Get the schema for the core.
-     *
-     * @return \SearchSolr\Schema\Schema
      */
-    public function schema()
+    public function schema():\SearchSolr\Schema\Schema
     {
-        $services = $this->getServiceLocator();
-        return $services->build(Schema::class, ['solr_core' => $this]);
+        return $this->getServiceLocator()
+            ->build(Schema::class, ['solr_core' => $this]);
     }
 
     public function getSchemaField($field)
@@ -333,7 +295,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $this->schema()->getField($field);
     }
 
-    public function schemaSupport($support)
+    public function schemaSupport($support): array
     {
         switch ($support) {
             case 'drupal':
