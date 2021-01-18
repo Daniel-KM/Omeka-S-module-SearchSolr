@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau 2018-2020
+ * Copyright Daniel Berthereau 2018-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -186,6 +186,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function clientUrlAdminBoard()
     {
         $settings = $this->clientSettings();
+        if ($settings['host'] === 'localhost' || $settings['host'] === '127.0.0.1') {
+            /** @var \Laminas\View\Helper\ServerUrl $serverUrl */
+            $serverUrl = $this->getViewHelper('ServerUrl');
+            $settings['host'] = $serverUrl->getHost();
+        }
         return $settings['scheme'] . '://' . $settings['host'] . ':' . $settings['port'] . '/solr/#/' . $settings['core'];
     }
 
