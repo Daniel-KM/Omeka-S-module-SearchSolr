@@ -173,7 +173,7 @@ TODO
 - [ ] Replace class Schema and Field with solarium ones.
 - [ ] Rewrite and simplify querier to better handle solarium.
 - [ ] Improve management of value resources and uris, and other special types.
-- [ ] Add a separate indexer for medias.
+- [ ] Add a separate indexer for medias and pages.
 
 
 Solr install <a id="solr-install"></a>
@@ -196,17 +196,19 @@ cd /opt
 java -version
 # If not installed, install it (uncomment)
 #sudo apt install default-jre
+# On CentOs:
+#sudo dnf install java-11-openjdk-devel.x86_64
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://archive.apache.org/dist/lucene/solr/8.6.2/solr-8.6.2.tgz
+wget https://archive.apache.org/dist/lucene/solr/8.7.0/solr-8.7.0.tgz
 # Extract the install script
-tar zxvf solr-8.6.2.tgz solr-8.6.2/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-8.7.0.tgz solr-8.7.0/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-8.6.2.tgz
+sudo bash ./install_solr_service.sh solr-8.7.0.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-8.6.2 /opt/solr
+#sudo ln -s /opt/solr-8.7.0 /opt/solr
 # Clean the sources.
-rm solr-8.6.2.tgz
+rm solr-8.7.0.tgz
 rm install_solr_service.sh
 ```
 
@@ -221,6 +223,7 @@ sudo systemctl start solr
 ```
 
 The result may be more complete with direct command:
+
 ```sh
 sudo su - solr -c "/opt/solr/bin/solr status"
 sudo su - solr -c "/opt/solr/bin/solr stop"
@@ -228,12 +231,16 @@ sudo su - solr -c "/opt/solr/bin/solr start"
 sudo su - solr -c "/opt/solr/bin/solr restart"
 ```
 
+Warning: Solr is a java application, so it is very slow to start, stop and
+restart. You may need to wait five minutes between two commands.
+
 Solr is automatically launched and available in your browser at [http://localhost:8983].
 
-Solr is available via command line too at `/opt/solr/bin/solr`.
+Solr is available via command line too at `/opt/solr/bin/solr`. You may want to
+add yourself to the solr group (`sudo usermod -aG solr myName`).
 
 If the service is not available after the install, you can create the file "/etc/systemd/system/solr.service",
-that may need to be adapted for the distribution, here for Centos 8 (see the [solr service gist]):
+that may need to be adapted for the distribution, here for CentOs 8 (see the [solr service gist]):
 
 ```ini
 # put this file in /etc/systemd/system/ as root
@@ -282,12 +289,13 @@ The simpler solution is to close this port with your firewall. Else, you may
 need to add a user control to the admin board. Search on your not-favorite
 search engine to add such a protection.
 
-#### Solr <= 7
+#### Solr before version 8
 
 The simplest protection to the Solr admin board is password based. For that,
 three files should be updated.
 
 * `/opt/solr/server/etc/jetty.xml`, before the ending tag `</Configure>`:
+
 ```xml
     <Call name="addBean">
         <Arg>
@@ -301,6 +309,7 @@ three files should be updated.
 ```
 
 * `/opt/solr/server/solr-webapp/webapp/WEB-INF/web.xml`, before the ending tag `</web-app>`:
+
 ```xml
   <security-constraint>
     <web-resource-collection>
@@ -318,14 +327,19 @@ three files should be updated.
 ```
 
 * `/opt/solr/server/etc/realm.properties`, a list of users, passwords, and roles:
+
 ```
 omeka_admin: xxx-pass-word-yyy, core1-role
 ```
 
-#### Solr >= 8
+#### Solr from version 8
 
 As indicated in [Solr Basic Authentication], add the file `/var/solr/data/security.json`,
-with the user roles you want (here the user `omeka_admin` is added as `admin`:
+with the user roles you want (here the user `omeka_admin` is added as `admin`.
+Because the password is hashed (salt + sha256), it may be simpler to use the
+example,  then to update the admin, then to remove the example user (solr, with
+password "SolrRocks"):
+
 ```json
 {
     "authentication":{
@@ -353,21 +367,24 @@ with the user roles you want (here the user `omeka_admin` is added as `admin`:
 }
 ```
 
-Don't forget to change rights of this file:
+Don't forget to change rights of this file, then to restart Solr:
+
 ```sh
 sudo chown solr:solr /var/solr/data/security.json && sudo chmod g+r,o-rw /var/solr/data/security.json
 ```
 
 To add the hashed password, it is simpler to use the api endpoint, so add the
 specific admin user like that:
+
 ```sh
 curl --user solr:SolrRocks http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d '{"set-user": {"omeka_admin":"MySecretPassPhrase"}}'
 ```
 
 Finally, restart the server and **remove the default admin "solr"** or change
 its password, and restart the server again:
+
 ```sh
-curl --user omeka:MySecretPassPhrase http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d  '{"delete-user": ["solr"]}'
+curl --user omeka_admin:MySecretPassPhrase http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d  '{"delete-user": ["solr"]}'
 sudo systemctl restart solr
 ```
 
@@ -379,10 +396,11 @@ the core in the Solr page inside Omeka.
 See [taking Solr to production].
 
 ```sh
+sudo touch /etc/security/limits.d/200-solr.conf
 sudo echo "solr    hard    nofile  65000" >> /etc/security/limits.d/200-solr.conf
-sudo echo "solr    hard    nproc  65000" >> /etc/security/limits.d/200-solr.conf
+sudo echo "solr    hard    nproc   65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    soft    nofile  65000" >> /etc/security/limits.d/200-solr.conf
-sudo echo "solr    soft    nproc  65000" >> /etc/security/limits.d/200-solr.conf
+sudo echo "solr    soft    nproc   65000" >> /etc/security/limits.d/200-solr.conf
 ```
 
 ### Upgrade Solr
@@ -400,11 +418,11 @@ upgrade from version 6 to 8, you first need to upgrade to version 7.
 cd /opt
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/8.6.2/solr-8.6.2.tgz
-tar zxvf solr-8.6.2.tgz solr-8.6.2/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/8.7.0/solr-8.7.0.tgz
+tar zxvf solr-8.7.0.tgz solr-8.7.0/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-8.6.2.tgz -f
-rm solr-8.6.2.tgz
+sudo bash ./install_solr_service.sh solr-8.7.0.tgz -f
+rm solr-8.7.0.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -418,11 +436,14 @@ executing, in particular don’t add whitespace after the slashs "/".
 ```sh
 sudo systemctl stop solr
 sudo update-rc.d -f solr remove
+# Equivalent for CentOs:
+# sudo chkconfig --del solr
 sudo rm /etc/init.d/solr
 sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
+sudo rm /etc/security/limits.d/200-solr.conf
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-8.6.2
+sudo rm -r /opt/solr-8.7.0
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -436,6 +457,11 @@ too.
 Solr management <a id="solr-management"></a>
 ---------------
 
+Until Solr version 7, the common way to configure Solr was to use the command
+line. Since version 8, it's often simpler to use the api endpoint, via a browser
+or via curl. In fact, the command is now a shortcut to the endpoint and the url
+is indicated in the results. Of course, it can be done via the ui too.
+
 ### Create a config
 
 At least one index ("core", "collection", or "node")  should be created in Solr
@@ -443,7 +469,10 @@ to be used with Omeka. The simpler is to create one via the command line to
 avoid permissions issues.
 
 ```sh
+# Via command:
 sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
+# Via api:
+curl --user omeka_admin:MySecretPassPhrase 'http://localhost:8983/solr/admin/cores?action=CREATE&name=omeka&instanceDir=omeka&schema=data_driven_schema_configs'
 ```
 
 Here, the user `solr` launches the command `solr` to create the core `omeka`,
@@ -455,6 +484,13 @@ You can check it via the web interface at [http://localhost:8983/solr/#/omeka].
 Here, the path to set in the config of the core in Omeka S is `solr/omeka`.
 
 The config files are saved in `/var/solr/data` by default.
+
+Possible issues:
+- The directory /var/solr is not belonging to solr, so run `sudo chown -R solr:solr /var/solr`.
+- There may be remaining files after a failed creation, so run first `sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"`.
+- There may be a rights issue, so backup and remove the file "security.json"
+  from the data directory, then create the core with the command above, then
+  restore the file "security.json".
 
 ### Upgrade a config
 
@@ -492,7 +528,7 @@ Use it at your own risk.
 It’s always recommended to backup your files and your databases and to check
 your archives regularly so you can roll back if needed.
 
-Note: By default, the config of the server SolR is saved in `/opt/solr/server/etc`
+Note: By default, the config of the server Solr is saved in `/opt/solr/server/etc`
 and in `/etc/default/solr.in.sh`; the config of the cores are saved in `/var/solr/data`.
 
 
@@ -538,7 +574,7 @@ Copyright
 See commits for full list of contributors.
 
 * Copyright BibLibre, 2016-2017 (see [BibLibre])
-* Copyright Daniel Berthereau, 2017-2020 (see [Daniel-KM])
+* Copyright Daniel Berthereau, 2017-2021 (see [Daniel-KM])
 * Copyright Paul Sarrassat, 2018
 
 The module [Solr by BibLibre] was built for the [digital library Explore] of [Université Paris Sciences & Lettres].
