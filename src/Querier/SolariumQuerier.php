@@ -354,7 +354,13 @@ class SolariumQuerier extends AbstractQuerier
     {
         // Currently, the only way to exclude fields is to search in all other
         // fields.
-        $usedFields = $this->usedSolrFields();
+        // TODO Manage multinlingual.
+        $usedFields = $this->usedSolrFields(
+            // Manage Drupal prefixes too.
+            ['t_', 'txt_', 'ss_', 'sm_'],
+            ['_t', '_txt', '_ss', '_s', '_ss_lower', '_s_lower'],
+            ['_txt_']
+        );
         $excludedFields = $this->query->getExcludedFields();
         $usedFields = array_diff($usedFields, $excludedFields);
         if (!count($usedFields)) {
@@ -510,12 +516,42 @@ class SolariumQuerier extends AbstractQuerier
         }
     }
 
-    protected function usedSolrFields()
+    /**
+     * @todo Replace by a single regex?
+     */
+    protected function usedSolrFields(array $prefixes = [], array $suffixes = [], array $contains = []): array
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        return $api->search('solr_maps', [
+        $fields = $api->search('solr_maps', [
             'solr_core_id' => $this->solrCore->id(),
         ], ['returnScalar' => 'fieldName'])->getContent();
+
+        $fields = array_filter($fields, function ($v) use ($prefixes, $suffixes, $contains) {
+            if ($prefixes) {
+                foreach ($prefixes as $prefix) {
+                    if (strncmp($v, $prefix, strlen($prefix)) === 0) {
+                        return true;
+                    }
+                }
+            }
+            if ($suffixes) {
+                foreach ($suffixes as $suffix) {
+                    if (substr($v, - strlen($suffix)) === $suffix) {
+                        return true;
+                    }
+                }
+            }
+            if ($contains) {
+                foreach ($contains as $contain) {
+                    if (strpos($v, $contain) !== false) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+
+        return $fields;
     }
 
     protected function fieldIsTokenized($name)
@@ -523,7 +559,7 @@ class SolariumQuerier extends AbstractQuerier
         return substr($name, -2) === '_t'
             || substr($name, -4) === '_txt'
             || substr($name, -3) === '_ws'
-            || (bool) strpos($name, '_txt_');
+            || strpos($name, '_txt_') !== false;
     }
 
     protected function fieldIsString($name)
