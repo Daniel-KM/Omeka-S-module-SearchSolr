@@ -10,7 +10,7 @@ CREATE TABLE `solr_map` (
     `resource_name` VARCHAR(190) NOT NULL,
     `field_name` VARCHAR(190) NOT NULL,
     `source` VARCHAR(190) NOT NULL,
-    `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
+    `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
     `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
     INDEX IDX_39A565C527B35A19 (`solr_core_id`),
     INDEX IDX_39A565C527B35A195103DEBC (`solr_core_id`, `resource_name`),

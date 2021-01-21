@@ -105,3 +105,14 @@ WHERE `settings` LIKE '%"formatter":"uri_only"%';
 SQL;
     $connection->exec($sql);
 }
+
+if (version_compare($oldVersion, '3.5.18.3', '<')) {
+    $sql = <<<SQL
+ALTER TABLE `solr_map`
+CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
+SQL;
+    try {
+        $connection->exec($sql);
+    } catch (\Exception $e) {
+    }
+}
