@@ -115,8 +115,8 @@ class Module extends AbstractModule
         $moduleManager = $services->get('Omeka\ModuleManager');
         $module = $moduleManager->getModule('Solr');
         if ($module
-            && version_compare($module->getIni('version'), '3.5.5', '>=')
-            && version_compare($module->getIni('version'), '3.5.14', '<=')
+            && version_compare($module->getIni('version') ?? '', '3.5.5', '>=')
+            && version_compare($module->getIni('version') ?? '', '3.5.14', '<=')
         ) {
             // Check if Solr was really installed.
             try {

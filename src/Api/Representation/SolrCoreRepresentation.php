@@ -194,7 +194,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         if (!file_exists(dirname(__DIR__, 3) . '/vendor/solarium/solarium/src/Client.php')) {
             $message = new Message('The composer library "%s" is not installed. See readme.', 'Solarium'); // @translate
             $logger->err($message);
-            return $message;
+            return (string) $message;
         }
 
         $clientSettings = $this->clientSettings();
@@ -203,7 +203,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         if (!$client) {
             $message = new Message('Solr core #%d: incorrect or incomplete configuration.', $this->id()); // @translate
             $logger->err($message);
-            return $message;
+            return (string) $message;
         }
 
         try {
@@ -215,12 +215,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             if ($e->getCode() === 404) {
                 $message = new Message('Solr core not found. Check your url.'); // @translate
                 $logger->err($message);
-                return $message;
+                return (string) $message;
             }
             if ($e->getCode() === 401) {
                 $message = new Message('Solr core not found or unauthorized. Check your url and your credentials.'); // @translate
                 $logger->err($message);
-                return $message;
+                return (string) $message;
             }
             $message = new Message('Solr core #%d: %s', $this->id(), $e->getMessage()); // @translate
             $logger->err($message);
