@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2020
+ * Copyright Daniel Berthereau, 2020-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -121,109 +121,67 @@ class SolrMap extends AbstractEntity
         return $this->id;
     }
 
-    /**
-     * @param SolrCore $solrCore
-     * @return self
-     */
-    public function setSolrCore(SolrCore $solrCore)
+    public function setSolrCore(SolrCore $solrCore): self
     {
         $this->solrCore = $solrCore;
         return $this;
     }
 
-    /**
-     * @return \SearchSolr\Entity\SolrCore
-     */
     public function getSolrCore(): SolrCore
     {
         return $this->solrCore;
     }
 
-    /**
-     * @param string $resourceName
-     * @return self
-     */
-    public function setResourceName($resourceName)
+    public function setResourceName(string $resourceName): self
     {
         $this->resourceName = $resourceName;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getResourceName(): string
     {
         return $this->resourceName;
     }
 
-    /**
-     * @param string $fieldName
-     * @return self
-     */
-    public function setFieldName($fieldName)
+    public function setFieldName(string $fieldName): self
     {
         $this->fieldName = $fieldName;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getFieldName(): string
     {
         return $this->fieldName;
     }
 
-    /**
-     * @param string $source
-     * @return self
-     */
-    public function setSource($source)
+    public function setSource(string $source): self
     {
         $this->source = $source;
         return $this;
     }
 
-    /**
-     * @return string
-     */
     public function getSource(): string
     {
         return $this->source;
     }
 
-    /**
-     * @param array $pool
-     * @return self
-     */
-    public function setPool(array $pool)
+    public function setPool(array $pool): self
     {
         $this->pool = $pool;
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getPool(): array
     {
         return $this->pool;
     }
 
-    /**
-     * @param array $settings
-     * @return self
-     */
-    public function setSettings(array $settings)
+    public function setSettings(array $settings): self
     {
         $this->settings = $settings;
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getSettings(): array
     {
         return $this->settings;
