@@ -30,7 +30,8 @@
 
 namespace SearchSolr\Entity;
 
-use Doctrine\ORM\PersistentCollection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Omeka\Entity\AbstractEntity;
 
 /**
@@ -80,7 +81,7 @@ class SolrCore extends AbstractEntity
 
     public function __construct()
     {
-        $this->maps = new PersistentCollection;
+        $this->maps = new ArrayCollection;
     }
 
     public function getId()
@@ -124,10 +125,7 @@ class SolrCore extends AbstractEntity
         return $this->settings;
     }
 
-    /**
-     * @return \Doctrine\ORM\PersistentCollection
-     */
-    public function getMaps(): PersistentCollection
+    public function getMaps(): Collection
     {
         return $this->maps;
     }
