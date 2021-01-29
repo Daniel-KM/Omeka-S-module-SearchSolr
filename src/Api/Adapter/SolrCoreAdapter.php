@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2020
+ * Copyright Daniel Berthereau, 2017-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -61,7 +61,7 @@ class SolrCoreAdapter extends AbstractEntityAdapter
         ErrorStore $errorStore
     ): void {
         if ($this->shouldHydrate($request, 'o:name')) {
-            $entity->setName(trim($request->getValue('o:name')));
+            $entity->setName(trim($request->getValue('o:name') ?? ''));
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
             $entity->setSettings($request->getValue('o:settings') ?: []);
@@ -70,7 +70,7 @@ class SolrCoreAdapter extends AbstractEntityAdapter
 
     public function validateEntity(EntityInterface $entity, ErrorStore $errorStore): void
     {
-        if (!trim($entity->getName())) {
+        if (!trim($entity->getName() ?? '')) {
             $errorStore->addError('o:name', 'The name cannot be empty.'); // @translate
         }
     }
