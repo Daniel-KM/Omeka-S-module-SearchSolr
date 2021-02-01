@@ -187,7 +187,7 @@ it via `dpkg`. The process is the same  for Red Hat and derivatives.
 ### Install Solr
 
 The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]),
-and Solr 7.7 and 8.6 (with Java [1.8] or higher). The last stable versions of Solr
+and Solr 7.7 and 8.8 (with Java [1.8] or higher). The last stable versions of Solr
 and Java (OpenJdk 11) are recommended.
 
 ```sh
@@ -200,15 +200,15 @@ java -version
 #sudo dnf install java-11-openjdk-devel.x86_64
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://archive.apache.org/dist/lucene/solr/8.7.0/solr-8.7.0.tgz
+wget https://archive.apache.org/dist/lucene/solr/8.8.0/solr-8.8.0.tgz
 # Extract the install script
-tar zxvf solr-8.7.0.tgz solr-8.7.0/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-8.8.0.tgz solr-8.8.0/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-8.7.0.tgz
+sudo bash ./install_solr_service.sh solr-8.8.0.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-8.7.0 /opt/solr
+#sudo ln -s /opt/solr-8.8.0 /opt/solr
 # Clean the sources.
-rm solr-8.7.0.tgz
+rm solr-8.8.0.tgz
 rm install_solr_service.sh
 ```
 
@@ -231,7 +231,7 @@ sudo su - solr -c "/opt/solr/bin/solr start"
 sudo su - solr -c "/opt/solr/bin/solr restart"
 ```
 
-Warning: Solr is a java application, so it is very slow to start, stop and
+**Warning**: Solr is a java application, so it is very slow to start, stop and
 restart. You may need to wait five minutes between two commands.
 
 Solr is automatically launched and available in your browser at [http://localhost:8983].
@@ -241,6 +241,7 @@ add yourself to the solr group (`sudo usermod -aG solr myName`).
 
 If the service is not available after the install, you can create the file "/etc/systemd/system/solr.service",
 that may need to be adapted for the distribution, here for CentOs 8 (see the [solr service gist]):
+This is useless if the file "/etc/init.d/solr" is available and used.
 
 ```ini
 # put this file in /etc/systemd/system/ as root
@@ -367,10 +368,12 @@ password "SolrRocks"):
 }
 ```
 
-Don't forget to change rights of this file, then to restart Solr:
+Don't forget to change rights of this file, then to restart Solr and wait some
+minutes for java:
 
 ```sh
 sudo chown solr:solr /var/solr/data/security.json && sudo chmod g+r,o-rw /var/solr/data/security.json
+sudo systemctl restart solr
 ```
 
 To add the hashed password, it is simpler to use the api endpoint, so add the
@@ -380,16 +383,16 @@ specific admin user like that:
 curl --user solr:SolrRocks http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d '{"set-user": {"omeka_admin":"MySecretPassPhrase"}}'
 ```
 
-Finally, restart the server and **remove the default admin "solr"** or change
-its password, and restart the server again:
+Finally, restart the server, wait some minutes for java, and **remove the default admin "solr"**
+or change its password, and restart the server again:
 
 ```sh
 curl --user omeka_admin:MySecretPassPhrase http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d  '{"delete-user": ["solr"]}'
 sudo systemctl restart solr
 ```
 
-Of course, the user `omeka_admin` and the password should be setin the config of
-the core in the Solr page inside Omeka.
+Of course, the user `omeka_admin` and the password should be set in the config
+of the core in the Solr page inside Omeka.
 
 ### Taking Solr to production
 
@@ -401,6 +404,7 @@ sudo echo "solr    hard    nofile  65000" >> /etc/security/limits.d/200-solr.con
 sudo echo "solr    hard    nproc   65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    soft    nofile  65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    soft    nproc   65000" >> /etc/security/limits.d/200-solr.conf
+sudo systemctl restart solr
 ```
 
 ### Upgrade Solr
@@ -418,11 +422,11 @@ upgrade from version 6 to 8, you first need to upgrade to version 7.
 cd /opt
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/8.7.0/solr-8.7.0.tgz
-tar zxvf solr-8.7.0.tgz solr-8.7.0/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/8.8.0/solr-8.8.0.tgz
+tar zxvf solr-8.8.0.tgz solr-8.8.0/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-8.7.0.tgz -f
-rm solr-8.7.0.tgz
+sudo bash ./install_solr_service.sh solr-8.8.0.tgz -f
+rm solr-8.8.0.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -443,7 +447,7 @@ sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm /etc/security/limits.d/200-solr.conf
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-8.7.0
+sudo rm -r /opt/solr-8.8.0
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -517,6 +521,19 @@ the config or add a cron to stop/clean/restart Solr.
 sudo /opt/solr/bin/solr stop
 sudo rm /opt/solr/server/logs/solr-8983-console.log
 sudo /opt/solr/bin/solr start
+```
+
+### Migrate a config
+
+If you have a new server and that the version is the same or the previous one,
+it is possible to copy the old install to the new one. Don't forget to remove
+the write lock if needed before restarting:
+
+```sh
+# From the new server (for a core named "omeka").
+rsync -va user@oldserver.com:/var/solr/data/omeka /var/solr/data
+rm /var/solr/data/omeka/data/index/write.lock
+systemctl restart solr
 ```
 
 
