@@ -71,6 +71,23 @@ SQL;
     $connection->exec($sql);
 
     $sql = <<<SQL
+ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
+SQL;
+    try {
+        $connection->exec($sql);
+        $sql = <<<SQL
+UPDATE `solr_map` SET `data_types` = "[]";
+SQL;
+        $connection->exec($sql);
+
+        $sql = <<<SQL
+UPDATE `solr_map` SET `source` = REPLACE(`source`, "item_set", "item_sets") WHERE `source` LIKE "%item_set%";
+SQL;
+        $connection->exec($sql);
+    } catch (\Exception $e) {
+    }
+
+    $sql = <<<SQL
 ALTER TABLE `solr_map`
 CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
 CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
