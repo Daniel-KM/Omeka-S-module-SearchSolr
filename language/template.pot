@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-11-30 00:00+0000\n"
+"POT-Creation-Date: 2021-02-08 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -53,7 +53,7 @@ msgstr ""
 msgid "This module has resources that connot be installed."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:710
+#: src/Generic/AbstractModule.php:707
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
@@ -289,11 +289,11 @@ msgstr ""
 msgid "Edit Solr map"
 msgstr ""
 
-#: view/search-solr/admin/map/form.phtml:25
+#: view/search-solr/admin/map/form.phtml:26
 msgid "Metadata to extract"
 msgstr ""
 
-#: view/search-solr/admin/map/form.phtml:30
+#: view/search-solr/admin/map/form.phtml:31
 msgid "Metadata to index"
 msgstr ""
 
@@ -318,7 +318,7 @@ msgstr ""
 msgid "Use the new import/export tool to simplify config."
 msgstr ""
 
-#: Module.php:98 src/Api/Representation/SolrCoreRepresentation.php:211
+#: Module.php:98 src/Api/Representation/SolrCoreRepresentation.php:195
 msgid "Solarium"
 msgstr ""
 
@@ -432,11 +432,11 @@ msgstr ""
 msgid "Formatter"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:141
+#: src/Form/Admin/SolrMapForm.php:142
 msgid "Default label"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:142
+#: src/Form/Admin/SolrMapForm.php:143
 msgid "The label is automatically translated if it exists in Omeka."
 msgstr ""
 
@@ -592,27 +592,31 @@ msgid ""
 "If empty, the config of the solr core (solrconfig.xml) will be used."
 msgstr ""
 
-#: src/ValueFormatter/Point.php:11
-msgid "Point"
+#: src/ValueFormatter/Uri.php:12
+msgid "Uri"
 msgstr ""
 
-#: src/ValueFormatter/StandardNoUri.php:14
-msgid "Standard (no uri)"
+#: src/ValueFormatter/StandardWithUri.php:15
+msgid "Standard with uri"
+msgstr ""
+
+#: src/ValueFormatter/Point.php:11
+msgid "Point"
 msgstr ""
 
 #: src/ValueFormatter/DateRange.php:37
 msgid "Date range"
 msgstr ""
 
-#: src/ValueFormatter/UriOnly.php:12
-msgid "Uri only"
+#: src/ValueFormatter/StandardWithoutUri.php:14
+msgid "Standard without uri"
 msgstr ""
 
 #: src/ValueFormatter/PlainText.php:12
 msgid "Plain text"
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:501
+#: src/Querier/SolariumQuerier.php:507
 #, php-format
 msgid "Search type \"%s\" is not managed."
 msgstr ""
@@ -848,49 +852,54 @@ msgstr ""
 msgid "%d fields have been mapped for core \"%s\" (#%d)."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:226
+#: src/Api/Representation/SolrCoreRepresentation.php:204
+#, php-format
+msgid "Solr core #%d: incorrect or incomplete configuration."
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:216
 msgid "Solr core not found. Check your url."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:231
+#: src/Api/Representation/SolrCoreRepresentation.php:221
 msgid ""
 "Solr core not found or unauthorized. Check your url and your credentials."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:235
-#: src/Api/Representation/SolrCoreRepresentation.php:239
-#: src/Api/Representation/SolrCoreRepresentation.php:253
+#: src/Api/Representation/SolrCoreRepresentation.php:225
+#: src/Api/Representation/SolrCoreRepresentation.php:229
+#: src/Api/Representation/SolrCoreRepresentation.php:243
 #, php-format
 msgid "Solr core #%d: %s"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:249
+#: src/Api/Representation/SolrCoreRepresentation.php:239
 #, php-format
 msgid "Solr core #%d enpoint: %s"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:260
+#: src/Api/Representation/SolrCoreRepresentation.php:250
 msgid "Solr: the config bypasses the check of the certificate."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:261
+#: src/Api/Representation/SolrCoreRepresentation.php:251
 msgid "OK (warning: check of certificate disabled)"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:264
+#: src/Api/Representation/SolrCoreRepresentation.php:254
 msgid "OK"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:279
+#: src/Indexer/SolariumIndexer.php:273
 #, php-format
 msgid "Indexing %1$s #%2$s in Solr core \"%3$s\""
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:441
+#: src/Indexer/SolariumIndexer.php:434
 msgid "No document to commit in Solr."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:446
+#: src/Indexer/SolariumIndexer.php:439
 #, php-format
 msgid "Commit index in Solr core \"%s\"."
 msgstr ""
