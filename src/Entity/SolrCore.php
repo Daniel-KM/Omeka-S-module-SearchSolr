@@ -84,7 +84,7 @@ class SolrCore extends AbstractEntity
         $this->maps = new ArrayCollection;
     }
 
-    public function getId(): ?int
+    public function getId()
     {
         return $this->id;
     }
@@ -95,7 +95,7 @@ class SolrCore extends AbstractEntity
         return $this;
     }
 
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
