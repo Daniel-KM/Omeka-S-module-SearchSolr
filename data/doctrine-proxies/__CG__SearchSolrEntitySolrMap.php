@@ -194,7 +194,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setSolrCore(\SearchSolr\Entity\SolrCore $solrCore)
+    public function setSolrCore(\SearchSolr\Entity\SolrCore $solrCore): \SearchSolr\Entity\SolrMap
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setSolrCore', [$solrCore]);
@@ -216,7 +216,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setResourceName($resourceName)
+    public function setResourceName(string $resourceName): \SearchSolr\Entity\SolrMap
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setResourceName', [$resourceName]);
@@ -238,7 +238,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setFieldName($fieldName)
+    public function setFieldName(string $fieldName): \SearchSolr\Entity\SolrMap
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setFieldName', [$fieldName]);
@@ -260,7 +260,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setSource($source)
+    public function setSource(string $source): \SearchSolr\Entity\SolrMap
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setSource', [$source]);
@@ -282,7 +282,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setPool(array $pool)
+    public function setPool(array $pool): \SearchSolr\Entity\SolrMap
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setPool', [$pool]);
@@ -304,7 +304,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setSettings(array $settings)
+    public function setSettings(array $settings): \SearchSolr\Entity\SolrMap
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setSettings', [$settings]);

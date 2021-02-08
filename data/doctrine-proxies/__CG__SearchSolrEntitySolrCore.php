@@ -194,7 +194,7 @@ class SolrCore extends \SearchSolr\Entity\SolrCore implements \Doctrine\ORM\Prox
     /**
      * {@inheritDoc}
      */
-    public function setName($name)
+    public function setName(string $name): \SearchSolr\Entity\SolrCore
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setName', [$name]);
@@ -205,7 +205,7 @@ class SolrCore extends \SearchSolr\Entity\SolrCore implements \Doctrine\ORM\Prox
     /**
      * {@inheritDoc}
      */
-    public function getName(): string
+    public function getName(): ?string
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getName', []);
@@ -216,7 +216,7 @@ class SolrCore extends \SearchSolr\Entity\SolrCore implements \Doctrine\ORM\Prox
     /**
      * {@inheritDoc}
      */
-    public function setSettings(array $settings)
+    public function setSettings(array $settings): \SearchSolr\Entity\SolrCore
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setSettings', [$settings]);
@@ -238,7 +238,7 @@ class SolrCore extends \SearchSolr\Entity\SolrCore implements \Doctrine\ORM\Prox
     /**
      * {@inheritDoc}
      */
-    public function getMaps(): \Doctrine\ORM\PersistentCollection
+    public function getMaps(): \Doctrine\Common\Collections\Collection
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getMaps', []);
