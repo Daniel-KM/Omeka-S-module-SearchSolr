@@ -67,11 +67,6 @@ class SolariumIndexer extends AbstractIndexer
     protected $apiAdapters;
 
     /**
-     * @var \Doctrine\ORM\EntityManager $entityManager
-     */
-    protected $entityManager;
-
-    /**
      * @var \SearchSolr\ValueExtractor\Manager
      */
     protected $valueExtractorManager;
@@ -238,7 +233,6 @@ class SolariumIndexer extends AbstractIndexer
         $services = $this->getServiceLocator();
         $this->api = $services->get('Omeka\ApiManager');
         $this->apiAdapters = $services->get('Omeka\ApiAdapterManager');
-        $this->entityManager = $services->get('Omeka\EntityManager');
         $this->valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $this->valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
         $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();

@@ -54,13 +54,6 @@ $form->prepare();
 <?php $this->trigger('view.edit.form.after'); ?>
 <?= $this->form()->closeTag() ?>
 
-<?php if (!class_exists('SolrDisMaxQuery')): ?>
-<p>
-<?php $solrVersion = class_exists('SolrUtils') ? \SolrUtils::getSolrVersion() : $translate('[unknown]'); ?>
-<?= sprintf($translate('To use advanced query options, you need the php-solr library 2.1.0 or above (lastest recommended, current %s).'), $solrVersion) ?>
-</p>
-<?php endif; ?>
-
 <p>
 <?= $translate('WARNING: Changing the required values will require a complete reindexation.') ?>
 </p>

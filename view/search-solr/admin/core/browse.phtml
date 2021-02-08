@@ -110,13 +110,6 @@ $this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css',
     </table>
 <?php endif; ?>
 
-<?php if (!class_exists('SolrDisMaxQuery')): ?>
-<p>
-<?php $solrVersion = class_exists('SolrUtils') ? \SolrUtils::getSolrVersion() : $translate('[unknown]'); ?>
-<?= sprintf($translate('To use advanced query options, you need the php-solr library 2.1.0 or above (lastest recommended, current %s).'), $solrVersion) ?>
-</p>
-<?php endif; ?>
-
 <div class="sidebar">
     <a href="#"
         class="sidebar-close o-icon-close"
