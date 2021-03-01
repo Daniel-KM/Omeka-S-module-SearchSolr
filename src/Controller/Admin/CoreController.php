@@ -501,7 +501,7 @@ class CoreController extends AbstractActionController
         fputcsv($stream, $fields, "\t", chr(0), chr(0));
     }
 
-    protected function extractRows($filepath, $options)
+    protected function extractRows(string $filepath, array $options = []): array
     {
         $options += [
             'type' => 'text/csv',
@@ -517,6 +517,9 @@ class CoreController extends AbstractActionController
         // fgetcsv is not used to avoid issues with bom.
         $content = file_get_contents($filepath);
         $content = mb_convert_encoding($content, 'UTF-8');
+        if (substr($content, 0, 3) === chr(0xEF) . chr(0xBB) . chr(0xBF)) {
+            $content = substr($content, 3);
+        }
         if (empty($content)) {
             return [];
         }
@@ -530,9 +533,9 @@ class CoreController extends AbstractActionController
                 unset($rows[$key]);
                 continue;
             }
-            if (count($row) < count($this->mappingHeaders)) {
+            if (count($row) < $countHeaders) {
                 $row = array_slice(array_merge($row, array_fill(0, $countHeaders, '')), 0, $countHeaders);
-            } elseif (count($row) > count($this->mappingHeaders)) {
+            } elseif (count($row) > $countHeaders) {
                 $row = array_slice($row, 0, $countHeaders);
             }
             $rows[$key] = array_combine($this->mappingHeaders, array_map('trim', $row));
@@ -541,11 +544,6 @@ class CoreController extends AbstractActionController
         $rows = array_values(array_filter($rows));
         if (!isset($rows[0]['resource_name'])) {
             return [];
-        }
-
-        // Simple fix issue with bom.
-        if (strpos($rows[0]['resource_name'], 'resource_name')) {
-            $rows[0]['resource_name'] = 'resource_name';
         }
 
         return $rows;
