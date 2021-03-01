@@ -290,7 +290,7 @@ The simpler solution is to close this port with your firewall. Else, you may
 need to add a user control to the admin board. Search on your not-favorite
 search engine to add such a protection.
 
-#### Solr before version 8
+#### Solr before version 8 (deprecated)
 
 The simplest protection to the Solr admin board is password based. For that,
 three files should be updated.
@@ -377,19 +377,23 @@ sudo systemctl restart solr
 ```
 
 To add the hashed password, it is simpler to use the api endpoint, so add the
-specific admin user like that:
+specific admin user like that, and restart the server:
 
 ```sh
-curl --user solr:SolrRocks http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d '{"set-user": {"omeka_admin":"MySecretPassPhrase"}}'
-```
-
-Finally, restart the server, wait some minutes for java, and **remove the default admin "solr"**
-or change its password, and restart the server again:
-
-```sh
-curl --user omeka_admin:MySecretPassPhrase http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d  '{"delete-user": ["solr"]}'
+curl --user solr:SolrRocks http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d '{"set-user": {"omeka_admin":"My Secret Pass Phrase"}}'
 sudo systemctl restart solr
 ```
+
+Finally, after some minutes for java, you should **remove the default admin "solr"**
+or change its password, and **restart the server again**:
+
+```sh
+curl --user 'omeka_admin:My Secret Pass Phrase' http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d  '{"delete-user": ["solr"]}'
+sudo systemctl restart solr
+```
+
+Important: don't forget to remove the previous lines from the shell or browser
+history.
 
 Of course, the user `omeka_admin` and the password should be set in the config
 of the core in the Solr page inside Omeka.
@@ -400,10 +404,12 @@ See [taking Solr to production].
 
 ```sh
 sudo touch /etc/security/limits.d/200-solr.conf
+sudo chmod o+w /etc/security/limits.d/200-solr.conf
 sudo echo "solr    hard    nofile  65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    hard    nproc   65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    soft    nofile  65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    soft    nproc   65000" >> /etc/security/limits.d/200-solr.conf
+sudo chmod o-w /etc/security/limits.d/200-solr.conf
 sudo systemctl restart solr
 ```
 
@@ -531,9 +537,11 @@ the write lock if needed before restarting:
 
 ```sh
 # From the new server (for a core named "omeka").
+sudo systemctl stop solr
 rsync -va user@oldserver.com:/var/solr/data/omeka /var/solr/data
 rm /var/solr/data/omeka/data/index/write.lock
-systemctl restart solr
+sudo chown -R solr:solr /var/solr
+sudo systemctl restart solr
 ```
 
 
