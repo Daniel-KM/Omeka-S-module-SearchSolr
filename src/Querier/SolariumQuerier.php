@@ -109,7 +109,7 @@ class SolariumQuerier extends AbstractQuerier
                 $this->response->setResourceTotalResults($groupName, $valueGroup->getNumFound());
                 foreach ($valueGroup as $document) {
                     $resourceId = basename($document['id']);
-                    $this->response->addResult($groupName, ['id' => $resourceId]);
+                    $this->response->addResult($groupName, ['id' => is_numeric($resourceId) ? (int) $resourceId : $resourceId]);
                 }
             }
         }
