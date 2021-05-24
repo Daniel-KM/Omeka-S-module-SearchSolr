@@ -115,7 +115,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             $clientSettings = (array) $clientSettings;
         }
         return [
-            $clientSettings['host'] => array_replace(
+            $clientSettings['host'] ?? 'localhost' => array_replace(
                 [
                     'scheme' => null,
                     'host' => null,
