@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2020
+ * Copyright Daniel Berthereau, 2017-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -130,6 +130,8 @@ class SolariumQuerier extends AbstractQuerier
 
     /**
      * @todo Improve the integration of Solarium. Many things can be added directly as option or as array.
+     * @todo Create an Omeka json output directly in Solr (via solarium nevertheless).
+     * @todo Remove checks from here.
      *
      * @return SolariumQuery|null
      *
@@ -213,13 +215,13 @@ class SolariumQuerier extends AbstractQuerier
                 }
                 continue;
             }
-            foreach ($values as $value) {
+            foreach ($values as $key => $value) {
                 $value = $this->encloseValue($value);
                 if (!strlen($value)) {
                     continue;
                 }
                 $this->solariumQuery
-                    ->createFilterQuery($name)
+                    ->createFilterQuery($name . '_' . $key)
                     ->setQuery("$name:$value");
             }
         }
