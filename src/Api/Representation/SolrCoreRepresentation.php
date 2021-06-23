@@ -210,7 +210,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             // Create a ping query.
             $query = $client->createPing();
             // Execute the ping query. Result is not checked, bug use exception.
-            $client->ping($query);
+            @$client->ping($query);
         } catch (SolariumException $e) {
             if ($e->getCode() === 404) {
                 $message = new Message('Solr core not found. Check your url.'); // @translate
