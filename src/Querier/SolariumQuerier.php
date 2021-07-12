@@ -40,6 +40,7 @@ use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 
 /**
  * @todo Rewrite the querier to simplify it and to use all solarium features.
+ * @todo Remove grouping (item/itemset): this is native in Omeka and most of the time, user want them mixed.
  */
 class SolariumQuerier extends AbstractQuerier
 {
@@ -399,10 +400,10 @@ class SolariumQuerier extends AbstractQuerier
                     continue;
                 }
                 if ($first) {
-                    $joiner = '';
+                    $join = '';
                     $first = false;
                 } else {
-                    $joiner = isset($value['joiner']) && $value['joiner'] === 'or' ? 'OR' : 'AND';
+                    $join = isset($value['join']) && $value['join'] === 'or' ? 'OR' : 'AND';
                 }
                 // "AND/NOT" cannot be used as first.
                 if (substr($type, 0, 1) === 'n') {
@@ -430,7 +431,7 @@ class SolariumQuerier extends AbstractQuerier
                         } else {
                             $val = $this->encloseValue($val);
                         }
-                        $fq .= " $joiner ($name:$bool$val$endBool)";
+                        $fq .= " $join ($name:$bool$val$endBool)";
                         break;
 
                     // Contains.
@@ -441,7 +442,7 @@ class SolariumQuerier extends AbstractQuerier
                         } else {
                             $val = $this->encloseValueAnd($val);
                         }
-                        $fq .= " $joiner ($name:$bool$val$endBool)";
+                        $fq .= " $join ($name:$bool$val$endBool)";
                         break;
 
                     // Starts with.
@@ -452,7 +453,7 @@ class SolariumQuerier extends AbstractQuerier
                         } else {
                             $val = $this->encloseValueAnd($val);
                         }
-                        $fq .= " $joiner ($name:$bool$val$endBool)";
+                        $fq .= " $join ($name:$bool$val$endBool)";
                         break;
 
                     // Ends with.
@@ -463,7 +464,7 @@ class SolariumQuerier extends AbstractQuerier
                         } else {
                             $val = $this->encloseValueAnd($val);
                         }
-                        $fq .= " $joiner ($name:$bool$val$endBool)";
+                        $fq .= " $join ($name:$bool$val$endBool)";
                         break;
 
                     // Matches.
@@ -475,7 +476,7 @@ class SolariumQuerier extends AbstractQuerier
                         // TODO Add // or not?
                         // TODO Escape regex for regexes…
                         $val = $this->fieldIsString($name) ? $val : $this->encloseValue($val);
-                        $fq .= " $joiner ($name:$bool$val$endBool)";
+                        $fq .= " $join ($name:$bool$val$endBool)";
                         break;
 
                     // In list.
@@ -490,18 +491,18 @@ class SolariumQuerier extends AbstractQuerier
                         // Like equal, but the field must be an integer.
                         if (substr($name, -2) === '_i' || substr($name, -3) === '_is') {
                             $val = (int) $val;
-                            $fq .= " $joiner ($name:$bool$val$endBool)";
+                            $fq .= " $join ($name:$bool$val$endBool)";
                         }
                         break;
 
                     // Exists (has a value).
                     case 'nex':
                         $val = $this->encloseValue($val);
-                        $fq .= " $joiner (-$name:$val)";
+                        $fq .= " $join (-$name:$val)";
                         break;
                     case 'ex':
                         $val = $this->encloseValue($val);
-                        $fq .= " $joiner (+$name:$val)";
+                        $fq .= " $join (+$name:$val)";
                         break;
 
                     default:
