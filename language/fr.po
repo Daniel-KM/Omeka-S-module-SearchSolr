@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-08 00:00+0000\n"
-"PO-Revision-Date: 2021-02-08 00:00+0000\n"
+"POT-Creation-Date: 2021-07-05 00:00+0000\n"
+"PO-Revision-Date: 2021-07-05 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -16,22 +16,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.0\n"
 
 #: Module.php:98
 #, php-format
 msgid "The composer library \"%s\" is not installed. See readme."
 msgstr ""
 
-#: src/Adapter/SolariumAdapter.php:101
+#: src/Adapter/SolariumAdapter.php:120
 msgid "Relevance"
 msgstr "Pertinence"
 
-#: src/Adapter/SolariumAdapter.php:106
+#: src/Adapter/SolariumAdapter.php:125
 msgid "Asc"
 msgstr "Asc"
 
-#: src/Adapter/SolariumAdapter.php:107
+#: src/Adapter/SolariumAdapter.php:126
 msgid "Desc"
 msgstr "Desc"
 
@@ -51,7 +51,7 @@ msgid "This module requires modules \"%s\"."
 msgstr "Ce module requiert les modules \"%s\"."
 
 #: src/Generic/AbstractModule.php:80
-msgid "This module has resources that connot be installed."
+msgid "This module has resources that cannot be installed."
 msgstr "Ce module a des ressources qui ne peuvent pas être installées."
 
 #: src/Generic/AbstractModule.php:707
@@ -122,21 +122,6 @@ msgstr "Cœur Solr"
 msgid "Add core"
 msgstr "Ajouter un cœur Solr"
 
-#: view/search-solr/admin/core/add.phtml:59
-#: view/search-solr/admin/core/browse.phtml:115
-#: view/search-solr/admin/core/edit.phtml:59
-msgid "[unknown]"
-msgstr "[Inconnu]"
-
-#: view/search-solr/admin/core/add.phtml:60
-#: view/search-solr/admin/core/browse.phtml:116
-#: view/search-solr/admin/core/edit.phtml:60
-#, php-format
-msgid ""
-"To use advanced query options, you need the php-solr library 2.1.0 or above "
-"(lastest recommended, current %s)."
-msgstr ""
-
 #: view/search-solr/admin/core/browse.phtml:43
 msgid "Solr configuration"
 msgstr "Configuration de Solr"
@@ -166,7 +151,7 @@ msgstr "Modifier le cœur Solr"
 msgid "Edit core"
 msgstr "Modifier le cœur Solr"
 
-#: view/search-solr/admin/core/edit.phtml:65
+#: view/search-solr/admin/core/edit.phtml:58
 msgid ""
 "WARNING: Changing the required values will require a complete reindexation."
 msgstr ""
@@ -311,19 +296,28 @@ msgstr ""
 msgid "The module Solr was upgraded by module SearchSolr and uninstalled."
 msgstr ""
 
-#: data/scripts/upgrade.php:42
+#: data/scripts/upgrade.php:46
 msgid "You should reindex your Solr cores."
 msgstr ""
 
-#: data/scripts/upgrade.php:62
+#: data/scripts/upgrade.php:66
 msgid "Now, values can be indexed differently for each data type, if wanted."
 msgstr ""
 
-#: data/scripts/upgrade.php:63
+#: data/scripts/upgrade.php:67
 msgid "Use the new import/export tool to simplify config."
 msgstr ""
 
-#: Module.php:98 src/Api/Representation/SolrCoreRepresentation.php:195
+#: data/scripts/upgrade.php:150
+#, php-format
+msgid "This module requires the module \"%s\", version %s or above."
+msgstr "Ce module requiert le module \"%s\", version \"%s\" ou supérieure."
+
+#: data/scripts/upgrade.php:159
+msgid "The auto-suggestion requires a specific url for now."
+msgstr ""
+
+#: Module.php:98 src/Api/Representation/SolrCoreRepresentation.php:205
 msgid "Solarium"
 msgstr ""
 
@@ -641,7 +635,15 @@ msgstr ""
 msgid "Plain text"
 msgstr "Texte brut"
 
-#: src/Querier/SolariumQuerier.php:507
+#: src/Querier/SolariumQuerier.php:76
+msgid "An issue occurred."
+msgstr "Un problème est survenu."
+
+#: src/Querier/SolariumQuerier.php:137
+msgid "Suggestions are not implemented"
+msgstr ""
+
+#: src/Querier/SolariumQuerier.php:518
 #, php-format
 msgid "Search type \"%s\" is not managed."
 msgstr ""
@@ -839,7 +841,7 @@ msgstr ""
 
 #: src/Controller/Admin/CoreController.php:370
 msgid "The file does not contain any row."
-msgstr ""
+msgstr "Le fichier ne contient aucune ligne."
 
 #: src/Controller/Admin/CoreController.php:378
 msgid ""
@@ -877,56 +879,51 @@ msgstr ""
 msgid "%d fields have been mapped for core \"%s\" (#%d)."
 msgstr "%d champs ont été mis en correspondance pour le cœur \"%s\" (#%d)."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:204
+#: src/Api/Representation/SolrCoreRepresentation.php:214
 #, php-format
 msgid "Solr core #%d: incorrect or incomplete configuration."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:216
+#: src/Api/Representation/SolrCoreRepresentation.php:226
 msgid "Solr core not found. Check your url."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:221
+#: src/Api/Representation/SolrCoreRepresentation.php:231
 msgid ""
 "Solr core not found or unauthorized. Check your url and your credentials."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:225
-#: src/Api/Representation/SolrCoreRepresentation.php:229
-#: src/Api/Representation/SolrCoreRepresentation.php:243
+#: src/Api/Representation/SolrCoreRepresentation.php:235
+#: src/Api/Representation/SolrCoreRepresentation.php:239
+#: src/Api/Representation/SolrCoreRepresentation.php:253
 #, php-format
 msgid "Solr core #%d: %s"
 msgstr "Cœur Solr #%d : %s"
 
-#: src/Api/Representation/SolrCoreRepresentation.php:239
+#: src/Api/Representation/SolrCoreRepresentation.php:249
 #, php-format
 msgid "Solr core #%d enpoint: %s"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:250
+#: src/Api/Representation/SolrCoreRepresentation.php:260
 msgid "Solr: the config bypasses the check of the certificate."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:251
+#: src/Api/Representation/SolrCoreRepresentation.php:261
 msgid "OK (warning: check of certificate disabled)"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:254
+#: src/Api/Representation/SolrCoreRepresentation.php:264
 msgid "OK"
 msgstr "Ok"
 
-#: src/Indexer/SolariumIndexer.php:273
+#: src/Indexer/SolariumIndexer.php:209
 #, php-format
-msgid "Indexing %1$s #%2$s in Solr core \"%3$s\""
+msgid "Indexing in Solr core \"%1$s\": %2$s"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:434
+#: src/Indexer/SolariumIndexer.php:441
 msgid "No document to commit in Solr."
-msgstr ""
-
-#: src/Indexer/SolariumIndexer.php:439
-#, php-format
-msgid "Commit index in Solr core \"%s\"."
 msgstr ""
 
 #: config/module.config.php:64
@@ -944,6 +941,9 @@ msgstr ""
 #: config/module.config.php:209
 msgid "Dynamic field"
 msgstr "Champ dynamique"
+
+#~ msgid "[unknown]"
+#~ msgstr "[Inconnu]"
 
 #~ msgid "Uri only"
 #~ msgstr "Uri seulement"
