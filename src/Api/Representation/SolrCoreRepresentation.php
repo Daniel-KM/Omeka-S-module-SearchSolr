@@ -102,7 +102,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         // TODO Convert settings during from old module Solr before saving.
         $clientSettings = (array) $this->setting('client', []);
         $clientSettings['endpoint'] = $this->endpoint();
-        return $clientSettings;
+        return $clientSettings + [
+            'scheme' => null,
+            'host' => null,
+            'port' => null,
+            'path' => '/',
+            // Core and collection have same meaning on a standard solr.
+            // 'collection' => null,
+            'core' => null,
+            'username' => null,
+            'password' => null,
+        ];
     }
 
     /**
