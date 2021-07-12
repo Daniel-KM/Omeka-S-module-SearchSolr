@@ -127,6 +127,8 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
+        $this->response->setActiveFacets($this->query->getActiveFacets());
+
         return $this->response
             ->setIsSuccess(true);
     }
@@ -296,16 +298,38 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         $facetFields = $this->query->getFacetFields();
+        $solariumFacetSet = $this->solariumQuery->getFacetSet();
         if (count($facetFields)) {
-            $facetSet = $this->solariumQuery->getFacetSet();
             foreach ($facetFields as $facetField) {
-                $facetSet->createFacetField($facetField)->setField($facetField);
+                $solariumFacetSet->createFacetField($facetField)->setField($facetField);
             }
         }
 
         $facetLimit = $this->query->getFacetLimit();
         if ($facetLimit) {
-            $this->solariumQuery->getFacetSet()->setLimit($facetLimit);
+            $solariumFacetSet->setLimit($facetLimit);
+        }
+
+        // TODO Manage facet languages for Solr.
+
+        /** @link https://petericebear.github.io/php-solarium-multi-select-facets-20160720/ */
+        $activeFacets = $this->query->getActiveFacets();
+        if ($activeFacets) {
+            foreach ($activeFacets as $name => $values) {
+                if (!count($values)) {
+                    continue;
+                }
+                $enclosedValues = $this->encloseValue($values);
+                $this->solariumQuery->addFilterQuery([
+                    'key' => $name . '-facet',
+                    'query' => "$name:$enclosedValues",
+                    'tag' => 'exclude',
+                ]);
+                $solariumFacetSet->createFacetField([
+                    'field' => $name,
+                    'exclude' => 'exclude',
+                ]);
+            }
         }
 
         return $this->solariumQuery;
