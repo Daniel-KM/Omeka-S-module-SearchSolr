@@ -2,6 +2,10 @@
 
 namespace SearchSolr;
 
+use Omeka\Module\Exception\ModuleCannotInstallException;
+use Omeka\Mvc\Controller\Plugin\Messenger;
+use Omeka\Stdlib\Message;
+
 /**
  * @var Module $this
  * @var \Laminas\ServiceManager\ServiceLocatorInterface $serviceLocator
@@ -132,4 +136,27 @@ SQL;
         $connection->exec($sql);
     } catch (\Exception $e) {
     }
+}
+
+if (version_compare($oldVersion, '3.5.25.3', '<')) {
+    $moduleManager = $services->get('Omeka\ModuleManager');
+    /** @var \Omeka\Module\Module $module */
+    $module = $moduleManager->getModule('Search');
+    if (!$module
+        || version_compare($module->getIni('version') ?? '', '3.5.22.3', '<')
+        || $module->getState() !== \Omeka\Module\Manager::STATE_ACTIVE
+    ) {
+        $message = new Message(
+            'This module requires the module "%s", version %s or above.', // @translate
+            'Search',
+            '3.5.22.3'
+        );
+        throw new ModuleCannotInstallException((string) $message);
+    }
+
+    $messenger = new Messenger();
+    $message = new Message(
+        'The auto-suggestion requires a specific url for now.' // @translate
+    );
+    $messenger->addWarning($message);
 }
