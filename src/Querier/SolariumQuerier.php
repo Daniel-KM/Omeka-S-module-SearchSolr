@@ -66,13 +66,14 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected $solrCore;
 
-    public function query()
+    public function query(): Response
     {
         $this->response = new Response;
 
         $this->solariumQuery = $this->getPreparedQuery();
         if (is_null($this->solariumQuery)) {
-            return $this->response;
+            return $this->response
+                ->setIsMessage('An issue occurred.'); // @translate
         }
 
         try {
@@ -126,7 +127,14 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
-        return $this->response;
+        return $this->response
+            ->setIsSuccess(true);
+    }
+
+    public function querySuggestions(): Response
+    {
+        return (new Response)
+            ->setMessage('Suggestions are not implemented'); // @translate
     }
 
     /**
@@ -557,7 +565,7 @@ class SolariumQuerier extends AbstractQuerier
         return $fields;
     }
 
-    protected function fieldIsTokenized($name)
+    protected function fieldIsTokenized($name): bool
     {
         return substr($name, -2) === '_t'
             || substr($name, -4) === '_txt'
@@ -565,7 +573,7 @@ class SolariumQuerier extends AbstractQuerier
             || strpos($name, '_txt_') !== false;
     }
 
-    protected function fieldIsString($name)
+    protected function fieldIsString($name): bool
     {
         return substr($name, -2) === '_s'
             || substr($name, -3) === '_ss'
@@ -573,7 +581,7 @@ class SolariumQuerier extends AbstractQuerier
             || substr($name, -9) === '_ss_lower';
     }
 
-    protected function fieldIsLower($name)
+    protected function fieldIsLower($name): bool
     {
         return substr($name, -6) === '_lower';
     }
@@ -584,7 +592,7 @@ class SolariumQuerier extends AbstractQuerier
      * @param array|string $string
      * @return string
      */
-    protected function encloseValue($value)
+    protected function encloseValue($value): string
     {
         if (is_array($value)) {
             if (empty($value)) {
@@ -604,7 +612,7 @@ class SolariumQuerier extends AbstractQuerier
      * @param array|string $string
      * @return string
      */
-    protected function encloseValueAnd($value)
+    protected function encloseValueAnd($value): string
     {
         if (is_array($value)) {
             if (empty($value)) {
@@ -626,7 +634,7 @@ class SolariumQuerier extends AbstractQuerier
      * @param string $prepend
      * @return string
      */
-    protected function regexDiacriticsValue($value, $prepend = '', $append = '')
+    protected function regexDiacriticsValue($value, string $prepend = '', string $append = ''): string
     {
         static $basicDiacritics;
         if (is_null($basicDiacritics)) {
@@ -673,7 +681,7 @@ class SolariumQuerier extends AbstractQuerier
      * @param string $string
      * @return string
      */
-    protected function enclose($string)
+    protected function enclose($string): string
     {
         return '"' . addcslashes((string) $string, '"') . '"';
     }
@@ -684,12 +692,12 @@ class SolariumQuerier extends AbstractQuerier
      * @param $string $string
      * @return $string
      */
-    protected function escape($string)
+    protected function escape($string): string
     {
         return preg_replace('/([+\-&|!(){}[\]\^"~*?:])/', '\\\\$1', (string) $string);
     }
 
-    protected function escapeSolrQuery($q)
+    protected function escapeSolrQuery($q): string
     {
         $reservedCharacters = [
             // The character "\" must be escaped first.
@@ -722,16 +730,13 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * @return self
      */
-    protected function init()
+    protected function init(): self
     {
         $this->getSolrCore();
         return $this;
     }
 
-    /**
-     * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
-     */
-    protected function getSolrCore()
+    protected function getSolrCore(): \SearchSolr\Api\Representation\SolrCoreRepresentation
     {
         if (!isset($this->solrCore)) {
             $solrCoreId = $this->getAdapterSetting('solr_core_id');
@@ -745,10 +750,7 @@ class SolariumQuerier extends AbstractQuerier
         return $this->solrCore;
     }
 
-    /**
-     * @return SolariumClient
-     */
-    protected function getClient()
+    protected function getClient(): SolariumClient
     {
         if (!isset($this->solariumClient)) {
             $this->solariumClient = $this->getSolrCore()->solariumClient();

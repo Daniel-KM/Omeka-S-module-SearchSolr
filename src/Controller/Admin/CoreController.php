@@ -125,7 +125,7 @@ class CoreController extends AbstractActionController
 
         $result = $this->checkCoreConfig($core);
         if (!$result) {
-            $this->messenger()->addError(new Message('The config to manage the Solr core "%s" was updated with an incorrect config.', $core->name())); // @translate
+            $this->messenger()->addError(new Message('The config to manage the Solr core "%s" was updated, but with an incorrect config.', $core->name())); // @translate
             return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
         }
 
@@ -296,7 +296,8 @@ class CoreController extends AbstractActionController
             return false;
         }
 
-        $form->setData($this->params()->fromPost());
+        $post = $this->params()->fromPost();
+        $form->setData($post);
         if (!$form->isValid()) {
             $this->messenger()->addError('There was an error during validation'); // @translate
             return false;

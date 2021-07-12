@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2020
+ * Copyright Daniel Berthereau, 2017-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -33,6 +33,7 @@ namespace SearchSolr\Indexer;
 use Omeka\Entity\Resource;
 use Omeka\Stdlib\Message;
 use Search\Indexer\AbstractIndexer;
+use Search\Indexer\IndexerInterface;
 use Search\Query;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
@@ -131,14 +132,14 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected $solariumDocuments = [];
 
-    public function canIndex($resourceName)
+    public function canIndex(string $resourceName): bool
     {
         return $this->getServiceLocator()
             ->get('SearchSolr\ValueExtractorManager')
             ->has($resourceName);
     }
 
-    public function clearIndex(Query $query = null)
+    public function clearIndex(?Query $query = null): IndexerInterface
     {
         // Solr does not use the same query format than the one used for select:
         // filter queries cannot be used directly. So use them as query part.
@@ -182,7 +183,7 @@ class SolariumIndexer extends AbstractIndexer
         return $this;
     }
 
-    public function indexResource(Resource $resource)
+    public function indexResource(Resource $resource): IndexerInterface
     {
         return $this->indexResources([$resource]);
     }
@@ -190,7 +191,7 @@ class SolariumIndexer extends AbstractIndexer
     /**
      * @var \Omeka\Entity\AbstractEntity[] $resources
      */
-    public function indexResources(array $resources)
+    public function indexResources(array $resources): IndexerInterface
     {
         if (!count($resources)) {
             return $this;
@@ -222,7 +223,7 @@ class SolariumIndexer extends AbstractIndexer
         return $this;
     }
 
-    public function deleteResource($resourceName, $resourceId)
+    public function deleteResource(string $resourceName, $resourceId): IndexerInterface
     {
         // Some values should be init to get the document id.
         $this->getServerId();

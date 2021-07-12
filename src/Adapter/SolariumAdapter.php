@@ -1,8 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2020
+ * Copyright Daniel Berthereau, 2017-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -58,33 +57,53 @@ class SolariumAdapter extends AbstractAdapter
         $this->translator = $translator;
     }
 
-    public function getLabel()
+    public function getLabel(): string
     {
-        return 'Solarium';
+        return 'Solr [via Solarium]';
     }
 
-    public function getConfigFieldset()
+    public function getConfigFieldset(): ?\Laminas\Form\Fieldset
     {
         $solrCores = $this->api->search('solr_cores')->getContent();
         return new ConfigFieldset(null, ['solrCores' => $solrCores]);
     }
 
-    public function getIndexerClass()
+    public function getIndexerClass(): string
     {
         return \SearchSolr\Indexer\SolariumIndexer::class;
     }
 
-    public function getQuerierClass()
+    public function getQuerierClass(): string
     {
         return \SearchSolr\Querier\SolariumQuerier::class;
     }
 
-    public function getAvailableFacetFields(SearchIndexRepresentation $index)
+    public function getAvailableFields(SearchIndexRepresentation $index): array
     {
-        return $this->getAvailableFields($index);
+        $solrCoreId = $index->settingAdapter('solr_core_id');
+        if (!$solrCoreId) {
+            return [];
+        }
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
+
+        $facetFields = [];
+        foreach ($solrCore->maps() as $map) {
+            $name = $map->fieldName();
+            $label = $map->setting('label', '');
+            $facetFields[$name] = [
+                'name' => $name,
+                'label' => $label,
+            ];
+        }
+
+        ksort($facetFields);
+
+        return $facetFields;
     }
 
-    public function getAvailableSortFields(SearchIndexRepresentation $index)
+    public function getAvailableSortFields(SearchIndexRepresentation $index): array
     {
         $solrCoreId = $index->settingAdapter('solr_core_id');
         if (!$solrCoreId) {
@@ -128,28 +147,8 @@ class SolariumAdapter extends AbstractAdapter
         return $sortFields;
     }
 
-    public function getAvailableFields(SearchIndexRepresentation $index)
+    public function getAvailableFacetFields(SearchIndexRepresentation $index): array
     {
-        $solrCoreId = $index->settingAdapter('solr_core_id');
-        if (!$solrCoreId) {
-            return [];
-        }
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
-
-        $facetFields = [];
-        foreach ($solrCore->maps() as $map) {
-            $name = $map->fieldName();
-            $label = $map->setting('label', '');
-            $facetFields[$name] = [
-                'name' => $name,
-                'label' => $label,
-            ];
-        }
-
-        ksort($facetFields);
-
-        return $facetFields;
+        return $this->getAvailableFields($index);
     }
 }
