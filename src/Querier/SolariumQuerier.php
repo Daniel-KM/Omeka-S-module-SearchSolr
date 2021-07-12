@@ -310,6 +310,14 @@ class SolariumQuerier extends AbstractQuerier
             $solariumFacetSet->setLimit($facetLimit);
         }
 
+        // Only two choices here.
+        $facetOrder = $this->query->getFacetOrder();
+        if ($facetOrder === 'total asc' || $facetOrder === 'total desc') {
+            $solariumFacetSet->setSort(\Solarium\Component\Facet\AbstractField::SORT_COUNT);
+        } elseif ($facetOrder === 'alphabetic asc') {
+            $solariumFacetSet->setSort(\Solarium\Component\Facet\AbstractField::SORT_INDEX);
+        }
+
         // TODO Manage facet languages for Solr.
 
         /** @link https://petericebear.github.io/php-solarium-multi-select-facets-20160720/ */
