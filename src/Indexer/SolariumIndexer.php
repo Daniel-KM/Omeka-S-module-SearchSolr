@@ -184,26 +184,41 @@ class SolariumIndexer extends AbstractIndexer
 
     public function indexResource(Resource $resource)
     {
-        if (empty($this->api)) {
-            $this->init();
-        }
-        $this->addResource($resource);
-        $this->commit();
-        return $this;
+        return $this->indexResources([$resource]);
     }
 
+    /**
+     * @var \Omeka\Entity\AbstractEntity[] $resources
+     */
     public function indexResources(array $resources)
     {
-        if (empty($resources)) {
+        if (!count($resources)) {
             return $this;
         }
+
         if (empty($this->api)) {
             $this->init();
         }
+
+        $resourceNames = [
+            'items' => 'item',
+            'item_sets' => 'item set',
+        ];
+
+        $resourcesIds = [];
+        foreach ($resources as $resource) {
+            $resourcesIds[] = $resourceNames[$resource->getResourceName()] . ' #' . $resource->getId();
+        }
+        $this->getLogger()->info(new Message(
+            'Indexing in Solr core "%1$s": %2$s', // @translate
+            $this->solrCore->name(), implode(', ', $resourcesIds)
+        ));
+
         foreach ($resources as $resource) {
             $this->addResource($resource);
         }
         $this->commit();
+
         return $this;
     }
 
@@ -269,10 +284,6 @@ class SolariumIndexer extends AbstractIndexer
     {
         $resourceName = $resource->getResourceName();
         $resourceId = $resource->getId();
-        $this->getLogger()->info(new Message(
-            'Indexing %1$s #%2$s in Solr core "%3$s"', // @translate
-            $resourceName, $resourceId, $this->solrCore->name()
-        ));
 
         $solrCoreSettings = $this->solrCore->settings();
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
@@ -435,11 +446,7 @@ class SolariumIndexer extends AbstractIndexer
             return;
         }
 
-        $this->getLogger()->info(new Message(
-            'Commit index in Solr core "%s".', // @translate
-            $this->getSolrCore()->name()
-        ));
-        //  TODO use BufferedAdd plugin?
+        // TODO use BufferedAdd plugin?
         $client = $this->getClient();
         try {
             $update = $client
