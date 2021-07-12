@@ -28,7 +28,7 @@ Installation
 ------------
 
 This module uses the module [Search], a fork of the module [Search by BibLibre],
-that should be installed first (version 3.5.14 or above).
+that should be installed first (version 3.5.22.3 or above).
 
 The optional module [Generic] may be installed first.
 
@@ -53,7 +53,7 @@ composer install --no-dev
 
 ### Requirements
 
-- Module [Search]
+- Module [Search] version 3.5.22.3 or above.
 - A running Apache Solr. Compatibility:
   - version 3.5.15 of this module has been tested with Solr 5 and Solr 6.
   - version 3.5.15.2 of this module has been tested with Solr 6 to Solr 8.
@@ -298,33 +298,33 @@ three files should be updated.
 * `/opt/solr/server/etc/jetty.xml`, before the ending tag `</Configure>`:
 
 ```xml
-    <Call name="addBean">
-        <Arg>
-             <New class="org.eclipse.jetty.security.HashLoginService">
-                <Set name="name">Sec Realm</Set>
-                <Set name="config"><SystemProperty name="jetty.home" default="."/>/etc/realm.properties</Set>
-                <Set name="refreshInterval">0</Set>
-             </New>
-        </Arg>
-    </Call>
+<Call name="addBean">
+    <Arg>
+        <New class="org.eclipse.jetty.security.HashLoginService">
+            <Set name="name">Sec Realm</Set>
+            <Set name="config"><SystemProperty name="jetty.home" default="."/>/etc/realm.properties</Set>
+            <Set name="refreshInterval">0</Set>
+        </New>
+    </Arg>
+</Call>
 ```
 
 * `/opt/solr/server/solr-webapp/webapp/WEB-INF/web.xml`, before the ending tag `</web-app>`:
 
 ```xml
-  <security-constraint>
+<security-constraint>
     <web-resource-collection>
-      <web-resource-name>Solr authenticated application</web-resource-name>
-      <url-pattern>/*</url-pattern>
+        <web-resource-name>Solr authenticated application</web-resource-name>
+        <url-pattern>/*</url-pattern>
     </web-resource-collection>
     <auth-constraint>
-      <role-name>core1-role</role-name>
+        <role-name>core1-role</role-name>
     </auth-constraint>
-  </security-constraint>
-  <login-config>
+</security-constraint>
+<login-config>
     <auth-method>BASIC</auth-method>
     <realm-name>Sec Realm</realm-name>
-  </login-config>
+</login-config>
 ```
 
 * `/opt/solr/server/etc/realm.properties`, a list of users, passwords, and roles:
@@ -412,6 +412,88 @@ sudo echo "solr    soft    nproc   65000" >> /etc/security/limits.d/200-solr.con
 sudo chmod o-w /etc/security/limits.d/200-solr.conf
 sudo systemctl restart solr
 ```
+
+**Important**: It is recommended to protect Solr with a reverse proxy.
+
+### Enable ssl (https)
+
+If you don't use localhost and if your Solr server is separated from the web
+server and not in a secure network or not behind a firewall or you want to
+access it from outside, it is  recommended to secure it.
+
+The [reference guide] of Solr explains this point, but the example uses a
+self-signed certificate, that may be rejected by the web server if it has not
+the root certificate.
+
+So take a true certificate or create a Let's encrypt one, then enable it in Solr.
+
+```sh
+# Check the existing certificate and backup it if needed.
+ls -lsa /opt/solr/server/etc/*.p12
+# Create the p12 certificate with the full chain of the certificate.
+sudo openssl pkcs12 -export -out ll -lsa /opt/solr/server/etc/solr-ssl.keystore.p12 -inkey /path/to/my/private/ssl.key -in /path/to/my/ssl.cert -certfile /path/to/the/complete/ssl.full-chain.everything
+# Secure the certificate.
+sudo chown -R solr:solr /opt/solr/server/etc/*.p12
+sudo chmod go-rwX /opt/solr/server/etc/*.p12
+```
+
+Next, enable the ssl inside the main config file "sudo nano /etc/default/solr.in.sh",
+as specified in the [guide]. The port may be changed. Solr doesn't seem to
+recommend 8443 anymore, but 8984. Anyway, it's only a choice. You can keep 8983
+too. In all cases, don't forget to open the port in the firewall, for example
+with firewall-d:
+
+```sh
+sudo firewall-cmd --permanent --add-port=8443/tcp
+sudo firewall-cmd --reload
+```
+
+Finally, stop and restart Solr.
+
+Sometime, the restart is too quick, so you may have to remove all lock files
+before restart. Check status and logs if needed.
+
+```sh
+sudo systemctl stop solr
+sudo find /var/solr/data -name 'write.lock' -type f -delete
+sudo systemctl restart solr
+```
+
+**Important**: the certificate of solr should be updated each time the source
+certificate expires.
+
+### Managing CORS with Solr
+
+When called from the server through the module, CORS don't need to be configured.
+But when the autosuggestion is configured to use an endpoint directly from the
+browser, generally for performance reasons, the server should be either behind a
+reverse proxy, or configured to accept direct requests from ajax.
+
+To add the CORS header to Solr is slightly complicate, so not described here.
+Anyway, it is not recommended to expose Solr directly to the web without any
+security measures.
+
+### Use Apache as a reverse proxy for Solr
+
+To configure a reverse proxy for Solr with Apache, create this file "/etc/apache2/sites-available/reverse_proxy.conf":
+
+```xml
+<VirtualHost *:8984>
+    ServerName solr.mydomain.com
+    ProxyPreserveHost on
+    ProxyRequests off
+
+    RewriteEngine On
+    RewriteRule ^\/solr(.*)$ $1 [L,R]
+
+    ProxyPass / http://localhost:8983/solr/
+    ProxyPassReverse / http://localhost:8983/solr/
+</VirtualHost>
+```
+
+Here, Solr should be available through port 8983 without ssl on the server, so
+the firewall should be configured to close this port and to open 8984. You can
+complete this virtual host with your ssl config.
 
 ### Upgrade Solr
 
@@ -632,6 +714,8 @@ of [Université des Antilles et de la Guyane], currently managed with [Greenston
 [Solr documentation]: https://lucene.apache.org/solr/resources.html
 [Solr Basic Authentication]: https://lucene.apache.org/solr/guide/basic-authentication-plugin.html#basic-authentication-plugin
 [taking Solr to production]: https://lucene.apache.org/solr/guide/taking-solr-to-production.html
+[reference guide]: https://solr.apache.org/guide/8_9/enabling-ssl.html
+[guide]: https://solr.apache.org/guide/8_9/enabling-ssl.html#solr-in-sh
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
