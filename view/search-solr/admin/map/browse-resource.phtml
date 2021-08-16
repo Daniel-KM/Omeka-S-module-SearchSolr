@@ -65,6 +65,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
 
 <nav class="breadcrumbs">
     <?php
+    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
     echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
     echo $this->hyperlink(sprintf($translate('Resources list for core "%s"'), $solrCore->name()), $this->url('admin/search/solr/core-id-map', [], true));
     ?><span><?php
