@@ -439,7 +439,7 @@ class MapController extends AbstractActionController
         $qb = $this->connection->createQueryBuilder()
             ->select('DISTINCT value.property_id')
             ->from('value', 'value')
-            ->join('value', 'resource', 'resource', 'resource.id = value.resource_id')
+            ->innerJoin('value', 'resource', 'resource', 'resource.id = value.resource_id')
             ->where('resource.resource_type = :resource_type')
             ->setParameter('resource_type', $resourceTypes[$resourceName])
             ->orderBy('value.property_id', 'ASC');

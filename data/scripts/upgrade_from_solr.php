@@ -56,7 +56,7 @@ if (version_compare($oldVersion, '3.5.12', '<')) {
     $sql = <<<'SQL'
 SELECT id, settings FROM solr_node;
 SQL;
-    $stmt = $connection->query($sql);
+    $stmt = $connection->executeQuery($sql);
     $solrNodes = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
     foreach ($solrNodes as $solrNodeId => $solrNodeSettings) {
         $solrNodeSettings = json_decode($solrNodeSettings, true) ?: [];
@@ -73,7 +73,7 @@ SQL;
         $sql = <<<'SQL'
 SELECT id, settings FROM search_index WHERE adapter = "solr";
 SQL;
-        $stmt = $connection->query($sql);
+        $stmt = $connection->executeQuery($sql);
         $searchIndexes = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
         foreach ($searchIndexes as $searchIndexId => $searchIndexSettings) {
             $searchIndexSettings = json_decode($searchIndexSettings, true) ?: [];
@@ -83,7 +83,7 @@ SQL;
                 $sql = <<<SQL
 SELECT id, settings FROM search_page WHERE index_id = $searchIndexId;
 SQL;
-                $stmt = $connection->query($sql);
+                $stmt = $connection->executeQuery($sql);
                 $searchPages = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
                 foreach ($searchPages as $searchPageId => $searchPageSettings) {
                     $searchPageSettings = json_decode($searchPageSettings, true) ?: [];
