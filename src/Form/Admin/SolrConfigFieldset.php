@@ -33,7 +33,7 @@ namespace SearchSolr\Form\Admin;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 
-class ConfigFieldset extends Fieldset
+class SolrConfigFieldset extends Fieldset
 {
     public function init(): void
     {
