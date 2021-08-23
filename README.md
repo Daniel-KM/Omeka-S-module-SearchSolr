@@ -1,21 +1,14 @@
-Search adapter for Solr (module for Omeka S)
-============================================
+Advanced Search adapter for Solr (module for Omeka S)
+=====================================================
 
 > __New versions of this module and support for Omeka S version 3.0 and above
 > are available on [GitLab], which seems to respect users and privacy better
 > than the previous repository.__
 
-[Search adapter for Solr] is a module for [Omeka S] that provides a [Search]
-adapter for [Apache Solr], so it is possible to get the power of a full search
-engine inside Omeka, for the public or in admin: search by relevance (score),
-instant search, facets, autocompletion, suggestions, etc.
-
-It is a full replacement for the module [Solr], a fork of the module [Solr by BibLibre].
-It has some new features and its main difference is that it **_doesn’t_** require the
-[Solr PHP extension] installed on the server, so it can be installed simpler as
-any other module, in particular on any shared web hosting services. Of course,
-it still requires a Solr server, but it can be provided by another server or by
-a third party.
+[Advanced Search adapter for Solr] is a module for [Omeka S] that provides an
+[Advanced Search] adapter for [Apache Solr], so it is possible to get the power
+of a full search engine inside Omeka, for the public or in admin: search by
+relevance (score), instant search, facets, autocompletion, suggestions, etc.
 
 Technically, the module is based on the library [Solarium], and it is compatible
 with any past, current and future versions of Solr. It is well maintained, and
@@ -23,17 +16,23 @@ it comes with a full api and a [full documentation], so it allows to integrate
 new features simpler, in particular for the indexation and the querying. This
 library is used in the equivalent modules for most common cms too.
 
+The main advantage of this library is that it **_doesn’t_** require the
+[Solr PHP extension] installed on the server, so it can be installed simpler as
+any other module, in particular on any shared web hosting services. Of course,
+it still requires a Solr server, but it can be provided by another server or by
+a third party.
+
 
 Installation
 ------------
 
-This module uses the module [Search], a fork of the module [Search by BibLibre],
-that should be installed first (version 3.5.22.3 or above).
+This module uses the module [Advanced Search] that should be installed first
+(version 3.3.6 or above).
 
 The optional module [Generic] may be installed first.
 
-The module uses external libraries, so use the release zip to install it, or use
-and init the source.
+The module uses an external library, [Solarium], so use the release zip to
+install it, or use and init the source.
 
 See general end user documentation for [installing a module].
 
@@ -53,7 +52,7 @@ composer install --no-dev
 
 ### Requirements
 
-- Module [Search] version 3.5.22.3 or above.
+- Module [Advanced Search] version 3.3.6 or above.
 - A running Apache Solr. Compatibility:
   - version 3.5.15 of this module has been tested with Solr 5 and Solr 6.
   - version 3.5.15.2 of this module has been tested with Solr 6 to Solr 8.
@@ -66,8 +65,8 @@ Quick start
     2. Create a Solr index (= "core", "collection", or "node") (see [below "Solr management"]),
        that is named `omeka` or whatever you want (use it for the path in
        point 2.1).
-    3. Install the module [Search].
-    4. Install this module [Search adapter for Solr].
+    3. Install the module [Advanced Search].
+    4. Install this module [Advanced Search adapter for Solr].
 2. In Solr admin
     1. A default core `default` is automatically added, and it is linked to the
        default install of Solr with the path `solr/omeka`. It contains a default
@@ -415,11 +414,12 @@ sudo systemctl restart solr
 
 **Important**: It is recommended to protect Solr with a reverse proxy.
 
-### Enable ssl (https)
+### Enable ssl (https) when not behind a proxy
 
 If you don't use localhost and if your Solr server is separated from the web
 server and not in a secure network or not behind a firewall or you want to
-access it from outside, it is  recommended to secure it.
+access it from outside, it is  recommended to secure it. See below to hide it
+behind Apache for a simpler configuration.
 
 The [reference guide] of Solr explains this point, but the example uses a
 self-signed certificate, that may be rejected by the web server if it has not
@@ -684,16 +684,18 @@ See commits for full list of contributors.
 * Copyright Daniel Berthereau, 2017-2021 (see [Daniel-KM])
 * Copyright Paul Sarrassat, 2018
 
-The module [Solr by BibLibre] was built for the [digital library Explore] of [Université Paris Sciences & Lettres].
-The module [Search adapter for Solr] is built for the future [digital library Manioc]
-of [Université des Antilles et de la Guyane], currently managed with [Greenstone].
+This module is a full replacement of the module [Solr], a deprecated fork of the
+module [Solr by BibLibre]. This later was built for the [digital library Explore]
+of [Université Paris Sciences & Lettres]. The fork [Advanced Search adapter for Solr]
+is built for the future [digital library Manioc] of [Université des Antilles et de la Guyane],
+currently managed with [Greenstone].
 
 
-[Search adapter for Solr]: https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr
+[Advanced Search adapter for Solr]: https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr
 [Omeka S]: https://omeka.org/s
 [Solr]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr
 [Solr by BibLibre]: https://github.com/biblibre/omeka-s-module-Solr
-[Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-Search
+[Advanced Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-AdvancedSearch
 [Search by BibLibre]: https://github.com/biblibre/omeka-s-module-search
 [Apache Solr]: https://lucene.apache.org/solr/
 [Solarium]: https://www.solarium-project.org/
