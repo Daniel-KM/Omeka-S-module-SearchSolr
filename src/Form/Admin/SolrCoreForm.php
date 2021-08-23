@@ -204,10 +204,10 @@ It must be a multi-valued, integer-based field (*_is in default solr config).', 
                 'name' => 'index_field',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Index field', // @translate
-                    'info' => 'Name of Solr field that will contain the index name in order to support multiple indexes on the same core.
+                    'label' => 'Engine field', // @translate
+                    'info' => 'Name of Solr field that will contain the advanced search engine name in order to support multiple indexes on the same core.
 This is an advanced feature that is not required in most of the cases.
-It must be a single-valued, string-based field.', // @translate
+It must be a single-valued, string-based field, like "index_id".', // @translate
                 ],
                 'attributes' => [
                     'id' => 'index_field',

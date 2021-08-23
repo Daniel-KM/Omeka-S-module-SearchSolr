@@ -71,29 +71,29 @@ SQL;
         $connection->exec($sql);
 
         $sql = <<<'SQL'
-SELECT id, settings FROM search_index WHERE adapter = "solr";
+SELECT id, settings FROM search_engine WHERE adapter = "solr";
 SQL;
         $stmt = $connection->executeQuery($sql);
-        $searchIndexes = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-        foreach ($searchIndexes as $searchIndexId => $searchIndexSettings) {
-            $searchIndexSettings = json_decode($searchIndexSettings, true) ?: [];
-            if (isset($searchIndexSettings['adapter']['solr_node_id'])
-                && (int) $searchIndexSettings['adapter']['solr_node_id'] === $solrNodeId
+        $searchEngines = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        foreach ($searchEngines as $searchEngineId => $searchEngineSettings) {
+            $searchEngineSettings = json_decode($searchEngineSettings, true) ?: [];
+            if (isset($searchEngineSettings['adapter']['solr_node_id'])
+                && (int) $searchEngineSettings['adapter']['solr_node_id'] === $solrNodeId
             ) {
                 $sql = <<<SQL
-SELECT id, settings FROM search_page WHERE index_id = $searchIndexId;
+SELECT id, settings FROM search_config WHERE engine_id = $searchEngineId;
 SQL;
                 $stmt = $connection->executeQuery($sql);
-                $searchPages = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-                foreach ($searchPages as $searchPageId => $searchPageSettings) {
-                    $searchPageSettings = json_decode($searchPageSettings, true) ?: [];
-                    $searchPageSettings['default_results'] = 'query';
-                    $searchPageSettings['default_query'] = $queryAlt;
-                    $searchPageSettings = $connection->quote(json_encode($searchPageSettings, 320));
+                $searchConfigs = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+                foreach ($searchConfigs as $searchConfigId => $searchConfigSettings) {
+                    $searchConfigSettings = json_decode($searchConfigSettings, true) ?: [];
+                    $searchConfigSettings['default_results'] = 'query';
+                    $searchConfigSettings['default_query'] = $queryAlt;
+                    $searchConfigSettings = $connection->quote(json_encode($searchConfigSettings, 320));
                     $sql = <<<SQL
-UPDATE search_page
-SET `settings` = $searchPageSettings
-WHERE id = $searchPageId;
+UPDATE search_config
+SET `settings` = $searchConfigSettings
+WHERE id = $searchConfigId;
 SQL;
                     $connection->exec($sql);
                 }
@@ -149,7 +149,7 @@ SET
             '"core":"'
         );
 
-UPDATE search_index
+UPDATE search_engine
 SET
     adapter = "solarium",
     settings =

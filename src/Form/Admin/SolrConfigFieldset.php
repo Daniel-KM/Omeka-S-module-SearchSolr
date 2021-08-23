@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau 2018-2020
+ * Copyright Daniel Berthereau 2018-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -72,7 +72,7 @@ class SolrConfigFieldset extends Fieldset
             return [];
         }
 
-        $searchIndexId = $this->getOption('search_index_id');
+        $searchEngineId = $this->getOption('search_engine_id');
 
         // If the core doesn't support multiple index, it will be unavailable,
         // except for the current index.
@@ -80,12 +80,12 @@ class SolrConfigFieldset extends Fieldset
         $services = $solrCore->getServiceLocator();
         $translator = $services->get('MvcTranslator');
 
-        /** @var \Search\Api\Representation\SearchIndexRepresentation[] $searchIndexes */
-        $searchIndexes = $services->get('Omeka\ApiManager')->search('search_indexes', ['adapter' => 'solarium'])->getContent();
+        /** @var \AdvancedSearch\Api\Representation\SearchEngineRepresentation[] $searchEngines */
+        $searchEngines = $services->get('Omeka\ApiManager')->search('search_engines', ['adapter' => 'solarium'])->getContent();
         $coreIndexes = [];
-        foreach ($searchIndexes as $searchIndex) {
-            $coreId = $searchIndex->settingAdapter('solr_core_id', '');
-            $coreIndexes[$coreId][] = $searchIndex->id();
+        foreach ($searchEngines as $searchEngine) {
+            $coreId = $searchEngine->settingAdapter('solr_core_id', '');
+            $coreIndexes[$coreId][] = $searchEngine->id();
         }
 
         $options = [];
@@ -96,7 +96,7 @@ class SolrConfigFieldset extends Fieldset
             ];
             if (isset($coreIndexes[$solrCore->id()])
                 && !$solrCore->setting('index_field')
-                && !in_array($searchIndexId, $coreIndexes[$solrCore->id()])
+                && !in_array($searchEngineId, $coreIndexes[$solrCore->id()])
             ) {
                 $option['label'] = sprintf($translator->translate('%s (unavailable: option multi-index not set)'), $option['label']); // @translate
                 $option['disabled'] = true;

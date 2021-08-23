@@ -1,23 +1,23 @@
 <?php
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
- * @var int $totalSearchPages
- * @var int $totalSearchIndexes
+ * @var int $totalSearchConfigs
+ * @var int $totalSearchEngines
  * @var int $totalSolrMaps
  */
 
 $translate = $this->plugin('translate');
 ?>
 
-<?php if ($totalSearchIndexes || $totalSearchPages || $totalSolrMaps): ?>
+<?php if ($totalSearchEngines || $totalSearchConfigs || $totalSolrMaps): ?>
 <h4><?= $translate('WARNING') ?></h4>
 <p>
     <?= sprintf($translate('This will delete all search indexes (%d), all search pages (%d), and all Solr maps (%d) that use this Solr core.'),
-        $totalSearchIndexes, $totalSearchPages, $totalSolrMaps) ?>
+        $totalSearchEngines, $totalSearchConfigs, $totalSolrMaps) ?>
 </p>
 <p>
     <?= sprintf($translate('To keep search indexes and pages, create a new core and set it for the related indexes before deletion.'),
-        $totalSearchIndexes, $totalSearchPages, $totalSolrMaps) ?>
+        $totalSearchEngines, $totalSearchConfigs, $totalSolrMaps) ?>
 </p>
 <?php else: ?>
 <p>

@@ -17,5 +17,5 @@ use PHPUnit\Framework\TestCase;
 
 Bootstrap::bootstrap(__DIR__);
 Bootstrap::loginAsAdmin();
-Bootstrap::enableModule('Search');
+Bootstrap::enableModule('AdvancedSearch');
 Bootstrap::enableModule('SearchSolr');

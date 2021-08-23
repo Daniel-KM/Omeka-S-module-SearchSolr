@@ -8,8 +8,8 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
 {
     protected $solrCore;
     protected $solrMap;
-    protected $searchIndex;
-    protected $searchPage;
+    protected $searchEngine;
+    protected $searchConfig;
 
     public function setUp(): void
     {
@@ -44,7 +44,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
         ]);
         $solrMap = $response->getContent();
 
-        $response = $this->api()->create('search_indexes', [
+        $response = $this->api()->create('search_engines', [
             'o:name' => 'TestIndex',
             'o:adapter' => 'solarium',
             'o:settings' => [
@@ -57,29 +57,29 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
                 ],
             ],
         ]);
-        $searchIndex = $response->getContent();
-        $response = $this->api()->create('search_pages', [
+        $searchEngine = $response->getContent();
+        $response = $this->api()->create('search_configs', [
             'o:name' => 'TestPage',
             'o:path' => 'test/search',
-            'o:index_id' => $searchIndex->id(),
+            'o:engine_id' => $searchEngine->id(),
             'o:form' => 'basic',
             'o:settings' => [
                 'facets' => [],
                 'sort_fields' => [],
             ],
         ]);
-        $searchPage = $response->getContent();
+        $searchConfig = $response->getContent();
 
         $this->solrCore = $solrCore;
         $this->solrMap = $solrMap;
-        $this->searchIndex = $searchIndex;
-        $this->searchPage = $searchPage;
+        $this->searchEngine = $searchEngine;
+        $this->searchConfig = $searchConfig;
     }
 
     public function tearDown(): void
     {
-        $this->api()->delete('search_pages', $this->searchPage->id());
-        $this->api()->delete('search_indexes', $this->searchIndex->id());
+        $this->api()->delete('search_configs', $this->searchConfig->id());
+        $this->api()->delete('search_engines', $this->searchEngine->id());
         $this->api()->delete('solr_maps', $this->solrMap->id());
         $this->api()->delete('solr_cores', $this->solrCore->id());
     }

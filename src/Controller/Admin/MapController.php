@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2017-2020
+ * Copyright Daniel Berthereau, 2017-2021
  * Copyright Paul Sarrassat, 2018
  *
  * This software is governed by the CeCILL license under French law and abiding
@@ -31,12 +31,12 @@
 
 namespace SearchSolr\Controller\Admin;
 
+use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
 use Doctrine\DBAL\Connection;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\Message;
-use Search\Api\Representation\SearchPageRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use SearchSolr\Form\Admin\SolrMapForm;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
@@ -323,11 +323,11 @@ class MapController extends AbstractActionController
         $response = $this->api()->read('solr_maps', $id);
         $map = $response->getContent();
 
-        $searchPages = $map->solrCore()->searchPages();
-        $searchPagesUsingMap = [];
-        foreach ($searchPages as $searchPage) {
-            if ($this->doesSearchPageUseMap($searchPage, $map)) {
-                $searchPagesUsingMap[] = $searchPage;
+        $searchConfigs = $map->solrCore()->searchConfigs();
+        $searchConfigsUsingMap = [];
+        foreach ($searchConfigs as $searchConfig) {
+            if ($this->doesSearchConfigUseMap($searchConfig, $map)) {
+                $searchConfigsUsingMap[] = $searchConfig;
             }
         }
 
@@ -335,8 +335,8 @@ class MapController extends AbstractActionController
             'resourceLabel' => 'Solr map', // @translate
             'resource' => $map,
             'partialPath' => 'common/solr-map-delete-confirm-details',
-            'totalSearchPages' => count($searchPages),
-            'totalSearchPagesUsingMap' => count($searchPagesUsingMap),
+            'totalSearchConfigs' => count($searchConfigs),
+            'totalSearchConfigsUsingMap' => count($searchConfigsUsingMap),
         ]);
         return $view
             ->setTerminal(true)
@@ -400,17 +400,17 @@ class MapController extends AbstractActionController
     /**
      * Check if a search page use a map enabled as facet or sort field.
      *
-     * @param SearchPageRepresentation $searchPage
+     * @param SearchConfigRepresentation $searchConfig
      * @param SolrMapRepresentation $solrMap
      * @return bool
      */
-    protected function doesSearchPageUseMap(
-        SearchPageRepresentation $searchPage,
+    protected function doesSearchConfigUseMap(
+        SearchConfigRepresentation $searchConfig,
         SolrMapRepresentation $solrMap
     ) {
-        $searchPageSettings = $searchPage->settings();
+        $searchConfigSettings = $searchConfig->settings();
         $fieldName = $solrMap->fieldName();
-        foreach ($searchPageSettings as $value) {
+        foreach ($searchConfigSettings as $value) {
             if (is_array($value)) {
                 if (!empty($value[$fieldName]['enabled'])
                     || !empty($value[$fieldName . ' asc']['enabled'])

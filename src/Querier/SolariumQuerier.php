@@ -30,9 +30,9 @@
 
 namespace SearchSolr\Querier;
 
-use Search\Querier\AbstractQuerier;
-use Search\Querier\Exception\QuerierException;
-use Search\Response;
+use AdvancedSearch\Querier\AbstractQuerier;
+use AdvancedSearch\Querier\Exception\QuerierException;
+use AdvancedSearch\Response;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Feature\TransliteratorCharacterTrait;
 use Solarium\Client as SolariumClient;
@@ -147,7 +147,7 @@ class SolariumQuerier extends AbstractQuerier
      * @return SolariumQuery|null
      *
      * {@inheritDoc}
-     * @see \Search\Querier\AbstractQuerier::getPreparedQuery()
+     * @see \AdvancedSearch\Querier\AbstractQuerier::getPreparedQuery()
      */
     public function getPreparedQuery()
     {
@@ -162,7 +162,7 @@ class SolariumQuerier extends AbstractQuerier
         $isPublicField = $solrCoreSettings['is_public_field'];
         $resourceNameField = $solrCoreSettings['resource_name_field'];
         $sitesField = $solrCoreSettings['sites_field'] ?? null;
-        $indexField = ($solrCoreSettings['index_field'] ?? null) && $this->index->settingAdapter('index_name')
+        $indexField = ($solrCoreSettings['index_field'] ?? null) && $this->engine->settingAdapter('index_name')
             ? $solrCoreSettings['index_field']
             : null;
 
@@ -206,7 +206,7 @@ class SolariumQuerier extends AbstractQuerier
         if ($indexField) {
             $this->solariumQuery
                 ->createFilterQuery($indexField)
-                ->setQuery($indexField . ':' . $this->index->shortName());
+                ->setQuery($indexField . ':' . $this->engine->shortName());
         }
 
         $filters = $this->query->getFilters();
@@ -262,15 +262,15 @@ class SolariumQuerier extends AbstractQuerier
                 || substr_compare($name, '_tdts', -5) === 0;
             foreach ($filterValues as $filterValue) {
                 if ($normalize) {
-                    $start = $normalizeDate($filterValue['start']);
-                    $end = $normalizeDate($filterValue['end']);
+                    $from = $normalizeDate($filterValue['from']);
+                    $to = $normalizeDate($filterValue['to']);
                 } else {
-                    $start = $filterValue['start'] ? $filterValue['start'] : '*';
-                    $end = $filterValue['end'] ? $filterValue['end'] : '*';
+                    $from = $filterValue['from'] ? $filterValue['from'] : '*';
+                    $to = $filterValue['to'] ? $filterValue['to'] : '*';
                 }
                 $this->solariumQuery
                     ->createFilterQuery($name)
-                    ->setQuery("$name:[$start TO $end]");
+                    ->setQuery("$name:[$from TO $to]");
             }
         }
 
@@ -546,7 +546,7 @@ class SolariumQuerier extends AbstractQuerier
                         break;
 
                     default:
-                        throw new \Search\Querier\Exception\QuerierException(sprintf(
+                        throw new \AdvancedSearch\Querier\Exception\QuerierException(sprintf(
                             'Search type "%s" is not managed.', // @translate
                             $type
                         ));

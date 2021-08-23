@@ -3,21 +3,21 @@
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrMapRepresentation $resource
  * @var \SearchSolr\Api\Representation\SolrMapRepresentation $map
- * @var int $totalSearchPages
- * @var int $totalSearchPagesUsingMap
+ * @var int $totalSearchConfigs
+ * @var int $totalSearchConfigsUsingMap
  */
 
 $translate = $this->plugin('translate');
 ?>
 
-<?php if ($totalSearchPages): ?>
+<?php if ($totalSearchConfigs): ?>
 <p>
     <?= sprintf($translate('Map between property "%s" and Solr field "%s" for "%s"'), $resource->source(), $resource->fieldName(), $resource->resourceName()) ?>
 </p>
 <h4><?= $translate('WARNING') ?></h4>
 <p>
     <?= sprintf($translate('This will remove all references to this Solr map in search pages that use it (%d, of which %d are enabled for facets or sort fields).'),
-        $totalSearchPages, $totalSearchPagesUsingMap) ?>
+        $totalSearchConfigs, $totalSearchConfigsUsingMap) ?>
 </p>
 <?php else: ?>
 <p>

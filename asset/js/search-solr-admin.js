@@ -1,6 +1,6 @@
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2018
+ * Copyright Daniel Berthereau, 2017-2021
  * Copyright Paul Sarrassat, 2018
  *
  * This software is governed by the CeCILL license under French law and abiding

@@ -29,10 +29,10 @@
 
 namespace SearchSolr\Adapter;
 
+use AdvancedSearch\Adapter\AbstractAdapter;
+use AdvancedSearch\Api\Representation\SearchEngineRepresentation;
 use Laminas\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
-use Search\Adapter\AbstractAdapter;
-use Search\Api\Representation\SearchIndexRepresentation;
 use SearchSolr\Form\Admin\SolrConfigFieldset;
 
 class SolariumAdapter extends AbstractAdapter
@@ -78,7 +78,7 @@ class SolariumAdapter extends AbstractAdapter
         return \SearchSolr\Querier\SolariumQuerier::class;
     }
 
-    public function getAvailableFields(SearchIndexRepresentation $index): array
+    public function getAvailableFields(SearchEngineRepresentation $index): array
     {
         $solrCoreId = $index->settingAdapter('solr_core_id');
         if (!$solrCoreId) {
@@ -103,7 +103,7 @@ class SolariumAdapter extends AbstractAdapter
         return $facetFields;
     }
 
-    public function getAvailableSortFields(SearchIndexRepresentation $index): array
+    public function getAvailableSortFields(SearchEngineRepresentation $index): array
     {
         $solrCoreId = $index->settingAdapter('solr_core_id');
         if (!$solrCoreId) {
@@ -147,7 +147,7 @@ class SolariumAdapter extends AbstractAdapter
         return $sortFields;
     }
 
-    public function getAvailableFacetFields(SearchIndexRepresentation $index): array
+    public function getAvailableFacetFields(SearchEngineRepresentation $index): array
     {
         return $this->getAvailableFields($index);
     }

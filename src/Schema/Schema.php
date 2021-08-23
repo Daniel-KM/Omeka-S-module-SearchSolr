@@ -60,10 +60,10 @@ class Schema
     {
         if (!isset($this->schema)) {
             $contents = @file_get_contents($this->schemaUrl);
-            
+
             if ($contents === false) {
                 // False result might be because file_get_contents is disabled, trying with curl
-                if (function_exists("curl_init")) { 
+                if (function_exists('curl_init')) {
                     $c = curl_init();
                     curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
                     curl_setopt($c, CURLOPT_URL, $this->schemaUrl);

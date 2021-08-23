@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2020
+ * Copyright Daniel Berthereau, 2017-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -36,20 +36,20 @@ if (!class_exists(\Generic\AbstractModule::class)) {
         : __DIR__ . '/src/Generic/AbstractModule.php';
 }
 
+use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
+use AdvancedSearch\Api\Representation\SearchEngineRepresentation;
 use Generic\AbstractModule;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\ModuleManager\ModuleManager;
 use Laminas\Mvc\MvcEvent;
 use Omeka\Module\Exception\ModuleCannotInstallException;
-use Search\Api\Representation\SearchIndexRepresentation;
-use Search\Api\Representation\SearchPageRepresentation;
 
 class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
 
-    protected $dependency = 'Search';
+    protected $dependency = 'AdvancedSearch';
 
     public function init(ModuleManager $moduleManager): void
     {
@@ -157,13 +157,13 @@ SQL;
     {
         $serviceLocator = $this->getServiceLocator();
         $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
-        $module = $moduleManager->getModule('Search');
+        $module = $moduleManager->getModule('AdvancedSearch');
         if ($module && in_array($module->getState(), [
             \Omeka\Module\Manager::STATE_ACTIVE,
             \Omeka\Module\Manager::STATE_NOT_ACTIVE,
         ])) {
             $sql = <<<'SQL'
-DELETE FROM `search_index` WHERE `adapter` = 'solarium';
+DELETE FROM `search_engine` WHERE `adapter` = 'solarium';
 SQL;
         }
         $connection = $serviceLocator->get('Omeka\Connection');
@@ -217,11 +217,11 @@ SQL;
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
         $id = $request->getId();
-        $searchIndexes = $this->searchSearchIndexesByCoreId($id);
-        if (empty($searchIndexes)) {
+        $searchEngines = $this->searchSearchEnginesByCoreId($id);
+        if (empty($searchEngines)) {
             return;
         }
-        $api->batchDelete('search_indexes', array_keys($searchIndexes), [], ['continueOnError' => true]);
+        $api->batchDelete('search_engines', array_keys($searchEngines), [], ['continueOnError' => true]);
     }
 
     public function preSolrMap(Event $event): void
@@ -255,33 +255,33 @@ SQL;
             return;
         }
 
-        $searchPages = $this->searchSearchPagesByCoreId($solrMap->getSolrCore()->getId());
-        if (empty($searchPages)) {
+        $searchConfigs = $this->searchSearchConfigsByCoreId($solrMap->getSolrCore()->getId());
+        if (empty($searchConfigs)) {
             return;
         }
 
-        foreach ($searchPages as $searchPage) {
-            $searchPageSettings = $searchPage->settings();
-            foreach ($searchPageSettings as $key => $value) {
+        foreach ($searchConfigs as $searchConfig) {
+            $searchConfigSettings = $searchConfig->settings();
+            foreach ($searchConfigSettings as $key => $value) {
                 if (is_array($value)) {
-                    if (isset($searchPageSettings[$key][$oldFieldName])) {
-                        $searchPageSettings[$key][$fieldName] = $searchPageSettings[$key][$oldFieldName];
-                        unset($searchPageSettings[$key][$oldFieldName]);
+                    if (isset($searchConfigSettings[$key][$oldFieldName])) {
+                        $searchConfigSettings[$key][$fieldName] = $searchConfigSettings[$key][$oldFieldName];
+                        unset($searchConfigSettings[$key][$oldFieldName]);
                     }
-                    if (isset($searchPageSettings[$key][$oldFieldName . ' asc'])) {
-                        $searchPageSettings[$key][$fieldName . ' asc'] = $searchPageSettings[$key][$oldFieldName . ' asc'];
-                        unset($searchPageSettings[$key][$oldFieldName]);
+                    if (isset($searchConfigSettings[$key][$oldFieldName . ' asc'])) {
+                        $searchConfigSettings[$key][$fieldName . ' asc'] = $searchConfigSettings[$key][$oldFieldName . ' asc'];
+                        unset($searchConfigSettings[$key][$oldFieldName]);
                     }
-                    if (isset($searchPageSettings[$key][$oldFieldName . ' desc'])) {
-                        $searchPageSettings[$key][$fieldName . ' desc'] = $searchPageSettings[$key][$oldFieldName . ' desc'];
-                        unset($searchPageSettings[$key][$oldFieldName]);
+                    if (isset($searchConfigSettings[$key][$oldFieldName . ' desc'])) {
+                        $searchConfigSettings[$key][$fieldName . ' desc'] = $searchConfigSettings[$key][$oldFieldName . ' desc'];
+                        unset($searchConfigSettings[$key][$oldFieldName]);
                     }
                 }
             }
             $api->update(
-                'search_pages',
-                $searchPage->id(),
-                ['o:settings' => $searchPageSettings],
+                'search_configs',
+                $searchConfig->id(),
+                ['o:settings' => $searchConfigSettings],
                 [],
                 ['isPartial' => true]
             );
@@ -293,25 +293,25 @@ SQL;
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $request = $event->getParam('request');
         $solrMapValues = $request->getValue('solrMap');
-        $searchPages = $this->searchSearchPagesByCoreId($solrMapValues['solr_core_id']);
-        if (empty($searchPages)) {
+        $searchConfigs = $this->searchSearchConfigsByCoreId($solrMapValues['solr_core_id']);
+        if (empty($searchConfigs)) {
             return;
         }
 
         $fieldName = $solrMapValues['field_name'];
-        foreach ($searchPages as $searchPage) {
-            $searchPageSettings = $searchPage->settings();
-            foreach ($searchPageSettings as $key => $value) {
+        foreach ($searchConfigs as $searchConfig) {
+            $searchConfigSettings = $searchConfig->settings();
+            foreach ($searchConfigSettings as $key => $value) {
                 if (is_array($value)) {
-                    unset($searchPageSettings[$key][$fieldName]);
-                    unset($searchPageSettings[$key][$fieldName . ' asc']);
-                    unset($searchPageSettings[$key][$fieldName . ' desc']);
+                    unset($searchConfigSettings[$key][$fieldName]);
+                    unset($searchConfigSettings[$key][$fieldName . ' asc']);
+                    unset($searchConfigSettings[$key][$fieldName . ' desc']);
                 }
             }
             $api->update(
-                'search_pages',
-                $searchPage->id(),
-                ['o:settings' => $searchPageSettings],
+                'search_configs',
+                $searchConfig->id(),
+                ['o:settings' => $searchConfigSettings],
                 [],
                 ['isPartial' => true]
             );
@@ -321,19 +321,19 @@ SQL;
     /**
      * Find all search indexes related to a specific solr core.
      *
-     * @todo Factorize searchSearchIndexes() from core with CoreController.
+     * @todo Factorize searchSearchEngines() from core with CoreController.
      * @param int $solrCoreId
-     * @return SearchIndexRepresentation[] Result is indexed by id.
+     * @return SearchEngineRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchIndexesByCoreId($solrCoreId)
+    protected function searchSearchEnginesByCoreId($solrCoreId)
     {
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        /** @var \Search\Api\Representation\SearchIndexRepresentation[] $searchIndexes */
-        $searchIndexes = $api->search('search_indexes', ['adapter' => 'solarium'])->getContent();
-        foreach ($searchIndexes as $searchIndex) {
-            if ($searchIndex->settingAdapter('solr_core_id') == $solrCoreId) {
-                $result[$searchIndex->id()] = $searchIndex;
+        /** @var \AdvancedSearch\Api\Representation\SearchEngineRepresentation[] $searchEngines */
+        $searchEngines = $api->search('search_engines', ['adapter' => 'solarium'])->getContent();
+        foreach ($searchEngines as $searchEngine) {
+            if ($searchEngine->settingAdapter('solr_core_id') == $solrCoreId) {
+                $result[$searchEngine->id()] = $searchEngine;
             }
         }
         return $result;
@@ -342,20 +342,20 @@ SQL;
     /**
      * Find all search pages that use a specific solr core id.
      *
-     * @todo Factorize searchSearchPages() from core with CoreController.
+     * @todo Factorize searchSearchConfigs() from core with CoreController.
      * @param int $solrCoreId
-     * @return SearchPageRepresentation[] Result is indexed by id.
+     * @return SearchConfigRepresentation[] Result is indexed by id.
      */
-    protected function searchSearchPagesByCoreId($solrCoreId)
+    protected function searchSearchConfigsByCoreId($solrCoreId)
     {
         // TODO Use entity manager to simplify search of pages from core.
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $searchIndexes = $this->searchSearchIndexesByCoreId($solrCoreId);
-        foreach ($searchIndexes as $searchIndex) {
-            $searchPages = $api->search('search_pages', ['index_id' => $searchIndex->id()])->getContent();
-            foreach ($searchPages as $searchPage) {
-                $result[$searchPage->id()] = $searchPage;
+        $searchEngines = $this->searchSearchEnginesByCoreId($solrCoreId);
+        foreach ($searchEngines as $searchEngine) {
+            $searchConfigs = $api->search('search_configs', ['engine_id' => $searchEngine->id()])->getContent();
+            foreach ($searchConfigs as $searchConfig) {
+                $result[$searchConfig->id()] = $searchConfig;
             }
         }
         return $result;

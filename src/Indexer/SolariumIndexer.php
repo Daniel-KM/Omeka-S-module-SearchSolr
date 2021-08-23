@@ -30,11 +30,11 @@
 
 namespace SearchSolr\Indexer;
 
+use AdvancedSearch\Indexer\AbstractIndexer;
+use AdvancedSearch\Indexer\IndexerInterface;
+use AdvancedSearch\Query;
 use Omeka\Entity\Resource;
 use Omeka\Stdlib\Message;
-use Search\Indexer\AbstractIndexer;
-use Search\Indexer\IndexerInterface;
-use Search\Query;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use Solarium\Client as SolariumClient;
@@ -150,7 +150,7 @@ class SolariumIndexer extends AbstractIndexer
         $isQuery = false;
         if ($query) {
             /** @var \Solarium\QueryType\Select\Query\Query|null $solariumQuery */
-            $solariumQuery = $this->index->querier()
+            $solariumQuery = $this->engine->querier()
                 ->setQuery($query)
                 ->getPreparedQuery();
             $isQuery = !is_null($solariumQuery);
@@ -508,7 +508,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function prepareIndexFieldAndName()
     {
         $field = $this->getSolrCore()->setting('index_field') ?: false;
-        $name = $this->index->settingAdapter('index_name') ?: false;
+        $name = $this->engine->settingAdapter('index_name') ?: false;
         if ($field && $name) {
             $this->indexField = $field;
             $this->indexName = $name;

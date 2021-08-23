@@ -311,7 +311,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             case 'drupal':
                 $fields = [
                     // Static fields.
-                    'index_id' => null,
+                    'engine_id' => null,
                     'site' => null,
                     'hash' => null,
                     'timestamp' => null,
@@ -381,18 +381,18 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Get all search indexes related to the core, indexed by id.
      *
-     * @return \Search\Api\Representation\SearchIndexRepresentation[]
+     * @return \AdvancedSearch\Api\Representation\SearchEngineRepresentation[]
      */
-    public function searchIndexes()
+    public function searchEngines()
     {
         // TODO Use entity manager to simplify search of indexes from core.
         $result = [];
-        /** @var \Search\Api\Representation\SearchIndexRepresentation[] $searchIndexes */
-        $searchIndexes = $this->getServiceLocator()->get('Omeka\ApiManager')->search('search_indexes', ['adapter' => 'solarium'])->getContent();
+        /** @var \AdvancedSearch\Api\Representation\SearchEngineRepresentation[] $searchEngines */
+        $searchEngines = $this->getServiceLocator()->get('Omeka\ApiManager')->search('search_engines', ['adapter' => 'solarium'])->getContent();
         $id = $this->id();
-        foreach ($searchIndexes as $searchIndex) {
-            if ($searchIndex->settingAdapter('solr_core_id') == $id) {
-                $result[$searchIndex->id()] = $searchIndex;
+        foreach ($searchEngines as $searchEngine) {
+            if ($searchEngine->settingAdapter('solr_core_id') == $id) {
+                $result[$searchEngine->id()] = $searchEngine;
             }
         }
         return $result;
@@ -401,17 +401,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Find all search pages related to the core, indexed by id.
      *
-     * @return \Search\Api\Representation\SearchPageRepresentation[]
+     * @return \AdvancedSearch\Api\Representation\SearchConfigRepresentation[]
      */
-    public function searchPages()
+    public function searchConfigs()
     {
         // TODO Use entity manager to simplify search of pages from core.
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        foreach (array_keys($this->searchIndexes()) as $searchIndexId) {
-            $searchPages = $api->search('search_pages', ['index_id' => $searchIndexId])->getContent();
-            foreach ($searchPages as $searchPage) {
-                $result[$searchPage->id()] = $searchPage;
+        foreach (array_keys($this->searchEngines()) as $searchEngineId) {
+            $searchConfigs = $api->search('search_configs', ['engine_id' => $searchEngineId])->getContent();
+            foreach ($searchConfigs as $searchConfig) {
+                $result[$searchConfig->id()] = $searchConfig;
             }
         }
         return $result;

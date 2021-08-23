@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2020
+ * Copyright Daniel Berthereau, 2017-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -163,16 +163,16 @@ class CoreController extends AbstractActionController
         $response = $this->api()->read('solr_cores', $id);
         $core = $response->getContent();
 
-        $searchIndexes = $core->searchIndexes();
-        $searchPages = $core->searchPages();
+        $searchEngines = $core->searchEngines();
+        $searchConfigs = $core->searchConfigs();
         $solrMaps = $core->maps();
 
         $view = new ViewModel([
             'resourceLabel' => 'Solr core', // @translate
             'resource' => $core,
             'partialPath' => 'common/solr-core-delete-confirm-details',
-            'totalSearchIndexes' => count($searchIndexes),
-            'totalSearchPages' => count($searchPages),
+            'totalSearchEngines' => count($searchEngines),
+            'totalSearchConfigs' => count($searchConfigs),
             'totalSolrMaps' => count($solrMaps),
         ]);
         return $view

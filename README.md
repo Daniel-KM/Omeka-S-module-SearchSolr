@@ -145,7 +145,7 @@ uppercase/lowercase, transliteration, scoring, etc.
 Nevertheless, some people want an advanced search where they can request on a
 specific property, or a group of metadata, with pattern, and even combine them
 together with various joiners (and, or, not, near…). In that particular case, it
-will be required to create multiple index in details.
+will be required to create multiple indexes in details.
 
 ### Indexation with third party
 
