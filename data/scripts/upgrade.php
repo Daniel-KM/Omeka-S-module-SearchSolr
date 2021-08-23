@@ -165,7 +165,7 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
     $moduleManager = $services->get('Omeka\ModuleManager');
     /** @var \Omeka\Module\Module $module */
     $module = $moduleManager->getModule('AdvancedSearch');
-    if ($module) {
+    if (!$module) {
         $message = new Message(
             'This module requires the module "%s", version %s or above.', // @translate
             'AdvancedSearch',
