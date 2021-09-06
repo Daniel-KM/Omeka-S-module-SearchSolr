@@ -69,6 +69,7 @@ class SolariumQuerier extends AbstractQuerier
     public function query(): Response
     {
         $this->response = new Response;
+        $this->response->setApi($this->services->get('Omeka\ApiManager'));
 
         $this->solariumQuery = $this->getPreparedQuery();
         if (is_null($this->solariumQuery)) {
@@ -135,8 +136,10 @@ class SolariumQuerier extends AbstractQuerier
 
     public function querySuggestions(): Response
     {
-        return (new Response)
-            ->setMessage('Suggestions are not implemented'); // @translate
+        $this->response = new Response;
+        $this->response->setApi($this->services->get('Omeka\ApiManager'));
+        return $this->response
+            ->setMessage('Suggestions are not implemented here. Use direct url.'); // @translate
     }
 
     /**
@@ -564,7 +567,7 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function usedSolrFields(array $prefixes = [], array $suffixes = [], array $contains = []): array
     {
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $api = $this->services->get('Omeka\ApiManager');
         $fields = $api->search('solr_maps', [
             'solr_core_id' => $this->solrCore->id(),
         ], ['returnScalar' => 'fieldName'])->getContent();
@@ -773,7 +776,7 @@ class SolariumQuerier extends AbstractQuerier
         if (!isset($this->solrCore)) {
             $solrCoreId = $this->getAdapterSetting('solr_core_id');
             if ($solrCoreId) {
-                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+                $api = $this->services->get('Omeka\ApiManager');
                 // Automatically throw an exception when empty.
                 $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
                 $this->solariumClient = $this->solrCore->solariumClient();
