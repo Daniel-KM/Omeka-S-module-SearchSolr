@@ -1,4 +1,9 @@
 {
+    "config": {
+        "platform": {
+            "php": "7.2"
+        }
+    },
     "require-dev": {
         "biblibre/omeka-s-test-helper": "dev-master"
     },
@@ -8,6 +13,7 @@
         }
     },
     "require": {
-        "solarium/solarium": "^5.2"
+        "solarium/solarium": "^6.0",
+        "symfony/event-dispatcher": "^4.4"
     }
 }
