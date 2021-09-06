@@ -141,15 +141,21 @@ SQL;
 if (version_compare($oldVersion, '3.5.25.3', '<')) {
     $moduleManager = $services->get('Omeka\ModuleManager');
     /** @var \Omeka\Module\Module $module */
-    $module = $moduleManager->getModule('Search');
-    if (!$module
-        || version_compare($module->getIni('version') ?? '', '3.5.22.3', '<')
-        || $module->getState() !== \Omeka\Module\Manager::STATE_ACTIVE
-    ) {
+    $module1 = $moduleManager->getModule('Search');
+    $missingModule1 = !$module1
+            || version_compare($module1->getIni('version') ?? '', '3.5.22.3', '<')
+            || $module1->getState() !== \Omeka\Module\Manager::STATE_ACTIVE;
+    $module2 = $moduleManager->getModule('AdvancedSearch');
+    $missingModule2 = !$module2
+            || version_compare($module2->getIni('version') ?? '', '3.3.6', '<')
+            || $module2->getState() !== \Omeka\Module\Manager::STATE_ACTIVE;
+
+
+    if ($missingModule1 && $missingModule2) {
         $message = new Message(
             'This module requires the module "%s", version %s or above.', // @translate
-            'Search',
-            '3.5.22.3'
+            'Search / AdvancedSearch',
+            '3.5.22.3 / 3.3.6'
         );
         throw new ModuleCannotInstallException((string) $message);
     }
