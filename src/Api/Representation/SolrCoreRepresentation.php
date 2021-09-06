@@ -34,7 +34,11 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 use Omeka\Stdlib\Message;
 use SearchSolr\Schema;
 use Solarium\Client as SolariumClient;
+use Solarium\Core\Client\Adapter\Http as SolariumAdapter;
 use Solarium\Exception\HttpException as SolariumException;
+// TODO Use Laminas event manager when #12 will be merged.
+// @see https://github.com/laminas/laminas-eventmanager/pull/12
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class SolrCoreRepresentation extends AbstractEntityRepresentation
 {
@@ -124,29 +128,39 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         if (!is_array($clientSettings)) {
             $clientSettings = (array) $clientSettings;
         }
-        return [
-            $clientSettings['host'] ?? 'localhost' => array_replace(
-                [
-                    'scheme' => null,
-                    'host' => null,
-                    'port' => null,
-                    'path' => '/',
-                    // Core and collection have same meaning on a standard solr.
-                    // 'collection' => null,
-                    'core' => null,
-                    'username' => null,
-                    'password' => null,
-                ],
-                $clientSettings
-            ),
-        ];
+        return array_replace(
+            [
+                // Solarium manages multiple endpoints, so the endpoint should
+                // be identified, so the id is used.
+                'key' => 'solr_' . $this->id(),
+                'scheme' => null,
+                'host' => null,
+                'port' => null,
+                'path' => '/',
+                // Core and collection have same meaning on a standard solr.
+                'collection' => null,
+                'core' => null,
+                // For Solr Cloud.
+                // 'leader' => false,
+                // Can be set separately via getEndpoint()->setAuthentication().
+                'username' => null,
+                'password' => null,
+            ],
+            $clientSettings
+        );
     }
 
     public function solariumClient(): ?SolariumClient
     {
         if (!isset($this->solariumClient)) {
             try {
-                $this->solariumClient = new SolariumClient(['endpoint' => $this->endpoint()]);
+                $this->solariumClient = new SolariumClient(
+                    new SolariumAdapter(),
+                    new EventDispatcher()
+                );
+                $this->solariumClient
+                    // Set the endpoint as default.
+                    ->createEndpoint($this->endpoint(), true);
             } catch (\Solarium\Exception\InvalidArgumentException $e) {
                 // Nothing.
             }
