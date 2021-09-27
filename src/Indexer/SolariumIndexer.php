@@ -708,7 +708,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function getSolrCore()
     {
         if (!isset($this->solrCore)) {
-            $solrCoreId = $this->getAdapterSetting('solr_core_id');
+            $solrCoreId = $this->engine->settingAdapter('solr_core_id');
             if ($solrCoreId) {
                 // Automatically throw an exception when empty.
                 $this->solrCore = $this->getServiceLocator()->get('Omeka\ApiManager')

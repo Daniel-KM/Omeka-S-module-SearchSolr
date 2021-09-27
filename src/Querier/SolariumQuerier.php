@@ -774,7 +774,7 @@ class SolariumQuerier extends AbstractQuerier
     protected function getSolrCore(): \SearchSolr\Api\Representation\SolrCoreRepresentation
     {
         if (!isset($this->solrCore)) {
-            $solrCoreId = $this->getAdapterSetting('solr_core_id');
+            $solrCoreId = $this->engine->settingAdapter('solr_core_id');
             if ($solrCoreId) {
                 $api = $this->services->get('Omeka\ApiManager');
                 // Automatically throw an exception when empty.
