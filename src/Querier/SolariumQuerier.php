@@ -370,7 +370,7 @@ class SolariumQuerier extends AbstractQuerier
         $excludedFiles = $this->query->getExcludedFields();
 
         $solrCoreSettings = $this->solrCore->settings();
-        $queryConfig = array_filter($solrCoreSettings['query']);
+        $queryConfig = array_filter($solrCoreSettings['query'] ?? []);
         if ($queryConfig) {
             // TODO These options and other DisMax ones can be passed directly as options. Even the query is an option.
             $dismax = $this->solariumQuery->getDisMax();
