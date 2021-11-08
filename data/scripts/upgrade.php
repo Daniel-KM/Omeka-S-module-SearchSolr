@@ -302,4 +302,32 @@ UPDATE `solr_map`
 SET `source` = REPLACE(`source`, "item_sets", "item_set")
 SQL;
     $connection->executeStatement($sql);
+
+    // Copy all mapping "items" and "item_sets" into "resources", except "item_set/xxx".
+    $sql = <<<'SQL'
+INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+SELECT `solr_core_id`, "resources", `field_name`, `source`, `pool`, `settings`
+FROM `solr_map`
+WHERE `resource_name` != "generic"
+    AND `resource_name` != "resource"
+    AND `source` NOT LIKE "item_set%"
+;
+SQL;
+    $connection->executeStatement($sql);
+
+    // Remove duplicate mappings
+    $sql = <<<'SQL'
+DELETE `t1` FROM `solr_map` as `t1`
+INNER JOIN `solr_map` as `t2`
+WHERE
+    `t1`.`id` > `t2`.`id`
+    AND `t1`.`solr_core_id` = `t2`.`solr_core_id`
+    AND `t1`.`resource_name` = `t2`.`resource_name`
+    AND `t1`.`field_name` = `t2`.`field_name`
+    AND `t1`.`source` = `t2`.`source`
+    AND `t1`.`pool` = `t2`.`pool`
+    AND `t1`.`settings` = `t2`.`settings`
+;
+SQL;
+    $connection->executeStatement($sql);
 }
