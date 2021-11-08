@@ -175,7 +175,7 @@ class SolariumQuerier extends AbstractQuerier
         if (empty($this->engine->settingAdapter('index_name'))) {
             $indexField = null;
         } else {
-            $indexField = $this->solrCore->mapsBySource('index_field', 'generic');
+            $indexField = $this->solrCore->mapsBySource('search_index', 'generic');
             $indexField = $indexField ? (reset($indexField))->fieldName() : null;
         }
 

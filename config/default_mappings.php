@@ -61,7 +61,7 @@ return [
     [
         'resource_name' => 'resources',
         'field_name' => 'index_id',
-        'source' => 'index_field',
+        'source' => 'search_index',
         'pool' => [],
         'settings' => [],
     ],

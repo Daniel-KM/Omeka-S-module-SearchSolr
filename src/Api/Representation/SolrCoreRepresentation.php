@@ -534,7 +534,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             'resource_template/o:id' => true,
             'owner/o:id' => true,
             'site/o:id' => true,
-            'index_field' => false,
+            'search_index' => false,
         ];
 
         $unavailableFields = [];

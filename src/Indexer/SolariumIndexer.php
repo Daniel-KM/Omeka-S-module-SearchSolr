@@ -358,7 +358,7 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            if ($source === 'index_field' && $solrField === $this->indexField) {
+            if ($source === 'search_index' && $solrField === $this->indexField) {
                 continue;
             }
 
@@ -518,7 +518,7 @@ class SolariumIndexer extends AbstractIndexer
 
     protected function prepareIndexFieldAndName()
     {
-        $fields = $this->getSolrCore()->mapsBySource('index_field', 'generic') ?: [];
+        $fields = $this->getSolrCore()->mapsBySource('search_index', 'generic') ?: [];
         $name = $this->engine->settingAdapter('index_name') ?: false;
         if ($fields && $name) {
             $this->indexField = reset($fields);
