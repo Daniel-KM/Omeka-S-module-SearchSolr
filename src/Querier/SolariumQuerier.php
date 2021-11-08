@@ -161,13 +161,23 @@ class SolariumQuerier extends AbstractQuerier
             return $this->solariumQuery;
         }
 
-        $solrCoreSettings = $this->solrCore->settings();
-        $isPublicField = $solrCoreSettings['is_public_field'];
-        $resourceNameField = $solrCoreSettings['resource_name_field'];
-        $sitesField = $solrCoreSettings['sites_field'] ?? null;
-        $indexField = ($solrCoreSettings['index_field'] ?? null) && $this->engine->settingAdapter('index_name')
-            ? $solrCoreSettings['index_field']
-            : null;
+        $resourceNameField = $this->solrCore->mapsBySource('resource_name', 'generic');
+        $resourceNameField = $resourceNameField ? (reset($resourceNameField))->fieldName() : null;
+        $isPublicField = $this->solrCore->mapsBySource('is_public', 'generic');
+        $isPublicField = $isPublicField ? (reset($isPublicField))->fieldName() : null;
+        $sitesField = $this->solrCore->mapsBySource('site/o:id', 'generic');
+        $sitesField = $sitesField ? (reset($sitesField))->fieldName() : null;
+        if (!$resourceNameField || !$isPublicField || !$sitesField) {
+            $this->solariumQuery = null;
+            return $this->solariumQuery;
+        }
+
+        if (empty($this->engine->settingAdapter('index_name'))) {
+            $indexField = null;
+        } else {
+            $indexField = $this->solrCore->mapsBySource('index_field', 'generic');
+            $indexField = $indexField ? (reset($indexField))->fieldName() : null;
+        }
 
         // TODO Add a param to select DisMaxQuery, standard query, eDisMax, or external query parsers.
 
