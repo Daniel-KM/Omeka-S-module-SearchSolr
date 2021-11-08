@@ -29,15 +29,15 @@ if (version_compare($oldVersion, '3.5.15.2', '<')) {
     $sql = <<<SQL
 CREATE INDEX `IDX_39A565C527B35A195103DEBC` ON `solr_map` (`solr_core_id`, `resource_name`);
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
     $sql = <<<SQL
 CREATE INDEX `IDX_39A565C527B35A194DEF17BC` ON `solr_map` (`solr_core_id`, `field_name`);
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
     $sql = <<<SQL
 CREATE INDEX `IDX_39A565C527B35A195F8A7F73` ON `solr_map` (`solr_core_id`, `source`);
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     $serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
     $settings->set('searchsolr_server_id', $serverId);
@@ -50,17 +50,17 @@ if (version_compare($oldVersion, '3.5.15.3.6', '<')) {
     $sql = <<<SQL
 ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     $sql = <<<SQL
 UPDATE `solr_map` SET `data_types` = "[]";
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     $sql = <<<SQL
 UPDATE `solr_map` SET `source` = REPLACE(`source`, "item_set", "item_sets") WHERE `source` LIKE "%item_set%";
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
     $messenger->addNotice('Now, values can be indexed differently for each data type, if wanted.'); // @translate
@@ -72,22 +72,22 @@ if (version_compare($oldVersion, '3.5.16.3', '<')) {
 ALTER TABLE `solr_core`
 CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     $sql = <<<SQL
 ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
 SQL;
     try {
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
         $sql = <<<SQL
 UPDATE `solr_map` SET `data_types` = "[]";
 SQL;
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
 
         $sql = <<<SQL
 UPDATE `solr_map` SET `source` = REPLACE(`source`, "item_set", "item_sets") WHERE `source` LIKE "%item_set%";
 SQL;
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
     } catch (\Exception $e) {
     }
 
@@ -96,21 +96,21 @@ ALTER TABLE `solr_map`
 CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
 CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     $sql = <<<SQL
 UPDATE `solr_map`
 SET `pool` = "[]"
 WHERE `pool` = "[]" OR `pool` = "{}" OR `pool` = "" OR `pool` IS NULL;
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     $sql = <<<SQL
 UPDATE `solr_map`
 SET `pool` = CONCAT('{"data_types":', `pool`, "}")
 WHERE `pool` != "[]" AND `pool` IS NOT NULL;
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 
     // Keep the standard formatter to simplify improvment.
     $sql = <<<SQL
@@ -118,13 +118,13 @@ UPDATE `solr_map`
 SET `settings` = REPLACE(`settings`, '"formatter":"standard_no_uri"', '"formatter":"standard_without_uri"')
 WHERE `settings` LIKE '%"formatter":"standard_no_uri"%';
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
     $sql = <<<SQL
 UPDATE `solr_map`
 SET `settings` = REPLACE(`settings`, '"formatter":"uri_only"', '"formatter":"uri"')
 WHERE `settings` LIKE '%"formatter":"uri_only"%';
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 }
 
 if (version_compare($oldVersion, '3.5.18.3', '<')) {
@@ -133,7 +133,7 @@ ALTER TABLE `solr_map`
 CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
 SQL;
     try {
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
     } catch (\Exception $e) {
     }
 }
@@ -182,6 +182,18 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.5.31.3', '<')) {
+    $moduleManager = $services->get('Omeka\ModuleManager');
+    /** @var \Omeka\Module\Module $module */
+    $module = $moduleManager->getModule('AdvancedSearch');
+    if (!$module || version_compare($module->getIni('version') ?? '', '3.3.6.7', '<')) {
+        $message = new Message(
+            'This module requires the module "%s", version %s or above.', // @translate
+            'AdvancedSearch',
+            '3.3.6.7'
+        );
+        throw new ModuleCannotInstallException((string) $message);
+    }
+
     // Remove an old option.
     $qb = $connection->createQueryBuilder();
     $qb
@@ -346,4 +358,18 @@ WHERE
 ;
 SQL;
     $connection->executeStatement($sql);
+
+    $messenger = new Messenger();
+    $message = new Message(
+        'The resource types are now structured to simplify config: "generic" and "resource" allow to set mapping for any resource.' // @translate
+    );
+    $messenger->addSuccess($message);
+    $message = new Message(
+        'All mapping for items and item sets have been copied to resources.' // @translate
+    );
+    $messenger->addWarning($message);
+    $message = new Message(
+        'It is recommended to check mappings, to remove the useless and duplicate ones, and to run a full reindexation.' // @translate
+    );
+    $messenger->addWarning($message);
 }
