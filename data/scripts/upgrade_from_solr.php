@@ -1,5 +1,9 @@
 <?php declare(strict_types=1);
+
 namespace SearchSolr;
+
+use Omeka\Mvc\Controller\Plugin\Messenger;
+use Omeka\Stdlib\Message;
 
 /**
  * @var Module $this
@@ -17,15 +21,25 @@ if (!$solrModule) {
     return;
 }
 
+$messenger = new Messenger;
+
+$moduleVersion = $moduleManager->getModule('SearchSolr')->getIni('version');
+if (version_compare($moduleVersion, '3.5.30.3', '>=')) {
+    $message = new Message(
+        'To upgrade module Solr automatically, this module should be lower or equal to 3.5.30.3.' // @translate
+    );
+    $messenger->addWarning($message);
+    return;
+}
+
 $oldVersion = $solrModule->getIni('version');
 if (version_compare($oldVersion, '3.5.5', '<')
     || version_compare($oldVersion, '3.5.14', '>')
 ) {
-    $message = new \Omeka\Stdlib\Message(
+    $message = new Message(
         'The version of the module Solr should be at least %s.', // @translate
         '3.5.5'
     );
-    $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
     $messenger->addWarning($message);
     return;
 }
@@ -175,8 +189,7 @@ foreach ($sqls as $sql) {
 // Convert the settings.
 // None, but there may be "solr_bypass_certificate_check" in the local config in Omeka.
 
-$message = new \Omeka\Stdlib\Message(
+$message = new Message(
     'The module Solr was upgraded by module SearchSolr and uninstalled.' // @translate
 );
-$messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
 $messenger->addWarning($message);

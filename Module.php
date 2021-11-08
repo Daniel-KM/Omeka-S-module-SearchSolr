@@ -93,10 +93,43 @@ class Module extends AbstractModule
     protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
+        $translator = $services->get('MvcTranslator');
+        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
+
         if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
-            $translator = $services->get('MvcTranslator');
-            $message = sprintf($translator->translate('The composer library "%s" is not installed. See readme.'), 'Solarium'); // @translate
+            $message = new \Omeka\Stdlib\Message(
+                'The composer library "%s" is not installed. See readme.', // @translate
+                'Solarium'
+            );
             throw new ModuleCannotInstallException($message);
+        }
+
+        // Module AdvancedSearch is already checked as dependency.
+
+        $moduleVersion = $moduleManager->getModule('SearchSolr')->getIni('version');
+        $module = $moduleManager->getModule('Solr');
+        $moduleSolrVersion = $module ? $module->getIni('version') : null;
+        if ($moduleSolrVersion) {
+            if (version_compare($moduleSolrVersion, '3.5.5', '<')
+                || version_compare($moduleSolrVersion, '3.5.14', '>')
+            ) {
+                if ($module->getState() === \Omeka\Module\Manager::STATE_ACTIVE) {
+                    $message = new \Omeka\Stdlib\Message(
+                        'To be upgraded automatically, the module Solr should be between versions 3.5.5 and 3.5.14. Upgrade it or disable it to install this module.' // @translate
+                    );
+                    throw new ModuleCannotInstallException($message);
+                }
+                $messenger->addWarning($translator->translate('The module Solr can be upgraded only for version between 3.5.5 and 3.5.14.')); // @translate
+            } elseif (version_compare($moduleVersion, '3.5.30.3', '>=')) {
+                if ($module->getState() === \Omeka\Module\Manager::STATE_ACTIVE) {
+                    $message = new \Omeka\Stdlib\Message(
+                        'To upgrade module Solr automatically, this module should be lower or equal to 3.5.30.3. Install this version of this module, then upgrade it.' // @translate
+                    );
+                    throw new ModuleCannotInstallException($message);
+                }
+                $messenger->addWarning($translator->translate('To upgrade module Solr automatically, this module should be lower or equal to 3.5.30.3.')); // @translate
+            }
+            $messenger->addWarning('A new config will be created instead.'); // @translate
         }
     }
 
@@ -108,26 +141,7 @@ class Module extends AbstractModule
         $serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
         $settings->set('searchsolr_server_id', $serverId);
 
-        // Upgrade from old module Solr if any, else install a default config.
         $connection = $services->get('Omeka\Connection');
-
-        /** @var \Omeka\Module\Manager $moduleManager */
-        $moduleManager = $services->get('Omeka\ModuleManager');
-        $module = $moduleManager->getModule('Solr');
-        if ($module
-            && version_compare($module->getIni('version') ?? '', '3.5.5', '>=')
-            && version_compare($module->getIni('version') ?? '', '3.5.14', '<=')
-        ) {
-            // Check if Solr was really installed.
-            try {
-                $connection->fetchAll('SELECT id FROM solr_node LIMIT 1;');
-                // So upgrade Solr.
-                $filepath = $this->modulePath() . '/data/scripts/upgrade_from_solr.php';
-                require_once $filepath;
-                return;
-            } catch (\Exception $e) {
-            }
-        }
 
         // Install a default config.
         $sql = <<<'SQL'
@@ -135,7 +149,7 @@ INSERT INTO `solr_core` (`name`, `settings`)
 VALUES ("default", ?);
 SQL;
         $defaultSettings = $this->getSolrCoreDefaultSettings();
-        $connection->executeQuery($sql, [json_encode($defaultSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
+        $connection->executeStatement($sql, [json_encode($defaultSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
 
         $sql = <<<'SQL'
 INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
@@ -143,7 +157,7 @@ VALUES (1, ?, ?, ?, ?, ?);
 SQL;
         $defaultMaps = $this->getDefaultSolrMaps();
         foreach ($defaultMaps as $map) {
-            $connection->executeQuery($sql, [
+            $connection->executeStatement($sql, [
                 $map['resource_name'],
                 $map['field_name'],
                 $map['source'],
@@ -167,7 +181,7 @@ DELETE FROM `search_engine` WHERE `adapter` = 'solarium';
 SQL;
         }
         $connection = $serviceLocator->get('Omeka\Connection');
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
     }
 
     /**
@@ -374,9 +388,11 @@ SQL;
                 'username' => null,
                 'password' => null,
             ],
-            'is_public_field' => 'is_public_b',
-            'resource_name_field' => 'resource_name_s',
-            'sites_field' => 'site_id_is',
+            'resource_fields' => [
+                'is_public_field' => 'is_public_b',
+                'resource_name_field' => 'resource_name_s',
+                'sites_field' => 'site_id_is',
+            ],
         ];
     }
 
