@@ -599,7 +599,8 @@ class SolariumIndexer extends AbstractIndexer
                     // The site should be the language site one, but urls don't
                     // include locale in Omeka.
                     // TODO Check if the site url should be the default site one or the root of Omeka.
-                    $value = $this->solrCore->setting('site_url') ?: 'http://localhost/';
+                    $helpers = $this->getServiceLocator()->get('ViewHelperManager');
+                    $value = $helpers->get('ServerUrl')->__invoke($helpers->get('BasePath')->__invoke('/'));
                     break;
                 case 'hash':
                     $value = $this->serverId;

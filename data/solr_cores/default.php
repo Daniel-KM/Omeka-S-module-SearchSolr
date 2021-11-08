@@ -37,8 +37,5 @@ return [
             'minimum_match' =>  '',
             'tie_breaker' =>  '',
         ],
-        // Should be the absolute url to the current Omeka install.
-        // It is used to simplify background indexing and locale indexing.
-        'site_url' =>  '/',
     ],
 ];

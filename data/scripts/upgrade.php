@@ -180,3 +180,29 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
         throw new ModuleCannotInstallException((string) $message);
     }
 }
+
+if (version_compare($oldVersion, '3.5.31.3', '<')) {
+    // Remove an old option.
+    $qb = $connection->createQueryBuilder();
+    $qb
+        ->select('id', 'settings')
+        ->from('solr_core', 'solr_core')
+        ->orderBy('id', 'asc');
+    $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
+    foreach ($solrCoresSettings as $id => $solrCoreSettings) {
+        $solrCoreSettings = json_decode($solrCoreSettings,  true) ?: [];
+        unset($solrCoreSettings['site_url']);
+        $sql = <<<'SQL'
+UPDATE `solr_core`
+SET
+    `settings` = ?
+WHERE
+    `id` = ?
+;
+SQL;
+        $connection->executeStatement($sql, [
+            json_encode($solrCoreSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            $id,
+        ]);
+    }
+}

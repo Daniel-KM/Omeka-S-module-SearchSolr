@@ -400,7 +400,6 @@ INSERT INTO `solr_core` (`name`, `settings`)
 VALUES (?, ?);
 SQL;
         $solrCoreData = require __DIR__ . '/data/solr_cores/default.php';
-        $solrCoreData['o:settings']['site_url'] = rtrim($urlHelper('top'), '/') . '/';
         $connection->executeStatement($sql, [
             $solrCoreData['o:name'],
             json_encode($solrCoreData['o:settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),

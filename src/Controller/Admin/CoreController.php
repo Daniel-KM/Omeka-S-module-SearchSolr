@@ -118,7 +118,6 @@ class CoreController extends AbstractActionController
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
-        $data['o:settings']['site_url'] = $this->getBaseUrl();
         $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages']))));
         unset($data['o:settings']['clear_full_index']);
         $this->api()->update('solr_cores', $id, $data);
@@ -303,19 +302,6 @@ class CoreController extends AbstractActionController
             return false;
         }
         return true;
-    }
-
-    /**
-     * Get the base url of the server.
-     *
-     * This value avoids issue in background job.
-     *
-     * @return string
-     */
-    protected function getBaseUrl()
-    {
-        $helpers = $this->viewHelpers();
-        return $helpers->get('ServerUrl')->__invoke($helpers->get('BasePath')->__invoke('/'));
     }
 
     protected function checkCoreConfig(SolrCoreRepresentation $solrCore)
