@@ -375,9 +375,12 @@ class MapController extends AbstractActionController
     protected function getSourceLabels()
     {
         $sourceLabels = [
-            'id' => 'Internal identifier',
+            'resource_name' => 'Resource type', // @translate
+            'id' => 'Internal id', // @translate
             'is_public' => 'Public', // @translate
             'is_open' => 'Is open', // @translate
+            'site' => 'Site', // @translate
+            'owner' => 'Owner', // @translate
             'created' => 'Created', // @translate
             'modified' => 'Modified', // @translate
             'resource_class' => 'Resource class', // @translate

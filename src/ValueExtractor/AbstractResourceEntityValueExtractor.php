@@ -73,43 +73,37 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         // TODO Use ajax to improve select of sub fields.
 
         $fields = [
-            'o:id' => [
-                'label' => 'Internal identifier', // @translate
+            'generic' => [
+                'label' => 'Generic', // @translate
+                'options' => [
+                    'resource_name' => 'Resource type', // @translate
+                    'o:id' => 'Internal id', // @translate
+                    'is_public' => 'Is public', // @translate
+                    'created' => 'Created', // @translate
+                    'modified' => 'Modified', // @translate
+                    'resource_class' => 'Resource class', // @translate
+                    'resource_template' => 'Resource template', // @translate
+                    'item_set' => 'Item: Item set', // @translate
+                    'media' => 'Item: Media', // @translate
+                    'content' => 'Media: Content (html or extracted text)', // @translate
+                    // May be used internally in admin board.
+                    'is_open' => 'Item set: Is open', // @translate
+                ],
             ],
-            'created' => [
-                'label' => 'Created', // @translate
-            ],
-            'modified' => [
-                'label' => 'Modified', // @translate
-            ],
-            'is_public' => [
-                'label' => 'Is public', // @translate
-            ],
-            'resource_class' => [
-                'label' => 'Resource class', // @translate
-            ],
-            'resource_template' => [
-                'label' => 'Resource template', // @translate
-            ],
-            'item_set' => [
-                'label' => 'Item: Item set', // @translate
-            ],
-            'media' => [
-                'label' => 'Item: Media', // @translate
-            ],
-            'content' => [
-                'label' => 'Media: Content (html or extracted text)', // @translate
-            ],
-            // May be used internally in admin board.
-            'is_open' => [
-                'label' => 'Item set: Is open', // @translate
-            ],
+            // Set dcterms first.
+            'dcterms' => [],
         ];
 
         $properties = $this->api->search('properties')->getContent();
         foreach ($properties as $property) {
-            $term = $property->term();
-            $fields[$term]['label'] = $term;
+            $prefix = $property->vocabulary()->prefix();
+            if (empty($fields[$prefix]['label'])) {
+                $fields[$prefix] = [
+                    'label' => $property->vocabulary()->label(),
+                    'options' => [],
+                ];
+            }
+            $fields[$prefix]['options'][$property->term()] = $property->label();
         }
 
         return $fields;
@@ -136,6 +130,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return [$resource->id()];
         }
 
+        if ($field === 'is_public') {
+            return [$resource->isPublic()];
+        }
+
         if ($field === 'created') {
             return [$resource->created()->format('Y-m-d H:i:s')];
         }
@@ -145,10 +143,6 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return $modified
                 ? [$modified->format('Y-m-d H:i:s')]
                 : [];
-        }
-
-        if ($field === 'is_public') {
-            return [$resource->isPublic()];
         }
 
         if ($field === 'resource_class') {

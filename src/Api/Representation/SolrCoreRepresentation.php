@@ -359,12 +359,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function maps()
     {
-        $maps = [];
-        $mapAdapter = $this->getAdapter('solr_maps');
-        /** @var \SearchSolr\Entity\SolrMap $mapEntity */
-        foreach ($this->resource->getMaps() as $mapEntity) {
-            $maps[$mapEntity->getId()] = $mapAdapter->getRepresentation($mapEntity);
+        static $maps;
+
+        if (is_null($maps)) {
+            $maps = [];
+            $mapAdapter = $this->getAdapter('solr_maps');
+            /** @var \SearchSolr\Entity\SolrMap $mapEntity */
+            foreach ($this->resource->getMaps() as $mapEntity) {
+                $maps[$mapEntity->getId()] = $mapAdapter->getRepresentation($mapEntity);
+            }
         }
+
         return $maps;
     }
 
@@ -378,6 +383,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         static $maps = [];
 
+        // TODO Check if the id is still needed.
         $id = $this->id();
         if (!isset($maps[$id])) {
             $maps[$id] = [];
@@ -388,9 +394,66 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             }
         }
 
-        return $resourceName
-            ? $maps[$id][$resourceName] ?? []
-            : $maps[$id];
+        if (!$resourceName) {
+            return $maps[$id];
+        }
+
+        if ($resourceName === 'generic') {
+            return $maps[$id]['generic'] ?? [];
+        }
+
+        if (!in_array($resourceName, ['items', 'item_sets'])) {
+            return array_merge(
+                $maps[$id]['generic'] ?? [],
+                $maps[$id][$resourceName] ?? []
+            );
+        }
+
+        return array_merge(
+            $maps[$id]['generic'] ?? [],
+            $maps[$id]['resources'] ?? [],
+            $maps[$id][$resourceName] ?? []
+        );
+    }
+
+    /**
+     * Get the solr maps by field name and optionnaly by resource name.
+     *
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
+     */
+    public function mapsByFieldName(string $fieldName, $resourceName = null): array
+    {
+        $result = [];
+        $maps = $resourceName
+            ? $this->mapsByResourceName($resourceName)
+            : $this->maps();
+        foreach ($maps as $map) {
+            if ($map->fieldName() === $fieldName) {
+                $result[] = $map;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get the solr maps by source and optionnaly by resource name.
+     *
+     * Warning: multiple maps can have the same source for various usage.
+     *
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
+     */
+    public function mapsBySource(string $source, $resourceName = null): array
+    {
+        $result = [];
+        $maps = $resourceName
+            ? $this->mapsByResourceName($resourceName)
+            : $this->maps();
+        foreach ($maps as $map) {
+            if ($map->source() === $source) {
+                $result[] = $map;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -430,5 +493,34 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             }
         }
         return $result;
+    }
+
+    /**
+     * Check if all required maps are managed by the core.
+     */
+    public function missingRequiredMaps(): ?array
+    {
+        // Check if the specified fields are available.
+        $fields = [
+            'resource_name' => true,
+            'is_public' => true,
+            'resource_class/o:id' => true,
+            'resource_template/o:id' => true,
+            'owner/o:id' => true,
+            'site/o:id' => true,
+            'index_field' => false,
+        ];
+
+        $unavailableFields = [];
+        foreach ($fields as $source => $isRequired) {
+            $maps = $this->mapsBySource($source, 'resources');
+            if (!count($maps )) {
+                if ($isRequired) {
+                    $unavailableFields[] = $source;
+                }
+            }
+        }
+
+        return $unavailableFields ?: null;
     }
 }

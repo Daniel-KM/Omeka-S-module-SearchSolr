@@ -95,7 +95,7 @@ class SolrMapForm extends Form
             ->get('o:pool')
             ->add([
                 'name' => 'data_types',
-                'type' => 'Omeka\Form\Element\DataTypeSelect',
+                'type' => \Omeka\Form\Element\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Limit to data types', // @translate
                 ],
@@ -108,7 +108,7 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'data_types_exclude',
-                'type' => 'Omeka\Form\Element\DataTypeSelect',
+                'type' => \Omeka\Form\Element\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Exclude data types', // @translate
                 ],
@@ -166,28 +166,12 @@ class SolrMapForm extends Form
     }
 
     /**
-     * @return \SearchSolr\ValueExtractor\Manager
-     */
-    public function getValueExtractorManager()
-    {
-        return $this->valueExtractorManager;
-    }
-
-    /**
      * @param ValueFormatterManager $valueFormatterManager
      */
     public function setValueFormatterManager(ValueFormatterManager $valueFormatterManager)
     {
         $this->valueFormatterManager = $valueFormatterManager;
         return $this;
-    }
-
-    /**
-     * @return \SearchSolr\ValueFormatter\Manager
-     */
-    public function getValueFormatterManager()
-    {
-        return $this->valueFormatterManager;
     }
 
     /**
@@ -200,76 +184,29 @@ class SolrMapForm extends Form
     }
 
     /**
-     * @return \Omeka\Api\Manager
-     */
-    public function getApiManager()
-    {
-        return $this->apiManager;
-    }
-
-    /**
      * @return array|null
      */
     protected function getSourceOptions()
     {
-        $valueExtractorManager = $this->getValueExtractorManager();
-
         $resourceName = $this->getOption('resource_name');
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
-        $valueExtractor = $valueExtractorManager->get($resourceName);
+        $valueExtractor = $this->valueExtractorManager->get($resourceName);
         if (!isset($valueExtractor)) {
             return null;
         }
 
-        return $this->getFieldsOptions($valueExtractor->getMapFields());
+        // Recursive select is no more used, neither prefix/suffix.
+        // See older version if needed.
+        return $valueExtractor->getMapFields();
     }
 
-    /**
-     * @return array
-     */
-    protected function getFieldsOptions($fields, $valuePrefix = '', $labelPrefix = '')
+    protected function getFormatterOptions(): array
     {
         $options = [];
-
-        foreach ($fields as $name => $field) {
-            $label = $field['label'];
-            $value = $name;
-
-            if (!empty($field['children'])) {
-                $childrenOptions = $this->getFieldsOptions($field['children'],
-                    $valuePrefix ? "$valuePrefix/$value" : $value,
-                    $labelPrefix ? "$labelPrefix / $label" : $label);
-                $options = array_merge($options, $childrenOptions);
-            } else {
-                $value = $valuePrefix ? "$valuePrefix/$value" : $value;
-                if ($labelPrefix) {
-                    if (!isset($options[$labelPrefix])) {
-                        $options[$labelPrefix] = ['label' => $labelPrefix];
-                    }
-                    $options[$labelPrefix]['options'][$value] = $label;
-                } else {
-                    $options[$value] = $label;
-                }
-            }
-        }
-
-        return $options;
-    }
-
-    /**
-     * @return array
-     */
-    protected function getFormatterOptions()
-    {
-        $valueFormatterManager = $this->getValueFormatterManager();
-
-        $options = [];
-
-        foreach ($valueFormatterManager->getRegisteredNames() as $name) {
-            $valueFormatter = $valueFormatterManager->get($name);
+        foreach ($this->valueFormatterManager->getRegisteredNames() as $name) {
+            $valueFormatter = $this->valueFormatterManager->get($name);
             $options[$name] = $valueFormatter->getLabel();
         }
-
         return $options;
     }
 }

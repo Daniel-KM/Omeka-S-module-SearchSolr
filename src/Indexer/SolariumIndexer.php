@@ -198,7 +198,10 @@ class SolariumIndexer extends AbstractIndexer
         }
 
         if (empty($this->api)) {
-            $this->init();
+            $result = $this->init();
+            if (!$result) {
+                return $this;
+            }
         }
 
         $resourceNames = [
@@ -244,7 +247,7 @@ class SolariumIndexer extends AbstractIndexer
      *
      * @todo Create/use a full service manager factory.
      */
-    protected function init()
+    protected function init(): ?IndexerInterface
     {
         $services = $this->getServiceLocator();
         $this->api = $services->get('Omeka\ApiManager');
@@ -259,6 +262,18 @@ class SolariumIndexer extends AbstractIndexer
         $this->prepareSingleValuedFields();
         $this->getSupportFields();
         $this->prepareFomatters();
+
+        // Force indexation of required fields, in particular resource type,
+        // visibility and sites, because they are the base of Omeka.
+        // So check required fields one time and abord early.
+        $missingMaps = $this->getSolrCore()->missingRequiredMaps();
+        if ($missingMaps) {
+            $this->getLogger()->err(new Message(
+                'Unable to index resources in Solr core "%1$s". Some required fields are not mapped: %2$s', // @translate
+                $this->getSolrCore()->name(), implode(', ', $missingMaps)
+            ));
+            return null;
+        }
 
         $doc = new SolariumInputDocument();
         $this->solariumHelpers = $doc->getHelper();
@@ -286,7 +301,6 @@ class SolariumIndexer extends AbstractIndexer
         $resourceName = $resource->getResourceName();
         $resourceId = $resource->getId();
 
-        $solrCoreSettings = $this->solrCore->settings();
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
 
@@ -305,50 +319,40 @@ class SolariumIndexer extends AbstractIndexer
             $document->addField($this->indexField, $this->indexName);
         }
 
-        // Force the indexation of visibility, resource type and sites, even if
-        // not selected in mapping, because they are the base of Omeka.
-
-        $isPublicField = $solrCoreSettings['is_public_field'];
-        $document->addField($isPublicField, $resource->isPublic());
-
-        $resourceNameField = $solrCoreSettings['resource_name_field'];
-        $document->addField($resourceNameField, $resourceName);
-
-        $sitesField = $solrCoreSettings['sites_field'];
-        switch ($resourceName) {
-            case 'items':
-                $sites = array_map(function (\Omeka\Entity\Site $v) {
-                    return $v->getId();
-                }, $resource->getSites()->toArray());
-                $document->addField($sitesField, array_values($sites));
-                break;
-
-            case 'item_sets':
-                $sites = array_map(function (\Omeka\Entity\SiteItemSet $v) {
-                    return $v->getSite()->getId();
-                }, $resource->getSiteItemSets()->toArray());
-                $document->addField($sitesField, $sites);
-                break;
-
-            default:
-                return;
-        }
-
         foreach ($this->solrCore->mapsByResourceName($resourceName) as $solrMap) {
             $solrField = $solrMap->fieldName();
             $source = $solrMap->source();
 
-            // Index the required fields one time only except if the admin wants
-            // to store it in a different field too.
-            if ($source === 'is_public' && $solrField === $isPublicField) {
+            // Required fields (resource name, visibility, etc.) are already
+            // checked, so they are all added during value extraction.
+
+            // Resource name is not available through the representation.
+            if ($source === 'resource_name') {
+                $document->addField($solrField, $resourceName);
+            }
+
+            if ($source === 'site/o:id') {
+                switch ($resourceName) {
+                    case 'items':
+                        $sites = array_map(function (\Omeka\Entity\Site $v) {
+                            return $v->getId();
+                        }, $resource->getSites()->toArray());
+                        $document->addField($solrField, array_values($sites));
+                        break;
+                    case 'item_sets':
+                        $sites = array_map(function (\Omeka\Entity\SiteItemSet $v) {
+                            return $v->getSite()->getId();
+                        }, $resource->getSiteItemSets()->toArray());
+                        $document->addField($solrField, $sites);
+                        break;
+                    default:
+                        // Nothing to do.
+                        break;
+                }
                 continue;
             }
-            // The admin can’t modify this parameter via the standard interface.
-            if ($source === 'resource_name' && $solrField === $sitesField) {
-                continue;
-            }
-            // The admin can’t modify this parameter via the standard interface.
-            if ($source === 'site/o:id' && $solrField === $sitesField) {
+
+            if ($source === 'index_field' && $solrField === $this->indexField) {
                 continue;
             }
 
@@ -507,10 +511,10 @@ class SolariumIndexer extends AbstractIndexer
 
     protected function prepareIndexFieldAndName()
     {
-        $field = $this->getSolrCore()->setting('index_field') ?: false;
+        $fields = $this->getSolrCore()->mapsBySource('index_field', 'generic') ?: [];
         $name = $this->engine->settingAdapter('index_name') ?: false;
-        if ($field && $name) {
-            $this->indexField = $field;
+        if ($fields && $name) {
+            $this->indexField = reset($fields);
             $this->indexName = $name;
         } else {
             $this->indexField = false;
@@ -555,8 +559,7 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function prepareSingleValuedFields(): void
     {
-        $solrCore = $this->getSolrCore();
-        $schema = $solrCore->schema();
+        $schema = $this->getSolrCore()->schema();
         $this->isSingleValuedFields = [];
         foreach ($this->getSolrCore()->mapsByResourceName() as $resourceName => $solrMaps) {
             $this->isSingleValuedFields[$resourceName] = [];

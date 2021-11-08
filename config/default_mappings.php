@@ -1,11 +1,84 @@
 <?php declare(strict_types=1);
-// Example of a generic mapping for Solr.
-// It should be adapted to specific data, in particular when they are normalized,
-// for example for dates.
+
+/**
+ * Generic mapping for Solr.
+ *
+ * It should be adapted to specific data, in particular when they are normalized,
+ * for example for dates.
+ *
+ * They can be updated in admin board.
+ */
 
 return [
+    // Resources.
+
+    // Required specific fields for any type of resource.
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'resource_name_s',
+        'source' => 'resource_name',
+        'pool' => [],
+        'settings' => [],
+    ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'is_public_b',
+        'source' => 'is_public',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Public'],
+    ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'resource_class_id_i',
+        'source' => 'resource_class/o:id',
+        'pool' => [],
+        'settings' => [],
+    ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'resource_template_id_i',
+        'source' => 'resource_template/o:id',
+        'pool' => [],
+        'settings' => [],
+    ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'owner_id_i',
+        'source' => 'owner/o:id',
+        'pool' => [],
+        'settings' => [],
+    ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'site_id_is',
+        'source' => 'site/o:id',
+        'pool' => [],
+        'settings' => [],
+    ],
+
+    // Not required specific fields.
+    /* For shared core with Drupal.
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'index_id',
+        'source' => 'index_field',
+        'pool' => [],
+        'settings' => [],
+    ],
+    */
+
     // Items.
 
+    // Required fields.
+    [
+        'resource_name' => 'items',
+        'field_name' => 'item_set_id_is',
+        'source' => 'item_set/o:id',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Item set id'],
+    ],
+
+    // Properties.
     // Text general of Dublin Core elements + spatial and temporal coverages.
     [
         'resource_name' => 'items',
@@ -142,29 +215,6 @@ return [
         'settings' => ['formatter' => 'date_range', 'label' => 'Temporal coverage'],
     ],
 
-    // Specific fields.
-    [
-        'resource_name' => 'items',
-        'field_name' => 'is_public_b',
-        'source' => 'is_public',
-        'pool' => [],
-        'settings' => ['formatter' => '', 'label' => 'Public'],
-    ],
-    [
-        'resource_name' => 'items',
-        'field_name' => 'resource_class_s',
-        'source' => 'resource_class',
-        'pool' => [],
-        'settings' => ['formatter' => '', 'label' => 'Resource class'],
-    ],
-    [
-        'resource_name' => 'items',
-        'field_name' => 'item_set_id_is',
-        'source' => 'item_set/o:id',
-        'pool' => [],
-        'settings' => ['formatter' => '', 'label' => 'Item set / Internal identifier'],
-    ],
-
     // Fields for facets.
     [
         'resource_name' => 'items',
@@ -216,6 +266,22 @@ return [
         'settings' => ['formatter' => '', 'label' => 'Item Set'],
     ],
 
+    // Specific fields.
+    [
+        'resource_name' => 'items',
+        'field_name' => 'resource_class_s',
+        'source' => 'resource_class/o:local_name',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Resource class'],
+    ],
+    [
+        'resource_name' => 'items',
+        'field_name' => 'resource_template_s',
+        'source' => 'resource_template/o:label',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Resource template'],
+    ],
+
     // Fields to sort.
     [
         'resource_name' => 'items',
@@ -240,6 +306,8 @@ return [
     ],
 
     // Item sets.
+
+    // Dublin core.
     [
         'resource_name' => 'item_sets',
         'field_name' => 'dcterms_title_txt',
@@ -254,13 +322,7 @@ return [
         'pool' => [],
         'settings' => ['formatter' => '', 'label' => 'Description'],
     ],
-    [
-        'resource_name' => 'item_sets',
-        'field_name' => 'is_public_b',
-        'source' => 'is_public',
-        'pool' => [],
-        'settings' => ['formatter' => '', 'label' => 'Public'],
-    ],
+    // Fields to sort.
     [
         'resource_name' => 'item_sets',
         'field_name' => 'dcterms_title_s',

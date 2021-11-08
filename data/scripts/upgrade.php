@@ -189,7 +189,7 @@ if (version_compare($oldVersion, '3.5.31.3', '<')) {
         ->from('solr_core', 'solr_core')
         ->orderBy('id', 'asc');
     $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
-    foreach ($solrCoresSettings as $id => $solrCoreSettings) {
+    foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
         $solrCoreSettings = json_decode($solrCoreSettings,  true) ?: [];
         unset($solrCoreSettings['site_url']);
         $sql = <<<'SQL'
@@ -202,7 +202,97 @@ WHERE
 SQL;
         $connection->executeStatement($sql, [
             json_encode($solrCoreSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            $id,
+            $solrCoreId,
+        ]);
+    }
+
+    // Move generic settings to map and add new ones.
+    $fields = [
+        'resource_name_field' => [
+            'resource_name' => 'generic',
+            'field_name' => 'resource_name_s',
+            'source' => 'resource_name',
+        ],
+        'is_public_field' => [
+            'resource_name' => 'generic',
+            'field_name' => 'is_public_b',
+            'source' => 'is_public',
+            'settings' => ['formatter' => '', 'label' => 'Public'],
+        ],
+        'sites_field' => [
+            'resource_name' => 'generic',
+            'field_name' => 'site_id_is',
+            'source' => 'site/o:id',
+        ],
+        [
+            'resource_name' => 'generic',
+            'field_name' => 'owner_id_i',
+            'source' => 'owner/o:id',
+        ],
+        'index_field' => [
+            'resource_name' => 'generic',
+            // Not required.
+            // 'field_name' => 'index_id',
+            'field_name' => null,
+            'source' => 'search_index',
+        ],
+
+        [
+            'resource_name' => 'resources',
+            'field_name' => 'resource_class_id_i',
+            'source' => 'resource_class/o:id',
+        ],
+        [
+            'resource_name' => 'resources',
+            'field_name' => 'resource_template_id_i',
+            'source' => 'resource_template/o:id',
+        ],
+
+        [
+            'resource_name' => 'items',
+            'field_name' => 'item_set_id_is',
+            'source' => 'item_set/o:id',
+            'settings' => ['formatter' => '', 'label' => 'Item set'],
+        ],
+    ];
+    $qb = $connection->createQueryBuilder();
+    $qb
+        ->select('id', 'settings')
+        ->from('solr_core', 'solr_core')
+        ->orderBy('id', 'asc');
+    $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
+    foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
+        $solrCoreSettings = json_decode($solrCoreSettings,  true) ?: [];
+        foreach ($fields as $oldName => $newField) {
+            $fieldName = $solrCoreSettings[$oldName] ?? $newField['field_name'];
+            unset($solrCoreSettings[$oldName]);
+            if (!$fieldName) {
+                continue;
+            }
+            $sql = <<<'SQL'
+INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+VALUES (?, ?, ?, ?, ?, ?);
+SQL;
+            $connection->executeStatement($sql, [
+                $solrCoreId,
+                $newField['resource_name'],
+                $fieldName,
+                $newField['source'],
+                json_encode($newField['pool'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                json_encode($newField['settings'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            ]);
+        }
+        $sql = <<<'SQL'
+UPDATE `solr_core`
+SET
+    `settings` = ?
+WHERE
+    `id` = ?
+;
+SQL;
+        $connection->executeStatement($sql, [
+            json_encode($solrCoreSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            $solrCoreId,
         ]);
     }
 }

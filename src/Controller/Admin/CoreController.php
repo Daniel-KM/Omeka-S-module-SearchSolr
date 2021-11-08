@@ -122,10 +122,14 @@ class CoreController extends AbstractActionController
         unset($data['o:settings']['clear_full_index']);
         $this->api()->update('solr_cores', $id, $data);
 
-        $result = $this->checkCoreConfig($core);
-        if (!$result) {
-            $this->messenger()->addError(new Message('The config to manage the Solr core "%s" was updated, but with an incorrect config.', $core->name())); // @translate
-            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
+        $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+
+        $missingMaps = $core->missingRequiredMaps();
+        if ($missingMaps) {
+            $this->messenger()->addError(new Message(
+                'Some required fields are missing or not available in the core: "%s". Update the generic or the resource mappings.', // @translate
+                implode('", "', array_unique($missingMaps))
+            ));
         }
 
         if (!empty($data['o:settings']['support'])) {
@@ -138,20 +142,17 @@ class CoreController extends AbstractActionController
                     'Some specific static or dynamic fields are missing or not available for "%s" in the core: "%s".', // @translate
                     $data['o:settings']['support'], implode('", "', array_keys($unsupportedFields))
                 ));
-            } else {
-                $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
             }
+            $this->messenger()->addWarning('Don’t forget to reindex this core with external indexers.'); // @translate
         } else {
-            $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+            $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this core.'); // @translate
         }
+
         if ($clearFullIndex) {
             $this->clearFullIndex($core);
             $this->messenger()->addWarning(new Message('All indexes of core "%s" are been deleted.', $core->name())); // @translate
         }
-        $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this core.'); // @translate
-        if ($clearFullIndex) {
-            $this->messenger()->addWarning('Don’t forget to reindex this core with external indexers.'); // @translate
-        }
+
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
@@ -301,41 +302,6 @@ class CoreController extends AbstractActionController
             $this->messenger()->addError('There was an error during validation'); // @translate
             return false;
         }
-        return true;
-    }
-
-    protected function checkCoreConfig(SolrCoreRepresentation $solrCore)
-    {
-        // Check if the specified fields are available.
-        $fields = [
-            'is_public_field' => true,
-            'resource_name_field' => true,
-            'sites_field' => true,
-            'index_field' => false,
-        ];
-
-        $unavailableFields = [];
-        foreach ($fields as $field => $isRequired) {
-            $fieldName = $solrCore->setting($field);
-            if (empty($fieldName)) {
-                if ($isRequired) {
-                    $unavailableFields[] = $fieldName;
-                }
-                continue;
-            }
-            if (!$solrCore->getSchemaField($fieldName)) {
-                $unavailableFields[] = $fieldName;
-            }
-        }
-
-        if (count($unavailableFields)) {
-            $this->messenger()->addError(new Message(
-                'Some static or dynamic fields are missing or not available in the core: "%s".', // @translate
-                implode('", "', $unavailableFields)
-            ));
-            return false;
-        }
-
         return true;
     }
 
