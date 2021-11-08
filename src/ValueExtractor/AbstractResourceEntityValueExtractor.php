@@ -90,6 +90,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'content' => 'Media: Content (html or extracted text)', // @translate
                     // May be used internally in admin board.
                     'is_open' => 'Item set: Is open', // @translate
+                    // Specific values.
+                    'o:term' => 'Property or class term', // @translate
+                    'o:label' => 'Label ', // @translate
                 ],
             ],
             // Set dcterms first.
@@ -160,16 +163,14 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         if ($field === 'resource_class') {
-            $resourceClass = $resource->resourceClass();
-            return $resourceClass
-                ? [$resourceClass->term()]
+            return $resource instanceof AbstractResourceEntityRepresentation
+                ? $this->extractResourceClassValues($resource, $solrMap)
                 : [];
         }
 
         if ($field === 'resource_template') {
-            $resourceTemplate = $resource->resourceTemplate();
-            return $resourceTemplate
-                ? [$resourceTemplate->label()]
+            return $resource instanceof AbstractResourceEntityRepresentation
+                ? $this->extractResourceTemplateValues($resource, $solrMap)
                 : [];
         }
 
@@ -178,6 +179,13 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 ? $this->extractItemMediasValue($resource, $solrMap)
                 : [];
         }
+
+        if ($field === 'content') {
+            return $resource instanceof MediaRepresentation
+                ? $this->extractMediaContent($resource)
+                : [];
+        }
+
         if ($field === 'item_set') {
             return $resource instanceof ItemRepresentation
                 ? $this->extractItemItemSetsValue($resource, $solrMap)
@@ -190,9 +198,15 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 : [];
         }
 
-        if ($field === 'content') {
-            return $resource instanceof MediaRepresentation
-                ? $this->extractMediaContent($resource)
+        if ($field === 'o:term') {
+            return method_exists($resource, 'term')
+                ? [$resource->term()]
+                : [];
+        }
+
+        if ($field === 'o:label') {
+            return method_exists($resource, 'label')
+                ? [$resource->label()]
                 : [];
         }
 
@@ -226,6 +240,26 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             $extractedValues = array_merge($extractedValues, $values);
         }
         return $extractedValues;
+    }
+
+    protected function extractResourceClassValues(
+        AbstractResourceEntityRepresentation $resource,
+        ?SolrMapRepresentation $solrMap
+    ): array {
+        $resourceClass = $resource->resourceClass();
+        return $resourceClass
+            ? $this->extractValue($resourceClass, $solrMap->subMap())
+            : [];
+    }
+
+    protected function extractResourceTemplateValues(
+        AbstractResourceEntityRepresentation $resource,
+        ?SolrMapRepresentation $solrMap
+    ): array {
+        $resourceTemplate = $resource->resourceTemplate();
+        return $resourceTemplate
+            ? $this->extractValue($resourceTemplate, $solrMap->subMap())
+            : [];
     }
 
     protected function extractItemMediasValue(

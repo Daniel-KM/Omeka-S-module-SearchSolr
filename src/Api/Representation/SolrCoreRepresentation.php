@@ -530,8 +530,6 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $fields = [
             'resource_name' => true,
             'is_public' => true,
-            'resource_class/o:id' => true,
-            'resource_template/o:id' => true,
             'owner/o:id' => true,
             'site/o:id' => true,
             'search_index' => false,

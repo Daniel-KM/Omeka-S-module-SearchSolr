@@ -303,6 +303,22 @@ SET `source` = REPLACE(`source`, "item_sets", "item_set")
 SQL;
     $connection->executeStatement($sql);
 
+    // Rename "resource_class".
+    $sql = <<<'SQL'
+UPDATE `solr_map`
+SET `source` = "resource_class/o:term"
+WHERE `source` = "resource_class";
+SQL;
+    $connection->executeStatement($sql);
+
+    // Rename "resource_class".
+    $sql = <<<'SQL'
+UPDATE `solr_map`
+SET `source` = "resource_template/o:label"
+WHERE `source` = "resource_template";
+SQL;
+    $connection->executeStatement($sql);
+
     // Copy all mapping "items" and "item_sets" into "resources", except "item_set/xxx".
     $sql = <<<'SQL'
 INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)

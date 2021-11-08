@@ -53,22 +53,23 @@ return [
     ],
     */
 
-    [
-        'resource_name' => 'resources',
-        'field_name' => 'resource_class_id_i',
-        'source' => 'resource_class/o:id',
-        'pool' => [],
-        'settings' => [],
-    ],
-    [
-        'resource_name' => 'resources',
-        'field_name' => 'resource_template_id_i',
-        'source' => 'resource_template/o:id',
-        'pool' => [],
-        'settings' => [],
-    ],
-
     // Resources.
+
+    // Specific fields.
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'resource_class_s',
+        'source' => 'resource_class/o:term',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Resource class'],
+    ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'resource_template_s',
+        'source' => 'resource_template/o:label',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Resource template'],
+    ],
 
     // Properties.
     // Text general of Dublin Core elements + spatial and temporal coverages.
@@ -256,22 +257,6 @@ return [
         'source' => 'item_set/dcterms:title',
         'pool' => [],
         'settings' => ['formatter' => '', 'label' => 'Item Set'],
-    ],
-
-    // Specific fields.
-    [
-        'resource_name' => 'resources',
-        'field_name' => 'resource_class_s',
-        'source' => 'resource_class/o:local_name',
-        'pool' => [],
-        'settings' => ['formatter' => '', 'label' => 'Resource class'],
-    ],
-    [
-        'resource_name' => 'resources',
-        'field_name' => 'resource_template_s',
-        'source' => 'resource_template/o:label',
-        'pool' => [],
-        'settings' => ['formatter' => '', 'label' => 'Resource template'],
     ],
 
     // Fields to sort.
