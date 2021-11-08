@@ -377,7 +377,7 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            if ($this->isSingleValuedFields[$resourceName][$solrField]) {
+            if ($this->isSingleValuedFields[$solrField]) {
                 $isSingleFieldFilled[$solrField] = true;
                 $document->addField($solrField, reset($values));
             } else {
@@ -562,19 +562,20 @@ class SolariumIndexer extends AbstractIndexer
      * a multi-mapped single-value field is already filled in order not to send
      * multiple values to a single valued field.
      *
+     * Because the multivalued quality is defined by the schema, it is not
+     * related to the resource name, so a single list is created.
+     * It avoids complexity with generic/resources/specific resources names too.
+     *
      * @todo Move the single valued check inside Solr core settings to do it one time.
      */
     protected function prepareSingleValuedFields(): void
     {
         $schema = $this->getSolrCore()->schema();
         $this->isSingleValuedFields = [];
-        foreach ($this->getSolrCore()->mapsByResourceName() as $resourceName => $solrMaps) {
-            $this->isSingleValuedFields[$resourceName] = [];
-            foreach ($solrMaps as $solrMap) {
-                $solrField = $solrMap->fieldName();
-                $schemaField = $schema->getField($solrField);
-                $this->isSingleValuedFields[$resourceName][$solrField] = $schemaField && !$schemaField->isMultivalued();
-            }
+        foreach ($this->getSolrCore()->maps() as $solrMap) {
+            $solrField = $solrMap->fieldName();
+            $schemaField = $schema->getField($solrField);
+            $this->isSingleValuedFields[$solrField] = $schemaField && !$schemaField->isMultivalued();
         }
     }
 
