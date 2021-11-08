@@ -137,11 +137,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 'host' => null,
                 'port' => null,
                 'path' => '/',
-                // Core and collection have same meaning on a standard solr.
-                'collection' => null,
+                // "core" and "collection" have same meaning on a standard solr,
+                // even if "collection" is designed for SolrCloud.
                 'core' => null,
                 // For Solr Cloud.
                 // 'leader' => false,
+                'collection' => null,
                 // Can be set separately via getEndpoint()->setAuthentication().
                 'username' => null,
                 'password' => null,

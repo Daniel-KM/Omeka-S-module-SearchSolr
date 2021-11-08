@@ -101,10 +101,11 @@ class Module extends AbstractModule
                 'The composer library "%s" is not installed. See readme.', // @translate
                 'Solarium'
             );
-            throw new ModuleCannotInstallException($message);
+            throw new ModuleCannotInstallException((string) $message);
         }
 
-        // Module AdvancedSearch is already checked as dependency.
+        /** @var \Omeka\Module\Manager $moduleManager */
+        $moduleManager = $services->get('Omeka\ModuleManager');
 
         $moduleVersion = $moduleManager->getModule('SearchSolr')->getIni('version');
         $module = $moduleManager->getModule('Solr');
@@ -117,7 +118,7 @@ class Module extends AbstractModule
                     $message = new \Omeka\Stdlib\Message(
                         'To be upgraded automatically, the module Solr should be between versions 3.5.5 and 3.5.14. Upgrade it or disable it to install this module.' // @translate
                     );
-                    throw new ModuleCannotInstallException($message);
+                    throw new ModuleCannotInstallException((string) $message);
                 }
                 $messenger->addWarning($translator->translate('The module Solr can be upgraded only for version between 3.5.5 and 3.5.14.')); // @translate
             } elseif (version_compare($moduleVersion, '3.5.30.3', '>=')) {
@@ -125,7 +126,7 @@ class Module extends AbstractModule
                     $message = new \Omeka\Stdlib\Message(
                         'To upgrade module Solr automatically, this module should be lower or equal to 3.5.30.3. Install this version of this module, then upgrade it.' // @translate
                     );
-                    throw new ModuleCannotInstallException($message);
+                    throw new ModuleCannotInstallException((string) $message);
                 }
                 $messenger->addWarning($translator->translate('To upgrade module Solr automatically, this module should be lower or equal to 3.5.30.3.')); // @translate
             }
@@ -135,36 +136,7 @@ class Module extends AbstractModule
 
     protected function postInstall(): void
     {
-        $services = $this->getServiceLocator();
-
-        $settings = $services->get('Omeka\Settings');
-        $serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
-        $settings->set('searchsolr_server_id', $serverId);
-
-        $connection = $services->get('Omeka\Connection');
-
-        // Install a default config.
-        $sql = <<<'SQL'
-INSERT INTO `solr_core` (`name`, `settings`)
-VALUES ("default", ?);
-SQL;
-        $defaultSettings = $this->getSolrCoreDefaultSettings();
-        $connection->executeStatement($sql, [json_encode($defaultSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
-
-        $sql = <<<'SQL'
-INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
-VALUES (1, ?, ?, ?, ?, ?);
-SQL;
-        $defaultMaps = $this->getDefaultSolrMaps();
-        foreach ($defaultMaps as $map) {
-            $connection->executeStatement($sql, [
-                $map['resource_name'],
-                $map['field_name'],
-                $map['source'],
-                json_encode($map['pool'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-                json_encode($map['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            ]);
-        }
+        $this->installResources();
     }
 
     protected function preUninstall(): void
@@ -375,29 +347,80 @@ SQL;
         return $result;
     }
 
-    protected function getSolrCoreDefaultSettings()
+    protected function installResources(): void
     {
-        return [
-            'client' => [
-                'scheme' => 'http',
-                'host' => 'localhost',
-                'port' => 8983,
-                'path' => '/',
-                // 'collection' => null,
-                'core' => 'omeka',
-                'username' => null,
-                'password' => null,
-            ],
-            'resource_fields' => [
-                'is_public_field' => 'is_public_b',
-                'resource_name_field' => 'resource_name_s',
-                'sites_field' => 'site_id_is',
-            ],
-        ];
+        $this->createDefaultSolrConfig();
     }
 
-    protected function getDefaultSolrMaps()
+    /**
+     * @todo Replace this method by the standard InstallResources() when the upgrade from Search will be removed.
+     */
+    protected function createDefaultSolrConfig(): void
     {
-        return include __DIR__ . '/config/default_mappings.php';
+        // Note: during installation or upgrade, the api may not be available
+        // for the search api adapters, so use direct sql queries.
+
+        $services = $this->getServiceLocator();
+
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
+
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $connection = $services->get('Omeka\Connection');
+
+        // Check if the internal index exists.
+        $sqlSolrCoreId = <<<'SQL'
+SELECT `id`
+FROM `solr_core`
+ORDER BY `id`
+SQL;
+        $solrCoreId = (int) $connection->fetchColumn($sqlSolrCoreId);
+        if ($solrCoreId) {
+            return;
+        }
+
+        // Set the default server id, used in some cases (shared core with Drupal).
+        $settings = $services->get('Omeka\Settings');
+        $serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
+        $settings->set('searchsolr_server_id', $serverId);
+
+        // Install a default config.
+        $sql = <<<'SQL'
+INSERT INTO `solr_core` (`name`, `settings`)
+VALUES (?, ?);
+SQL;
+        $solrCoreData = require __DIR__ . '/data/solr_cores/default.php';
+        $solrCoreData['o:settings']['site_url'] = rtrim($urlHelper('top'), '/') . '/';
+        $connection->executeStatement($sql, [
+            $solrCoreData['o:name'],
+            json_encode($solrCoreData['o:settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        ]);
+        $solrCoreId = (int) $connection->fetchColumn($sqlSolrCoreId);
+
+        // Install a default mapping.
+        $sql = <<<'SQL'
+INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+VALUES (?, ?, ?, ?, ?, ?);
+SQL;
+        $defaultMaps = require __DIR__ . '/config/default_mappings.php';
+        foreach ($defaultMaps as $map) {
+            $connection->executeStatement($sql, [
+                $solrCoreId,
+                $map['resource_name'],
+                $map['field_name'],
+                $map['source'],
+                json_encode($map['pool'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                json_encode($map['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            ]);
+        }
+
+        $message = new \Omeka\Stdlib\Message(
+            'The default core is available. Configure it in the %ssearch manager%s.', // @translate
+            // Don't use the url helper, the route is not available during install.
+            sprintf('<a href="%s">', $urlHelper('admin') . '/search-manager/solr/core/' . $solrCoreId . '/edit'),
+            '</a>'
+        );
+        $message->setEscapeHtml(false);
+        $messenger->addSuccess($message);
     }
 }
