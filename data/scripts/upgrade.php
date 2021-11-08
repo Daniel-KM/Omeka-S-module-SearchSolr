@@ -295,4 +295,11 @@ SQL;
             $solrCoreId,
         ]);
     }
+
+    // Rename any source from "item_sets/xxx" into "item_set/xxx".
+    $sql = <<<'SQL'
+UPDATE `solr_map`
+SET `source` = REPLACE(`source`, "item_sets", "item_set")
+SQL;
+    $connection->executeStatement($sql);
 }
