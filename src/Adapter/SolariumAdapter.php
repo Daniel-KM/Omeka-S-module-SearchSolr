@@ -78,9 +78,13 @@ class SolariumAdapter extends AbstractAdapter
         return \SearchSolr\Querier\SolariumQuerier::class;
     }
 
-    public function getAvailableFields(SearchEngineRepresentation $index): array
+    public function getAvailableFields(): array
     {
-        $solrCoreId = $index->settingAdapter('solr_core_id');
+        if (!$this->searchEngine) {
+            return [];
+        }
+
+        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -103,9 +107,13 @@ class SolariumAdapter extends AbstractAdapter
         return $facetFields;
     }
 
-    public function getAvailableSortFields(SearchEngineRepresentation $index): array
+    public function getAvailableSortFields(): array
     {
-        $solrCoreId = $index->settingAdapter('solr_core_id');
+        if (!$this->searchEngine) {
+            return [];
+        }
+
+        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -147,8 +155,8 @@ class SolariumAdapter extends AbstractAdapter
         return $sortFields;
     }
 
-    public function getAvailableFacetFields(SearchEngineRepresentation $index): array
+    public function getAvailableFacetFields(): array
     {
-        return $this->getAvailableFields($index);
+        return $this->getAvailableFields();
     }
 }
