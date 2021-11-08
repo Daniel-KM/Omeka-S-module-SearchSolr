@@ -477,28 +477,42 @@ class SolariumIndexer extends AbstractIndexer
                             ->addDocument($document)
                             ->addCommit();
                         $client->update($update);
-                    } catch (SolariumServerException $e) {
-                        $dId = explode('-', $documentId);
-                        $error = json_decode((string) $e->getBody(), true);
-                        $message = is_array($error) && isset($error['error']['msg']) ? $error['error']['msg'] : $e->getMessage();
-                        $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $message);
-                        $this->getLogger()->err($message);
                     } catch (\Exception $e) {
                         $dId = explode('-', $documentId);
-                        $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $e->getMessage());
-                        $this->getLogger()->err($message);
+                        $dId = array_pop($dId);
+                        $this->commitError($dId, $e);
                     }
                 }
             } else {
                 $dId = explode('-', key($this->solariumDocuments));
-                $error = json_decode((string) $e->getMessage(), true);
-                $message = is_array($error) || isset($error['error']['msg']) ? $error['error']['msg'] : $e->getMessage();
-                $message = new Message('Indexing of resource %1$s failed: %2$s', array_pop($dId), $message);
-                $this->getLogger()->err($message);
+                $dId = array_pop($dId);
+                $this->commitError($dId, $e);
             }
         }
 
         $this->solariumDocuments = [];
+    }
+
+    /**
+     * Prepare the commit message error for log.
+     *
+     * To get a better message: get the data ($request->getRawData()) and post it
+     * in Solr admin board.
+     * @see Solarium\Core\Client\Adapter\Http::createContext()
+     */
+    protected function commitError(string $dId, \Exception $exception)
+    {
+        $error = method_exists($exception, 'getBody')? json_decode((string) $exception->getBody(), true) : null;
+        if (is_array($error) && isset($error['error']['msg'])) {
+            $message = $error['error']['msg'];
+        } else {
+            $message = $exception->getMessage();
+            if ($message === 'Solr HTTP error: Bad Request (400)') {
+                $message = new Message('Invalid document (wrong field type or missing required field).'); // @translate
+            }
+        }
+        $message = new Message('Indexing of resource %1$s failed: %2$s', $dId, $message);
+        $this->getLogger()->err($message);
     }
 
     /**
