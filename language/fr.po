@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-07-05 00:00+0000\n"
-"PO-Revision-Date: 2021-07-05 00:00+0000\n"
+"POT-Creation-Date: 2021-11-08 00:00+0000\n"
+"PO-Revision-Date: 2021-11-08 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -22,6 +22,7 @@ msgstr ""
 #, php-format
 msgid "The composer library \"%s\" is not installed. See readme."
 msgstr ""
+"La bibliothèque composer \"%s\" n'est pas installée. Voir le lisez-moi."
 
 #: src/Adapter/SolariumAdapter.php:120
 msgid "Relevance"
@@ -242,7 +243,7 @@ msgstr "Réservoir"
 
 #: view/search-solr/admin/map/browse-resource.phtml:82
 msgid "Translated default label"
-msgstr ""
+msgstr "Libellé par défaut traduit"
 
 #: view/search-solr/admin/map/browse-resource.phtml:114
 msgid "Excluded data types"
@@ -281,11 +282,11 @@ msgstr "Modifier le cœur Solr"
 
 #: view/search-solr/admin/map/form.phtml:26
 msgid "Metadata to extract"
-msgstr ""
+msgstr "Métadonnée à extraire"
 
 #: view/search-solr/admin/map/form.phtml:31
 msgid "Metadata to index"
-msgstr ""
+msgstr "Métadonnée à indexer"
 
 #: data/scripts/upgrade_from_solr.php:25
 #, php-format
@@ -298,7 +299,7 @@ msgstr ""
 
 #: data/scripts/upgrade.php:46
 msgid "You should reindex your Solr cores."
-msgstr ""
+msgstr "Vous devez réindexer vos cœurs Solr."
 
 #: data/scripts/upgrade.php:66
 msgid "Now, values can be indexed differently for each data type, if wanted."
@@ -319,7 +320,7 @@ msgstr ""
 
 #: Module.php:98 src/Api/Representation/SolrCoreRepresentation.php:205
 msgid "Solarium"
-msgstr ""
+msgstr "Solarium"
 
 #: src/Form/Admin/ConfigFieldset.php:45 src/Form/Admin/SolrCoreForm.php:100
 #: src/Controller/Admin/CoreController.php:171
@@ -346,7 +347,7 @@ msgstr ""
 
 #: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:207
 msgid "Set sub-property"
-msgstr ""
+msgstr "Indiquer la sous-propriété"
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:14
 msgid "comma"
@@ -382,11 +383,13 @@ msgstr "vide"
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:42
 msgid "Spreadsheet (tsv or csv)"
-msgstr ""
+msgstr "Tableur (tsv ou csv)"
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:43
 msgid "LibreOffice and tsv are recommended for compliant formats."
 msgstr ""
+"Les formats LibreOffice et tsv sont recommandés en tant que formats "
+"conformes."
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:54
 msgid "Column delimiter"
@@ -428,7 +431,7 @@ msgstr "Exclure des types de données"
 
 #: src/Form/Admin/SolrMapForm.php:117
 msgid "Select data types to exclude…"
-msgstr ""
+msgstr "Indiquer les types de données à exclure…"
 
 #: src/Form/Admin/SolrMapForm.php:129
 msgid "Formatter"
@@ -436,7 +439,7 @@ msgstr "Formateur"
 
 #: src/Form/Admin/SolrMapForm.php:142
 msgid "Default label"
-msgstr ""
+msgstr "Libellé par défaut"
 
 #: src/Form/Admin/SolrMapForm.php:143
 msgid "The label is automatically translated if it exists in Omeka."
@@ -444,7 +447,7 @@ msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:63
 msgid "Scheme"
-msgstr ""
+msgstr "Schéma"
 
 #: src/Form/Admin/SolrCoreForm.php:76
 msgid "IP or hostname"
@@ -456,7 +459,7 @@ msgstr "Port"
 
 #: src/Form/Admin/SolrCoreForm.php:112
 msgid "Is secure"
-msgstr ""
+msgstr "Est sécurisé"
 
 #: src/Form/Admin/SolrCoreForm.php:122
 msgid "Solr user"
@@ -474,11 +477,11 @@ msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:147
 msgid "Bypass certificate check"
-msgstr ""
+msgstr "Ignorer le contrôle du certificat"
 
 #: src/Form/Admin/SolrCoreForm.php:148
 msgid "Avoid issue when the certificate expires."
-msgstr ""
+msgstr "Évite un problème lorsque le certificat expire."
 
 #: src/Form/Admin/SolrCoreForm.php:162
 msgid "Is public field"
@@ -592,7 +595,7 @@ msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:291
 msgid "Minimum match (or/and)"
-msgstr ""
+msgstr "Correspondance minimale (ou/et)"
 
 #: src/Form/Admin/SolrCoreForm.php:292
 msgid ""
@@ -600,6 +603,9 @@ msgid ""
 "possible.\n"
 "If empty, the config of the solr core (solrconfig.xml) will be used."
 msgstr ""
+"Le nombre \"1\" signifie \"OR\" et \"100%\" signifie \"AND\". Les "
+"expressions complexes sont possibles.\n"
+"Si vide, la configuration du cœur Solr (solrconfig.xml) sera utilisée."
 
 #: src/Form/Admin/SolrCoreForm.php:306
 msgid "Tie breaker"
@@ -621,11 +627,11 @@ msgstr ""
 
 #: src/ValueFormatter/Point.php:11
 msgid "Point"
-msgstr ""
+msgstr "Point"
 
 #: src/ValueFormatter/DateRange.php:37
 msgid "Date range"
-msgstr ""
+msgstr "Intervalle de date"
 
 #: src/ValueFormatter/StandardWithoutUri.php:14
 msgid "Standard without uri"
@@ -641,12 +647,12 @@ msgstr "Un problème est survenu."
 
 #: src/Querier/SolariumQuerier.php:137
 msgid "Suggestions are not implemented"
-msgstr ""
+msgstr "Les suggestions ne sont pas implémentées"
 
 #: src/Querier/SolariumQuerier.php:518
 #, php-format
 msgid "Search type \"%s\" is not managed."
-msgstr ""
+msgstr "Le type de recherche \"%s\" n’est pas géré."
 
 #: src/Schema/Schema.php:70
 #, php-format
@@ -676,7 +682,7 @@ msgstr "Classe de ressource"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:95
 msgid "Item: Item set"
-msgstr ""
+msgstr "Contenu : collection"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:98
 msgid "Item: Media"
@@ -688,7 +694,7 @@ msgstr ""
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:105
 msgid "Item set: Is open"
-msgstr ""
+msgstr "Collection : ouvert"
 
 #: src/Controller/Admin/MapController.php:93
 msgid ""
@@ -911,7 +917,7 @@ msgstr ""
 
 #: src/Api/Representation/SolrCoreRepresentation.php:261
 msgid "OK (warning: check of certificate disabled)"
-msgstr ""
+msgstr "OK (attention : vérification du certificat désactivée)"
 
 #: src/Api/Representation/SolrCoreRepresentation.php:264
 msgid "OK"
@@ -924,7 +930,7 @@ msgstr ""
 
 #: src/Indexer/SolariumIndexer.php:441
 msgid "No document to commit in Solr."
-msgstr ""
+msgstr "Aucun document à indexer dans Solr."
 
 #: config/module.config.php:64
 msgid "Solr"
@@ -936,7 +942,7 @@ msgstr "Champ"
 
 #: config/module.config.php:208
 msgid "Choose a field…"
-msgstr ""
+msgstr "Choisir un champ…"
 
 #: config/module.config.php:209
 msgid "Dynamic field"
