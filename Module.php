@@ -107,6 +107,16 @@ class Module extends AbstractModule
         /** @var \Omeka\Module\Manager $moduleManager */
         $moduleManager = $services->get('Omeka\ModuleManager');
 
+        // Module AdvancedSearch is already checked as dependency.
+        $advancedSearchVersion = $moduleManager->getModule('AdvancedSearch')->getIni('version');
+        if (version_compare($advancedSearchVersion, '3.3.6.7', '<')) {
+            $message = new Message(
+                $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
+                'Advanced Search', '3.3.6.7'
+            );
+            throw new ModuleCannotInstallException((string) $message);
+        }
+
         $moduleVersion = $moduleManager->getModule('SearchSolr')->getIni('version');
         $module = $moduleManager->getModule('Solr');
         $moduleSolrVersion = $module ? $module->getIni('version') : null;
