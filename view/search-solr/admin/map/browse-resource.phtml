@@ -34,8 +34,12 @@
  * @var string $resourceName
  */
 
-$translate = $this->plugin('translate');
-$escape = $this->plugin('escapeHtml');
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
+
+$this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 
 $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
 ?>
@@ -65,9 +69,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
 
 <nav class="breadcrumbs">
     <?php
-    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
-    echo $this->hyperlink(sprintf($translate('Resources list for core "%s"'), $solrCore->name()), $this->url('admin/search/solr/core-id-map', [], true));
+    echo $hyperlink($translate('Search'), $this->url('admin/search'));
+    echo $hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
+    echo $hyperlink(sprintf($translate('Resources list for core "%s"'), $solrCore->name()), $this->url('admin/search/solr/core-id-map', [], true));
     ?><span><?php
     echo sprintf($translate('Maps for "%s"'), $resourceName);
     ?></span>
@@ -89,9 +93,15 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                 <tr>
                     <td>
                         <span><?= $map->fieldName() ?></span>
+                        <div></div>
                         <ul class="actions">
+                        <?php if ($map->resourceName() !== $resourceName): ?>
                             <li>
-                                <?= $this->hyperlink('', $map->adminUrl('edit'), [
+                                <span class="field-generic"><?= $map->resourceName() ?></span>
+                            </li>
+                        <?php endif; ?>
+                            <li>
+                                <?= $hyperlink('', $map->adminUrl('edit'), [
                                     'class' => 'o-icon-edit',
                                     'title' => $translate('Edit'),
                                 ]) ?>

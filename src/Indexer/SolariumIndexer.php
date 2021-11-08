@@ -345,6 +345,12 @@ class SolariumIndexer extends AbstractIndexer
                         }, $resource->getSiteItemSets()->toArray());
                         $document->addField($solrField, $sites);
                         break;
+                    case 'media':
+                        $sites = array_map(function (\Omeka\Entity\Site $v) {
+                            return $v->getId();
+                        }, $resource->getItem()->getSites()->toArray());
+                        $document->addField($solrField, array_values($sites));
+                        break;
                     default:
                         // Nothing to do.
                         break;
@@ -406,6 +412,7 @@ class SolariumIndexer extends AbstractIndexer
     {
         foreach ($this->supportFields as $solrField => $value) switch ($solrField) {
             // Drupal.
+            // TODO Don't use "index_id", but the name set in the map, that should be "index_id" anyway.
             case 'index_id':
                 // Already set for multi-index, and it is a single value.
                 break;

@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2020
+ * Copyright Daniel Berthereau, 2020-2021
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -40,6 +40,8 @@ class ResourceValueExtractorFactory implements FactoryInterface
         $config = $services->get('Config');
         $baseFilepath = $config['file_store']['local']['base_path'] ?: (OMEKA_PATH . '/files');
         $requestedNames = [
+            'generic' => \SearchSolr\ValueExtractor\GenericValueExtractor::class,
+            'resources' => \SearchSolr\ValueExtractor\ResourceValueExtractor::class,
             'items' => \SearchSolr\ValueExtractor\ItemValueExtractor::class,
             'item_sets' => \SearchSolr\ValueExtractor\ItemSetValueExtractor::class,
             'media' => \SearchSolr\ValueExtractor\MediaValueExtractor::class,

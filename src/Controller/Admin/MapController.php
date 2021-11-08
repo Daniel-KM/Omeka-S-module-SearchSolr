@@ -65,8 +65,17 @@ class MapController extends AbstractActionController
 
     public function browseAction()
     {
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCoreId = $this->params('coreId');
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+
+        $missingMaps = $solrCore->missingRequiredMaps();
+        if ($missingMaps) {
+            $this->messenger()->addError(new Message(
+                'Some required fields are missing or not available in the core: "%s". Update the generic or the resource mappings.', // @translate
+                implode('", "', array_unique($missingMaps))
+            ));
+        }
 
         $valueExtractors = [];
         foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
@@ -437,6 +446,7 @@ class MapController extends AbstractActionController
         $resourceTypes = [
             'items' => \Omeka\Entity\Item::class,
             'item_sets' => \Omeka\Entity\ItemSet::class,
+            'media' => \Omeka\Entity\Media::class,
         ];
 
         $qb = $this->connection->createQueryBuilder()

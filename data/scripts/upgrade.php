@@ -224,17 +224,17 @@ SQL;
             'field_name' => 'site_id_is',
             'source' => 'site/o:id',
         ],
-        [
-            'resource_name' => 'generic',
-            'field_name' => 'owner_id_i',
-            'source' => 'owner/o:id',
-        ],
         'index_field' => [
             'resource_name' => 'generic',
             // Not required.
             // 'field_name' => 'index_id',
             'field_name' => null,
             'source' => 'search_index',
+        ],
+        [
+            'resource_name' => 'generic',
+            'field_name' => 'owner_id_i',
+            'source' => 'owner/o:id',
         ],
 
         [

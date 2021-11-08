@@ -374,6 +374,30 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * Get solr mappings by id ordered by field name and structurally.
+     *
+     *  The structure is: generic, then resource, then specific resource type.
+     *
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
+     */
+    public function mapsOrderedByStructure()
+    {
+        static $maps;
+
+        if (is_null($maps)) {
+            $maps = $this->mapsByResourceName();
+            foreach ($maps as &$mapss) {
+                usort($mapss, function ($a, $b) {
+                    return $a->fieldName() <=> $b->fieldName();
+                });
+            }
+            $maps = array_merge(...array_values($maps));
+        }
+
+        return $maps;
+    }
+
+    /**
      * Get the solr mappings by resource type.
      *
      * @param string $resourceName
@@ -381,38 +405,40 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function mapsByResourceName($resourceName = null)
     {
-        static $maps = [];
+        static $maps;
 
-        // TODO Check if the id is still needed.
-        $id = $this->id();
-        if (!isset($maps[$id])) {
-            $maps[$id] = [];
+        if (is_null($maps)) {
+            $maps = [
+                'generic' => [],
+                'resources' => [],
+            ];
             $mapAdapter = $this->getAdapter('solr_maps');
             /** @var \SearchSolr\Entity\SolrMap $mapEntity */
             foreach ($this->resource->getMaps() as $mapEntity) {
-                $maps[$id][$mapEntity->getResourceName()][] = $mapAdapter->getRepresentation($mapEntity);
+                $maps[$mapEntity->getResourceName()][] = $mapAdapter->getRepresentation($mapEntity);
             }
+            $maps = array_filter($maps);
         }
 
         if (!$resourceName) {
-            return $maps[$id];
+            return $maps;
         }
 
         if ($resourceName === 'generic') {
-            return $maps[$id]['generic'] ?? [];
+            return $maps['generic'] ?? [];
         }
 
-        if (!in_array($resourceName, ['items', 'item_sets'])) {
+        if (!in_array($resourceName, ['items', 'item_sets', 'media'])) {
             return array_merge(
-                $maps[$id]['generic'] ?? [],
-                $maps[$id][$resourceName] ?? []
+                $maps['generic'] ?? [],
+                $maps[$resourceName] ?? []
             );
         }
 
         return array_merge(
-            $maps[$id]['generic'] ?? [],
-            $maps[$id]['resources'] ?? [],
-            $maps[$id][$resourceName] ?? []
+            $maps['generic'] ?? [],
+            $maps['resources'] ?? [],
+            $maps[$resourceName] ?? []
         );
     }
 

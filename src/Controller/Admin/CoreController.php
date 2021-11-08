@@ -350,7 +350,7 @@ class CoreController extends AbstractActionController
                     $key + 1
                 ));
                 unset($rows[$key]);
-            } elseif (!in_array($row['resource_name'], ['items', 'item_sets'])) {
+            } elseif (!in_array($row['resource_name'], ['items', 'item_sets', 'media'])) {
                 $this->messenger()->addWarning(new Message(
                     'The row #%d does not manage resource "%s".', // @translate
                     $key + 1, $row['resource_name']

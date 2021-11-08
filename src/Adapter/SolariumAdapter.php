@@ -92,19 +92,17 @@ class SolariumAdapter extends AbstractAdapter
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
 
-        $facetFields = [];
-        foreach ($solrCore->maps() as $map) {
+        $fields = [];
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $name = $map->fieldName();
             $label = $map->setting('label', '');
-            $facetFields[$name] = [
+            $fields[$name] = [
                 'name' => $name,
                 'label' => $label,
             ];
         }
 
-        ksort($facetFields);
-
-        return $facetFields;
+        return $fields;
     }
 
     public function getAvailableSortFields(): array
@@ -134,7 +132,7 @@ class SolariumAdapter extends AbstractAdapter
             'desc' => $this->translator->translate('Desc'),
         ];
 
-        foreach ($solrCore->maps() as $map) {
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $fieldName = $map->fieldName();
             $schemaField = $schema->getField($fieldName);
             if (!$schemaField || $schemaField->isMultivalued()) {
@@ -149,8 +147,6 @@ class SolariumAdapter extends AbstractAdapter
                 ];
             }
         }
-
-        ksort($sortFields);
 
         return $sortFields;
     }

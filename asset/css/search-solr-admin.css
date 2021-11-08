@@ -32,3 +32,8 @@
     opacity: 0.5;
     text-decoration: none;
 }
+
+.solr-map.browse .field-generic {
+    font-style: italic;
+    font-size: 0.8em;
+}

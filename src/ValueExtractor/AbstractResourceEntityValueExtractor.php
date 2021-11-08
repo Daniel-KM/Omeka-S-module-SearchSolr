@@ -78,6 +78,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 'options' => [
                     'resource_name' => 'Resource type', // @translate
                     'o:id' => 'Internal id', // @translate
+                    'owner' => 'Owner', // @translate
+                    'site' => 'Site', // @translate
                     'is_public' => 'Is public', // @translate
                     'created' => 'Created', // @translate
                     'modified' => 'Modified', // @translate
@@ -132,6 +134,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         if ($field === 'is_public') {
             return [$resource->isPublic()];
+        }
+
+        if ($field === 'owner') {
+            return $resource instanceof AbstractResourceEntityRepresentation
+                ? $this->extractOwnerValues($resource, $solrMap)
+                : [];
+        }
+
+        if ($field === 'site') {
+            return $resource instanceof AbstractResourceEntityRepresentation
+                ? $this->extractSitesValues($resource, $solrMap)
+                : [];
         }
 
         if ($field === 'created') {
@@ -189,14 +203,39 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         return [];
     }
 
+    protected function extractOwnerValues(
+        AbstractResourceEntityRepresentation $resource,
+        ?SolrMapRepresentation $solrMap
+    ): array {
+        $user = $resource->owner();
+        return $user
+            ? $this->extractValue($user, $solrMap->subMap())
+            : [];
+    }
+
+    protected function extractSitesValues(
+        AbstractResourceEntityRepresentation $resource,
+        ?SolrMapRepresentation $solrMap
+    ): array {
+        if ($resource instanceof MediaRepresentation) {
+            $resource = $resource->item();
+        }
+        $extractedValues = [];
+        foreach ($resource->sites() as $site) {
+            $values = $this->extractValue($site, $solrMap->subMap());
+            $extractedValues = array_merge($extractedValues, $values);
+        }
+        return $extractedValues;
+    }
+
     protected function extractItemMediasValue(
         ItemRepresentation $item,
         ?SolrMapRepresentation $solrMap
     ): array {
         $extractedValues = [];
         foreach ($item->media() as $media) {
-            $mediaExtractedValues = $this->extractValue($media, $solrMap->subMap());
-            $extractedValues = array_merge($extractedValues, $mediaExtractedValues);
+            $values = $this->extractValue($media, $solrMap->subMap());
+            $extractedValues = array_merge($extractedValues, $values);
         }
         return $extractedValues;
     }
@@ -207,8 +246,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     ): array {
         $extractedValues = [];
         foreach ($item->itemSets() as $itemSet) {
-            $itemSetExtractedValues = $this->extractValue($itemSet, $solrMap->subMap());
-            $extractedValues = array_merge($extractedValues, $itemSetExtractedValues);
+            $values = $this->extractValue($itemSet, $solrMap->subMap());
+            $extractedValues = array_merge($extractedValues, $values);
         }
         return $extractedValues;
     }
