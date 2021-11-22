@@ -353,7 +353,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
-     * Get the solr mappings by id.
+     * Get the solr / omeka mappings by id.
      *
      * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
      */
@@ -374,7 +374,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
-     * Get solr mappings by id ordered by field name and structurally.
+     * Get solr / omeka mappings by id ordered by field name and structurally.
      *
      *  The structure is: generic, then resource, then specific resource type.
      *
@@ -398,7 +398,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
-     * Get the solr mappings by resource type.
+     * Get the solr / omeka mappings by resource type.
      *
      * @param string $resourceName
      * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
@@ -492,7 +492,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         // TODO Use entity manager to simplify search of indexes from core.
         $result = [];
         /** @var \AdvancedSearch\Api\Representation\SearchEngineRepresentation[] $searchEngines */
-        $searchEngines = $this->getServiceLocator()->get('Omeka\ApiManager')->search('search_engines', ['adapter' => 'solarium'])->getContent();
+        $searchEngines = $this->getServiceLocator()->get('Omeka\ApiManager')
+            ->search('search_engines', ['adapter' => 'solarium'])->getContent();
         $id = $this->id();
         foreach ($searchEngines as $searchEngine) {
             if ($searchEngine->settingAdapter('solr_core_id') == $id) {
@@ -532,16 +533,14 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             'is_public' => true,
             'owner/o:id' => true,
             'site/o:id' => true,
-            'search_index' => false,
+            // 'search_index' => false,
         ];
 
         $unavailableFields = [];
         foreach ($fields as $source => $isRequired) {
             $maps = $this->mapsBySource($source, 'resources');
-            if (!count($maps )) {
-                if ($isRequired) {
-                    $unavailableFields[] = $source;
-                }
+            if (!count($maps)) {
+                $unavailableFields[] = $source;
             }
         }
 
