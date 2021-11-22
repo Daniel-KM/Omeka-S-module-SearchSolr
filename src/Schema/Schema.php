@@ -129,8 +129,8 @@ class Schema
     {
         // Fill fields only when needed.
         if (!array_key_exists($name, $this->fields)) {
-            $fieldsByName = $this->getFieldsByName();
-            $field = $fieldsByName[$name] ?? $this->getDynamicFieldFor($name);
+            $field = $this->getFieldsByName()[$name]
+                ?? $this->getDynamicFieldFor($name);
             if ($field) {
                 $type = $this->getType($field['type']);
                 $field = new Field($name, $field, $type);

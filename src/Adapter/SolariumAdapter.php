@@ -156,6 +156,33 @@ class SolariumAdapter extends AbstractAdapter
 
     public function getAvailableFacetFields(): array
     {
-        return $this->getAvailableFields();
+        if (!$this->searchEngine) {
+            return [];
+        }
+
+        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        if (!$solrCoreId) {
+            return [];
+        }
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
+        $schema = $solrCore->schema();
+
+        $fields = [];
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
+            $name = $map->fieldName();
+            $schemaField = $schema->getField($name);
+            if (!$schemaField || $schemaField->isGeneralText()) {
+                continue;
+            }
+            $label = $map->setting('label', '');
+            $fields[$name] = [
+                'name' => $name,
+                'label' => $label,
+            ];
+        }
+
+        return $fields;
     }
 }

@@ -15,14 +15,14 @@ class Field
     protected $field;
 
     /**
-     * @var string
+     * @var array
      */
     protected $type;
 
     /**
      * @param string $name
      * @param string $field
-     * @param string $type
+     * @param array $type
      */
     public function __construct($name, $field, $type)
     {
@@ -34,10 +34,19 @@ class Field
     /**
      * @return bool
      */
-    public function isMultivalued()
+    public function isMultivalued(): bool
     {
-        return $this->field['multiValued']
+        $result = $this->field['multiValued']
             ?? $this->type['multiValued']
             ?? false;
+        return (bool) $result;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isGeneralText(): bool
+    {
+        return strpos($this->type['name'], 'text') !== false;
     }
 }
