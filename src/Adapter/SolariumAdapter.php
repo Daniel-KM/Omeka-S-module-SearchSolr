@@ -92,6 +92,8 @@ class SolariumAdapter extends AbstractAdapter
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
 
+        // TODO Add support of input field for id (from o:id).
+
         $fields = [];
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $name = $map->fieldName();
@@ -99,6 +101,7 @@ class SolariumAdapter extends AbstractAdapter
             $fields[$name] = [
                 'name' => $name,
                 'label' => $label,
+                'from' => $map->source(),
             ];
         }
 
