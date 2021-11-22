@@ -56,6 +56,7 @@ composer install --no-dev
 - A running Apache Solr. Compatibility:
   - version 3.5.15 of this module has been tested with Solr 5 and Solr 6.
   - version 3.5.15.2 of this module has been tested with Solr 6 to Solr 8.
+  - version 3.5.32.3 of this module has been tested with Solr 8 and above.
 
 Quick start
 -----------
@@ -190,7 +191,7 @@ and Solr 7.7 and 8.8 (with Java [1.8] or higher). The last stable versions of So
 and Java (OpenJdk 11) are recommended.
 
 ```sh
-cd /opt
+cd /tmp
 # Check if java is installed with the good version.
 java -version
 # If not installed, install it (uncomment)
@@ -199,15 +200,15 @@ java -version
 #sudo dnf install java-11-openjdk-devel.x86_64
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://archive.apache.org/dist/lucene/solr/8.8.0/solr-8.8.0.tgz
+wget https://archive.apache.org/dist/lucene/solr/8.11.0/solr-8.11.0.tgz
 # Extract the install script
-tar zxvf solr-8.8.0.tgz solr-8.8.0/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-8.11.0.tgz solr-8.11.0/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-8.8.0.tgz
+sudo bash ./install_solr_service.sh solr-8.11.0.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-8.8.0 /opt/solr
+#sudo ln -s /opt/solr-8.11.0 /opt/solr
 # Clean the sources.
-rm solr-8.8.0.tgz
+rm solr-8.11.0.tgz
 rm install_solr_service.sh
 ```
 
@@ -243,96 +244,63 @@ that may need to be adapted for the distribution, here for CentOs 8 (see the [so
 This is useless if the file "/etc/init.d/solr" is available and used.
 
 ```ini
-# put this file in /etc/systemd/system/ as root
+# Save this file as /etc/systemd/system/solr.service as root
+
 # below paths assume solr installed in /opt/solr, SOLR_PID_DIR is /data
 # and that all configuration exists in /etc/default/solr.in.sh which is the case if previously installed as an init.d service
 # change port in pid file if differs
-# note that it is configured to auto restart solr if it fails (Restart=on-faliure) and that's the motivation indeed :)
+#
+# note that it is configured to auto restart solr if it fails (Restart=on-failure) and that's the motivation indeed :)
 # to switch from systemv (init.d) to systemd, do the following after creating this file:
 # sudo systemctl daemon-reload
 # sudo service solr stop # if already running
 # sudo systemctl enable solr
 # systemctl start solr
 # this was inspired by https://confluence.t5.fi/display/~stefan.roos/2015/04/01/Creating+systemd+unit+(service)+for+Apache+Solr
+
 [Unit]
-Description=Apache SOLR
+Description=Apache Solr
 ConditionPathExists=/opt/solr
-After=syslog.target network.target remote-fs.target nss-lookup.target systemd-journald-dev-log.socket
+Wants=network-online.target
+After=network-online.target
 Before=multi-user.target
 Conflicts=shutdown.target
 StartLimitIntervalSec=60
 
 [Service]
 User=solr
-LimitNOFILE=1048576
-LimitNPROC=1048576
-PIDFile=/var/solr/solr-8983.pid
-Environment=SOLR_INCLUDE=/etc/default/solr.in.sh
-Environment=RUNAS=solr
-Environment=SOLR_INSTALL_DIR=/opt/solr
+Group=solr
 
+Type=forking
+ExecStart=/opt/solr/bin/solr start
+ExecReload=/opt/solr/bin/solr restart
+ExecStop=/opt/solr/bin/solr stop
 Restart=on-failure
 RestartSec=5
 
-ExecStart=/opt/solr/bin/solr start
-ExecStop=/opt/solr/bin/solr stop
-Restart=on-failure
+# Optional config.
+LimitNOFILE=1048576
+LimitNPROC=1048576
+# PIDFile=/var/solr/solr-8983.pid
+# Environment=SOLR_INCLUDE=/etc/default/solr.in.sh
+# Environment=RUNAS=solr
+# Environment=SOLR_INSTALL_DIR=/opt/solr
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-### Protect access to Solr
+### Protect access to Solr (Solr 8 and above)
+
+For documentation before Solr 8, see the readme of this module until version 3.5.31.3.
 
 You may need some more commands to protect install. Check the default port 8983.
-The simpler solution is to close this port with your firewall. Else, you may
-need to add a user control to the admin board. Search on your not-favorite
-search engine to add such a protection.
 
-#### Solr before version 8 (deprecated)
+The simplest solution is to close this port with your firewall and to use Apache
+as a reverse proxy to it, so only Apache should be protected.
 
-The simplest protection to the Solr admin board is password based. For that,
-three files should be updated.
-
-* `/opt/solr/server/etc/jetty.xml`, before the ending tag `</Configure>`:
-
-```xml
-<Call name="addBean">
-    <Arg>
-        <New class="org.eclipse.jetty.security.HashLoginService">
-            <Set name="name">Sec Realm</Set>
-            <Set name="config"><SystemProperty name="jetty.home" default="."/>/etc/realm.properties</Set>
-            <Set name="refreshInterval">0</Set>
-        </New>
-    </Arg>
-</Call>
-```
-
-* `/opt/solr/server/solr-webapp/webapp/WEB-INF/web.xml`, before the ending tag `</web-app>`:
-
-```xml
-<security-constraint>
-    <web-resource-collection>
-        <web-resource-name>Solr authenticated application</web-resource-name>
-        <url-pattern>/*</url-pattern>
-    </web-resource-collection>
-    <auth-constraint>
-        <role-name>core1-role</role-name>
-    </auth-constraint>
-</security-constraint>
-<login-config>
-    <auth-method>BASIC</auth-method>
-    <realm-name>Sec Realm</realm-name>
-</login-config>
-```
-
-* `/opt/solr/server/etc/realm.properties`, a list of users, passwords, and roles:
-
-```
-omeka_admin: xxx-pass-word-yyy, core1-role
-```
-
-#### Solr from version 8
+In any case, you need to use the default user or to add a user to access to the
+admin board. Search on your not-favorite search engine to add such a protection.
 
 As indicated in [Solr Basic Authentication], add the file `/var/solr/data/security.json`,
 with the user roles you want (here the user `omeka_admin` is added as `admin`.
@@ -392,7 +360,7 @@ sudo systemctl restart solr
 ```
 
 Important: don't forget to remove the previous lines from the shell or browser
-history.
+history. Or add a space before it to skip it from the history.
 
 Of course, the user `omeka_admin` and the password should be set in the config
 of the core in the Solr page inside Omeka.
@@ -444,7 +412,7 @@ too. In all cases, don't forget to open the port in the firewall, for example
 with firewall-d:
 
 ```sh
-sudo firewall-cmd --permanent --add-port=8443/tcp
+sudo firewall-cmd --permanent --add-port=8984/tcp
 sudo firewall-cmd --reload
 ```
 
@@ -507,14 +475,14 @@ Note: Solr can only be upgraded one major version by one major version, so to
 upgrade from version 6 to 8, you first need to upgrade to version 7.
 
 ```sh
-cd /opt
+cd /tmp
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/8.8.0/solr-8.8.0.tgz
-tar zxvf solr-8.8.0.tgz solr-8.8.0/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/8.11.0/solr-8.11.0.tgz
+tar zxvf solr-8.11.0.tgz solr-8.11.0/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-8.8.0.tgz -f
-rm solr-8.8.0.tgz
+sudo bash ./install_solr_service.sh solr-8.11.0.tgz -f
+rm solr-8.11.0.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -535,7 +503,7 @@ sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm /etc/security/limits.d/200-solr.conf
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-8.8.0
+sudo rm -r /opt/solr-8.11.0
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -564,7 +532,7 @@ avoid permissions issues.
 # Via command:
 sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
 # Via api:
-curl --user omeka_admin:MySecretPassPhrase 'http://localhost:8983/solr/admin/cores?action=CREATE&name=omeka&instanceDir=omeka&schema=data_driven_schema_configs'
+curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/admin/cores?action=CREATE&name=omeka&instanceDir=omeka&schema=data_driven_schema_configs'
 ```
 
 Here, the user `solr` launches the command `solr` to create the core `omeka`,
@@ -579,10 +547,61 @@ The config files are saved in `/var/solr/data` by default.
 
 Possible issues:
 - The directory /var/solr is not belonging to solr, so run `sudo chown -R solr:solr /var/solr`.
-- There may be remaining files after a failed creation, so run first `sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"`.
+- There may be remaining files after a failed creation, so run first `sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"`
+  or `curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/admin/cores?action=UNLOAD&core=omeka&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true'`
 - There may be a rights issue, so backup and remove the file "security.json"
   from the data directory, then create the core with the command above, then
   restore the file "security.json".
+- The resources may be missing:
+  ```sh
+  sudo cp -r /opt/solr/server/solr/configsets/_default/conf /opt/solr/server/resources/
+  ```
+
+Always restart solr after trying above.
+
+If nothing is working (you don't see the core inside the front-end), create the
+core yourself with these commands:
+
+```sh
+sudo cp -r /opt/solr/server/solr/configsets/_default /var/solr/data
+# The destination directory inside data is the name of the core.
+sudo mv /var/solr/data/_default /var/solr/data/omeka
+sudo nano /var/solr/data/omeka/core.properties
+sudo chown -R solr:solr /var/solr
+sudo systemctl restart solr
+```
+
+The file `core.properties` above should contain the name of the core, that
+should be the name of the directory:
+
+```ini
+#Written by CorePropertiesLocator
+#Tue Nov 08 00:00:00 UTC 2021
+name=omeka
+```
+
+### Querying Solr
+
+You can check if the Solr core is working via the user interface or via such a
+command:
+
+```sh
+curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/omeka/select?q=*:*&indent=on&wt=json'
+```
+
+### Fixing the issue when there is no result
+
+When there is no default field, Solr may not answer anything. To fix this issue,
+as indicated in [this issue on omeka.org], add the copy field `_text_` with source `*`.
+
+It can be done via the user interface (in the menu Schema). Or you can use this
+command, as indicated in the [reference guide to copy a field]:
+
+```sh
+curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-field":{"source":"*","dest":"_text_" }}' 'http://localhost:8983/solr/omeka/schema'
+```
+
+Of course, you need to reindex resources after modifying schema.
 
 ### Upgrade a config
 
@@ -716,8 +735,9 @@ currently managed with [Greenstone].
 [Solr documentation]: https://lucene.apache.org/solr/resources.html
 [Solr Basic Authentication]: https://lucene.apache.org/solr/guide/basic-authentication-plugin.html#basic-authentication-plugin
 [taking Solr to production]: https://lucene.apache.org/solr/guide/taking-solr-to-production.html
-[reference guide]: https://solr.apache.org/guide/8_9/enabling-ssl.html
-[guide]: https://solr.apache.org/guide/8_9/enabling-ssl.html#solr-in-sh
+[reference guide]: https://solr.apache.org/guide/enabling-ssl.html
+[guide]: https://solr.apache.org/guide/enabling-ssl.html#solr-in-sh
+[reference guide to copy a field]: https://solr.apache.org/guide/schema-api.html#add-a-new-copy-field-rule
 [module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr/-/issues
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
