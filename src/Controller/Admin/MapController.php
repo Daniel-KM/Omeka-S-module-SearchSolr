@@ -128,6 +128,7 @@ class MapController extends AbstractActionController
         }, $maps);
 
         // Add all missing maps with a generic multivalued text field.
+        // Don't add a map if it exists at a upper level.
         $result = [];
         $properties = $api->search('properties')->getContent();
         $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
@@ -136,6 +137,7 @@ class MapController extends AbstractActionController
             if (!in_array($property->id(), $usedPropertyIds)) {
                 continue;
             }
+
             $term = $property->term();
             // Skip property that are already mapped.
             if (in_array($term, $maps)) {
@@ -180,12 +182,15 @@ class MapController extends AbstractActionController
 
         // Get all existing indexed properties.
         $maps = $solrCore->mapsByResourceName($resourceName);
+
         // Map as associative array by map id and keep only the source.
         $mapList = [];
         foreach ($maps as $map) {
-            $mapList[$map->id()] = $map->source();
+            // Only the maps with the current resource name are removed.
+            if ($map->resourceName() === $resourceName) {
+                $mapList[$map->id()] = $map->source();
+            }
         }
-        $maps = $mapList;
 
         // Add all missing maps.
         $result = [];
@@ -196,14 +201,15 @@ class MapController extends AbstractActionController
             if (in_array($property->id(), $usedPropertyIds)) {
                 continue;
             }
-            $term = $property->term();
+
             // Skip property that are not mapped.
-            if (!in_array($term, $maps)) {
+            $term = $property->term();
+            if (!in_array($term, $mapList)) {
                 continue;
             }
 
             // There may be multiple maps with the same term.
-            $ids = array_keys(array_filter($maps, function ($v) use ($term) {
+            $ids = array_keys(array_filter($mapList, function ($v) use ($term) {
                 return $v === $term;
             }));
             $api->batchDelete('solr_maps', $ids);
