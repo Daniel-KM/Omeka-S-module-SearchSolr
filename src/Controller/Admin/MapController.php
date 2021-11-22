@@ -441,21 +441,30 @@ class MapController extends AbstractActionController
      * @param string $resourceName
      * @return \Omeka\Api\Representation\PropertyRepresentation[]
      */
-    protected function listUsedPropertyIds($resourceName)
+    protected function listUsedPropertyIds($resourceName): array
     {
         $resourceTypes = [
+            'resources' => \Omeka\Entity\Resource::class,
             'items' => \Omeka\Entity\Item::class,
             'item_sets' => \Omeka\Entity\ItemSet::class,
             'media' => \Omeka\Entity\Media::class,
         ];
 
+        // Manage "generic" type.
+        if (!isset($resourceTypes[$resourceName])) {
+            return [];
+        }
+
         $qb = $this->connection->createQueryBuilder()
             ->select('DISTINCT value.property_id')
             ->from('value', 'value')
             ->innerJoin('value', 'resource', 'resource', 'resource.id = value.resource_id')
-            ->where('resource.resource_type = :resource_type')
-            ->setParameter('resource_type', $resourceTypes[$resourceName])
             ->orderBy('value.property_id', 'ASC');
+        if ($resourceName !== 'resources') {
+            $qb
+                ->where('resource.resource_type = :resource_type')
+                ->setParameter('resource_type', $resourceTypes[$resourceName]);
+        }
 
         return $this->connection
             ->executeQuery($qb, $qb->getParameters())
