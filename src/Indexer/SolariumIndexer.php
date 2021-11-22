@@ -536,6 +536,7 @@ class SolariumIndexer extends AbstractIndexer
         $name = $this->engine->settingAdapter('index_name') ?: false;
         if ($fields && $name) {
             $this->indexField = reset($fields);
+            $this->indexField = $this->indexField->fieldName();
             $this->indexName = $name;
         } else {
             $this->indexField = false;
