@@ -231,7 +231,7 @@ class SolrCoreForm extends Form
                     'label' => 'Minimum match (or/and)', // @translate
                     'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
 If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
-                    'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
+                    'documentation' => 'https://solr.apache.org/guide/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
                 ],
                 'attributes' => [
                     'required' => false,
@@ -246,7 +246,7 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
                     'label' => 'Tie breaker', // @translate
                     'info' => 'Increase score according to the number of matched fields.
 If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
-                    'documentation' => 'https://lucene.apache.org/solr/guide/8_5/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
+                    'documentation' => 'https://solr.apache.org/guide/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
                 ],
                 'attributes' => [
                     'id' => 'tie_breaker',

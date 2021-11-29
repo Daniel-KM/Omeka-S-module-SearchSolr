@@ -169,11 +169,12 @@ TODO
 - [ ] Create automatically multiple index by property (text, string, lower, latin).
 - [ ] Use the search engine directly without search api.
 - [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
-- [ ] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
+- [x] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
 - [ ] Replace class Schema and Field with solarium ones.
 - [ ] Rewrite and simplify querier to better handle solarium.
 - [ ] Improve management of value resources and uris, and other special types.
 - [ ] Add a separate indexer for medias and pages.
+- [ ] Add a redirect from item-set/browse to search page, like item-set/show.
 
 
 Solr install <a id="solr-install"></a>
@@ -716,25 +717,25 @@ currently managed with [Greenstone].
 [Solr by BibLibre]: https://github.com/biblibre/omeka-s-module-Solr
 [Advanced Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-AdvancedSearch
 [Search by BibLibre]: https://github.com/biblibre/omeka-s-module-search
-[Apache Solr]: https://lucene.apache.org/solr/
+[Apache Solr]: https://solr.apache.org/
 [Solarium]: https://www.solarium-project.org/
 [full documentation]: https://solarium.readthedocs.io/en/stable/
 [Generic]: https://gitlab.com/Daniel-KM/Omeka-S-module-Generic
 [Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
-[documentation]: https://lucene.apache.org/solr/guide/the-dismax-query-parser.html#q-alt-parameter
+[documentation]: https://solr.apache.org/guide/the-dismax-query-parser.html#q-alt-parameter
 [this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
 [Solr PHP extension]: https://pecl.php.net/package/solr
 [below]: #manage-solr
 [below for Debian]: #solr-install
 [below "Solr management"]: #solr-management
-[1.8]: https://lucene.apache.org/solr/7_2_1/SYSTEM_REQUIREMENTS.html
-[1.7 u55]: https://lucene.apache.org/solr/5_5_5/SYSTEM_REQUIREMENTS.html
+[1.8]: https://solr.apache.org/docs/7_2_1/SYSTEM_REQUIREMENTS.html
+[1.7 u55]: https://solr.apache.org/docs/5_5_5/SYSTEM_REQUIREMENTS.html
 [http://localhost:8983]: http://localhost:8983
 [http://localhost:8983/solr/#/omeka]: http://localhost:8983/solr/#/omeka
 [solr service gist]: https://gist.github.com/Daniel-KM/1fb475a47340d7945fa6c47c945707d0
-[Solr documentation]: https://lucene.apache.org/solr/resources.html
-[Solr Basic Authentication]: https://lucene.apache.org/solr/guide/basic-authentication-plugin.html#basic-authentication-plugin
-[taking Solr to production]: https://lucene.apache.org/solr/guide/taking-solr-to-production.html
+[Solr documentation]: https://solr.apache.org/resources.html
+[Solr Basic Authentication]: https://solr.apache.org/guide/basic-authentication-plugin.html#basic-authentication-plugin
+[taking Solr to production]: https://solr.apache.org/guide/taking-solr-to-production.html
 [reference guide]: https://solr.apache.org/guide/enabling-ssl.html
 [guide]: https://solr.apache.org/guide/enabling-ssl.html#solr-in-sh
 [reference guide to copy a field]: https://solr.apache.org/guide/schema-api.html#add-a-new-copy-field-rule
