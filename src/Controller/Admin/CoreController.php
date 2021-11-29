@@ -540,6 +540,7 @@ class CoreController extends AbstractActionController
             // 'application/vnd.oasis.opendocument.spreadsheet' => true,
             'text/plain' => true,
             'text/tab-separated-values' => true,
+            'application/csv' => true,
         ];
         if (! isset($supporteds[$mediaType])) {
             return false;
