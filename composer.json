@@ -13,6 +13,7 @@
         }
     },
     "require": {
+        "php" : "^7.2",
         "solarium/solarium": "^6.0",
         "symfony/event-dispatcher": "^4.4"
     }
