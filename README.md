@@ -241,8 +241,10 @@ Solr is available via command line too at `/opt/solr/bin/solr`. You may want to
 add yourself to the solr group (`sudo usermod -aG solr myName`).
 
 If the service is not available after the install, you can create the file "/etc/systemd/system/solr.service",
-that may need to be adapted for the distribution, here for CentOs 8 (see the [solr service gist]):
+that may need to be adapted for the distribution, here for Debian 11 or CentOs 8 (see the [solr service gist]):
 This is useless if the file "/etc/init.d/solr" is available and used.
+
+After creating the following file, run `sudo systemctl daemon-reload`.
 
 ```ini
 # Save this file as /etc/systemd/system/solr.service as root
@@ -304,7 +306,7 @@ In any case, you need to use the default user or to add a user to access to the
 admin board. Search on your not-favorite search engine to add such a protection.
 
 As indicated in [Solr Basic Authentication], add the file `/var/solr/data/security.json`,
-with the user roles you want (here the user `omeka_admin` is added as `admin`.
+with the user roles you want (here the user `omeka_admin` is added as `admin`).
 Because the password is hashed (salt + sha256), it may be simpler to use the
 example,  then to update the admin, then to remove the example user (solr, with
 password "SolrRocks"):
@@ -347,6 +349,11 @@ sudo systemctl restart solr
 To add the hashed password, it is simpler to use the api endpoint, so add the
 specific admin user like that, and restart the server:
 
+**Important**: don't forget to remove the next lines from the shell or browser
+history, because they contain the password. Or add a space before the commmand
+line to skip it from the history. Anyway, the password should be added in the
+config of the module, so it is available in the database.
+
 ```sh
 curl --user solr:SolrRocks http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d '{"set-user": {"omeka_admin":"My Secret Pass Phrase"}}'
 sudo systemctl restart solr
@@ -359,9 +366,6 @@ or change its password, and **restart the server again**:
 curl --user 'omeka_admin:My Secret Pass Phrase' http://localhost:8983/api/cluster/security/authentication -H 'Content-type:application/json' -d  '{"delete-user": ["solr"]}'
 sudo systemctl restart solr
 ```
-
-Important: don't forget to remove the previous lines from the shell or browser
-history. Or add a space before it to skip it from the history.
 
 Of course, the user `omeka_admin` and the password should be set in the config
 of the core in the Solr page inside Omeka.
@@ -381,7 +385,7 @@ sudo chmod o-w /etc/security/limits.d/200-solr.conf
 sudo systemctl restart solr
 ```
 
-**Important**: It is recommended to protect Solr with a reverse proxy.
+**Important**: It is recommended to protect Solr with a reverse proxy (see below).
 
 ### Enable ssl (https) when not behind a proxy
 
@@ -464,6 +468,11 @@ Here, Solr should be available through port 8983 without ssl on the server, so
 the firewall should be configured to close this port and to open 8984. You can
 complete this virtual host with your ssl config.
 
+Then enable this new config:
+```sh
+sudo a2ensite reverse_proxy
+```
+
 ### Upgrade Solr
 
 Before upgrade, **you should backup the folder `/var/solr` and check the backup**
@@ -523,6 +532,15 @@ line. Since version 8, it's often simpler to use the api endpoint, via a browser
 or via curl. In fact, the command is now a shortcut to the endpoint and the url
 is indicated in the results. Of course, it can be done via the ui too.
 
+To access to the ui when the Solr is protected, you can create a tunnel via ssh:
+
+```sh
+ssh -N -f user@myserver.org -L8983:myserver.org:8983
+```
+
+Then you can go to `http://localhost:8983` with your browser, that will be
+redirected to the real server.
+
 ### Create a config
 
 At least one index ("core", "collection", or "node")  should be created in Solr
@@ -541,33 +559,39 @@ and it will use the default config schema `data_driven_schema_configs`. This
 schema simplifies the management of fields, because they are guessed from the
 data.
 
-You can check it via the web interface at [http://localhost:8983/solr/#/omeka].
 Here, the path to set in the config of the core in Omeka S is `solr/omeka`.
+
+You can check it via the web interface at [http://localhost:8983/solr/#/omeka].
+You can access to the localhost through a ssh tunnel, or use the domain you set
+in the config.
 
 The config files are saved in `/var/solr/data` by default.
 
-Possible issues:
+Possible issues (always restart solr after trying next commands):
+
 - The directory /var/solr is not belonging to solr, so run `sudo chown -R solr:solr /var/solr`.
+- The resources may be missing, so copy them:
+  ```sh
+  sudo cp -r /opt/solr/server/solr/configsets/_default/conf /opt/solr/server/resources/
+  ```
 - There may be remaining files after a failed creation, so run first `sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"`
   or `curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/admin/cores?action=UNLOAD&core=omeka&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true'`
 - There may be a rights issue, so backup and remove the file "security.json"
   from the data directory, then create the core with the command above, then
   restore the file "security.json".
-- The resources may be missing:
-  ```sh
-  sudo cp -r /opt/solr/server/solr/configsets/_default/conf /opt/solr/server/resources/
-  ```
-
-Always restart solr after trying above.
 
 If nothing is working (you don't see the core inside the front-end), create the
-core yourself with these commands:
+core yourself with these commands, here with a core named `omeka`:
 
 ```sh
 sudo cp -r /opt/solr/server/solr/configsets/_default /var/solr/data
 # The destination directory inside data is the name of the core.
 sudo mv /var/solr/data/_default /var/solr/data/omeka
-sudo nano /var/solr/data/omeka/core.properties
+sudo touch /var/solr/data/omeka/core.properties
+sudo echo "#Written by CorePropertiesLocator" >> /var/solr/data/omeka/core.properties
+sudo echo "#Tue Nov 08 00:00:00 UTC 2021" >> /var/solr/data/omeka/core.properties
+sudo echo "name=omeka" >> /etc/security/limits.d/200-solr.conf
+sudo chmod ug+rw /var/solr/data/omeka/core.properties
 sudo chown -R solr:solr /var/solr
 sudo systemctl restart solr
 ```
