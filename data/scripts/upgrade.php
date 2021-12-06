@@ -130,7 +130,7 @@ SQL;
 if (version_compare($oldVersion, '3.5.18.3', '<')) {
     $sql = <<<SQL
 ALTER TABLE `solr_map`
-CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
+CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
 SQL;
     try {
         $connection->executeStatement($sql);
@@ -182,6 +182,16 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.5.31.3', '<')) {
+    // Fix upgrade issue in 3.5.18.3.
+    $sql = <<<SQL
+ALTER TABLE `solr_map`
+CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+SQL;
+    try {
+        $connection->executeStatement($sql);
+    } catch (\Exception $e) {
+    }
+
     $moduleManager = $services->get('Omeka\ModuleManager');
     /** @var \Omeka\Module\Module $module */
     $module = $moduleManager->getModule('AdvancedSearch');
