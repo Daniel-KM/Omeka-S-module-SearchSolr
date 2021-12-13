@@ -405,7 +405,8 @@ class SolariumIndexer extends AbstractIndexer
         foreach ($values as $value) {
             $result = array_merge($result, $valueFormatter->format($value));
         }
-        return $result;
+        // Don't use array_unique before, because objects may not be stringable.
+        return array_unique($result);
     }
 
     protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document): void
