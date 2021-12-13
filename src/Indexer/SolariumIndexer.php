@@ -472,6 +472,12 @@ class SolariumIndexer extends AbstractIndexer
             $isMultiple = count($this->solariumDocuments) > 1;
             if ($isMultiple) {
                 foreach ($this->solariumDocuments as $documentId => $document) {
+                    if (!$document) {
+                        $dId = explode('-', $documentId);
+                        $dId = array_pop($dId);
+                        $this->commitError($document, $dId, $e);
+                        continue;
+                    }
                     try {
                         $update = $client
                             ->createUpdate()
@@ -481,13 +487,13 @@ class SolariumIndexer extends AbstractIndexer
                     } catch (\Exception $e) {
                         $dId = explode('-', $documentId);
                         $dId = array_pop($dId);
-                        $this->commitError($dId, $e);
+                        $this->commitError($document, $dId, $e);
                     }
                 }
             } else {
                 $dId = explode('-', key($this->solariumDocuments));
                 $dId = array_pop($dId);
-                $this->commitError($dId, $e);
+                $this->commitError(reset($this->solariumDocuments), $dId, $e);
             }
         }
 
@@ -499,10 +505,15 @@ class SolariumIndexer extends AbstractIndexer
      *
      * To get a better message: get the data ($request->getRawData()) and post it
      * in Solr admin board.
-     * @see Solarium\Core\Client\Adapter\Http::createContext()
+     * @see \Solarium\Core\Client\Adapter\Http::createContext()
      */
-    protected function commitError(string $dId, \Exception $exception)
+    protected function commitError(?SolariumInputDocument $document, string $dId, \Exception $exception): self
     {
+        if (!$document) {
+            $message = new Message('Indexing of resource %1$s failed: empty of invalid document.', $dId, $message);
+            $this->getLogger()->err($message);
+            return $this;
+        }
         $error = method_exists($exception, 'getBody')? json_decode((string) $exception->getBody(), true) : null;
         if (is_array($error) && isset($error['error']['msg'])) {
             $message = $error['error']['msg'];
@@ -514,6 +525,7 @@ class SolariumIndexer extends AbstractIndexer
         }
         $message = new Message('Indexing of resource %1$s failed: %2$s', $dId, $message);
         $this->getLogger()->err($message);
+        return $this;
     }
 
     /**
