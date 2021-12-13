@@ -127,7 +127,15 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $field = $solrMap->firstSource();
 
         if ($field === '') {
-            $title = $resource->displayTitle('');
+            if (method_exists($resource, 'displayTitle')) {
+                $title = $resource->displayTitle('');
+            } elseif (method_exists($resource, 'title')) {
+                $title = $resource->title();
+            } elseif (method_exists($resource, 'label')) {
+                $title = $resource->label();
+            } else {
+                return [];
+            }
             return mb_strlen($title) ? [$title] : [];
         }
 
@@ -136,7 +144,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         if ($field === 'is_public') {
-            return [$resource->isPublic()];
+            return method_exists($resource, 'isPublic')
+                ? [$resource->isPublic()]
+                : [true];
         }
 
         if ($field === 'owner') {
@@ -152,10 +162,15 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         if ($field === 'created') {
-            return [$resource->created()->format('Y-m-d H:i:s')];
+            return method_exists($resource, 'created')
+                ? [$resource->created()->format('Y-m-d H:i:s')]
+                : [];
         }
 
         if ($field === 'modified') {
+            if (!method_exists($resource, 'modified')) {
+                return [];
+            }
             $modified = $resource->modified();
             return $modified
                 ? [$modified->format('Y-m-d H:i:s')]
@@ -201,6 +216,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         if ($field === 'o:term') {
             return method_exists($resource, 'term')
                 ? [$resource->term()]
+                : [];
+        }
+
+        if ($field === 'o:title') {
+            return method_exists($resource, 'title')
+                ? [$resource->title()]
                 : [];
         }
 
