@@ -201,15 +201,15 @@ java -version
 #sudo dnf install java-11-openjdk-devel.x86_64
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://archive.apache.org/dist/lucene/solr/8.11.0/solr-8.11.0.tgz
+wget https://archive.apache.org/dist/lucene/solr/8.11.1/solr-8.11.1.tgz
 # Extract the install script
-tar zxvf solr-8.11.0.tgz solr-8.11.0/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-8.11.1.tgz solr-8.11.1/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
 sudo bash ./install_solr_service.sh solr-8.11.0.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-8.11.0 /opt/solr
+#sudo ln -s /opt/solr-8.11.1 /opt/solr
 # Clean the sources.
-rm solr-8.11.0.tgz
+rm solr-8.11.1.tgz
 rm install_solr_service.sh
 ```
 
@@ -488,11 +488,11 @@ upgrade from version 6 to 8, you first need to upgrade to version 7.
 cd /tmp
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/8.11.0/solr-8.11.0.tgz
-tar zxvf solr-8.11.0.tgz solr-8.11.0/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/8.11.1/solr-8.11.1.tgz
+tar zxvf solr-8.11.1.tgz solr-8.11.1/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-8.11.0.tgz -f
-rm solr-8.11.0.tgz
+sudo bash ./install_solr_service.sh solr-8.11.1.tgz -f
+rm solr-8.11.1.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -513,7 +513,7 @@ sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm /etc/security/limits.d/200-solr.conf
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-8.11.0
+sudo rm -r /opt/solr-8.11.1
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
