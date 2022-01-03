@@ -96,6 +96,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'url_api' => 'Api url', // @translate
                     'url_admin' => 'Admin url', // @translate
                     'url_site' => 'Site url (default or first site only)', // @translate
+                    'url_asset' => 'Asset/Thumbnail: file url', // @translate
+                    'url_original' => 'Primary media: original file url', // @translate
+                    //  TODO Manage all thumbnail types (here only standard ones).
+                    'url_thumbnail_large' => 'Primary media: large thumbnail url', // @translate
+                    'url_thumbnail_medium' => 'Primary media: medium thumbnail url', // @translate
+                    'url_thumbnail_square' => 'Primary media: square thumbnail url', // @translate
                     // Specific values.
                     'o:label' => 'Label', // @translate
                     'o:name' => 'Name', // @translate
@@ -104,6 +110,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'o:media_type' => 'Media type', // @translate
                     'o:term' => 'Property or class term', // @translate
                     'o:alt_text' => 'Alternative text', // @translate
+                    'o:asset_url' => 'Asset url', // @translate
+                    'o:original_url' => 'Original url', // @translate
                     'o:thumbnail' => 'Thumbnail (asset)', // @translate
                 ],
             ],
@@ -247,6 +255,39 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return $url ? [$url] : [];
         }
 
+        if ($field === 'url_asset') {
+            if (!method_exists($resource, 'thumbnail')) {
+                return [];
+            }
+            $asset = $resource->thumbnail();
+            return $asset
+                ? [$asset->assetUrl()]
+                : [];
+        }
+
+        if ($field === 'url_original') {
+            $primaryMedia = $resource->primaryMedia();
+            if (!$primaryMedia) {
+                return [];
+            }
+            $url = $primaryMedia->originalUrl();
+            return $url ? [$url] : [];
+        }
+
+        $mediaUrlTypes = [
+            'url_thumbnail_large' => 'large',
+            'url_thumbnail_medium' => 'medium',
+            'url_thumbnail_square' => 'square',
+        ];
+        if (isset($mediaUrlTypes[$field])) {
+            $primaryMedia = $resource->primaryMedia();
+            if (!$primaryMedia) {
+                return [];
+            }
+            $url = $primaryMedia->thumbnailUrl($mediaUrlTypes[$field]);
+            return $url ? [$url] : [];
+        }
+
         $specialMetadata = [
             'url_admin' => 'adminUrl',
             'url_api' => 'apiUrl',
@@ -257,8 +298,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             'o:filename' => 'filename',
             'o:media_type' => 'mediaType',
             'o:title' => 'title',
-            // Assets.
             'o:alt_text' => 'altText',
+            'o:asset_url' => 'assetUrl',
+            'o:original_url' => 'originalUrl',
             'o:thumbnail' => 'thumbnail',
         ];
         if (isset($specialMetadata[$field])) {
