@@ -233,6 +233,7 @@ return [
             'date_range' => ValueFormatter\DateRange::class,
             'plain_text' => ValueFormatter\PlainText::class,
             'html_escaped_text' => ValueFormatter\HtmlEscapedText::class,
+            'raw_text' => ValueFormatter\RawText::class,
             'point' => ValueFormatter\Point::class,
             'standard' => ValueFormatter\Standard::class,
             'standard_with_uri' => ValueFormatter\StandardWithUri::class,
