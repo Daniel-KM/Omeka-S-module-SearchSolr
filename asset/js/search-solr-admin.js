@@ -90,7 +90,7 @@
             : (source.charAt(0).toUpperCase() + source.slice(1));
 
         var input = $('input[name="o:settings[label]"]');
-        input.val(label);
+        input.val(label.replace(/_/g, ' '));
     }
 
     function showTypeInfo() {
