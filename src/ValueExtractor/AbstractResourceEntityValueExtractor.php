@@ -106,13 +106,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'o:label' => 'Label', // @translate
                     'o:name' => 'Name', // @translate
                     'o:title' => 'Title', // @translate
-                    'o:filename' => 'File name', // @translate
+                    'o:lang' => 'Media language', // @translate
+                    'o:ingester' => 'Media ingester', // @translate
+                    'o:renderer' => 'Media renderer', // @translate
+                    'o:size' => 'Media size', // @translate
+                    'o:source' => 'Media source', // @translate
                     'o:media_type' => 'Media type', // @translate
-                    'o:term' => 'Property or class term', // @translate
+                    'o:filename' => 'File name', // @translate
                     'o:alt_text' => 'Alternative text', // @translate
                     'o:asset_url' => 'Asset url', // @translate
                     'o:original_url' => 'Original url', // @translate
                     'o:thumbnail' => 'Thumbnail (asset)', // @translate
+                    'o:term' => 'Property or class term', // @translate
                 ],
             ],
             // Set dcterms first.
@@ -296,6 +301,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             'o:label' => 'label',
             'o:name' => 'name',
             'o:filename' => 'filename',
+            'o:lang' => 'lang',
+            'o:ingester' => 'ingester',
+            'o:renderer' => 'renderer',
+            'o:size' => 'size',
+            'o:source' => 'source',
             'o:media_type' => 'mediaType',
             'o:title' => 'title',
             'o:alt_text' => 'altText',
@@ -304,9 +314,13 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             'o:thumbnail' => 'thumbnail',
         ];
         if (isset($specialMetadata[$field])) {
-            return method_exists($resource, $specialMetadata[$field])
-                ? [$resource->{$specialMetadata[$field]}()]
-                : [];
+            if (!method_exists($resource, $specialMetadata[$field])) {
+                return [];
+            }
+            $result = $resource->{$specialMetadata[$field]}();
+            return is_null($result) || $result === '' || $result === []
+                ? []
+                : [$result];
         }
 
         if (strpos($field, ':')) {
