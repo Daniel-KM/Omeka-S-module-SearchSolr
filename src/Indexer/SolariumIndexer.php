@@ -520,6 +520,7 @@ class SolariumIndexer extends AbstractIndexer
         } else {
             $message = $exception->getMessage();
             if ($message === 'Solr HTTP error: Bad Request (400)') {
+                // Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
                 $message = new Message('Invalid document (wrong field type or missing required field).'); // @translate
             }
         }

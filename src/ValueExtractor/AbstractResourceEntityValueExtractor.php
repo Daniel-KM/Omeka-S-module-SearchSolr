@@ -163,7 +163,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         if ($field === 'created') {
             return method_exists($resource, 'created')
-                ? [$resource->created()->format('Y-m-d H:i:s')]
+                ? [$resource->created()->format('Y-m-d\TH:i:s\Z')]
                 : [];
         }
 
@@ -173,7 +173,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             }
             $modified = $resource->modified();
             return $modified
-                ? [$modified->format('Y-m-d H:i:s')]
+                ? [$modified->format('Y-m-d\TH:i:s\Z')]
                 : [];
         }
 
