@@ -383,3 +383,11 @@ SQL;
     );
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.5.33.3', '<')) {
+    $messenger = new Messenger();
+    $message = new Message(
+        'It is now possible to index original and thumbnails urls.' // @translate
+    );
+    $messenger->addSuccess($message);
+}
