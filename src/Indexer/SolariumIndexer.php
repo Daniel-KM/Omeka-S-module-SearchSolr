@@ -471,23 +471,42 @@ class SolariumIndexer extends AbstractIndexer
             // Index documents by one to avoid to skip well formatted documents.
             $isMultiple = count($this->solariumDocuments) > 1;
             if ($isMultiple) {
-                foreach ($this->solariumDocuments as $documentId => $document) {
-                    if (!$document) {
-                        $dId = explode('-', $documentId);
-                        $dId = array_pop($dId);
-                        $this->commitError($document, $dId, $e);
-                        continue;
-                    }
+                // To improve speed when error and avoid 100 requests, try
+                // indexing by ten first, then individually, so usually 11 to 20
+                // requests.
+                foreach (array_chunk($this->solariumDocuments, 10, true) as $solariumDocs) {
                     try {
                         $update = $client
                             ->createUpdate()
-                            ->addDocument($document)
+                            ->addDocuments($solariumDocs)
                             ->addCommit();
                         $client->update($update);
                     } catch (\Exception $e) {
-                        $dId = explode('-', $documentId);
-                        $dId = array_pop($dId);
-                        $this->commitError($document, $dId, $e);
+                        if (count($solariumDocs) > 1) {
+                            foreach ($solariumDocs as $documentId => $document) {
+                                if (!$document) {
+                                    $dId = explode('-', $documentId);
+                                    $dId = array_pop($dId);
+                                    $this->commitError($document, $dId, $e);
+                                    continue;
+                                }
+                                try {
+                                    $update = $client
+                                    ->createUpdate()
+                                    ->addDocument($document)
+                                    ->addCommit();
+                                    $client->update($update);
+                                } catch (\Exception $e) {
+                                    $dId = explode('-', $documentId);
+                                    $dId = array_pop($dId);
+                                    $this->commitError($document, $dId, $e);
+                                }
+                            }
+                        } else {
+                            $dId = explode('-', key($solariumDocs));
+                            $dId = array_pop($dId);
+                            $this->commitError(reset($solariumDocs), $dId, $e);
+                        }
                     }
                 }
             } else {
