@@ -33,6 +33,8 @@ namespace SearchSolr\ValueExtractor;
 
 use Laminas\Log\LoggerInterface;
 use Omeka\Api\Manager as ApiManager;
+use Omeka\Api\Representation\AbstractEntityRepresentation;
+use Omeka\Api\Representation\AbstractRepresentation;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
@@ -85,14 +87,20 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'modified' => 'Modified', // @translate
                     'resource_class' => 'Resource class', // @translate
                     'resource_template' => 'Resource template', // @translate
+                    'asset' => 'Asset (attached thumbnail)', // @translate
                     'item_set' => 'Item: Item set', // @translate
                     'media' => 'Item: Media', // @translate
                     'content' => 'Media: Content (html or extracted text)', // @translate
-                    // May be used internally in admin board.
                     'is_open' => 'Item set: Is open', // @translate
                     // Specific values.
+                    'o:label' => 'Label', // @translate
+                    'o:name' => 'Name', // @translate
+                    'o:title' => 'Title', // @translate
+                    'o:filename' => 'File name', // @translate
+                    'o:media_type' => 'Media type', // @translate
                     'o:term' => 'Property or class term', // @translate
-                    'o:label' => 'Label ', // @translate
+                    'o:alt_text' => 'Alternative text', // @translate
+                    'o:thumbnail' => 'Thumbnail (asset)', // @translate
                 ],
             ],
             // Set dcterms first.
@@ -133,6 +141,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 $title = $resource->title();
             } elseif (method_exists($resource, 'label')) {
                 $title = $resource->label();
+            } elseif (method_exists($resource, 'name')) {
+                $title = $resource->name();
             } else {
                 return [];
             }
@@ -150,7 +160,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         if ($field === 'owner') {
-            return $resource instanceof AbstractResourceEntityRepresentation
+            return method_exists($resource, 'owner')
                 ? $this->extractOwnerValues($resource, $solrMap)
                 : [];
         }
@@ -189,6 +199,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 : [];
         }
 
+        if ($field === 'asset') {
+            return method_exists($resource, 'thumbnail')
+                ? $this->extractAssetValues($resource, $solrMap)
+                : [];
+        }
+
         if ($field === 'media') {
             return $resource instanceof ItemRepresentation
                 ? $this->extractItemMediasValue($resource, $solrMap)
@@ -213,21 +229,20 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 : [];
         }
 
-        if ($field === 'o:term') {
-            return method_exists($resource, 'term')
-                ? [$resource->term()]
-                : [];
-        }
-
-        if ($field === 'o:title') {
-            return method_exists($resource, 'title')
-                ? [$resource->title()]
-                : [];
-        }
-
-        if ($field === 'o:label') {
-            return method_exists($resource, 'label')
-                ? [$resource->label()]
+        $specialMetadata = [
+            'o:term' => 'term',
+            'o:label' => 'label',
+            'o:name' => 'name',
+            'o:filename' => 'filename',
+            'o:media_type' => 'mediaType',
+            'o:title' => 'title',
+            // Assets.
+            'o:alt_text' => 'altText',
+            'o:thumbnail' => 'thumbnail',
+        ];
+        if (isset($specialMetadata[$field])) {
+            return method_exists($resource, $specialMetadata[$field])
+                ? [$resource->{$specialMetadata[$field]}()]
                 : [];
         }
 
@@ -239,7 +254,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     }
 
     protected function extractOwnerValues(
-        AbstractResourceEntityRepresentation $resource,
+        AbstractEntityRepresentation $resource,
         ?SolrMapRepresentation $solrMap
     ): array {
         $user = $resource->owner();
@@ -280,6 +295,16 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $resourceTemplate = $resource->resourceTemplate();
         return $resourceTemplate
             ? $this->extractValue($resourceTemplate, $solrMap->subMap())
+            : [];
+    }
+
+    protected function extractAssetValues(
+        AbstractRepresentation $resource,
+        ?SolrMapRepresentation $solrMap
+    ): array {
+        $asset = $resource->thumbnail();
+        return $asset
+            ? $this->extractValue($asset, $solrMap->subMap())
             : [];
     }
 
