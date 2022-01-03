@@ -92,6 +92,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'media' => 'Item: Media', // @translate
                     'content' => 'Media: Content (html or extracted text)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
+                    // Urls.
+                    'url_api' => 'Api url', // @translate
+                    'url_admin' => 'Admin url', // @translate
+                    'url_site' => 'Site url (default or first site only)', // @translate
                     // Specific values.
                     'o:label' => 'Label', // @translate
                     'o:name' => 'Name', // @translate
@@ -132,6 +136,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         AbstractResourceRepresentation $resource,
         SolrMapRepresentation $solrMap
     ): array {
+        static $defaultSiteSlug;
+
         $field = $solrMap->firstSource();
 
         if ($field === '') {
@@ -229,7 +235,22 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 : [];
         }
 
+        if ($field === 'url_site') {
+            if (is_null($defaultSiteSlug)) {
+                $defaultSiteSlug = $this->defaultSiteSlug($resource) ?: false;
+            }
+            if ($defaultSiteSlug === false || !method_exists($resource, 'siteUrl')) {
+                return [];
+            }
+            // Some resources like assets have the method, but no data.
+            $url = $resource->siteUrl($defaultSiteSlug, true);
+            return $url ? [$url] : [];
+        }
+
         $specialMetadata = [
+            'url_admin' => 'adminUrl',
+            'url_api' => 'apiUrl',
+            // Special metadata.
             'o:term' => 'term',
             'o:label' => 'label',
             'o:name' => 'name',
@@ -383,5 +404,24 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return [file_get_contents($filePath)];
         }
         return [];
+    }
+
+    protected function defaultSiteSlug(AbstractRepresentation $resource): ?string
+    {
+        $services = $resource->getServiceLocator();
+        $api = $services->get('Omeka\ApiManager');
+        $settings = $services->get('Omeka\Settings');
+        $defaultSiteId = (int) $settings->get('default_site');
+        if ($defaultSiteId) {
+            try {
+                $result = $api->read('sites', $id, [], ['responseContent' => 'resource'])->getContent();
+                return $result->getSlug();
+            } catch (\Omeka\Api\Exception\NotFoundException $e) {
+            }
+        }
+        $result = $api->search('sites', ['limit' => 1], ['returnScalar' => 'slug'])->getContent();
+        return count($result)
+            ? reset($result)
+            : null;
     }
 }
