@@ -19,6 +19,6 @@ class StandardWithoutUri implements ValueFormatterInterface
         $value = is_object($value) && $value instanceof \Omeka\Api\Representation\ValueRepresentation
             ? trim((string) $value->value())
             : trim((string) $value);
-        return strlen($value) ? [$value] : $value;
+        return strlen($value) ? [$value] : [];
     }
 }
