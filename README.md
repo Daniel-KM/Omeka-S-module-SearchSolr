@@ -243,9 +243,12 @@ add yourself to the solr group (`sudo usermod -aG solr myName`).
 
 If the service is not available after the install, you can create the file "/etc/systemd/system/solr.service",
 that may need to be adapted for the distribution, here for Debian 11 or CentOs 8 (see the [solr service gist]):
-This is useless if the file "/etc/init.d/solr" is available and used.
 
-After creating the following file, run `sudo systemctl daemon-reload`.
+This is useless if the file "/etc/init.d/solr" is available and used. Note that
+the default init doesn't manage restart on failure. The following service sets
+it at 30 seconds. Furthermore, the logs are simpler with systemd.
+
+After creating the following file, run `sudo systemctl enable solr`, then `sudo systemctl daemon-reload`.
 
 ```ini
 # Save this file as /etc/systemd/system/solr.service as root
@@ -280,7 +283,7 @@ ExecStart=/opt/solr/bin/solr start
 ExecReload=/opt/solr/bin/solr restart
 ExecStop=/opt/solr/bin/solr stop
 Restart=on-failure
-RestartSec=5
+RestartSec=30
 
 # Optional config.
 LimitNOFILE=1048576
