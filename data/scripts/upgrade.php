@@ -39,7 +39,7 @@ CREATE INDEX `IDX_39A565C527B35A195F8A7F73` ON `solr_map` (`solr_core_id`, `sour
 SQL;
     $connection->executeStatement($sql);
 
-    $serverId = strtolower(substr(str_replace(['+', '/'], '', base64_encode(random_bytes(20))), 0, 6));
+    $serverId = strtolower(substr(str_replace(['+', '/', '='], ['', '', ''], base64_encode(random_bytes(32))), 0, 6));
     $settings->set('searchsolr_server_id', $serverId);
 
     $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
