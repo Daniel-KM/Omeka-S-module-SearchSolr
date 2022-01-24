@@ -391,7 +391,9 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                     return $a->fieldName() <=> $b->fieldName();
                 });
             }
-            $maps = array_merge(...array_values($maps));
+            if ($maps) {
+                $maps = array_merge(...array_values($maps));
+            }
         }
 
         return $maps;
