@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2021
+ * Copyright Daniel Berthereau, 2017-2022
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -350,7 +350,7 @@ class CoreController extends AbstractActionController
                     $key + 1
                 ));
                 unset($rows[$key]);
-            } elseif (!in_array($row['resource_name'], ['items', 'item_sets', 'media'])) {
+            } elseif (!in_array($row['resource_name'], ['generic', 'resources', 'items', 'item_sets', 'media'])) {
                 $this->messenger()->addWarning(new Message(
                     'The row #%d does not manage resource "%s".', // @translate
                     $key + 1, $row['resource_name']
@@ -523,7 +523,7 @@ class CoreController extends AbstractActionController
         $fileData['extension'] = $extension;
 
         // Manage an exception for a very common format, undetected by fileinfo.
-        if ($mediaType === 'text/plain' || 'application/octet-stream') {
+        if ($mediaType === 'text/plain' || $mediaType === 'application/octet-stream') {
             $extensions = [
                 'txt' => 'text/plain',
                 'csv' => 'text/csv',
@@ -542,7 +542,7 @@ class CoreController extends AbstractActionController
             'text/tab-separated-values' => true,
             'application/csv' => true,
         ];
-        if (! isset($supporteds[$mediaType])) {
+        if (!isset($supporteds[$mediaType])) {
             return false;
         }
 
