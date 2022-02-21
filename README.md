@@ -206,7 +206,7 @@ wget https://archive.apache.org/dist/lucene/solr/8.11.1/solr-8.11.1.tgz
 # Extract the install script
 tar zxvf solr-8.11.1.tgz solr-8.11.1/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-8.11.0.tgz
+sudo bash ./install_solr_service.sh solr-8.11.1.tgz
 # Add a symlink to simplify management (if not automatically created).
 #sudo ln -s /opt/solr-8.11.1 /opt/solr
 # Clean the sources.
@@ -571,7 +571,7 @@ in the config.
 
 The config files are saved in `/var/solr/data` by default.
 
-Possible issues (always restart solr after trying next commands):
+Possible issues (always **restart solr after trying next commands**):
 
 - The directory /var/solr is not belonging to solr, so run `sudo chown -R solr:solr /var/solr`.
 - The resources may be missing, so copy them:
