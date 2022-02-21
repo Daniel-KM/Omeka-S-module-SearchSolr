@@ -357,7 +357,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      *
      * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
      */
-    public function maps()
+    public function maps(): array
     {
         static $maps;
 
@@ -380,7 +380,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      *
      * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
      */
-    public function mapsOrderedByStructure()
+    public function mapsOrderedByStructure(): array
     {
         static $maps;
 
@@ -405,7 +405,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      * @param string $resourceName
      * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
      */
-    public function mapsByResourceName($resourceName = null)
+    public function mapsByResourceName($resourceName = null): array
     {
         static $maps;
 
@@ -489,7 +489,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      *
      * @return \AdvancedSearch\Api\Representation\SearchEngineRepresentation[]
      */
-    public function searchEngines()
+    public function searchEngines(): array
     {
         // TODO Use entity manager to simplify search of indexes from core.
         $result = [];
@@ -510,7 +510,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      *
      * @return \AdvancedSearch\Api\Representation\SearchConfigRepresentation[]
      */
-    public function searchConfigs()
+    public function searchConfigs(): array
     {
         // TODO Use entity manager to simplify search of pages from core.
         $result = [];
