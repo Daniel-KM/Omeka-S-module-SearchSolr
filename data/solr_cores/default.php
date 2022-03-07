@@ -14,24 +14,24 @@ return [
     'o:id' => null,
     'o:name' => 'Default',
     'o:settings' => [
-        'client' =>  [
-            'scheme' =>  'http',
-            'host' =>  'localhost',
-            'port' =>  8983,
+        'client' => [
+            'scheme' => 'http',
+            'host' => 'localhost',
+            'port' => 8983,
             'path' => '/',
             // 'collection' => null,
-            'core' =>  'omeka',
-            'secure' =>  false,
-            'username' =>  null,
-            'password' =>  null,
+            'core' => 'omeka',
+            'secure' => false,
+            'username' => null,
+            'password' => null,
             'bypass_certificate_check' => false,
         ],
-        'support' =>  '',
-        'server_id' =>  '',
-        'resource_languages' =>  '',
-        'query' =>  [
-            'minimum_match' =>  '',
-            'tie_breaker' =>  '',
+        'support' => '',
+        'server_id' => '',
+        'resource_languages' => '',
+        'query' => [
+            'minimum_match' => '',
+            'tie_breaker' => '',
         ],
     ],
 ];

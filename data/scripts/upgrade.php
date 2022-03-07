@@ -150,7 +150,6 @@ if (version_compare($oldVersion, '3.5.25.3', '<')) {
             || version_compare($module2->getIni('version') ?? '', '3.3.6', '<')
             || $module2->getState() !== \Omeka\Module\Manager::STATE_ACTIVE;
 
-
     if ($missingModule1 && $missingModule2) {
         $message = new Message(
             'This module requires the module "%s", version %s or above.', // @translate
@@ -212,7 +211,7 @@ SQL;
         ->orderBy('id', 'asc');
     $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
     foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
-        $solrCoreSettings = json_decode($solrCoreSettings,  true) ?: [];
+        $solrCoreSettings = json_decode($solrCoreSettings, true) ?: [];
         unset($solrCoreSettings['site_url']);
         $sql = <<<'SQL'
 UPDATE `solr_core`
@@ -284,7 +283,7 @@ SQL;
         ->orderBy('id', 'asc');
     $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
     foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
-        $solrCoreSettings = json_decode($solrCoreSettings,  true) ?: [];
+        $solrCoreSettings = json_decode($solrCoreSettings, true) ?: [];
         foreach ($fields as $oldName => $newField) {
             $fieldName = $solrCoreSettings[$oldName] ?? $newField['field_name'];
             unset($solrCoreSettings[$oldName]);

@@ -30,7 +30,6 @@
 namespace SearchSolr\Adapter;
 
 use AdvancedSearch\Adapter\AbstractAdapter;
-use AdvancedSearch\Api\Representation\SearchEngineRepresentation;
 use Laminas\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
 use SearchSolr\Form\Admin\SolrConfigFieldset;

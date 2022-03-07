@@ -38,7 +38,6 @@ use Omeka\Stdlib\Message;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use Solarium\Client as SolariumClient;
-use Solarium\Exception\HttpException as SolariumServerException;
 use Solarium\QueryType\Update\Query\Document as SolariumInputDocument;
 
 /**

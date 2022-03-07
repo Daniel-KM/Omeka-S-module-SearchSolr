@@ -229,14 +229,14 @@ class SolrCoreForm extends Form
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Minimum match (or/and)', // @translate
-                    'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible.
+                    'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible, like "3<80%".
 If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
                     'documentation' => 'https://solr.apache.org/guide/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
                 ],
                 'attributes' => [
                     'required' => false,
                     'value' => '',
-                    'placeholder' => '50%',
+                    'placeholder' => '3<80%',
                 ],
             ])
             ->add([
@@ -252,7 +252,7 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
                     'id' => 'tie_breaker',
                     'required' => false,
                     'value' => '',
-                    'placeholder' => '0.10',
+                    'placeholder' => '0.15',
                     'inclusive' => true,
                     'min' => '0.0',
                     'max' => '1.0',
