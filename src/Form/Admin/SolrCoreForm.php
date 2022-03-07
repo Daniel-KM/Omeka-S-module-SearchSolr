@@ -191,13 +191,13 @@ class SolrCoreForm extends Form
                 // 'type' => 'Omeka\Form\Element\LocaleSelect',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Resource languages codes for shared core', // @translate
-                    'info' => 'A third party may need to know the languages of a resource, even if it has no meaning in Omeka.', // @translate
+                    'label' => 'Resource languages 2-letters iso codes for shared core', // @translate
+                    'info' => 'A third party may need to know the languages of a resource, even if it has no meaning in Omeka. Use "und" for undetermined.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'resource_languages',
                     'multiple' => true,
-                    // 'value' => 'und',
+                    'placeholder' => 'fr de sp und',
                 ],
             ])
             // TODO Replace the checkbox by a button.

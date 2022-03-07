@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2021
+ * Copyright Daniel Berthereau, 2017-2022
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -111,6 +111,11 @@ class SolariumIndexer extends AbstractIndexer
      * @var string
      */
     protected $indexName;
+
+    /**
+     * @var string
+     */
+    protected $mainLocale;
 
     /**
      * @var string|false
@@ -278,6 +283,8 @@ class SolariumIndexer extends AbstractIndexer
         $doc = new SolariumInputDocument();
         $this->solariumHelpers = $doc->getHelper();
 
+        $this->mainLocale = $services->get('Omeka\Settings')->get('locale');
+
         return $this;
     }
 
@@ -319,6 +326,7 @@ class SolariumIndexer extends AbstractIndexer
             $document->addField($this->indexField, $this->indexName);
         }
 
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $solrMap */
         foreach ($this->solrCore->mapsByResourceName($resourceName) as $solrMap) {
             $solrField = $solrMap->fieldName();
             $source = $solrMap->source();
@@ -372,23 +380,29 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            $values = $this->formatValues($values, $solrMap);
-            if (!count($values)) {
+            $formattedValues = $this->formatValues($values, $solrMap);
+            if (!count($formattedValues)) {
                 continue;
             }
 
             if ($this->isSingleValuedFields[$solrField]) {
                 $isSingleFieldFilled[$solrField] = true;
-                $document->addField($solrField, reset($values));
+                $document->addField($solrField, reset($formattedValues));
             } else {
-                foreach ($values as $value) {
+                foreach ($formattedValues as $value) {
                     $document->addField($solrField, $value);
                 }
             }
 
             if ($this->support === 'drupal') {
                 // Only one value is filled for special values of Drupal.
-                $this->appendDrupalValues($resource, $document, $solrField, reset($values));
+                $value = reset($values);
+                // Generally, the value is a ValueRepresentation.
+                $locale = is_object($value) && method_exists($value, 'lang')
+                    ? $value->lang()
+                    : null;
+                $formattedValue = reset($formattedValues);
+                $this->appendDrupalValues($resource, $document, $solrField, $formattedValue, $locale);
             }
         }
 
@@ -534,7 +548,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function commitError(?SolariumInputDocument $document, string $dId, \Exception $exception): self
     {
         if (!$document) {
-            $message = new Message('Indexing of resource %1$s failed: empty of invalid document.', $dId, $message);
+            $message = new Message('Indexing of resource failed: empty of invalid document: %s', $exception);
             $this->getLogger()->err($message);
             return $this;
         }
@@ -732,35 +746,50 @@ class SolariumIndexer extends AbstractIndexer
      * @param SolariumInputDocument $document
      * @param string $solrField
      * @param mixed $value
+     * @param string $locale
      * @return self
      */
-    protected function appendDrupalValues(Resource $resource, SolariumInputDocument $document, $solrField, $value)
+    protected function appendDrupalValues(Resource $resource, SolariumInputDocument $document, $solrField, $value, ?string $valueLocale = null)
     {
         $resourceName = $resource->getResourceName();
         if (!isset($this->vars['solr_maps'][$resourceName][$solrField])) {
             return $this;
         }
 
-        // FIXME Use the translated values in Drupal sort fields.
+        // When a value has a locale, only this locale is stored, else all
+        // locales defined in the config.
+
         // In Drupal, the same value is copied in each language field for sort…
         // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/src/Plugin/search_api/backend/SearchApiSolrBackend.php#L1130-1172
         // For example, field is "ss_title", so sort field is "sort_X3b_fr_title".
         // This is slighly different from Drupal process.
         $prefix = $this->vars['solr_maps'][$resourceName][$solrField]['prefix'];
         $matches = [];
-        if (in_array(mb_substr($prefix . '_', 0, 3), ['tm_', 'ts_', 'sm_', 'ss_'])) {
-            foreach ($this->vars['locales'] as $locale) {
-                $field = 'sort_X3b_' . $locale . '_' . $this->vars['solr_maps'][$resourceName][$solrField]['name'];
-                if (!$document->{$field}) {
-                    $value = mb_substr((string) $value, 0, 128);
-                    $document->addField($field, $value);
+        if (in_array($prefix, ['tm', 'ts', 'sm', 'ss'])) {
+            // Don't translate a field twice.
+            if (strpos($solrField, '_X3b_') !== false) {
+                return $this;
+            }
+            // Drupal needs two letters language codes, except for undetermined.
+            // TODO Use the right mapping for iso language 3 characters to 2 characters.
+            if ($valueLocale && $valueLocale !== 'und' && strlen($valueLocale) > 2) {
+                $valueLocale = substr($valueLocale, 0, 2);
+            }
+            // For sort, only the first 128 characters can be indexed.
+            $valueSort = mb_substr((string) $value, 0, 128);
+            $name = $this->vars['solr_maps'][$resourceName][$solrField]['name'];
+            foreach ($valueLocale ? [$valueLocale] : $this->vars['locales'] as $locale) {
+                $field = 'sort_X3b_' . $locale . '_' . $name;
+                // Add only one sort value.
+                if (!isset($document->{$field})) {
+                    $document->addField($field, $valueSort);
                 }
             }
         } elseif (strpos($solrField, 'random_') !== 0
             && preg_match('/^([a-z]+)m(_.*)/', $solrField, $matches)
         ) {
             $field = $matches[1] . 's' . $matches[2];
-            if (!$document->{$field}) {
+            if (!isset($document->{$field})) {
                 $document->addField($field, $value);
             }
         }
