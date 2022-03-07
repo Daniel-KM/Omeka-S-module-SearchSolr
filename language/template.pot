@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-01-03 00:00+0000\n"
+"POT-Creation-Date: 2022-03-07 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,15 +33,15 @@ msgid ""
 "to 3.5.30.3."
 msgstr ""
 
-#: src/Adapter/SolariumAdapter.php:129
+#: src/Adapter/SolariumAdapter.php:128
 msgid "Relevance"
 msgstr ""
 
-#: src/Adapter/SolariumAdapter.php:134
+#: src/Adapter/SolariumAdapter.php:133
 msgid "Asc"
 msgstr ""
 
-#: src/Adapter/SolariumAdapter.php:135
+#: src/Adapter/SolariumAdapter.php:134
 msgid "Desc"
 msgstr ""
 
@@ -50,7 +50,7 @@ msgstr ""
 msgid "%s (unavailable: option multi-index not set)"
 msgstr ""
 
-#: src/Generic/AbstractModule.php:66
+#: src/Generic/AbstractModule.php:66 src/Generic/AbstractModule.php:740
 #, php-format
 msgid "This module requires the module \"%s\"."
 msgstr ""
@@ -64,7 +64,23 @@ msgstr ""
 msgid "This module has resources that cannot be installed."
 msgstr ""
 
-#: src/Generic/AbstractModule.php:725
+#: src/Generic/AbstractModule.php:87
+msgid ""
+"This module cannot install its tables, because they exist already. Try to "
+"remove them first."
+msgstr ""
+
+#: src/Generic/AbstractModule.php:328
+#, php-format
+msgid "The module removed tables \"%s\" from a previous broken install."
+msgstr ""
+
+#: src/Generic/AbstractModule.php:735
+#, php-format
+msgid "This module requires the module \"%s\", version %s or above."
+msgstr ""
+
+#: src/Generic/AbstractModule.php:832
 #, php-format
 msgid ""
 "The module \"%s\" was automatically deactivated because the dependencies are "
@@ -314,33 +330,27 @@ msgstr ""
 msgid "Use the new import/export tool to simplify config."
 msgstr ""
 
-#: data/scripts/upgrade.php:156 data/scripts/upgrade.php:176
-#: data/scripts/upgrade.php:200
-#, php-format
-msgid "This module requires the module \"%s\", version %s or above."
-msgstr ""
-
-#: data/scripts/upgrade.php:165
+#: data/scripts/upgrade.php:164
 msgid "The auto-suggestion requires a specific url for now."
 msgstr ""
 
-#: data/scripts/upgrade.php:374
+#: data/scripts/upgrade.php:373
 msgid ""
 "The resource types are now structured to simplify config: \"generic\" and "
 "\"resource\" allow to set mapping for any resource."
 msgstr ""
 
-#: data/scripts/upgrade.php:378
+#: data/scripts/upgrade.php:377
 msgid "All mapping for items and item sets have been copied to resources."
 msgstr ""
 
-#: data/scripts/upgrade.php:382
+#: data/scripts/upgrade.php:381
 msgid ""
 "It is recommended to check mappings, to remove the useless and duplicate "
 "ones, and to run a full reindexation."
 msgstr ""
 
-#: data/scripts/upgrade.php:390
+#: data/scripts/upgrade.php:389
 msgid "It is now possible to index original and thumbnails urls."
 msgstr ""
 
@@ -553,13 +563,13 @@ msgid ""
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:194
-msgid "Resource languages codes for shared core"
+msgid "Resource languages 2-letters iso codes for shared core"
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:195
 msgid ""
 "A third party may need to know the languages of a resource, even if it has "
-"no meaning in Omeka."
+"no meaning in Omeka. Use \"und\" for undetermined."
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:208
@@ -583,7 +593,7 @@ msgstr ""
 #: src/Form/Admin/SolrCoreForm.php:232
 msgid ""
 "Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions are "
-"possible.\n"
+"possible, like \"3<80%\".\n"
 "If empty, the config of the solr core (solrconfig.xml) will be used."
 msgstr ""
 
@@ -877,8 +887,8 @@ msgstr ""
 #: src/Controller/Admin/CoreController.php:142
 #, php-format
 msgid ""
-"Some specific static or dynamic fields are missing or not available for \"%s"
-"\" in the core: \"%s\"."
+"Some specific static or dynamic fields are missing or not available for "
+"\"%s\" in the core: \"%s\"."
 msgstr ""
 
 #: src/Controller/Admin/CoreController.php:146
@@ -1007,23 +1017,23 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:217
+#: src/Indexer/SolariumIndexer.php:221
 #, php-format
 msgid "Indexing in Solr core \"%1$s\": %2$s"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:272
+#: src/Indexer/SolariumIndexer.php:276
 #, php-format
 msgid ""
 "Unable to index resources in Solr core \"%1$s\". Some required fields are "
 "not mapped: %2$s"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:463
+#: src/Indexer/SolariumIndexer.php:476
 msgid "No document to commit in Solr."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:548
+#: src/Indexer/SolariumIndexer.php:561
 msgid "Invalid document (wrong field type or missing required field)."
 msgstr ""
 
