@@ -470,7 +470,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $defaultSiteId = (int) $settings->get('default_site');
         if ($defaultSiteId) {
             try {
-                $result = $api->read('sites', $id, [], ['responseContent' => 'resource'])->getContent();
+                $result = $api->read('sites', $defaultSiteId, [], ['responseContent' => 'resource'])->getContent();
                 return $result->getSlug();
             } catch (\Omeka\Api\Exception\NotFoundException $e) {
             }
