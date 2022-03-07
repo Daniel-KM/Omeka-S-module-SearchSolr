@@ -785,6 +785,17 @@ class SolariumIndexer extends AbstractIndexer
                     $document->addField($field, $valueSort);
                 }
             }
+            // The title and body (description) should be translated too.
+            if (in_array($solrField, ['tm_title', 'ts_title', 'tm_body', 'ts_body'])) {
+                $tmOrTs = $prefix === 'ts' ? 'ts' : 'tm';
+                foreach ($valueLocale ? [$valueLocale] : $this->vars['locales'] as $locale) {
+                    $field = $tmOrTs . '_X3b_' . $locale . '_' . $name;
+                    // There may be multiple titles or bodies, but avoid issues.
+                    if (!isset($document->{$field})) {
+                        $document->addField($field, $value);
+                    }
+                }
+            }
         } elseif (strpos($solrField, 'random_') !== 0
             && preg_match('/^([a-z]+)m(_.*)/', $solrField, $matches)
         ) {
