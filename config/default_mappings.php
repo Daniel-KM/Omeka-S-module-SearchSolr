@@ -70,6 +70,13 @@ return [
         'pool' => [],
         'settings' => ['formatter' => '', 'label' => 'Resource template'],
     ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'title_s',
+        'source' => 'o:title',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Title'],
+    ],
 
     // Properties.
     // Text general of Dublin Core elements + spatial and temporal coverages.

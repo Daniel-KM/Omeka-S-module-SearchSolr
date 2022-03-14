@@ -293,6 +293,21 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return $url ? [$url] : [];
         }
 
+        // TODO Use all available locales to get the title and the description.
+        if ($field === 'o:title' && method_exists($resource, 'displayTitle')) {
+            $result = $resource->displayTitle();
+            return is_null($result) || $result === '' || $result === []
+                ? []
+                : [$result];
+        }
+
+        if ($field === 'o:description' && method_exists($resource, 'displayDescription')) {
+            $result = $resource->displayDescription();
+            return is_null($result) || $result === '' || $result === []
+                ? []
+                : [$result];
+        }
+
         $specialMetadata = [
             'url_admin' => 'adminUrl',
             'url_api' => 'apiUrl',
