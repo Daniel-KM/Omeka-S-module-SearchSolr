@@ -34,6 +34,7 @@ use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
 use Omeka\Api\Manager as ApiManager;
+use SearchSolr\Form\Element as SearchSolrElement;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 use SearchSolr\ValueFormatter\Manager as ValueFormatterManager;
 
@@ -95,7 +96,7 @@ class SolrMapForm extends Form
             ->get('o:pool')
             ->add([
                 'name' => 'data_types',
-                'type' => \Omeka\Form\Element\DataTypeSelect::class,
+                'type' => SearchSolrElement\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Limit to data types', // @translate
                 ],
@@ -108,7 +109,7 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'data_types_exclude',
-                'type' => \Omeka\Form\Element\DataTypeSelect::class,
+                'type' => SearchSolrElement\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Exclude data types', // @translate
                 ],
