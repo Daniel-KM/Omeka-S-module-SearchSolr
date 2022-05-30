@@ -239,6 +239,7 @@ return [
             'standard_with_uri' => ValueFormatter\StandardWithUri::class,
             'standard_without_uri' => ValueFormatter\StandardWithoutUri::class,
             'uri' => ValueFormatter\Uri::class,
+            'year' => ValueFormatter\Year::class,
         ],
     ],
 ];
