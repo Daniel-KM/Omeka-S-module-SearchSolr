@@ -80,6 +80,9 @@ class SolariumQuerier extends AbstractQuerier
         try {
             $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
         } catch (\Exception $e) {
+            // To get the query sent by solarium to solr, check the url in
+            // vendor/solarium/solarium/src/Core/Client/Adapter/Http.php
+            /** @see \Solarium\Core\Client\Adapter\Http::getData() */
             // The solr query cannot be an empty string.
             $q = $this->query->getQuery();
             if (!$q) {

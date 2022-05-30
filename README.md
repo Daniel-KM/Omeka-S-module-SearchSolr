@@ -214,6 +214,10 @@ rm solr-8.11.1.tgz
 rm install_solr_service.sh
 ```
 
+If not protected by a firewall or a proxy, you will access to solr admin page at
+http://example.org:8983/solr. See below to create a ssh tunnel to access it when
+protected.
+
 ### Integration in the system
 
 Solr may be managed as a system service:
