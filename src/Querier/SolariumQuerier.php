@@ -793,6 +793,10 @@ class SolariumQuerier extends AbstractQuerier
                 // Automatically throw an exception when empty.
                 $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
                 $this->solariumClient = $this->solrCore->solariumClient();
+                $clientSettings = $this->solrCore->clientSettings();
+                if (($clientSettings['http_request_type'] ?? 'post') !== 'get') {
+                    $this->solariumClient->getPlugin('postbigrequest');
+                }
             }
         }
         return $this->solrCore;
@@ -801,7 +805,12 @@ class SolariumQuerier extends AbstractQuerier
     protected function getClient(): SolariumClient
     {
         if (!isset($this->solariumClient)) {
-            $this->solariumClient = $this->getSolrCore()->solariumClient();
+            $core = $this->getSolrCore();
+            $this->solariumClient = $core->solariumClient();
+            $clientSettings = $core->clientSettings();
+            if (($clientSettings['http_request_type'] ?? 'post') !== 'get') {
+                $this->solariumClient->getPlugin('postbigrequest');
+            }
         }
         return $this->solariumClient;
     }

@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau 2020
+ * Copyright Daniel Berthereau 2020-2022
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -150,7 +150,25 @@ class SolrCoreForm extends Form
                 'attributes' => [
                     'id' => 'bypass_certificate_check',
                 ],
-            ]);
+            ])
+            ->add([
+                'name' => 'http_request_type',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Http request type', // @translate
+                    'info' => 'Choose if requests to Solr use "get" or "post".', // @translate
+                    'documentation' => 'https://solarium.readthedocs.io/en/latest/plugins/#postbigrequest-plugin',
+                    'value_options' => [
+                        'post' => 'Post (allow big queries and numerous facets)', // @translate
+                        'get' => 'Get (cacheable)', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'required' => false,
+                    'value' => 'post',
+                ],
+            ])
+        ;
 
         $settingsFieldset->add($clientSettingsFieldset);
 
