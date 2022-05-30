@@ -102,12 +102,12 @@ class SolariumIndexer extends AbstractIndexer
     protected $serverId;
 
     /**
-     * @var string|false
+     * @var string|null
      */
     protected $indexField;
 
     /**
-     * @var string
+     * @var string|null
      */
     protected $indexName;
 
@@ -117,7 +117,7 @@ class SolariumIndexer extends AbstractIndexer
     protected $mainLocale;
 
     /**
-     * @var string|false
+     * @var string|null
      */
     protected $support;
 
@@ -590,8 +590,8 @@ class SolariumIndexer extends AbstractIndexer
             $this->indexField = $this->indexField->fieldName();
             $this->indexName = $name;
         } else {
-            $this->indexField = false;
-            $this->indexName = false;
+            $this->indexField = null;
+            $this->indexName = null;
         }
         return $this;
     }
@@ -662,7 +662,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function getSupportFields()
     {
         if (is_null($this->supportFields)) {
-            $this->support = $this->solrCore->setting('support') ?: false;
+            $this->support = $this->solrCore->setting('support') ?: null;
             $this->supportFields = array_filter($this->solrCore->schemaSupport($this->support));
             // Manage some static values.
             foreach ($this->supportFields as $solrField => &$value) switch ($solrField) {
