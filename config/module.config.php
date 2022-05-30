@@ -217,6 +217,10 @@ return [
         'config' => [
             'searchsolr_server_id' => null,
         ],
+        // A mapping table of codes.
+        // To be copied and completed in main Omeka config/local.config.php for the value formatter "Table".
+        'table' => [
+        ],
     ],
     'searchsolr_value_extractors' => [
         'factories' => [
@@ -238,6 +242,7 @@ return [
             'standard' => ValueFormatter\Standard::class,
             'standard_with_uri' => ValueFormatter\StandardWithUri::class,
             'standard_without_uri' => ValueFormatter\StandardWithoutUri::class,
+            'table' => ValueFormatter\Table::class,
             'uri' => ValueFormatter\Uri::class,
             'year' => ValueFormatter\Year::class,
         ],
