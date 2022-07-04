@@ -408,6 +408,23 @@ class SolariumIndexer extends AbstractIndexer
 
         $this->appendSupportedFields($resource, $document);
 
+        // Remove the duplicates in the multiple indexes: this is generally an
+        // unintentional issue (or related to a drupal field).
+        // It's recommended to use Solr boost mechanisms to boost a property or
+        // a document.
+        foreach ($document->getFields() as $field => $values) {
+            if (empty($this->isSingleValuedFields[$field]) && is_array($values) && count($values) > 1) {
+                $deduplicatedValues = array_unique($values);
+                if (count($deduplicatedValues) !== count($values)) {
+                    // Note: to remove a field removes the boost data too.
+                    $document->removeField($field);
+                    foreach ($deduplicatedValues as $value) {
+                        $document->addField($field, $value);
+                    }
+                }
+            }
+        }
+
         $this->solariumDocuments[$documentId] = $document;
     }
 
