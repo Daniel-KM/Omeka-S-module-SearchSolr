@@ -385,6 +385,7 @@ class SolariumIndexer extends AbstractIndexer
             }
 
             if ($this->isSingleValuedFields[$solrField]) {
+                // Store single fields one time only (checked above).
                 $isSingleFieldFilled[$solrField] = true;
                 $document->addField($solrField, reset($formattedValues));
             } else {

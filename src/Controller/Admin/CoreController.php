@@ -328,7 +328,7 @@ class CoreController extends AbstractActionController
         $rows = array_values($rows);
         if (array_values($rows[0]) !== array_values($this->mappingHeaders)) {
             $this->messenger()->addError(
-                'The headers of the file are not the default ones. You may check the delimiter too.' // @translate
+                'The headers of the file are not the default ones. Or the delimiter is not the good one according to the media-type or extension.' // @translate
             );
             return false;
         }
