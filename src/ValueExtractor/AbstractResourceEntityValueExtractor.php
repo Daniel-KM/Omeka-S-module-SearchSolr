@@ -151,7 +151,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     ): array {
         static $defaultSiteSlug;
 
-        if ($this->excludeResourceViaQueryFilter($resource, $solrMap)) {
+        if ($this->excludeResourceViaQueryFilter($resource, $solrMap, 'filter_resources')) {
             return [];
         }
 
@@ -351,7 +351,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
     protected function excludeResourceViaQueryFilter(
         AbstractResourceRepresentation $resource,
-        SolrMapRepresentation $solrMap
+        SolrMapRepresentation $solrMap,
+        string $keyQueryFilter
     ): bool {
         static $idsByQueries = [
             'items' => [],
@@ -361,7 +362,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             'users' => [],
         ];
 
-        $queryFilter = $solrMap->pool('filter_resources');
+        $queryFilter = $solrMap->pool($keyQueryFilter);
         if (empty($queryFilter)) {
             return false;
         }
@@ -505,8 +506,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             // vocab with a resource.
             $vr = $value->valueResource();
             if ($vr) {
-                $resourceExtractedValues = $this->extractValue($vr, $solrMap->subMap());
-                $extractedValues = array_merge($extractedValues, $resourceExtractedValues);
+                if (!$this->excludeResourceViaQueryFilter($vr, $solrMap, 'filter_value_resources')) {
+                    $resourceExtractedValues = $this->extractValue($vr, $solrMap->subMap());
+                    $extractedValues = array_merge($extractedValues, $resourceExtractedValues);
+                }
             } else {
                 $extractedValues[] = $value;
             }

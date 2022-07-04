@@ -106,6 +106,17 @@ class SolrMapForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'filter_value_resources',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Index only value resources matching this standard query', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'filter_value_resources',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'data_types',
                 'type' => SearchSolrElement\DataTypeSelect::class,
                 'options' => [
