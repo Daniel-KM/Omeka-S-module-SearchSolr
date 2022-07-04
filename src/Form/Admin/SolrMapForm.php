@@ -95,10 +95,21 @@ class SolrMapForm extends Form
         $this
             ->get('o:pool')
             ->add([
+                'name' => 'filter_resources',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Index only resources matching this standard query', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'filter_resources',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'data_types',
                 'type' => SearchSolrElement\DataTypeSelect::class,
                 'options' => [
-                    'label' => 'Limit to data types', // @translate
+                    'label' => 'Index only these data types', // @translate
                 ],
                 'attributes' => [
                     'id' => 'data_types',

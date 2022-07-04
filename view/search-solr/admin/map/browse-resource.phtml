@@ -117,9 +117,14 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                     </td>
                     <td><?= $map->source() ?></td>
                     <td><?php
+                        $filterResources = $map->pool('filter_resources');
                         $dataTypes = $map->pool('data_types');
                         $dataTypesExclude = $map->pool('data_types_exclude');
-                        if ($dataTypes || $dataTypesExclude): ?>
+                        ?>
+                        <?php if ($filterResources): ?>
+                        <div><?= $translate('Filtered by resources') ?></div>
+                        <?php endif; ?>
+                        <?php if ($dataTypes || $dataTypesExclude): ?>
                         <dl>
                             <?php if ($dataTypes) echo '<dt>' . $translate('Data types') . '</dt><dd>' . implode('</dd><dd>', $dataTypes) . '</dd>'; ?>
                             <?php if ($dataTypesExclude) echo '<dt>' . $translate('Excluded data types') . '</dt><dd>' . implode('</dd><dd>', $dataTypesExclude) . '</dd>'; ?>

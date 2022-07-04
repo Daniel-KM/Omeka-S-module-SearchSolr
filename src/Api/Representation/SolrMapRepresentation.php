@@ -92,10 +92,10 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         return $this->resource->getSource();
     }
 
-    public function pool(?string $name = null, $default = null): array
+    public function pool(?string $name = null, $default = null)
     {
         if (!is_null($this->pool)) {
-            return $name ? $this->pool[$name] ?? $default : $this->pool;
+            return is_null($name) ? $this->pool : ($this->pool[$name] ?? $default);
         }
 
         $this->pool = $this->resource->getPool();
@@ -114,7 +114,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             $this->pool[$dataTypeName] = $result;
         }
 
-        return $name ? $this->pool[$name] ?? $default : $this->pool;
+        return is_null($name) ? $this->pool : ($this->pool[$name] ?? $default);
     }
 
     public function settings(): array

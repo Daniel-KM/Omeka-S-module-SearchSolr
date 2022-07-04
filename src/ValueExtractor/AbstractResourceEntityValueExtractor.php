@@ -151,6 +151,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     ): array {
         static $defaultSiteSlug;
 
+        if ($this->excludeResourceViaQueryFilter($resource, $solrMap)) {
+            return [];
+        }
+
         $field = $solrMap->firstSource();
 
         if ($field === '') {
@@ -343,6 +347,52 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         return [];
+    }
+
+    protected function excludeResourceViaQueryFilter(
+        AbstractResourceRepresentation $resource,
+        SolrMapRepresentation $solrMap
+    ): bool {
+        static $idsByQueries = [
+            'items' => [],
+            'item_sets' => [],
+            'media' => [],
+            'assets' => [],
+            'users' => [],
+        ];
+
+        $queryFilter = $solrMap->pool('filter_resources');
+        if (empty($queryFilter)) {
+            return false;
+        }
+
+        $resourceNames = [
+            \Omeka\Api\Representation\ItemRepresentation::class => 'items',
+            \Omeka\Api\Representation\ItemSetRepresentation::class => 'item_sets',
+            \Omeka\Api\Representation\MediaRepresentation::class => 'media',
+            \Omeka\Api\Representation\AssetRepresentation::class => 'assets',
+            \Omeka\Api\Representation\UserRepresentation::class => 'users',
+        ];
+        if (!isset($resourceNames[get_class($resource)])) {
+            return false;
+        }
+
+        $resourceName = $resourceNames[get_class($resource)];
+
+        if (!array_key_exists($queryFilter, $idsByQueries[$resourceName])) {
+            $services = $resource->getServiceLocator();
+            /** @var \Omeka\Api\Manager $api */
+            $api = $services->get('Omeka\ApiManager');
+            $request = [];
+            parse_str($queryFilter, $request);
+            if (!$request) {
+                $idsByQueries[$resourceName][$queryFilter] = null;
+                return false;
+            }
+            $idsByQueries[$resourceName][$queryFilter] = $api->search($resourceName, $request, ['returnScalar' => 'id'])->getContent();
+        }
+
+        return !isset($idsByQueries[$resourceName][$queryFilter][$resource->id()]);
     }
 
     protected function extractOwnerValues(
