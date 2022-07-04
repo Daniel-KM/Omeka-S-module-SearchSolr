@@ -61,11 +61,14 @@ class Schema
             if ($contents === false) {
                 // False result might be because file_get_contents is disabled, trying with curl
                 if (function_exists('curl_init')) {
-                    $c = curl_init();
-                    curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
-                    curl_setopt($c, CURLOPT_URL, $this->schemaUrl);
-                    $contents = curl_exec($c);
-                    curl_close($c);
+                    $curl = curl_init();
+                    curl_setopt_array($curl, [
+                        CURLOPT_RETURNTRANSFER => 1,
+                        CURLOPT_URL => $this->schemaUrl,
+                        CURLOPT_USERAGENT => 'curl/' . curl_version()['version'],
+                    ]);
+                    $contents = curl_exec($curl);
+                    curl_close($curl);
                 }
             }
 
