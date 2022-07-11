@@ -66,6 +66,13 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected $solrCore;
 
+    /**
+     * Allow to manage hidden filter queries.
+     *
+     * @var int
+     */
+    protected $appendToKey = 0;
+
     public function query(): Response
     {
         $this->response = new Response;
@@ -225,6 +232,7 @@ class SolariumQuerier extends AbstractQuerier
                 ->setQuery($indexField . ':' . $this->engine->shortName());
         }
 
+        $this->appendHiddenFilters();
         $this->filterQuery();
 
         $sort = $this->query->getSort();
@@ -369,6 +377,17 @@ class SolariumQuerier extends AbstractQuerier
         $this->solariumQuery->setQuery(implode(' ', $qq));
     }
 
+    protected function appendHiddenFilters(): void
+    {
+        $hiddenFilters = $this->query->getHiddenQueryFilters();
+        if (!$hiddenFilters) {
+            return;
+        }
+        $this->filterQueryValues($hiddenFilters);
+        $this->filterQueryDateRange($hiddenFilters);
+        $this->filterQueryFilters($hiddenFilters);
+    }
+
     /**
      * Filter the query.
      */
@@ -392,18 +411,32 @@ class SolariumQuerier extends AbstractQuerier
                     $value = '("items:' . implode('" OR "items:', $values)
                         . '" OR "item_sets:' . implode('" OR "item_sets:', $values) . '")';
                     $this->solariumQuery
-                        ->createFilterQuery($name)
+                        ->createFilterQuery($name . '_' . ++$this->appendToKey)
                         ->setQuery("$name:$value");
                 }
                 continue;
             }
-            foreach ($values as $key => $value) {
+            // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
+            if (!is_array($values)) {
+                $values = [$values];
+            }
+            foreach ($values as $value) {
+                if (is_array($value)) {
+                    // Skip date range queries (for hidden queries).
+                    if (isset($value['from']) || isset($value['to'])) {
+                        continue;
+                    }
+                    // Skip queries filters (for hidden queries).
+                    if (isset($value['joiner']) || isset($value['type']) || isset($value['text']) || isset($value['join']) || isset($value['value'])) {
+                        continue;
+                    }
+                }
                 $value = $this->encloseValue($value);
                 if (!strlen($value)) {
                     continue;
                 }
                 $this->solariumQuery
-                    ->createFilterQuery($name . '_' . $key)
+                    ->createFilterQuery($name . '_' . ++$this->appendToKey)
                     ->setQuery("$name:$value");
             }
         }
@@ -427,6 +460,10 @@ class SolariumQuerier extends AbstractQuerier
 
         $dateRangeFilters = $this->query->getDateRangeFilters();
         foreach ($dateRangeFilters as $name => $filterValues) {
+            // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
+            if (!is_array($filterValues)) {
+                continue;
+            }
             // Normalize dates if needed.
             $normalize = substr_compare($name, '_dt', -3) === 0
                 || substr_compare($name, '_dts', -4) === 0
@@ -435,15 +472,22 @@ class SolariumQuerier extends AbstractQuerier
                 || substr_compare($name, '_pdts', -5) === 0
                 || substr_compare($name, '_tdts', -5) === 0;
             foreach ($filterValues as $filterValue) {
+                // Skip simple and query filters (for hidden queries).
+                if (!is_array($filterValue)) {
+                    continue;
+                }
                 if ($normalize) {
-                    $from = $normalizeDate($filterValue['from']);
-                    $to = $normalizeDate($filterValue['to']);
+                    $from = empty($filterValue['from']) ? '*' : $normalizeDate($filterValue['from']);
+                    $to = empty($filterValue['to']) ? '*' : $normalizeDate($filterValue['to']);
                 } else {
-                    $from = $filterValue['from'] ? $filterValue['from'] : '*';
-                    $to = $filterValue['to'] ? $filterValue['to'] : '*';
+                    $from = empty($filterValue['from']) ? '*' : $filterValue['from'];
+                    $to = empty($filterValue['to']) ? '*' : $filterValue['to'];
+                }
+                if ($from === '*' && $to === '*') {
+                    continue;
                 }
                 $this->solariumQuery
-                    ->createFilterQuery($name)
+                    ->createFilterQuery($name . '_' . ++$this->appendToKey)
                     ->setQuery("$name:[$from TO $to]");
             }
         }
@@ -451,17 +495,22 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function filterQueryFilters(array $filters): void
     {
-        if (!$filters) {
-            return;
-        }
-
         // Filters are boolean: in or out. nevertheless, the check can be more
         // complex than "equal": before or after a date, like a string, etc.
 
         foreach ($filters as $name => $values) {
+            // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
+            if (!is_array($values)) {
+                continue;
+            }
             $fq = '';
             $first = true;
             foreach ($values as $value) {
+                // Skip simple filters (for hidden queries).
+                if (!$value || !is_array($value)) {
+                    continue;
+                }
+                $value += ['join' => null, 'type' => null, 'value' => null];
                 // There is no default in Omeka.
                 // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
                 $type = $value['type'];
@@ -584,7 +633,7 @@ class SolariumQuerier extends AbstractQuerier
             }
             $this->solariumQuery
                 // The name must be different from simple filter, or merge them.
-                ->createFilterQuery($name . '-fq')
+                ->createFilterQuery($name . '_fq' . '_' . ++$this->appendToKey)
                 ->setQuery(ltrim($fq));
         }
     }
