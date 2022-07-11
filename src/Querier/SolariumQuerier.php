@@ -39,7 +39,7 @@ use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 
 /**
- * @todo Rewrite the querier to simplify it and to use all solarium features.
+ * @todo Rewrite the querier to simplify it and to use all solarium features directly.
  * @todo Remove grouping (item/itemset): this is native in Omeka and most of the time, user want them mixed.
  */
 class SolariumQuerier extends AbstractQuerier
@@ -225,72 +225,7 @@ class SolariumQuerier extends AbstractQuerier
                 ->setQuery($indexField . ':' . $this->engine->shortName());
         }
 
-        $filters = $this->query->getFilters();
-        foreach ($filters as $name => $values) {
-            if ($name === 'id') {
-                $value = [];
-                array_walk_recursive($values, function ($v) use (&$value): void {
-                    $value[] = $v;
-                });
-                $values = array_unique(array_map('intval', $value));
-                if (count($values)) {
-                    $value = '("items:' . implode('" OR "items:', $values)
-                        . '" OR "item_sets:' . implode('" OR "item_sets:', $values) . '")';
-                    $this->solariumQuery
-                        ->createFilterQuery($name)
-                        ->setQuery("$name:$value");
-                }
-                continue;
-            }
-            foreach ($values as $key => $value) {
-                $value = $this->encloseValue($value);
-                if (!strlen($value)) {
-                    continue;
-                }
-                $this->solariumQuery
-                    ->createFilterQuery($name . '_' . $key)
-                    ->setQuery("$name:$value");
-            }
-        }
-
-        $normalizeDate = function ($value) {
-            if ($value) {
-                if (strlen($value) < 20) {
-                    $value = substr_replace('0000-01-01T00:00:00Z', $value, 0, strlen($value) - 20);
-                }
-                try {
-                    $value = new \DateTime($value);
-                    return $value->format('Y-m-d\TH:i:s\Z');
-                } catch (\Exception $e) {
-                }
-            }
-            return '*';
-        };
-
-        $dateRangeFilters = $this->query->getDateRangeFilters();
-        foreach ($dateRangeFilters as $name => $filterValues) {
-            // Normalize dates if needed.
-            $normalize = substr_compare($name, '_dt', -3) === 0
-                || substr_compare($name, '_dts', -4) === 0
-                || substr_compare($name, '_pdt', -4) === 0
-                || substr_compare($name, '_tdt', -4) === 0
-                || substr_compare($name, '_pdts', -5) === 0
-                || substr_compare($name, '_tdts', -5) === 0;
-            foreach ($filterValues as $filterValue) {
-                if ($normalize) {
-                    $from = $normalizeDate($filterValue['from']);
-                    $to = $normalizeDate($filterValue['to']);
-                } else {
-                    $from = $filterValue['from'] ? $filterValue['from'] : '*';
-                    $to = $filterValue['to'] ? $filterValue['to'] : '*';
-                }
-                $this->solariumQuery
-                    ->createFilterQuery($name)
-                    ->setQuery("$name:[$from TO $to]");
-            }
-        }
-
-        $this->addFilterQueries();
+        $this->filterQuery();
 
         $sort = $this->query->getSort();
         if ($sort) {
@@ -434,9 +369,88 @@ class SolariumQuerier extends AbstractQuerier
         $this->solariumQuery->setQuery(implode(' ', $qq));
     }
 
-    protected function addFilterQueries(): void
+    /**
+     * Filter the query.
+     */
+    protected function filterQuery(): void
     {
-        $filters = $this->query->getFilterQueries();
+        $this->filterQueryValues($this->query->getFilters());
+        $this->filterQueryDateRange($this->query->getDateRangeFilters());
+        $this->filterQueryFilters($this->query->getFilterQueries());
+    }
+
+    protected function filterQueryValues(array $filters): void
+    {
+        foreach ($filters as $name => $values) {
+            if ($name === 'id') {
+                $value = [];
+                array_walk_recursive($values, function ($v) use (&$value): void {
+                    $value[] = $v;
+                });
+                $values = array_unique(array_map('intval', $value));
+                if (count($values)) {
+                    $value = '("items:' . implode('" OR "items:', $values)
+                        . '" OR "item_sets:' . implode('" OR "item_sets:', $values) . '")';
+                    $this->solariumQuery
+                        ->createFilterQuery($name)
+                        ->setQuery("$name:$value");
+                }
+                continue;
+            }
+            foreach ($values as $key => $value) {
+                $value = $this->encloseValue($value);
+                if (!strlen($value)) {
+                    continue;
+                }
+                $this->solariumQuery
+                    ->createFilterQuery($name . '_' . $key)
+                    ->setQuery("$name:$value");
+            }
+        }
+    }
+
+    protected function filterQueryDateRange(array $dateRangeFilters): void
+    {
+        $normalizeDate = function ($value) {
+            if ($value) {
+                if (strlen($value) < 20) {
+                    $value = substr_replace('0000-01-01T00:00:00Z', $value, 0, strlen($value) - 20);
+                }
+                try {
+                    $value = new \DateTime($value);
+                    return $value->format('Y-m-d\TH:i:s\Z');
+                } catch (\Exception $e) {
+                }
+            }
+            return '*';
+        };
+
+        $dateRangeFilters = $this->query->getDateRangeFilters();
+        foreach ($dateRangeFilters as $name => $filterValues) {
+            // Normalize dates if needed.
+            $normalize = substr_compare($name, '_dt', -3) === 0
+                || substr_compare($name, '_dts', -4) === 0
+                || substr_compare($name, '_pdt', -4) === 0
+                || substr_compare($name, '_tdt', -4) === 0
+                || substr_compare($name, '_pdts', -5) === 0
+                || substr_compare($name, '_tdts', -5) === 0;
+            foreach ($filterValues as $filterValue) {
+                if ($normalize) {
+                    $from = $normalizeDate($filterValue['from']);
+                    $to = $normalizeDate($filterValue['to']);
+                } else {
+                    $from = $filterValue['from'] ? $filterValue['from'] : '*';
+                    $to = $filterValue['to'] ? $filterValue['to'] : '*';
+                }
+                $this->solariumQuery
+                    ->createFilterQuery($name)
+                    ->setQuery("$name:[$from TO $to]");
+            }
+        }
+    }
+
+    protected function filterQueryFilters(array $filters): void
+    {
         if (!$filters) {
             return;
         }
