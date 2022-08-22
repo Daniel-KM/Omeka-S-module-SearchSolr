@@ -34,6 +34,7 @@ return [
             Form\Element\DataTypeSelect::class => Service\Form\Element\DataTypeSelectFactory::class,
         ],
         'aliases' => [
+            // Use aliases to keep core keys.
             'Omeka\Form\Element\DataTypeSelect' => Form\Element\DataTypeSelect::class,
         ],
     ],

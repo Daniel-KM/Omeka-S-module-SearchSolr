@@ -7,6 +7,8 @@ use Omeka\DataType\Manager as DataTypeManager;
 
 /**
  * @see AdvancedResourceTemplate\Form\Element\DataTypeSelect
+ * @see BulkEdit\Form\Element\DataTypeSelect
+ * @see SearchSolr\Form\Element\DataTypeSelect
  */
 class DataTypeSelect extends Select
 {
@@ -71,22 +73,10 @@ class DataTypeSelect extends Select
         return array_merge($options, $optgroupOptions);
     }
 
-    /**
-     * @param DataTypeManager $dataTypeManager
-     * @return self
-     */
-    public function setDataTypeManager(DataTypeManager $dataTypeManager)
+    public function setDataTypeManager(DataTypeManager $dataTypeManager): self
     {
         $this->dataTypeManager = $dataTypeManager;
         $this->dataTypes = $dataTypeManager->getRegisteredNames();
         return $this;
-    }
-
-    /**
-     * @return DataTypeManager
-     */
-    public function getDataTypeManager()
-    {
-        return $this->dataTypeManager;
     }
 }
