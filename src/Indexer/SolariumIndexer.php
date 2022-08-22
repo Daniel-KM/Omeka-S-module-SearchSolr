@@ -570,14 +570,14 @@ class SolariumIndexer extends AbstractIndexer
             return $this;
         }
         $error = method_exists($exception, 'getBody')? json_decode((string) $exception->getBody(), true) : null;
-        if (is_array($error) && isset($error['error']['msg'])) {
-            $message = $error['error']['msg'];
-        } else {
-            $message = $exception->getMessage();
-            if ($message === 'Solr HTTP error: Bad Request (400)') {
-                // Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
-                $message = new Message('Invalid document (wrong field type or missing required field).'); // @translate
-            }
+        $message = is_array($error) && isset($error['error']['msg'])
+            ? $error['error']['msg']
+            : $exception->getMessage();
+        if ($message === 'Solr HTTP error: Bad Request (400)') {
+            // Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
+            $message = new Message('Invalid document (wrong field type or missing required field).'); // @translate
+        } elseif ($message === 'Solr HTTP error: HTTP request failed') {
+            $message = new Message('Solr HTTP error: HTTP request failed due to network or certificate issue.'); // @translate
         }
         $message = new Message('Indexing of resource %1$s failed: %2$s', $dId, $message);
         $this->getLogger()->err($message);
