@@ -166,7 +166,7 @@ TODO
 ----
 
 - [ ] Create an automatic mode from the resource templates or from Dublin Core.
-- [ ] Create automatically multiple index by property (text, string, lower, latin).
+- [ ] Create automatically multiple index by property (text, string, lower, latin, for query, order, facets, etc.).
 - [ ] Use the search engine directly without search api.
 - [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
 - [x] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
@@ -176,6 +176,7 @@ TODO
 - [ ] Add a separate indexer for medias and pages.
 - [ ] Add a redirect from item-set/browse to search page, like item-set/show.
 - [ ] Remove the fix for indexation of string "0", replaced by "00".
+- [ ] Include all new advanced filters mode.
 
 
 Solr install <a id="solr-install"></a>
