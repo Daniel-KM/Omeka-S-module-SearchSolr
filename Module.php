@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2021
+ * Copyright Daniel Berthereau, 2017-2022
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -109,10 +109,10 @@ class Module extends AbstractModule
 
         // Module AdvancedSearch is already checked as dependency.
         $advancedSearchVersion = $moduleManager->getModule('AdvancedSearch')->getIni('version');
-        if (version_compare($advancedSearchVersion, '3.3.6.7', '<')) {
+        if (version_compare($advancedSearchVersion, '3.3.6.16', '<')) {
             $message = new \Omeka\Stdlib\Message(
                 $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
-                'Advanced Search', '3.3.6.7'
+                'Advanced Search', '3.3.6.16'
             );
             throw new ModuleCannotInstallException((string) $message);
         }

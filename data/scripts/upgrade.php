@@ -390,3 +390,27 @@ if (version_compare($oldVersion, '3.5.33.3', '<')) {
     );
     $messenger->addSuccess($message);
 }
+
+if (version_compare($oldVersion, '3.5.37.3', '<')) {
+    $translator = $services->get('MvcTranslator');
+    $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
+
+    /** @var \Omeka\Module\Manager $moduleManager */
+    $moduleManager = $services->get('Omeka\ModuleManager');
+    $advancedSearchModule = $moduleManager->getModule('AdvancedSearch');
+    if (!$advancedSearchModule) {
+        $message = new Message(
+            $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
+            'Advanced Search', '3.3.6.16'
+        );
+        throw new ModuleCannotInstallException((string) $message);
+    }
+    $advancedSearchVersion = $advancedSearchModule->getIni('version');
+    if (version_compare($advancedSearchVersion, '3.3.6.16', '<')) {
+        $message = new Message(
+            $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
+            'Advanced Search', '3.3.6.16'
+        );
+        throw new ModuleCannotInstallException((string) $message);
+    }
+}
