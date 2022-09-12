@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2021
+ * Copyright Daniel Berthereau, 2017-2022
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -40,6 +40,12 @@ class SolrCoreAdapter extends AbstractEntityAdapter
     protected $sortFields = [
         'id' => 'id',
         'name' => 'name',
+    ];
+
+    protected $scalarFields = [
+        'id' => 'id',
+        'name' => 'name',
+        'settings' => 'settings',
     ];
 
     public function getResourceName()
