@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2021
+ * Copyright Daniel Berthereau, 2017-2022
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -85,6 +85,7 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         try {
+            /** @var \Solarium\QueryType\Select\Result\Result $solariumResultSet */
             $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
         } catch (\Exception $e) {
             // To get the query sent by solarium to solr, check the url in
@@ -104,6 +105,12 @@ class SolariumQuerier extends AbstractQuerier
             $this->solariumQuery->setQuery($escapedQ);
             try {
                 $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
+            /*
+            } catch (\Solarium\Exception\HttpException $e) {
+                // Http Exception has getStatusMessage() and getBody(), but useless.
+                // TODO Get the error with the same url, but direct query. Or find where Solarium store the error message.
+                throw new QuerierException($e->getMessage(), $e->getCode(), $e);
+            */
             } catch (\Exception $e) {
                 throw new QuerierException($e->getMessage(), $e->getCode(), $e);
             }
@@ -127,15 +134,32 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
+        /** @var \Solarium\Component\Result\FacetSet $facetSet */
         $facetSet = $solariumResultSet->getFacetSet();
         if ($facetSet) {
-            foreach ($facetSet as $name => $values) {
-                foreach ($values as $value => $count) {
-                    if ($count > 0) {
-                        $this->response->addFacetCount($name, $value, $count);
+            $facetCounts = [];
+            /** @var \Solarium\Component/Result/Facet/FacetResultInterface $facetResult */
+            // foreach $facetSet = foreach $facetSet->getFacets().
+            foreach ($facetSet->getFacets() as $name => $facetResult) {
+                // TODO Use getValues(), then array_column, then array_filter.
+                if ($facetResult instanceof \Solarium\Component\Result\Facet\Buckets) {
+                    // JsonRange extends Buckets with getBefore(), getAfter()
+                    // and getBetween(), that are not used for now.
+                    $facetCount = [];
+                    /** @var \Solarium\Component\Result\Facet\Bucket $bucket */
+                    // foreach $facetResult = foreach $facetResult->getBuckets().
+                    foreach ($facetResult->getBuckets() as $bucket) {
+                        $count = $bucket->getCount();
+                        if ($count > 0) {
+                            // $this->response->addFacetCount($name, $value, $count);
+                            $facetCount[] = ['value' => $bucket->getValue(), 'count' => $count];
+                        }
                     }
+                    $facetCounts[$name] = $facetCount;
                 }
+                // Else not managed or useless here (Aggregation: count, etc.).
             }
+            $this->response->setFacetCounts($facetCounts);
         }
 
         $this->response->setActiveFacets($this->query->getActiveFacets());
@@ -256,28 +280,68 @@ class SolariumQuerier extends AbstractQuerier
             $this->solariumQuery->getGrouping()->setOffset($offset);
         }
 
-        $facetFields = $this->query->getFacetFields();
+        // Manage facets.
+        /** @var \Solarium\Component\FacetSet $solariumFacetSet */
         $solariumFacetSet = $this->solariumQuery->getFacetSet();
-        if (count($facetFields)) {
-            foreach ($facetFields as $facetField) {
-                $solariumFacetSet->createFacetField($facetField)->setField($facetField);
-            }
-        }
 
+        // TODO Remove generic limit and order and set them by field.
+        // This is the default limit for facets.
         $facetLimit = $this->query->getFacetLimit();
         if ($facetLimit) {
             $solariumFacetSet->setLimit($facetLimit);
         }
 
-        // Only two choices here.
+        // This is the default order for facets.
+        // Only two choices here: index asc (alphabetic/numeric) or count desc.
+        // Default is by total desc.
         $facetOrder = $this->query->getFacetOrder();
+        $facetSort = \Solarium\Component\Facet\AbstractField::SORT_COUNT;
         if ($facetOrder === 'total asc' || $facetOrder === 'total desc') {
             $solariumFacetSet->setSort(\Solarium\Component\Facet\AbstractField::SORT_COUNT);
         } elseif ($facetOrder === 'alphabetic asc') {
+            $facetSort = \Solarium\Component\Facet\AbstractField::SORT_INDEX;
             $solariumFacetSet->setSort(\Solarium\Component\Facet\AbstractField::SORT_INDEX);
         }
 
-        // TODO Manage facet languages for Solr.
+        $facets = $this->query->getFacets();
+        if (count($facets)) {
+            foreach ($facets as $facetField => $facetData) {
+                if ($facetData['type'] === 'SelectRange') {
+                    /*
+                    $solariumFacetSet
+                        ->createFacetRange($facetField)
+                        ->setField($facetField)
+                        // FIXME Start, end, and gap for facet range are required and hard coded, but depends on values.
+                        ->setStart(0)
+                        ->setEnd(10000)
+                        ->setGap(1)
+                        // MinCount is used only with standard facet range.
+                        ->setMinCount(1)
+                    ;
+                    */
+                    // JsonFacetRange has better default values.
+                    // TODO Use arbitrary range to use default values for start/end/gap? No, the range are not arbitrary.
+                    $solariumFacetSet
+                        ->createJsonFacetRange($facetField)
+                        ->setField($facetField)
+                        // For year.
+                        // FIXME Find a way to get min and max year (with query?).
+                        ->setStart(0)
+                        ->setEnd(2100)
+                        ->setGap(1)
+                    ;
+                } else {
+                    $solariumFacetSet
+                        ->createJsonFacetTerms($facetField)
+                        ->setField($facetField)
+                        ->setLimit($facetLimit)
+                        ->setSort($facetSort)
+                    ;
+                }
+            }
+        }
+
+        // TODO Manage facet languages for Solr: index them separately?
 
         /** @link https://petericebear.github.io/php-solarium-multi-select-facets-20160720/ */
         $activeFacets = $this->query->getActiveFacets();
@@ -286,16 +350,47 @@ class SolariumQuerier extends AbstractQuerier
                 if (!count($values)) {
                     continue;
                 }
-                $enclosedValues = $this->encloseValue($values);
-                $this->solariumQuery->addFilterQuery([
-                    'key' => $name . '-facet',
-                    'query' => "$name:$enclosedValues",
-                    'tag' => 'exclude',
-                ]);
-                $solariumFacetSet->createFacetField([
-                    'field' => $name,
-                    'exclude' => 'exclude',
-                ]);
+                $firstKey = key($values);
+                // Check for a facet range.
+                if (count($values) <= 2 && ($firstKey === 'from' || $firstKey === 'to')) {
+                    $hasFrom = isset($values['from']) && $values['from'] !== '';
+                    $hasTo = isset($values['to']) && $values['to'] !== '';
+                    if ($hasFrom && $hasTo) {
+                        $from = $this->enclose($values['from']);
+                        $to = $this->enclose($values['to']);
+                        $this->solariumQuery->addFilterQuery([
+                           'key' => $name . '-facet',
+                           'query' => "$name:[$from TO $to]",
+                           'tag' => 'exclude',
+                        ]);
+                    } elseif ($hasFrom) {
+                        $from = $this->enclose($values['from']);
+                        $this->solariumQuery->addFilterQuery([
+                           'key' => $name . '-facet',
+                           'query' => "$name:[$from TO *]",
+                           'tag' => 'exclude',
+                        ]);
+                    } elseif ($hasTo) {
+                        $to = $this->enclose($values['to']);
+                        $this->solariumQuery->addFilterQuery([
+                           'key' => $name . '-facet',
+                           'query' => "$name:[* TO $to]",
+                           'tag' => 'exclude',
+                        ]);
+                    }
+                } else {
+                    $enclosedValues = $this->encloseValue($values);
+                    $this->solariumQuery->addFilterQuery([
+                        'key' => $name . '-facet',
+                        'query' => "$name:$enclosedValues",
+                        'tag' => 'exclude',
+                    ]);
+                    // TODO Is excluding selected facet still needed?
+                    $solariumFacetSet->createFacetField([
+                        'field' => $name,
+                        'exclude' => 'exclude',
+                    ]);
+                }
             }
         }
 
