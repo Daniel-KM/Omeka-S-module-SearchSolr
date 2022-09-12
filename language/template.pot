@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-03-07 00:00+0000\n"
+"POT-Creation-Date: 2022-09-12 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: Module.php:114
+#: data/scripts/upgrade.php:403 data/scripts/upgrade.php:411 Module.php:114
 #, php-format
 msgid "This module requires module \"%s\" version \"%s\" or greater."
 msgstr ""
@@ -77,7 +77,7 @@ msgstr ""
 
 #: src/Generic/AbstractModule.php:735
 #, php-format
-msgid "This module requires the module \"%s\", version %s or above."
+msgid "This module requires the module \"%1$s\", version %2$s or above."
 msgstr ""
 
 #: src/Generic/AbstractModule.php:832
@@ -266,15 +266,23 @@ msgstr ""
 msgid "Translated default label"
 msgstr ""
 
-#: view/search-solr/admin/map/browse-resource.phtml:125
+#: view/search-solr/admin/map/browse-resource.phtml:126
+msgid "Filtered by resources"
+msgstr ""
+
+#: view/search-solr/admin/map/browse-resource.phtml:129
+msgid "Filtered by value resources"
+msgstr ""
+
+#: view/search-solr/admin/map/browse-resource.phtml:134
 msgid "Excluded data types"
 msgstr ""
 
-#: view/search-solr/admin/map/browse-resource.phtml:136
+#: view/search-solr/admin/map/browse-resource.phtml:145
 msgid "There is no maps defined yet."
 msgstr ""
 
-#: view/search-solr/admin/map/browse-resource.phtml:137
+#: view/search-solr/admin/map/browse-resource.phtml:146
 msgid "Add a new map"
 msgstr ""
 
@@ -328,6 +336,12 @@ msgstr ""
 
 #: data/scripts/upgrade.php:67
 msgid "Use the new import/export tool to simplify config."
+msgstr ""
+
+#: data/scripts/upgrade.php:155 data/scripts/upgrade.php:175
+#: data/scripts/upgrade.php:199
+#, php-format
+msgid "This module requires the module \"%s\", version %s or above."
 msgstr ""
 
 #: data/scripts/upgrade.php:164
@@ -384,7 +398,7 @@ msgstr ""
 msgid "Select a metadata from the resource…"
 msgstr ""
 
-#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:207
+#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:211
 msgid "Set sub-property"
 msgstr ""
 
@@ -466,7 +480,7 @@ msgstr ""
 msgid "label"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:68
+#: src/Form/Admin/SolrMapForm.php:69
 msgid ""
 "To select a sub-property allows to store a linked metadata when the property "
 "is filled with a resource. Thereby, an item can be found from the specified "
@@ -474,27 +488,35 @@ msgid ""
 "the journal, so the issue can be found from the title of the journal."
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:100
-msgid "Limit to data types"
+#: src/Form/Admin/SolrMapForm.php:101
+msgid "Index only resources matching this standard query"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:113
+#: src/Form/Admin/SolrMapForm.php:112
+msgid "Index only value resources matching this standard query"
+msgstr ""
+
+#: src/Form/Admin/SolrMapForm.php:123
+msgid "Index only these data types"
+msgstr ""
+
+#: src/Form/Admin/SolrMapForm.php:136
 msgid "Exclude data types"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:117
+#: src/Form/Admin/SolrMapForm.php:140
 msgid "Select data types to exclude…"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:129
+#: src/Form/Admin/SolrMapForm.php:152
 msgid "Formatter"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:142
+#: src/Form/Admin/SolrMapForm.php:165
 msgid "Default label"
 msgstr ""
 
-#: src/Form/Admin/SolrMapForm.php:143
+#: src/Form/Admin/SolrMapForm.php:166
 msgid "The label is automatically translated if it exists in Omeka."
 msgstr ""
 
@@ -536,25 +558,41 @@ msgstr ""
 msgid "Avoid issue when the certificate expires."
 msgstr ""
 
+#: src/Form/Admin/SolrCoreForm.php:158
+msgid "Http request type"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:159
+msgid "Choose if requests to Solr use \"get\" or \"post\"."
+msgstr ""
+
 #: src/Form/Admin/SolrCoreForm.php:162
+msgid "Post (allow big queries and numerous facets)"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:163
+msgid "Get (cacheable)"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:180
 msgid "Index specific fields"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:165
+#: src/Form/Admin/SolrCoreForm.php:183
 msgid "Drupal"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:167
+#: src/Form/Admin/SolrCoreForm.php:185
 msgid ""
 "Allow to store specific data needed to share a core with a third party. All "
 "field names should be manually adapted."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:179
+#: src/Form/Admin/SolrCoreForm.php:197
 msgid "Server id for shared core"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:180
+#: src/Form/Admin/SolrCoreForm.php:198
 #, php-format
 msgid ""
 "May be empty, or may be or may not be the same unique id than the third "
@@ -562,46 +600,46 @@ msgid ""
 "install is \"%s\"."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:194
+#: src/Form/Admin/SolrCoreForm.php:212
 msgid "Resource languages 2-letters iso codes for shared core"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:195
+#: src/Form/Admin/SolrCoreForm.php:213
 msgid ""
 "A third party may need to know the languages of a resource, even if it has "
 "no meaning in Omeka. Use \"und\" for undetermined."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:208
+#: src/Form/Admin/SolrCoreForm.php:226
 msgid "Clear all indexes, included external ones"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:209
+#: src/Form/Admin/SolrCoreForm.php:227
 msgid ""
 "Warning: this button will clear all indexes on the core, included indexes "
 "externally managed if multi-index is set."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:212
+#: src/Form/Admin/SolrCoreForm.php:230
 msgid "clear_full_index"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:231
+#: src/Form/Admin/SolrCoreForm.php:249
 msgid "Minimum match (or/and)"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:232
+#: src/Form/Admin/SolrCoreForm.php:250
 msgid ""
 "Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions are "
 "possible, like \"3<80%\".\n"
 "If empty, the config of the solr core (solrconfig.xml) will be used."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:246
+#: src/Form/Admin/SolrCoreForm.php:264
 msgid "Tie breaker"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:247
+#: src/Form/Admin/SolrCoreForm.php:265
 msgid ""
 "Increase score according to the number of matched fields.\n"
 "If empty, the config of the solr core (solrconfig.xml) will be used."
@@ -631,6 +669,10 @@ msgstr ""
 msgid "Plain text"
 msgstr ""
 
+#: src/ValueFormatter/Year.php:9
+msgid "Year"
+msgstr ""
+
 #: src/ValueFormatter/HtmlEscapedText.php:14
 msgid "HTML escaped text"
 msgstr ""
@@ -639,39 +681,43 @@ msgstr ""
 msgid "Raw text"
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:77
+#: src/ValueFormatter/Table.php:14
+msgid "Table"
+msgstr ""
+
+#: src/Querier/SolariumQuerier.php:84
 msgid "An issue occurred."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:142
+#: src/Querier/SolariumQuerier.php:176
 msgid "Suggestions are not implemented here. Use direct url."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:563
+#: src/Querier/SolariumQuerier.php:724
 #, php-format
 msgid "Search type \"%s\" is not managed."
 msgstr ""
 
-#: src/Schema/Schema.php:79
+#: src/Schema/Schema.php:82
 #, php-format
 msgid ""
 "Solr core is not available. Check config or certificate to get Solr core "
 "schema \"%s\"."
 msgstr ""
 
-#: src/Schema/Schema.php:84
+#: src/Schema/Schema.php:87
 #, php-format
 msgid ""
 "Solr core is not available. Check config to get Solr core schema \"%s\"."
 msgstr ""
 
-#: src/Schema/Schema.php:98
+#: src/Schema/Schema.php:101
 #, php-format
 msgid ""
 "Response is not valid. Check output of %s, that should be valid json data."
 msgstr ""
 
-#: src/Schema/Schema.php:110
+#: src/Schema/Schema.php:113
 #, php-format
 msgid ""
 "Response is not valid. Check output of %s, that should be a json with a key "
@@ -941,8 +987,8 @@ msgstr ""
 
 #: src/Controller/Admin/CoreController.php:331
 msgid ""
-"The headers of the file are not the default ones. You may check the "
-"delimiter too."
+"The headers of the file are not the default ones. Or the delimiter is not "
+"the good one according to the media-type or extension."
 msgstr ""
 
 #: src/Controller/Admin/CoreController.php:349
@@ -1029,30 +1075,35 @@ msgid ""
 "not mapped: %2$s"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:476
+#: src/Indexer/SolariumIndexer.php:494
 msgid "No document to commit in Solr."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:561
+#: src/Indexer/SolariumIndexer.php:578
 msgid "Invalid document (wrong field type or missing required field)."
 msgstr ""
 
-#: config/module.config.php:57
+#: src/Indexer/SolariumIndexer.php:580
+msgid ""
+"Solr HTTP error: HTTP request failed due to network or certificate issue."
+msgstr ""
+
+#: config/module.config.php:61
 msgid "Search manager"
 msgstr ""
 
-#: config/module.config.php:64
+#: config/module.config.php:68
 msgid "Solr"
 msgstr ""
 
-#: config/module.config.php:205
+#: config/module.config.php:209
 msgid "Field"
 msgstr ""
 
-#: config/module.config.php:208
+#: config/module.config.php:212
 msgid "Choose a field…"
 msgstr ""
 
-#: config/module.config.php:209
+#: config/module.config.php:213
 msgid "Dynamic field"
 msgstr ""
