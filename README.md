@@ -176,7 +176,9 @@ TODO
 - [ ] Add a separate indexer for medias and pages.
 - [ ] Add a redirect from item-set/browse to search page, like item-set/show.
 - [ ] Remove the fix for indexation of string "0", replaced by "00".
-- [ ] Include all new advanced filters mode.
+- [ ] Include all new advanced filters mode for properties.
+- [ ] Manage indexation of item sets when module Item Set Tree is used.
+- [ ] Facet range: determine start/end/gap automatically or add option.
 
 
 Solr install <a id="solr-install"></a>
