@@ -306,30 +306,22 @@ class SolariumQuerier extends AbstractQuerier
 
         $facets = $this->query->getFacets();
         if (count($facets)) {
+            // Use "json facets" output, that is recommended by Solr.
+            /** @see https://solr.apache.org/guide/solr/latest/query-guide/json-facet-api.html */
             foreach ($facets as $facetField => $facetData) {
                 if ($facetData['type'] === 'SelectRange') {
-                    /*
-                    $solariumFacetSet
-                        ->createFacetRange($facetField)
-                        ->setField($facetField)
-                        // FIXME Start, end, and gap for facet range are required and hard coded, but depends on values.
-                        ->setStart(0)
-                        ->setEnd(10000)
-                        ->setGap(1)
-                        // MinCount is used only with standard facet range.
-                        ->setMinCount(1)
-                    ;
-                    */
-                    // JsonFacetRange has better default values.
                     // TODO Use arbitrary range to use default values for start/end/gap? No, the range are not arbitrary.
                     $solariumFacetSet
                         ->createJsonFacetRange($facetField)
                         ->setField($facetField)
                         // For year.
                         // FIXME Find a way to get min and max year (with query?).
+                        // FIXME Start, end, and gap for facet range are required and hard coded, but depends on values.
                         ->setStart(0)
                         ->setEnd(2100)
                         ->setGap(1)
+                        // MinCount is used only with standard facet range.
+                        // ->setMinCount(1)
                     ;
                 } else {
                     $solariumFacetSet
