@@ -692,11 +692,22 @@ class SolariumQuerier extends AbstractQuerier
                     }
                 }
 
+                // Check joiner and invert the query type for joiner "not".
+                $joiner = $queryFilter['join'] ?? '';
                 if ($first) {
                     $joiner = '';
                     $first = false;
+                } elseif ($joiner) {
+                    if ($joiner === 'or') {
+                        $joiner = 'OR';
+                    } elseif ($joiner === 'not') {
+                        $joiner = 'AND';
+                        $queryType = $allReciprocalTypes[$queryType];
+                    } else {
+                        $joiner = 'AND';
+                    }
                 } else {
-                    $joiner = isset($queryFilter['join']) && $queryFilter['join'] === 'or' ? 'OR' : 'AND';
+                    $joiner = 'AND';
                 }
 
                 // "AND/NOT" cannot be used as first.
