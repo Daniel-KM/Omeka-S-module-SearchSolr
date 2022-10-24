@@ -22,11 +22,14 @@ class Date implements ValueFormatterInterface
             // Manage the common case where the date is uncertain and wrapped
             // with "[]" or "()" or "{}". Wrap may be on part of the date only.
             $value = str_replace(['[', ']', '(', ')', '{', '}'], '', $value);
-            // Manage "1914/1918" and the common but unstandard case "1914-1918".
+            $matches = [];
+            // Manage "1914/1918" and the common but unstandard case "1914-1918"
+            // that should not be the allowed "1918-11".
+            // Of course, garbage in, garbage out.
             if (strpos($value, '/') > 0) {
-                $value = strtok($value, '/');
-            } elseif (strpos($value, '-') > 0) {
-                $value = strtok($value, '-');
+                $value = trim(strtok($value, '/'));
+            } elseif (preg_match('~^\s*(-?\d+)\s*-\s*-?\s*(?:[\D]+|-?\s*\d\d\d+|[a-zA-Z].*)\s*\??\s*$$~', $value, $matches)) {
+                $value = $matches[1];
             }
         }
         $result = (string) $this->getDateTimeFromValue((string) $value);
