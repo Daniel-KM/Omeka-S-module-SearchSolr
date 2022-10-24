@@ -19,6 +19,9 @@ class Date implements ValueFormatterInterface
             $value = strtok((string) $value, '/');
         } else {
             $value = (string) $value;
+            // Manage the common case where the date is uncertain and wrapped
+            // with "[]" or "()" or "{}". Wrap may be on part of the date only.
+            $value = str_replace(['[', ']', '(', ')', '{', '}'], '', $value);
             // Manage "1914/1918" and the common but unstandard case "1914-1918".
             if (strpos($value, '/') > 0) {
                 $value = strtok($value, '/');
