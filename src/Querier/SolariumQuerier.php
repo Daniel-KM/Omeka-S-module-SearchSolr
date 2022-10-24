@@ -597,9 +597,38 @@ class SolariumQuerier extends AbstractQuerier
      * complex than "equal": before or after a date, like a string, etc.
      *
      * @see \AdvancedSearch\Mvc\Controller\Plugin\SearchResources::buildPropertyQuery()
+     *
+     * Warning: filter queries use "name" (as key) + "join", "type", "value", not "property", "joiner", "type", "text".
+     *
+     * Solr does not support query on omeka datatypes.
+     *
+     * Solr supports two more query types:
+     *   - ma: matches a simple regex
+     *   - nma: does not match a simple regex
      */
     protected function filterQueryFilters(array $filters): void
     {
+        $moreSupportedQueryTypes = [
+            'ma',
+            'nma',
+        ];
+
+        $allReciprocalTypes = SearchResources::PROPERTY_QUERY['reciprocal']
+            + $moreSupportedQueryTypes;
+
+        $unsupportedQueryTypes = [
+            'tp',
+            'ntp',
+            'tpl',
+            'ntpl',
+            'tpr',
+            'ntpr',
+            'tpu',
+            'ntpu',
+            'dtp',
+            'ndtp',
+        ];
+
         foreach ($filters as $name => $queryFilters) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
             if (!is_array($queryFilters)) {
@@ -613,21 +642,54 @@ class SolariumQuerier extends AbstractQuerier
                 if (!$queryFilter
                     || !is_array($queryFilter)
                     || empty($queryFilter['type'])
-                    || !isset(SearchResources::PROPERTY_QUERY['reciprocal'][$queryFilter['type']])
+                    || !isset($allReciprocalTypes[$queryFilter['type']])
+                    || in_array($queryFilter['type'], $unsupportedQueryTypes)
                 ) {
                     continue;
                 }
 
-                // Complete the value for simplicity.
-                $queryFilter += ['join' => null, 'value' => null];
-
                 // There is no default in Omeka.
                 /** @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery() */
                 $queryType = $queryFilter['type'];
+                $value = $queryFilter['value'] ?? '';
 
-                $value = isset($queryFilter['value']) ? trim($queryFilter['value']) : '';
-                if ($value === '' && !in_array($queryType, ['ex', 'nex'])) {
+                // Quick check of value.
+                // A empty string "" is not a value, but "0" is a value.
+                if (in_array($queryType, SearchResources::PROPERTY_QUERY['value_none'], true)) {
+                    $value = null;
+                }
+                // Check array of values.
+                elseif (in_array($queryType, SearchResources::PROPERTY_QUERY['value_array'], true)) {
+                    if ((is_array($value) && !count($value))
+                        || (!is_array($value) && !strlen((string) $value))
+                    ) {
+                        continue;
+                    }
+                    if (!is_array($value)) {
+                        $value = [$value];
+                    }
+                    // To use array_values() avoids doctrine issue with string keys.
+                    $value = in_array($queryType, SearchResources::PROPERTY_QUERY['value_integer'])
+                        ? array_values(array_unique(array_map('intval', $value)))
+                        : array_values(array_unique(array_filter(array_map('trim', array_map('strval', $value)), 'strlen')));
+                    if (empty($value)) {
+                        continue;
+                    }
+                }
+                // The value should be scalar in all other cases (int or string).
+                elseif (is_array($value)) {
                     continue;
+                } else {
+                    $value = trim((string) $value);
+                    if (!strlen($value)) {
+                        continue;
+                    }
+                    if (in_array($queryType, SearchResources::PROPERTY_QUERY['value_integer'])) {
+                        if (!is_numeric($value)) {
+                            continue;
+                        }
+                        $value = (int) $value;
+                    }
                 }
 
                 if ($first) {
@@ -640,7 +702,7 @@ class SolariumQuerier extends AbstractQuerier
                 // "AND/NOT" cannot be used as first.
                 // TODO Will be simplified in version 3.5.38.3.
                 $isNegative = isset(SearchResources::PROPERTY_QUERY['negative'])
-                    ? in_array($queryType, SearchResources::PROPERTY_QUERY['negative'])
+                    ? (in_array($queryType, SearchResources::PROPERTY_QUERY['negative']) || $queryType === 'nma')
                     : substr($queryType, 0, 1) === 'n';
                 if ($isNegative) {
                     $bool = '(NOT ';
