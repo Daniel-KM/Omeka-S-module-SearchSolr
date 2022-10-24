@@ -21,7 +21,7 @@ if (!$solrModule) {
     return;
 }
 
-$messenger = new Messenger;
+$messenger = $services->get('ControllerPluginManager')->get('messenger');
 
 $moduleVersion = $moduleManager->getModule('SearchSolr')->getIni('version');
 if (version_compare($moduleVersion, '3.5.30.3', '>=')) {

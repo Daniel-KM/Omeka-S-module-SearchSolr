@@ -94,7 +94,7 @@ class Module extends AbstractModule
     {
         $services = $this->getServiceLocator();
         $translator = $services->get('MvcTranslator');
-        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
 
         if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
             $message = new \Omeka\Stdlib\Message(
@@ -373,7 +373,7 @@ SQL;
         $services = $this->getServiceLocator();
 
         $urlHelper = $services->get('ViewHelperManager')->get('url');
-        $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
 
         /** @var \Doctrine\DBAL\Connection $connection */
         $connection = $services->get('Omeka\Connection');

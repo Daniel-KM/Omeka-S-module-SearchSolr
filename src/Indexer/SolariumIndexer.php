@@ -574,7 +574,7 @@ class SolariumIndexer extends AbstractIndexer
             ? $error['error']['msg']
             : $exception->getMessage();
         if ($message === 'Solr HTTP error: Bad Request (400)') {
-            // Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
+            // TODO Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
             $message = new Message('Invalid document (wrong field type or missing required field).'); // @translate
         } elseif ($message === 'Solr HTTP error: HTTP request failed') {
             $message = new Message('Solr HTTP error: HTTP request failed due to network or certificate issue.'); // @translate

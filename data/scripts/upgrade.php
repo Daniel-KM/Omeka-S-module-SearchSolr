@@ -24,6 +24,7 @@ $settings = $services->get('Omeka\Settings');
 $connection = $services->get('Omeka\Connection');
 $api = $services->get('Omeka\ApiManager');
 $config = require dirname(__DIR__, 2) . '/config/module.config.php';
+$messenger = $services->get('ControllerPluginManager')->get('messenger');
 
 if (version_compare($oldVersion, '3.5.15.2', '<')) {
     $sql = <<<SQL
@@ -42,7 +43,6 @@ SQL;
     $serverId = strtolower(substr(str_replace(['+', '/', '='], ['', '', ''], base64_encode(random_bytes(128))), 0, 6));
     $settings->set('searchsolr_server_id', $serverId);
 
-    $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
     $messenger->addWarning('You should reindex your Solr cores.'); // @translate
 }
 
@@ -62,7 +62,6 @@ UPDATE `solr_map` SET `source` = REPLACE(`source`, "item_set", "item_sets") WHER
 SQL;
     $connection->executeStatement($sql);
 
-    $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger();
     $messenger->addNotice('Now, values can be indexed differently for each data type, if wanted.'); // @translate
     $messenger->addNotice('Use the new import/export tool to simplify config.'); // @translate
 }
@@ -159,7 +158,6 @@ if (version_compare($oldVersion, '3.5.25.3', '<')) {
         throw new ModuleCannotInstallException((string) $message);
     }
 
-    $messenger = new Messenger();
     $message = new Message(
         'The auto-suggestion requires a specific url for now.' // @translate
     );
@@ -368,7 +366,6 @@ WHERE
 SQL;
     $connection->executeStatement($sql);
 
-    $messenger = new Messenger();
     $message = new Message(
         'The resource types are now structured to simplify config: "generic" and "resource" allow to set mapping for any resource.' // @translate
     );
@@ -384,7 +381,6 @@ SQL;
 }
 
 if (version_compare($oldVersion, '3.5.33.3', '<')) {
-    $messenger = new Messenger();
     $message = new Message(
         'It is now possible to index original and thumbnails urls.' // @translate
     );
@@ -393,7 +389,6 @@ if (version_compare($oldVersion, '3.5.33.3', '<')) {
 
 if (version_compare($oldVersion, '3.5.37.3', '<')) {
     $translator = $services->get('MvcTranslator');
-    $messenger = new \Omeka\Mvc\Controller\Plugin\Messenger;
 
     /** @var \Omeka\Module\Manager $moduleManager */
     $moduleManager = $services->get('Omeka\ModuleManager');
