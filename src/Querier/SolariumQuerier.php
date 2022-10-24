@@ -30,6 +30,7 @@
 
 namespace SearchSolr\Querier;
 
+use AdvancedSearch\Mvc\Controller\Plugin\SearchResources;
 use AdvancedSearch\Querier\AbstractQuerier;
 use AdvancedSearch\Querier\Exception\QuerierException;
 use AdvancedSearch\Response;
@@ -378,6 +379,7 @@ class SolariumQuerier extends AbstractQuerier
                            'tag' => 'exclude',
                         ]);
                     }
+                    // TODO Add a exclude facet field?
                 } else {
                     $enclosedValues = $this->encloseValue($values);
                     $this->solariumQuery->addFilterQuery([
@@ -588,46 +590,66 @@ class SolariumQuerier extends AbstractQuerier
         }
     }
 
+    /**
+     * Append filter queries.
+     *
+     * Filters are boolean: in or out. nevertheless, the check can be more
+     * complex than "equal": before or after a date, like a string, etc.
+     *
+     * @see \AdvancedSearch\Mvc\Controller\Plugin\SearchResources::buildPropertyQuery()
+     */
     protected function filterQueryFilters(array $filters): void
     {
-        // Filters are boolean: in or out. nevertheless, the check can be more
-        // complex than "equal": before or after a date, like a string, etc.
-
-        foreach ($filters as $name => $values) {
+        foreach ($filters as $name => $queryFilters) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
-            if (!is_array($values)) {
+            if (!is_array($queryFilters)) {
                 continue;
             }
+
             $fq = '';
             $first = true;
-            foreach ($values as $value) {
+            foreach ($queryFilters as $queryFilter) {
                 // Skip simple filters (for hidden queries).
-                if (!$value || !is_array($value)) {
+                if (!$queryFilter
+                    || !is_array($queryFilter)
+                    || empty($queryFilter['type'])
+                    || !isset(SearchResources::PROPERTY_QUERY['reciprocal'][$queryFilter['type']])
+                ) {
                     continue;
                 }
-                $value += ['join' => null, 'type' => null, 'value' => null];
+
+                // Complete the value for simplicity.
+                $queryFilter += ['join' => null, 'value' => null];
+
                 // There is no default in Omeka.
-                // @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
-                $type = $value['type'];
-                $val = isset($value['value']) ? trim($value['value']) : '';
-                if ($val === '' && !in_array($type, ['ex', 'nex'])) {
+                /** @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery() */
+                $queryType = $queryFilter['type'];
+
+                $value = isset($queryFilter['value']) ? trim($queryFilter['value']) : '';
+                if ($value === '' && !in_array($queryType, ['ex', 'nex'])) {
                     continue;
                 }
+
                 if ($first) {
-                    $join = '';
+                    $joiner = '';
                     $first = false;
                 } else {
-                    $join = isset($value['join']) && $value['join'] === 'or' ? 'OR' : 'AND';
+                    $joiner = isset($queryFilter['join']) && $queryFilter['join'] === 'or' ? 'OR' : 'AND';
                 }
+
                 // "AND/NOT" cannot be used as first.
-                if (substr($type, 0, 1) === 'n') {
+                // TODO Will be simplified in version 3.5.38.3.
+                $isNegative = isset(SearchResources::PROPERTY_QUERY['negative'])
+                    ? in_array($queryType, SearchResources::PROPERTY_QUERY['negative'])
+                    : substr($queryType, 0, 1) === 'n';
+                if ($isNegative) {
                     $bool = '(NOT ';
                     $endBool = ')';
                 } else {
                     $bool = '(';
                     $endBool = ')';
                 }
-                switch ($type) {
+                switch ($queryType) {
                     // Regex requires string (_s), not text or anything else.
                     // So if the field is not a string, use a simple "+", that
                     // will be enough in most of the cases.
@@ -641,44 +663,52 @@ class SolariumQuerier extends AbstractQuerier
                     case 'neq':
                     case 'eq':
                         if ($this->fieldIsString($name)) {
-                            $val = $this->regexDiacriticsValue($val, '', '');
+                            $value = $this->regexDiacriticsValue($value, '', '');
                         } else {
-                            $val = $this->encloseValue($val);
+                            $value = $this->encloseValue($value);
                         }
-                        $fq .= " $join ($name:$bool$val$endBool)";
+                        $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
 
                     // Contains.
                     case 'nin':
                     case 'in':
                         if ($this->fieldIsString($name)) {
-                            $val = $this->regexDiacriticsValue($val, '.*', '.*');
+                            $value = $this->regexDiacriticsValue($value, '.*', '.*');
                         } else {
-                            $val = $this->encloseValueAnd($val);
+                            $value = $this->encloseValueAnd($value);
                         }
-                        $fq .= " $join ($name:$bool$val$endBool)";
+                        $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
+
+                    /*
+                    // In list.
+                    case 'nlist':
+                    case 'list':
+                        // TODO Manage api filter in list (not used in standard forms).
+                        break;
+                    */
 
                     // Starts with.
                     case 'nsw':
                     case 'sw':
                         if ($this->fieldIsString($name)) {
-                            $val = $this->regexDiacriticsValue($val, '', '.*');
+                            $value = $this->regexDiacriticsValue($value, '', '.*');
                         } else {
-                            $val = $this->encloseValueAnd($val);
+                            $value = $this->encloseValueAnd($value);
                         }
-                        $fq .= " $join ($name:$bool$val$endBool)";
+                        $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
 
                     // Ends with.
                     case 'new':
                     case 'ew':
                         if ($this->fieldIsString($name)) {
-                            $val = $this->regexDiacriticsValue($val, '.*', '');
+                            $value = $this->regexDiacriticsValue($value, '.*', '');
                         } else {
-                            $val = $this->encloseValueAnd($val);
+                            $value = $this->encloseValueAnd($value);
                         }
-                        $fq .= " $join ($name:$bool$val$endBool)";
+                        $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
 
                     // Matches.
@@ -689,14 +719,8 @@ class SolariumQuerier extends AbstractQuerier
                         // regex and anchors are added by default.
                         // TODO Add // or not?
                         // TODO Escape regex for regexes…
-                        $val = $this->fieldIsString($name) ? $val : $this->encloseValue($val);
-                        $fq .= " $join ($name:$bool$val$endBool)";
-                        break;
-
-                    // In list.
-                    case 'nlist':
-                    case 'list':
-                        // TODO Manage api filter in list (not used in standard forms).
+                        $value = $this->fieldIsString($name) ? $value : $this->encloseValue($value);
+                        $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
 
                     // Resource with id.
@@ -704,25 +728,64 @@ class SolariumQuerier extends AbstractQuerier
                     case 'res':
                         // Like equal, but the field must be an integer.
                         if (substr($name, -2) === '_i' || substr($name, -3) === '_is') {
-                            $val = (int) $val;
-                            $fq .= " $join ($name:$bool$val$endBool)";
+                            $value = (int) $value;
+                            $fq .= " $joiner ($name:$bool$value$endBool)";
                         }
                         break;
 
                     // Exists (has a value).
                     case 'nex':
-                        $val = $this->encloseValue($val);
-                        $fq .= " $join (-$name:$val)";
+                        $value = $this->encloseValue($value);
+                        $fq .= " $joiner (-$name:$value)";
                         break;
                     case 'ex':
-                        $val = $this->encloseValue($val);
-                        $fq .= " $join (+$name:$val)";
+                        $value = $this->encloseValue($value);
+                        $fq .= " $joiner (+$name:$value)";
                         break;
+
+                    /*
+                    case 'nexs':
+                    case 'exs':
+                        break;
+
+                    case 'nexm':
+                    case 'exm':
+                        break;
+
+                    case 'ntp':
+                    case 'tp':
+                    case 'ntpl':
+                    case 'tpl':
+                    case 'ntpr':
+                    case 'tpr':
+                    case 'ntpu':
+                    case 'tpu':
+                    case 'ndtp':
+                    case 'dtp':
+                        break;
+
+                    // The linked resources (subject values) use the same sub-query.
+                    case 'nlex':
+                    case 'nlres':
+                    case 'lex':
+                    case 'lres':
+                        break;
+
+                    // TODO Manage uri and resources with gt, gte, lte, lt (it has a meaning at least for resource ids, but separate).
+                    case 'gt':
+                        break;
+                    case 'gte':
+                        break;
+                    case 'lte':
+                        break;
+                    case 'lt':
+                        break;
+                    */
 
                     default:
                         throw new \AdvancedSearch\Querier\Exception\QuerierException(sprintf(
-                            'Search type "%s" is not managed.', // @translate
-                            $type
+                            'Search type "%s" is not managed currently by SearchSolr.', // @translate
+                            $queryType
                         ));
                 }
             }
