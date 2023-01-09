@@ -1,4 +1,4 @@
-o   Advanced Search adapter for Solr (module for Omeka S)
+Advanced Search adapter for Solr (module for Omeka S)
 =====================================================
 
 > __New versions of this module and support for Omeka S version 3.0 and above
@@ -799,7 +799,7 @@ currently managed with [Greenstone].
 [Solarium]: https://www.solarium-project.org/
 [full documentation]: https://solarium.readthedocs.io/en/stable/
 [Generic]: https://gitlab.com/Daniel-KM/Omeka-S-module-Generic
-[Installing a module]: http://dev.omeka.org/docs/s/user-manual/modules/#installing-modules
+[Installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
 [documentation]: https://solr.apache.org/guide/the-dismax-query-parser.html#q-alt-parameter
 [this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
 [Solr PHP extension]: https://pecl.php.net/package/solr
