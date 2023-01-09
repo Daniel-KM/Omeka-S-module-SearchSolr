@@ -10,7 +10,7 @@ class DataTypeSelectFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $element = new DataTypeSelect;
+        $element = new DataTypeSelect(null, $options ?? []);
         return $element
             ->setDataTypeManager($services->get('Omeka\DataTypeManager'));
     }

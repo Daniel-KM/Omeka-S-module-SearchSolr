@@ -49,7 +49,9 @@ class Module extends AbstractModule
 {
     const NAMESPACE = __NAMESPACE__;
 
-    protected $dependency = 'AdvancedSearch';
+    protected $dependencies = [
+        'AdvancedSearch',
+     ];
 
     public function init(ModuleManager $moduleManager): void
     {
@@ -82,7 +84,7 @@ class Module extends AbstractModule
 
         // Manage the dependency upon Search, in particular when upgrading.
         // Once disabled, this current method and other ones are no more called.
-        if (!$this->isModuleActive($this->dependency)) {
+        if (!$this->isModuleActive('AdvancedSearch')) {
             $this->disableModule(__NAMESPACE__);
             return;
         }

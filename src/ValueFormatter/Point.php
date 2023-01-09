@@ -17,6 +17,7 @@ class Point implements ValueFormatterInterface
             switch ($value->type()) {
                 // Less check, because it is already formatted.
                 case 'geometry:geography':
+                case 'geography':
                     $val = (string) $value;
                     return strpos($val, 'POINT(') === 0
                         ? [preg_replace('~[^\d.]~', ',', $val)]
@@ -30,6 +31,7 @@ class Point implements ValueFormatterInterface
                     return [$val['latitude'] . ',' . $val['longitude']];
 
                 case 'geometry:geometry':
+                case 'geometry':
                     // Geometry should be checked as any other data, because
                     // only latitude and longitude are managed by Solr point.
                 default:

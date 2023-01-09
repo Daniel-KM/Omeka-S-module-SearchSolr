@@ -106,12 +106,12 @@ class SolariumQuerier extends AbstractQuerier
             $this->solariumQuery->setQuery($escapedQ);
             try {
                 $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
-            /*
-            } catch (\Solarium\Exception\HttpException $e) {
-                // Http Exception has getStatusMessage() and getBody(), but useless.
-                // TODO Get the error with the same url, but direct query. Or find where Solarium store the error message.
-                throw new QuerierException($e->getMessage(), $e->getCode(), $e);
-            */
+                /*
+                } catch (\Solarium\Exception\HttpException $e) {
+                    // Http Exception has getStatusMessage() and getBody(), but useless.
+                    // TODO Get the error with the same url, but direct query. Or find where Solarium store the error message.
+                    throw new QuerierException($e->getMessage(), $e->getCode(), $e);
+                */
             } catch (\Exception $e) {
                 throw new QuerierException($e->getMessage(), $e->getCode(), $e);
             }
@@ -262,7 +262,7 @@ class SolariumQuerier extends AbstractQuerier
 
         $sort = $this->query->getSort();
         if ($sort) {
-            @list($sortField, $sortOrder) = explode(' ', $sort, 2);
+            @[$sortField, $sortOrder] = explode(' ', $sort, 2);
             if ($sortField === 'score') {
                 $sortOrder = $sortOrder === 'asc' ? SolariumQuery::SORT_ASC : SolariumQuery::SORT_DESC;
             } else {
@@ -307,7 +307,7 @@ class SolariumQuerier extends AbstractQuerier
         $facets = $this->query->getFacets();
         if (count($facets)) {
             // Use "json facets" output, that is recommended by Solr.
-            /** @see https://solr.apache.org/guide/solr/latest/query-guide/json-facet-api.html */
+            /* @see https://solr.apache.org/guide/solr/latest/query-guide/json-facet-api.html */
             foreach ($facets as $facetField => $facetData) {
                 if ($facetData['type'] === 'SelectRange') {
                     // TODO Use arbitrary range to use default values for start/end/gap? No, the range are not arbitrary.

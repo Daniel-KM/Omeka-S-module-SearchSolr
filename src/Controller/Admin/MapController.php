@@ -474,7 +474,7 @@ class MapController extends AbstractActionController
 
         return $this->connection
             ->executeQuery($qb, $qb->getParameters())
-            ->fetchAll(\PDO::FETCH_COLUMN, 0);
+            ->fetchFirstColumn();
     }
 
     /**

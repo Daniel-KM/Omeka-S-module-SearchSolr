@@ -2,26 +2,32 @@
 
 namespace SearchSolr;
 
-use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Stdlib\Message;
 
 /**
  * @var Module $this
  * @var \Laminas\ServiceManager\ServiceLocatorInterface $services
- * @var \Doctrine\DBAL\Connection $connection
- * @var \Omeka\Module\Manager $moduleManager
+ * @var string $newVersion
+ * @var string $oldVersion
+ *
+ * @var \Omeka\Api\Manager $api
  * @var \Omeka\Settings\Settings $settings
+ * @var \Doctrine\DBAL\Connection $connection
+ * @var \Doctrine\ORM\EntityManager $entityManager
+ * @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger
  */
-$connection = $services->get('Omeka\Connection');
+$plugins = $services->get('ControllerPluginManager');
+$api = $plugins->get('api');
 $settings = $services->get('Omeka\Settings');
+$connection = $services->get('Omeka\Connection');
+$messenger = $plugins->get('messenger');
+$entityManager = $services->get('Omeka\EntityManager');
+
 $moduleManager = $services->get('Omeka\ModuleManager');
 $solrModule = $moduleManager->getModule('Solr');
-
 if (!$solrModule) {
     return;
 }
-
-$messenger = $services->get('ControllerPluginManager')->get('messenger');
 
 $moduleVersion = $moduleManager->getModule('SearchSolr')->getIni('version');
 if (version_compare($moduleVersion, '3.5.30.3', '>=')) {
@@ -46,7 +52,7 @@ if (version_compare($oldVersion, '3.5.5', '<')
 
 // Check if Solr was really installed.
 try {
-    $connection->fetchAll('SELECT id FROM solr_node LIMIT 1;');
+    $connection->fetchAllAssociative('SELECT id FROM solr_node LIMIT 1;');
 } catch (\Exception $e) {
     return;
 }
@@ -62,7 +68,7 @@ SET `source` = 'item_set/o:id'
 WHERE `source` = 'item_set/id'
 ;
 SQL;
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 }
 
 if (version_compare($oldVersion, '3.5.12', '<')) {
@@ -70,8 +76,7 @@ if (version_compare($oldVersion, '3.5.12', '<')) {
     $sql = <<<'SQL'
 SELECT id, settings FROM solr_node;
 SQL;
-    $stmt = $connection->executeQuery($sql);
-    $solrNodes = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+    $solrNodes = $connection->executeQuery($sql)->fetchAllKeyValue();
     foreach ($solrNodes as $solrNodeId => $solrNodeSettings) {
         $solrNodeSettings = json_decode($solrNodeSettings, true) ?: [];
         $queryAlt = empty($solrNodeSettings['query']['query_alt']) ? '*:*' : $solrNodeSettings['query']['query_alt'];
@@ -82,13 +87,12 @@ UPDATE solr_node
 SET `settings` = $solrNodeSettings
 WHERE id = $solrNodeId;
 SQL;
-        $connection->exec($sql);
+        $connection->executeStatement($sql);
 
         $sql = <<<'SQL'
 SELECT id, settings FROM search_engine WHERE adapter = "solr";
 SQL;
-        $stmt = $connection->executeQuery($sql);
-        $searchEngines = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        $searchEngines = $connection->executeQuery($sql)->fetchAllKeyValue();
         foreach ($searchEngines as $searchEngineId => $searchEngineSettings) {
             $searchEngineSettings = json_decode($searchEngineSettings, true) ?: [];
             if (isset($searchEngineSettings['adapter']['solr_node_id'])
@@ -97,8 +101,7 @@ SQL;
                 $sql = <<<SQL
 SELECT id, settings FROM search_config WHERE engine_id = $searchEngineId;
 SQL;
-                $stmt = $connection->executeQuery($sql);
-                $searchConfigs = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+                $searchConfigs = $connection->executeQuery($sql)->fetchAllKeyValue();
                 foreach ($searchConfigs as $searchConfigId => $searchConfigSettings) {
                     $searchConfigSettings = json_decode($searchConfigSettings, true) ?: [];
                     $searchConfigSettings['default_results'] = 'query';
@@ -109,7 +112,7 @@ UPDATE search_config
 SET `settings` = $searchConfigSettings
 WHERE id = $searchConfigId;
 SQL;
-                    $connection->exec($sql);
+                    $connection->executeStatement($sql);
                 }
             }
         }
@@ -183,7 +186,7 @@ SQL;
 
 $sqls = array_filter(array_map('trim', explode(";\n", $sql)));
 foreach ($sqls as $sql) {
-    $connection->exec($sql);
+    $connection->executeStatement($sql);
 }
 
 // Convert the settings.

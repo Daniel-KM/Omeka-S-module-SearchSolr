@@ -569,7 +569,7 @@ class SolariumIndexer extends AbstractIndexer
             $this->getLogger()->err($message);
             return $this;
         }
-        $error = method_exists($exception, 'getBody')? json_decode((string) $exception->getBody(), true) : null;
+        $error = method_exists($exception, 'getBody') ? json_decode((string) $exception->getBody(), true) : null;
         $message = is_array($error) && isset($error['error']['msg'])
             ? $error['error']['msg']
             : $exception->getMessage();

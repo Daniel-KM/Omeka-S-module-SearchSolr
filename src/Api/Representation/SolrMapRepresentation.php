@@ -142,7 +142,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         if (strpos($source, '/') === false) {
             $subField = '';
         } else {
-            list(, $subField) = explode('/', $source, 2);
+            [, $subField] = explode('/', $source, 2);
         }
         $subMap = new SolrSubMap($this->resource, $this->adapter);
         return $subMap
