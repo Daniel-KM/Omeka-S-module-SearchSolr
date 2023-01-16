@@ -309,7 +309,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             if (!method_exists($resource, 'thumbnailDisplayUrl')) {
                 return [];
             }
-            $url = $primaryMedia->thumbnailDisplayUrl($mediaUrlTypes[$field]);
+            $url = $resource->thumbnailDisplayUrl($mediaUrlTypes[$field]);
             return $url ? [$url] : [];
         }
 
