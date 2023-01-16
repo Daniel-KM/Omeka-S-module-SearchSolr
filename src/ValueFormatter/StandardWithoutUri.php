@@ -16,9 +16,17 @@ class StandardWithoutUri implements ValueFormatterInterface
 
     public function format($value): array
     {
-        $value = is_object($value) && $value instanceof \Omeka\Api\Representation\ValueRepresentation
-            ? trim((string) $value->value())
-            : trim((string) $value);
+        if (is_object($value)) {
+            if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                $value = trim((string) $value->value());
+            } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
+                $value = trim((string) $value->altText());
+            } else {
+                return [];
+            }
+        } else {
+            $value = trim((string) $value);
+        }
         return strlen($value) ? [$value] : [];
     }
 }

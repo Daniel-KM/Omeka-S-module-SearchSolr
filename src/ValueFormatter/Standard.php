@@ -17,11 +17,20 @@ class Standard implements ValueFormatterInterface
 
     public function format($value): array
     {
-        if (is_object($value) && $value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-            return array_filter([
-                trim((string) $value->value()),
-                trim((string) $value->uri()),
-            ], 'strlen');
+        if (is_object($value)) {
+            if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                return array_filter([
+                    trim((string) $value->value()),
+                    trim((string) $value->uri()),
+                ], 'strlen');
+            } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
+                return array_filter([
+                    $value->assetUrl(),
+                    trim((string) $value->altText()),
+                ], 'strlen');
+            } else {
+                return [];
+            }
         }
         $value = trim((string) $value);
         return strlen($value) ? [$value] : [];

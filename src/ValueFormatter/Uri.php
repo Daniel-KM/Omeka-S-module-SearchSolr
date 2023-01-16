@@ -14,9 +14,17 @@ class Uri implements ValueFormatterInterface
 
     public function format($value): array
     {
-        $value = is_object($value) && $value instanceof \Omeka\Api\Representation\ValueRepresentation
-            ? (string) $value->uri()
-            : (string) $value;
+        if (is_object($value)) {
+            if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                $value = trim($value->uri());
+            } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
+                $value = trim($value->assetUrl());
+            } else {
+                return [];
+            }
+        } else {
+            $value = trim((string) $value);
+        }
         return filter_var($value, FILTER_VALIDATE_URL)
             ? [$value]
             : [];
