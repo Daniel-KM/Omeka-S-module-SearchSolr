@@ -779,7 +779,7 @@ Copyright
 See commits for full list of contributors.
 
 * Copyright BibLibre, 2016-2017 (see [BibLibre])
-* Copyright Daniel Berthereau, 2017-2022 (see [Daniel-KM])
+* Copyright Daniel Berthereau, 2017-2023 (see [Daniel-KM])
 * Copyright Paul Sarrassat, 2018
 
 This module is a full replacement of the module [Solr], a deprecated fork of the
