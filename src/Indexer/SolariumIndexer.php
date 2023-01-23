@@ -77,11 +77,6 @@ class SolariumIndexer extends AbstractIndexer
     protected $valueFormatterManager;
 
     /**
-     * @var \Solarium\Core\Query\Helper
-     */
-    protected $solariumHelpers;
-
-    /**
      * @var array
      */
     protected $formatters = [];
@@ -278,9 +273,6 @@ class SolariumIndexer extends AbstractIndexer
             ));
             return null;
         }
-
-        $doc = new SolariumInputDocument();
-        $this->solariumHelpers = $doc->getHelper();
 
         $this->mainLocale = $services->get('Omeka\Settings')->get('locale');
 

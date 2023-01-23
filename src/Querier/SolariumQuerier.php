@@ -42,6 +42,9 @@ use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 /**
  * @todo Rewrite the querier to simplify it and to use all solarium features directly.
  * @todo Remove grouping (item/itemset): this is native in Omeka and most of the time, user want them mixed.
+ *
+ * @todo Use Solarium helpers (geo, escape, xml, etc.).
+ * @see \Solarium\Core\Query\Helper
  */
 class SolariumQuerier extends AbstractQuerier
 {
