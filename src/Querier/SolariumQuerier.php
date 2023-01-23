@@ -288,9 +288,13 @@ class SolariumQuerier extends AbstractQuerier
         /** @var \Solarium\Component\FacetSet $solariumFacetSet */
         $solariumFacetSet = $this->solariumQuery->getFacetSet();
 
-        // TODO Remove generic limit and order and set them by field.
+        // TODO Manage facets individually by fields for limit and order.
+
+        $queryFacets = $this->query->getFacets();
+        $firstFacet = reset($queryFacets);
+
         // This is the default limit for facets.
-        $facetLimit = $this->query->getFacetLimit();
+        $facetLimit = $firstFacet ? $firstFacet['limit'] ?? 0 : 0;
         if ($facetLimit) {
             $solariumFacetSet->setLimit($facetLimit);
         }
@@ -298,13 +302,20 @@ class SolariumQuerier extends AbstractQuerier
         // This is the default order for facets.
         // Only two choices here: index asc (alphabetic/numeric) or count desc.
         // Default is by total desc.
-        $facetOrder = $this->query->getFacetOrder();
-        $facetSort = \Solarium\Component\Facet\AbstractField::SORT_COUNT;
-        if ($facetOrder === 'total asc' || $facetOrder === 'total desc') {
-            $solariumFacetSet->setSort(\Solarium\Component\Facet\AbstractField::SORT_COUNT);
+        $facetOrder = $firstFacet ? $firstFacet['order'] ?? '' : '';
+        $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC;
+        if ($facetOrder === 'total desc') {
+            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC;
+            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC);
+        } elseif ($facetOrder === 'total asc') {
+            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC;
+            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC);
         } elseif ($facetOrder === 'alphabetic asc') {
-            $facetSort = \Solarium\Component\Facet\AbstractField::SORT_INDEX;
-            $solariumFacetSet->setSort(\Solarium\Component\Facet\AbstractField::SORT_INDEX);
+            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC;
+            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC);
+        } elseif ($facetOrder === 'alphabetic desc') {
+            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC;
+            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC);
         }
 
         $facets = $this->query->getFacets();
