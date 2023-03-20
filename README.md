@@ -52,11 +52,12 @@ composer install --no-dev
 
 ### Requirements
 
-- Module [Advanced Search] version 3.3.6 or above.
+- Module [Advanced Search] version 3.4.6.20 or above.
 - A running Apache Solr. Compatibility:
   - version 3.5.15 of this module has been tested with Solr 5 and Solr 6.
   - version 3.5.15.2 of this module has been tested with Solr 6 to Solr 8.
   - version 3.5.32.3 of this module has been tested with Solr 8 and above.
+  - version 3.5.39.4 of this module has been tested with Solr 9 and above.
 
 Quick start
 -----------
@@ -191,31 +192,33 @@ it via `dpkg`. The process is the same  for Red Hat and derivatives.
 
 ### Install Solr
 
-The module works with Solr 5.5.5 (Java [1.7 u55]) and Solr 6.6.6 (Java [1.8]),
-and Solr 7.7 and 8.8 (with Java [1.8] or higher). The last stable versions of Solr
-and Java (OpenJdk 11) are recommended.
+Solr 9 requires Java 11 (OpenJdk 11), but the last version of java is recommended
+(OpenJdk 17). See other [Solr system requirements]. The headless version is
+enough. The  following guide is an abstract of the [official guide for production].
 
 ```sh
 cd /tmp
 # Check if java is installed with the good version.
 java -version
-# If not installed, install it (uncomment)
-#sudo apt install default-jre
+# If not installed, install it (uncomment line below).
+#sudo apt install default-jdk-headless
 # On CentOs:
-#sudo dnf install java-11-openjdk-devel.x86_64
+#sudo dnf install java-17-openjdk-headless
+# On CentOs, Solr requires lsof:
+#sudo dnf install lsof
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://dlcdn.apache.org/solr/solr/9.0.0/solr-9.0.0.tgz
+wget https://dlcdn.apache.org/solr/solr/9.1.1/solr-9.1.1.tgz
 # Extract the install script
-tar zxvf solr-9.0.0.tgz solr-9.0.0/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-9.1.1.tgz solr-9.1.1/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-9.0.0.tgz
+sudo bash ./install_solr_service.sh solr-9.1.1.tgz
 # Add a symlink to simplify management (if not automatically created).
 #sudo ln -s /opt/solr-9.0.0 /opt/solr
 # In some cases, there may be a issue on start due to missing log directory:
 #sudo mkdir /opt/solr/server/logs && sudo chown solr:adm /opt/solr/server/logs && sudo systemctl restart solr
 # Clean the sources.
-rm solr-9.0.0.tgz
+rm solr-9.1.1.tgz
 rm install_solr_service.sh
 ```
 
@@ -806,8 +809,8 @@ currently managed with [Greenstone].
 [below]: #manage-solr
 [below for Debian]: #solr-install
 [below "Solr management"]: #solr-management
-[1.8]: https://solr.apache.org/docs/7_2_1/SYSTEM_REQUIREMENTS.html
-[1.7 u55]: https://solr.apache.org/docs/5_5_5/SYSTEM_REQUIREMENTS.html
+[Solr system requirements]: https://solr.apache.org/guide/solr/latest/deployment-guide/system-requirements.html
+[official guide for production]: https://solr.apache.org/guide/solr/latest/deployment-guide/taking-solr-to-production.html
 [http://localhost:8983]: http://localhost:8983
 [http://localhost:8983/solr/#/omeka]: http://localhost:8983/solr/#/omeka
 [solr service gist]: https://gist.github.com/Daniel-KM/1fb475a47340d7945fa6c47c945707d0
