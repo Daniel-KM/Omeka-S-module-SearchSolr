@@ -816,10 +816,7 @@ class SolariumIndexer extends AbstractIndexer
         return $this;
     }
 
-    /**
-     * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
-     */
-    protected function getSolrCore()
+    protected function getSolrCore(): SolrCoreRepresentation
     {
         if (!isset($this->solrCore)) {
             $solrCoreId = $this->engine->settingAdapter('solr_core_id');
@@ -830,13 +827,16 @@ class SolariumIndexer extends AbstractIndexer
                 $this->solariumClient = $this->solrCore->solariumClient();
             }
         }
+
+        // Throw an exception if unavailable.
+        if (!$this->solrCore->status()) {
+            throw new \Omeka\Mvc\Exception\RuntimeException('Solr core is not available.'); // @translate
+        }
+
         return $this->solrCore;
     }
 
-    /**
-     * @return SolariumClient
-     */
-    protected function getClient()
+    protected function getClient(): SolariumClient
     {
         if (!isset($this->solariumClient)) {
             $this->solariumClient = $this->getSolrCore()->solariumClient();
