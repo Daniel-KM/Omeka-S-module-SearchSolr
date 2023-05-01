@@ -163,25 +163,6 @@ according to the config inside Drupal, for example: `ss_title` and `tm_body`.
 The sort fields are automatically managed.
 
 
-TODO
-----
-
-- [ ] Create an automatic mode from the resource templates or from Dublin Core.
-- [ ] Create automatically multiple index by property (text, string, lower, latin, for query, order, facets, etc.).
-- [ ] Use the search engine directly without search api.
-- [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
-- [x] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
-- [ ] Replace class Schema and Field with solarium ones.
-- [ ] Rewrite and simplify querier to better handle solarium.
-- [ ] Improve management of value resources and uris, and other special types.
-- [ ] Add a separate indexer for medias and pages.
-- [ ] Add a redirect from item-set/browse to search page, like item-set/show.
-- [ ] Remove the fix for indexation of string "0", replaced by "00".
-- [ ] Include all new advanced filters mode for properties.
-- [ ] Manage indexation of item sets when module Item Set Tree is used.
-- [ ] Facet range: determine start/end/gap automatically or add option.
-
-
 Solr install <a id="solr-install"></a>
 ------------
 
@@ -214,7 +195,7 @@ tar zxvf solr-9.1.1.tgz solr-9.1.1/bin/install_solr_service.sh --strip-component
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
 sudo bash ./install_solr_service.sh solr-9.1.1.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-9.0.0 /opt/solr
+#sudo ln -s /opt/solr-9.1.1 /opt/solr
 # In some cases, there may be a issue on start due to missing log directory:
 #sudo mkdir /opt/solr/server/logs && sudo chown solr:adm /opt/solr/server/logs && sudo systemctl restart solr
 # Clean the sources.
@@ -346,7 +327,13 @@ As indicated in [Solr Basic Authentication], add the file `security.json`,
 with the user roles you want (here the user `omeka_admin` is added as `admin`).
 The directory where to place the file is usually `/opt/solr/server/solr`, but it
 may be `/var/solr/data/` in some cases. The good one ("solr home") is visible
-when you check the status : `/opt/solr/bin/solr status` (or sometime `systemctl status solr`).
+when you check the status:
+
+```sh
+/opt/solr/bin/solr status
+# or sometime
+systemctl status solr
+```
 
 Because the password is hashed (salt + sha256), it may be simpler to use the
 example,  then to update the admin, then to remove the example user (solr, with
@@ -379,13 +366,15 @@ password "SolrRocks"):
 }
 ```
 
+***Warning***
 Don't forget to change rights of this file, then to restart Solr and wait some
 minutes for java:
 
-***Warning***
-
 ```sh
+# if the directory is "/opt/solr/server/solr":
 sudo chown -R solr:solr /opt/solr/server/solr && sudo chmod -R g+r,o-rw /opt/solr/server/solr
+# or if it is "/var/solr/data":
+sudo chown -R solr:solr /var/solr/data && sudo chmod -R g+r,o-rw /var/solr/data
 # If an issue occurs, it may be a previous java session not closed. Check it with:
 #sudo /opt/solr/bin/solr status
 # And try to stop it:
@@ -424,9 +413,9 @@ of the core in the Solr page inside Omeka.
 See [taking Solr to production].
 
 ```sh
-# You may need to set it as global or not (with `*` instead of `solr`).
 sudo touch /etc/security/limits.d/200-solr.conf
 sudo chmod o+w /etc/security/limits.d/200-solr.conf
+# On CentOs, you main it set params as global, so to use `*` instead of `solr` for each following command:
 sudo echo "solr    hard    nofile  65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    hard    nproc   65000" >> /etc/security/limits.d/200-solr.conf
 sudo echo "solr    soft    nofile  65000" >> /etc/security/limits.d/200-solr.conf
@@ -538,13 +527,14 @@ upgrade from version 6 to 8, you first need to upgrade to version 7.
 
 ```sh
 cd /tmp
+# Check if java 17 recommended (or 11).
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/9.0.0/solr-9.0.0.tgz
-tar zxvf solr-9.0.0.tgz solr-9.0.0/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/9.1.1/solr-9.1.1.tgz
+tar zxvf solr-9.1.1.tgz solr-9.1.1/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-9.0.0.tgz -f
-rm solr-9.0.0.tgz
+sudo bash ./install_solr_service.sh solr-9.1.1.tgz -f
+rm solr-9.1.1.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -565,7 +555,7 @@ sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm /etc/security/limits.d/200-solr.conf
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-9.0.0
+sudo rm -r /opt/solr-9.1.1
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -629,6 +619,9 @@ Possible issues (always **restart solr after trying next commands**):
   ```
 - There may be remaining files after a failed creation, so run first `sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"`
   or `curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/admin/cores?action=UNLOAD&core=omeka&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true'`
+- There may be a remaining lock file after a kill, so check in solr home: `sudo rm /var/solr/solr-8983.pid`.
+- Check if it is a service issue: try to run it as a user the `sudo -u solr /opt/solr/bin/solr start`.
+- Check if it is a rights issue: try to run it as a user the `sudo /opt/solr/bin/solr start -force`.
 - There may be a rights issue, so backup and remove the file "security.json"
   from the data directory, then create the core with the command above, then
   restore the file "security.json".
@@ -638,14 +631,15 @@ core yourself with these commands, here with a core named `omeka` (here when
 the solr home directory is /var/solr):
 
 ```sh
-# Use /opt/solr/server/solr if it solr home.
+# HERE, for solr home as "/var/solr/data". Change it if it is "/opt/solr/server/solr"
 sudo cp -r /opt/solr/server/solr/configsets/_default /var/solr/data
-# The destination directory inside data is the name of the core.
+# The destination directory inside data is the name of the core, here "omeka".
+# It should be updated in following command if the name is different.
 sudo mv /var/solr/data/_default /var/solr/data/omeka
 sudo touch /var/solr/data/omeka/core.properties
 sudo echo "#Written by CorePropertiesLocator" >> /var/solr/data/omeka/core.properties
-sudo echo "#Tue Nov 08 00:00:00 UTC 2021" >> /var/solr/data/omeka/core.properties
-sudo echo "name=omeka" >> /etc/security/limits.d/200-solr.conf
+sudo echo "#Mon Mar 20 00:00:00 UTC 2023" >> /var/solr/data/omeka/core.properties
+sudo echo "name=omeka" >> /var/solr/data/omeka/core.properties
 sudo chmod ug+rw /var/solr/data/omeka/core.properties
 sudo chown -R solr:solr /var/solr
 sudo systemctl restart solr
@@ -656,7 +650,7 @@ should be the name of the directory:
 
 ```ini
 #Written by CorePropertiesLocator
-#Tue Nov 08 00:00:00 UTC 2021
+#Mon Mar 20 00:00:00 UTC 2023
 name=omeka
 ```
 
@@ -725,6 +719,25 @@ rm /var/solr/data/omeka/data/index/write.lock
 sudo chown -R solr:solr /var/solr
 sudo systemctl restart solr
 ```
+
+
+TODO
+----
+
+- [ ] Create an automatic mode from the resource templates or from Dublin Core.
+- [ ] Create automatically multiple index by property (text, string, lower, latin, for query, order, facets, etc.).
+- [ ] Use the search engine directly without search api.
+- [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
+- [x] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
+- [ ] Replace class Schema and Field with solarium ones.
+- [ ] Rewrite and simplify querier to better handle solarium.
+- [ ] Improve management of value resources and uris, and other special types.
+- [ ] Add a separate indexer for medias and pages.
+- [ ] Add a redirect from item-set/browse to search page, like item-set/show.
+- [ ] Remove the fix for indexation of string "0", replaced by "00".
+- [ ] Include all new advanced filters mode for properties.
+- [ ] Manage indexation of item sets when module Item Set Tree is used.
+- [ ] Facet range: determine start/end/gap automatically or add option.
 
 
 Warning
