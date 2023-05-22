@@ -545,8 +545,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
         $values = $resource->value($solrMap->firstSource(), ['all' => true, 'type' => $solrMap->pool('data_types')]);
 
-        // Filter values is full regex automatically checked.
+        // Filter values and uris are full regex automatically checked.
         $filterValuesPattern = $solrMap->pool('filter_values') ?: null;
+        $filterUrisPattern = $solrMap->pool('filter_uris') ?: null;
 
         // It is not possible to exclude a type via value methods.
         $excludedDataTypes = $solrMap->pool('data_types_exclude');
@@ -561,6 +562,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             if ($filterValuesPattern) {
                 $val = (string) $value->value();
                 if (strlen($val) && !preg_match($filterValuesPattern, $val)) {
+                    continue;
+                }
+            }
+            if ($filterUrisPattern) {
+                $val = (string) $value->uri();
+                if (strlen($val) && !preg_match($filterUrisPattern, $val)) {
                     continue;
                 }
             }

@@ -106,6 +106,17 @@ class SolrMapForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'filter_uris',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Index only uris matching this regex', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'filter_uris',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'filter_resources',
                 'type' => Element\Text::class,
                 'options' => [

@@ -110,6 +110,16 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             }
         }
 
+        // Check the regex for uri one time.
+        if (empty($this->pool['filter_uris'])) {
+            $this->pool['filter_uris'] = null;
+        } else {
+            $test = @preg_match($this->pool['filter_uris'], '');
+            if ($test === false) {
+                $this->pool['filter_uris'] = null;
+            }
+        }
+
         // To avoid issues with updating/removing, check the data types.
         $dataTypeManager = $this->getServiceLocator()->get('Omeka\DataTypeManager');
         foreach (['data_types', 'data_types_exclude'] as $dataTypeName) {

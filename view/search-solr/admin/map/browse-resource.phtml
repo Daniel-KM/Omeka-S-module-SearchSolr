@@ -118,6 +118,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                     <td><?= $map->source() ?></td>
                     <td><?php
                         $filterValues = $map->pool('filter_values');
+                        $filterUris = $map->pool('filter_uris');
                         $filterResources = $map->pool('filter_resources');
                         $filterValueResources = $map->pool('filter_value_resources');
                         $dataTypes = $map->pool('data_types');
@@ -125,6 +126,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                         ?>
                         <?php if ($filterValues): ?>
                         <div><?= $translate('Filtered by values') ?></div>
+                        <?php endif; ?>
+                        <?php if ($filterUris): ?>
+                        <div><?= $translate('Filtered by uris') ?></div>
                         <?php endif; ?>
                         <?php if ($filterResources): ?>
                         <div><?= $translate('Filtered by resources') ?></div>
