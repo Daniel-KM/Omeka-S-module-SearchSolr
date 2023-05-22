@@ -545,7 +545,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
         $values = $resource->value($solrMap->firstSource(), ['all' => true, 'type' => $solrMap->pool('data_types')]);
 
-        // It's not possible to exclude a type via value.
+        // Filter values is full regex automatically checked.
+        $filterValuesPattern = $solrMap->pool('filter_values') ?: null;
+
+        // It is not possible to exclude a type via value methods.
         $excludedDataTypes = $solrMap->pool('data_types_exclude');
         $hasExcludedDataTypes = !empty($excludedDataTypes);
 
@@ -554,6 +557,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         foreach ($values as $value) {
             if ($hasExcludedDataTypes && in_array($value->type(), $excludedDataTypes)) {
                 continue;
+            }
+            if ($filterValuesPattern) {
+                $val = (string) $value->value();
+                if (strlen($val) && !preg_match($filterValuesPattern, $val)) {
+                    continue;
+                }
             }
             // A value resource may be set for multiple types, included a custom
             // vocab with a resource.

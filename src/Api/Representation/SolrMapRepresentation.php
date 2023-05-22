@@ -100,6 +100,16 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
 
         $this->pool = $this->resource->getPool();
 
+        // Check the regex for value one time.
+        if (empty($this->pool['filter_values'])) {
+            $this->pool['filter_values'] = null;
+        } else {
+            $test = @preg_match($this->pool['filter_values'], '');
+            if ($test === false) {
+                $this->pool['filter_values'] = null;
+            }
+        }
+
         // To avoid issues with updating/removing, check the data types.
         $dataTypeManager = $this->getServiceLocator()->get('Omeka\DataTypeManager');
         foreach (['data_types', 'data_types_exclude'] as $dataTypeName) {

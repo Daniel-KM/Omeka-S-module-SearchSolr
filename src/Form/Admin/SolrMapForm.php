@@ -95,6 +95,17 @@ class SolrMapForm extends Form
         $this
             ->get('o:pool')
             ->add([
+                'name' => 'filter_values',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Index only values matching this regex', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'filter_values',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'filter_resources',
                 'type' => Element\Text::class,
                 'options' => [
