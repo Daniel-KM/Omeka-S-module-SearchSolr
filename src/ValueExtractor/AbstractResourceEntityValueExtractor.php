@@ -89,6 +89,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'resource_template' => 'Resource template', // @translate
                     'asset' => 'Asset (attached thumbnail)', // @translate
                     'item_set' => 'Item: Item set', // @translate
+                    'item_sets_tree' => 'Item: Item sets tree', // @translate
                     'media' => 'Item: Media', // @translate
                     'content' => 'Media: Content (html or extracted text)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
@@ -246,6 +247,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         if ($field === 'item_set') {
             return $resource instanceof ItemRepresentation
                 ? $this->extractItemItemSetsValue($resource, $solrMap)
+                : [];
+        }
+
+        if ($field === 'item_sets_tree') {
+            return $resource instanceof ItemRepresentation
+                ? $this->extractItemItemSetsTreeValue($resource, $solrMap)
                 : [];
         }
 
@@ -482,13 +489,43 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     protected function extractItemItemSetsValue(
         ItemRepresentation $item,
         ?SolrMapRepresentation $solrMap
+        ): array {
+            $extractedValues = [];
+            foreach ($item->itemSets() as $itemSet) {
+                $values = $this->extractValue($itemSet, $solrMap->subMap());
+                $extractedValues = array_merge($extractedValues, $values);
+            }
+            return $extractedValues;
+    }
+
+    protected function extractItemItemSetsTreeValue(
+        ItemRepresentation $item,
+        ?SolrMapRepresentation $solrMap
     ): array {
-        $extractedValues = [];
-        foreach ($item->itemSets() as $itemSet) {
-            $values = $this->extractValue($itemSet, $solrMap->subMap());
-            $extractedValues = array_merge($extractedValues, $values);
+        static $itemSetsTreeAncestorsOrSelf;
+
+        if (is_null($itemSetsTreeAncestorsOrSelf)) {
+            $itemSetsTreeAncestorsOrSelf = [];
+            $services = $item->getServiceLocator();
+            if ($services->has('ItemSetsTree')) {
+                $structure = $this->itemSetsTreeQuick($services);
+                $itemSetsTreeAncestorsOrSelf = array_column($structure, 'ancestors', 'id');
+                foreach ($itemSetsTreeAncestorsOrSelf as $id => &$ancestors) {
+                    $ancestors = [$id => $id] + $ancestors;
+                }
+                unset($ancestors);
+            }
         }
-        return $extractedValues;
+
+        if (!count($itemSetsTreeAncestorsOrSelf)) {
+            return [];
+        }
+
+        $result = [];
+        foreach (array_keys($item->itemSets()) as $itemSetId) {
+            $result = array_merge($result, $itemSetsTreeAncestorsOrSelf[$itemSetId] ?? []);
+        }
+        return array_values(array_unique($result));
     }
 
     /**
@@ -563,5 +600,77 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         return count($result)
             ? reset($result)
             : null;
+    }
+
+    /**
+     * Get flat tree of item sets quickly.
+     *
+     * Use a quick connection request instead of a long procedure.
+     *
+     * @see \AdvancedSearch\View\Helper\AbstractFacet::itemsSetsTreeQuick()
+     * @see \SearchSolr\ValueExtractor\AbstractResourceEntityValueExtractor::itemSetsTreeQuick()
+     *
+     * @return array
+     */
+    protected function itemSetsTreeQuick($services): array
+    {
+        // Run an api request to check rights.
+        $itemSetTitles = $this->api->search('item_sets', [], ['returnScalar' => 'title'])->getContent();
+        if (!count($itemSetTitles)) {
+            return [];
+        }
+
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $connection = $services->get('Omeka\Connection');
+
+        // TODO Use query builder.
+        $sql = <<<SQL
+SELECT
+    item_sets_tree_edge.item_set_id,
+    item_sets_tree_edge.item_set_id AS "id",
+    item_sets_tree_edge.parent_item_set_id AS "parent",
+    item_sets_tree_edge.rank AS "rank",
+    resource.title as "title"
+FROM item_sets_tree_edge
+JOIN resource ON resource.id = item_sets_tree_edge.item_set_id
+WHERE item_sets_tree_edge.item_set_id IN (:ids)
+ORDER BY item_sets_tree_edge.item_set_id;
+SQL;
+        $flatTree = $connection->executeQuery($sql, ['ids' => array_keys($itemSetTitles)], ['ids' => $connection::PARAM_INT_ARRAY])->fetchAllAssociativeIndexed();
+
+        $structure = [];
+        foreach ($flatTree as $id => $node) {
+            $children = [];
+            foreach ($flatTree as $subId => $subNode) {
+                if ($subNode['parent'] === $id) {
+                    $children[$subId] = $subId;
+                }
+            }
+            $ancestors = [];
+            $nodeWhile = $node;
+            while ($parentId = $nodeWhile['parent']) {
+                $ancestors[$parentId] = $parentId;
+                $nodeWhile = $flatTree[$parentId] ?? null;
+            }
+            $structure[$id] = $node;
+            $structure[$id]['children'] = $children;
+            $structure[$id]['ancestors'] = $ancestors;
+            $structure[$id]['level'] = count($ancestors);
+        }
+
+        // Append missing item sets.
+        foreach (array_diff_key($itemSetTitles, $flatTree) as $id => $title) {
+            $structure[$id] = [
+                'id' => $id,
+                'parent' => null,
+                'rank' => 0,
+                'title' => $title,
+                'children' => [],
+                'ancestors' => [],
+                'level' => 0,
+            ];
+        }
+
+        return $structure;
     }
 }
