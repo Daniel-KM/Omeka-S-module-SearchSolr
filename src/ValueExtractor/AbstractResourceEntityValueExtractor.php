@@ -610,6 +610,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
      * @see \AdvancedSearch\View\Helper\AbstractFacet::itemsSetsTreeQuick()
      * @see \SearchSolr\ValueExtractor\AbstractResourceEntityValueExtractor::itemSetsTreeQuick()
      *
+     * @todo Simplify ordering: by sql (for children too) or store.
+     *
      * @return array
      */
     protected function itemSetsTreeQuick($services): array
@@ -623,6 +625,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         /** @var \Doctrine\DBAL\Connection $connection */
         $connection = $services->get('Omeka\Connection');
 
+        $sortingMethod = $services->get('Omeka\Settings')->get('itemsetstree_sorting_method', 'title') === 'rank' ? 'rank' : 'title';
+        $sortingMethodSql = $sortingMethod === 'rank'
+            ? 'item_sets_tree_edge.rank'
+            : 'resource.title';
+
         // TODO Use query builder.
         $sql = <<<SQL
 SELECT
@@ -634,9 +641,19 @@ SELECT
 FROM item_sets_tree_edge
 JOIN resource ON resource.id = item_sets_tree_edge.item_set_id
 WHERE item_sets_tree_edge.item_set_id IN (:ids)
-ORDER BY item_sets_tree_edge.item_set_id;
+GROUP BY resource.id
+ORDER BY $sortingMethodSql;
 SQL;
         $flatTree = $connection->executeQuery($sql, ['ids' => array_keys($itemSetTitles)], ['ids' => $connection::PARAM_INT_ARRAY])->fetchAllAssociativeIndexed();
+
+        // Use integers or string to simplify comparaisons.
+        foreach ($flatTree as &$node) {
+            $node['id'] = (int) $node['id'];
+            $node['parent'] = (int) $node['parent'] ?: null;
+            $node['rank'] = (int) $node['rank'];
+            $node['title'] = (string) $node['title'];
+        }
+        unset($node);
 
         $structure = [];
         foreach ($flatTree as $id => $node) {
@@ -651,6 +668,9 @@ SQL;
             while ($parentId = $nodeWhile['parent']) {
                 $ancestors[$parentId] = $parentId;
                 $nodeWhile = $flatTree[$parentId] ?? null;
+                if (!$nodeWhile) {
+                    break;
+                }
             }
             $structure[$id] = $node;
             $structure[$id]['children'] = $children;
@@ -658,8 +678,93 @@ SQL;
             $structure[$id]['level'] = count($ancestors);
         }
 
+        // Order by sorting method.
+        if ($sortingMethod === 'rank') {
+            $sortingFunction = function ($a, $b) use ($structure) {
+                return $structure[$a]['rank'] - $structure[$b]['rank'];
+            };
+        } else {
+            $sortingFunction = function ($a, $b) use ($structure) {
+                return strcmp($structure[$a]['title'], $structure[$b]['title']);
+            };
+        }
+
+        foreach ($structure as &$node) {
+            usort($node['children'], $sortingFunction);
+        }
+        unset($node);
+
+        // Get and order root nodes.
+        $roots = [];
+        foreach ($structure as $id => $node) {
+            if (!$node['level']) {
+                $roots[$id] = $node;
+            }
+        }
+
+        // Root is already ordered via sql.
+
+        // Reorder whole structure.
+        // TODO Use a while loop.
+        $result = [];
+        foreach ($roots as $id => $root) {
+            $result[$id] = $root;
+            foreach ($root['children'] ?? [] as $child1) {
+                $child1 = $structure[$child1];
+                $result[$child1['id']] = $child1;
+                foreach ($child1['children'] ?? [] as $child2) {
+                    $child2 = $structure[$child2];
+                    $result[$child2['id']] = $child2;
+                    foreach ($child2['children'] ?? [] as $child3) {
+                        $child3 = $structure[$child3];
+                        $result[$child3['id']] = $child3;
+                        foreach ($child3['children'] ?? [] as $child4) {
+                            $child4 = $structure[$child4];
+                            $result[$child4['id']] = $child4;
+                            foreach ($child4['children'] ?? [] as $child5) {
+                                $child5 = $structure[$child5];
+                                $result[$child5['id']] = $child5;
+                                foreach ($child5['children'] ?? [] as $child6) {
+                                    $child6 = $structure[$child6];
+                                    $result[$child6['id']] = $child6;
+                                    foreach ($child6['children'] ?? [] as $child7) {
+                                        $child7 = $structure[$child7];
+                                        $result[$child7['id']] = $child7;
+                                        foreach ($child7['children'] ?? [] as $child8) {
+                                            $child8 = $structure[$child8];
+                                            $result[$child8['id']] = $child8;
+                                            foreach ($child8['children'] ?? [] as $child9) {
+                                                $child9 = $structure[$child9];
+                                                $result[$child9['id']] = $child9;
+                                                foreach ($child9['children'] ?? [] as $child10) {
+                                                    $child10 = $structure[$child10];
+                                                    $result[$child10['id']] = $child10;
+                                                    foreach ($child10['children'] ?? [] as $child11) {
+                                                        $child11 = $structure[$child11];
+                                                        $result[$child11['id']] = $child11;
+                                                        foreach ($child11['children'] ?? [] as $child12) {
+                                                            $child12 = $structure[$child12];
+                                                            $result[$child12['id']] = $child12;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        $structure = $result;
+
         // Append missing item sets.
         foreach (array_diff_key($itemSetTitles, $flatTree) as $id => $title) {
+            if (isset($structure[$id])) {
+                continue;
+            }
             $structure[$id] = [
                 'id' => $id,
                 'parent' => null,
