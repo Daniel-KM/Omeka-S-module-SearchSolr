@@ -47,6 +47,8 @@ class CoreController extends AbstractActionController
         'resource_name',
         'field_name',
         'source',
+        'pool:filter_resources',
+        'pool:filter_value_resources',
         'pool:data_types',
         'pool:data_types_exclude',
         'settings:label',
@@ -362,6 +364,8 @@ class CoreController extends AbstractActionController
                     'o:field_name' => $row['field_name'],
                     'o:source' => $row['source'],
                     'o:pool' => [
+                        'filter_resources' => empty($row['pool:filter_resources']) ? null : trim($row['pool:filter_resources']),
+                        'filter_value_resources' => empty($row['pool:filter_value_resources']) ? null : trim($row['pool:filter_value_resources']),
                         'data_types' => array_filter(array_map('trim', explode('|', $row['pool:data_types']))),
                         'data_types_exclude' => array_filter(array_map('trim', explode('|', $row['pool:data_types_exclude']))),
                     ],
@@ -429,11 +433,14 @@ class CoreController extends AbstractActionController
         $this->appendTsvRow($stream, $this->mappingHeaders);
 
         foreach ($solrCore->mapsByResourceName() as $resourceName => $maps) {
+            /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
             foreach ($maps as $map) {
                 $mapping = [
                     $resourceName,
                     $map->fieldName(),
                     $map->source(),
+                    (string) $map->pool('filter_resources'),
+                    (string) $map->pool('filter_value_resources'),
                     implode(' | ', $map->pool('data_types')),
                     implode(' | ', $map->pool('data_types_exclude')),
                     $map->setting('label', ''),
