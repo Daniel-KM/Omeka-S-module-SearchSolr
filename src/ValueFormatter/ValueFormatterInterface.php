@@ -30,12 +30,19 @@
 
 namespace SearchSolr\ValueFormatter;
 
+use Laminas\ServiceManager\ServiceLocatorInterface;
+
 interface ValueFormatterInterface
 {
     /**
      * Get the label of the formatter.
      */
     public function getLabel(): string;
+
+    /**
+     * Set services to be used by the formatter.
+     */
+    public function setServiceLocator(ServiceLocatorInterface $services): self;
 
     /**
      * Set settings to be used by the formatter, if any.

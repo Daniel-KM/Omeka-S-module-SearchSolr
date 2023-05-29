@@ -667,7 +667,9 @@ class SolariumIndexer extends AbstractIndexer
     {
         $this->formatters = ['' => null];
         foreach ($this->valueFormatterManager->getRegisteredNames() as $formatter) {
-            $this->formatters[$formatter] = $this->valueFormatterManager->get($formatter);
+            $valueFormatter = $this->valueFormatterManager->get($formatter);
+            $valueFormatter->setServiceLocator($this->services);
+            $this->formatters[$formatter] = $valueFormatter;
         }
         $this->formatters[''] = $this->formatters['standard'];
     }
