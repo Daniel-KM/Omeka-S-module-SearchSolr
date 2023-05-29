@@ -110,6 +110,12 @@ class CoreController extends AbstractActionController
             'server_id' => $this->settings()->get('searchsolr_server_id'),
         ]);
         $data = $core->jsonSerialize();
+
+        // The setting "filter_resources" should be a string.
+        $data['o:settings']['filter_resources'] = empty($data['o:settings']['filter_resources'])
+            ? ''
+            : http_build_query($data['o:settings']['filter_resources']);
+
         $form->setData($data);
 
         if (!$this->checkPostAndValidForm($form)) {
@@ -120,6 +126,11 @@ class CoreController extends AbstractActionController
 
         $data = $form->getData();
         $clearFullIndex = !empty($data['o:settings']['clear_full_index']);
+
+        // Store query as array to simplify process.
+        $filterResources = [];
+        parse_str($data['o:settings']['filter_resources'] ?? '', $filterResources);
+        $data['o:settings']['filter_resources'] = $filterResources ?: null;
 
         // SolrClient requires a boolean for the option "secure".
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);

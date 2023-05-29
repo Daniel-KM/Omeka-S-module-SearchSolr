@@ -53,7 +53,12 @@ class SolrCoreForm extends Form
             ]);
 
         $settingsFieldset = new Fieldset('o:settings');
+        $this
+            ->add($settingsFieldset);
+
         $clientSettingsFieldset = new Fieldset('client');
+        $settingsFieldset
+            ->add($clientSettingsFieldset);
 
         $clientSettingsFieldset
             ->add([
@@ -164,15 +169,27 @@ class SolrCoreForm extends Form
                     ],
                 ],
                 'attributes' => [
+                    'id' => 'http_request_type',
                     'required' => false,
                     'value' => 'post',
                 ],
             ])
         ;
 
-        $settingsFieldset->add($clientSettingsFieldset);
-
         $settingsFieldset
+            ->add([
+                'name' => 'filter_resources',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Filter resources to index with a specific query', // @translate
+                    'info' => 'Allow to store only an item set, a template, an owner, a visibility, etc.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'filter_resources',
+                    'value' => '',
+                    'required' => false,
+                ],
+            ])
             ->add([
                 'name' => 'support',
                 'type' => Element\Radio::class,
@@ -237,9 +254,9 @@ class SolrCoreForm extends Form
             ->setEmptyOption(null);
         */
 
-        $this->add($settingsFieldset);
-
         $querySettingsFieldset = new Fieldset('query');
+        $settingsFieldset
+            ->add($querySettingsFieldset);
 
         $querySettingsFieldset
             ->add([
@@ -279,8 +296,6 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
             ]);
 
         // TODO Other fields (boost...) requires multiple fields. See https://secure.php.net/manual/en/class.solrdismaxquery.php.
-
-        $settingsFieldset->add($querySettingsFieldset);
 
         $inputFilter = $this->getInputFilter();
         $settingFilters = $inputFilter->get('o:settings');

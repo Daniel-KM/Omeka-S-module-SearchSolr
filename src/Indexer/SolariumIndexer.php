@@ -188,7 +188,7 @@ class SolariumIndexer extends AbstractIndexer
     }
 
     /**
-     * @var \Omeka\Entity\AbstractEntity[] $resources
+     * @param \Omeka\Entity\AbstractEntity[] $resources
      */
     public function indexResources(array $resources): IndexerInterface
     {
@@ -203,15 +203,22 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
+        $resources = $this->filterResources($resources);
+        if (!count($resources)) {
+            return $this;
+        }
+
         $resourceNames = [
             'items' => 'item',
             'item_sets' => 'item set',
+            'media' => 'media',
         ];
 
         $resourcesIds = [];
         foreach ($resources as $resource) {
             $resourcesIds[] = $resourceNames[$resource->getResourceName()] . ' #' . $resource->getId();
         }
+
         $this->getLogger()->info(new Message(
             'Indexing in Solr core "%1$s": %2$s', // @translate
             $this->solrCore->name(), implode(', ', $resourcesIds)
@@ -814,6 +821,30 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
         return $this;
+    }
+
+    /**
+     * @param array \Omeka\Entity\Resource[]
+     */
+    protected function filterResources(array $resources): array
+    {
+        $query = $this->getSolrCore()->setting('filter_resources');
+        if (!$query || !$resources) {
+            return $resources;
+        }
+
+        $resourceIds = [];
+        foreach ($resources as $resource) {
+            $resourceIds[] = $resource->getId();
+        }
+
+        $query['id'] = array_unique(array_merge($query['id'] ?? [], $resourceIds));
+
+        // TODO Search api is currently unavailable for resources (wait v4.1)
+        // For now, use the first resource.
+        $first = reset($resources);
+        $resourceName = $first->getResourceName();
+        return $this->api->search($resourceName, $query, ['responseContent' => 'resource'])->getContent();
     }
 
     protected function getSolrCore(): SolrCoreRepresentation
