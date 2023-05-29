@@ -123,6 +123,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                         $filterValueResources = $map->pool('filter_value_resources');
                         $dataTypes = $map->pool('data_types');
                         $dataTypesExclude = $map->pool('data_types_exclude');
+                        $filterVisibility = $map->pool('filter_visibility');
                         ?>
                         <?php if ($filterValues): ?>
                         <div><?= $translate('Filtered by values') ?></div>
@@ -141,6 +142,11 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                             <?php if ($dataTypes) echo '<dt>' . $translate('Data types') . '</dt><dd>' . implode('</dd><dd>', $dataTypes) . '</dd>'; ?>
                             <?php if ($dataTypesExclude) echo '<dt>' . $translate('Excluded data types') . '</dt><dd>' . implode('</dd><dd>', $dataTypesExclude) . '</dd>'; ?>
                         </dl>
+                        <?php endif; ?>
+                        <?php if ($filterVisibility === 'public'): ?>
+                        <div><?= $translate('Filtered by visibility Public') ?></div>
+                        <?php elseif ($filterVisibility === 'private'): ?>
+                        <div><?= $translate('Filtered by visibility Private') ?></div>
                         <?php endif; ?>
                     </td>
                     <td><?php if (!empty($mapSettings['label'])) echo $translate($mapSettings['label']); ?></td>

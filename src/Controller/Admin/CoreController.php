@@ -53,6 +53,7 @@ class CoreController extends AbstractActionController
         'pool:filter_value_resources',
         'pool:data_types',
         'pool:data_types_exclude',
+        'pool:filter_visibility',
         'settings:label',
         'settings:formatter',
     ];
@@ -372,6 +373,7 @@ class CoreController extends AbstractActionController
                         'filter_value_resources' => empty($row['pool:filter_value_resources']) ? null : trim($row['pool:filter_value_resources']),
                         'data_types' => array_filter(array_map('trim', explode('|', $row['pool:data_types']))),
                         'data_types_exclude' => array_filter(array_map('trim', explode('|', $row['pool:data_types_exclude']))),
+                        'filter_visibility' => empty($row['pool:filter_visibility']) || !in_array($row['pool:filter_visibility'], ['public', 'private'])? null : $row['pool:filter_visibility'],
                     ],
                     'o:settings' => [
                         'formatter' => $row['settings:formatter'],
@@ -449,6 +451,7 @@ class CoreController extends AbstractActionController
                     (string) $map->pool('filter_value_resources'),
                     implode(' | ', $map->pool('data_types')),
                     implode(' | ', $map->pool('data_types_exclude')),
+                    (string) $map->pool('filter_visibility'),
                     $map->setting('label', ''),
                     $map->setting('formatter', ''),
                 ];

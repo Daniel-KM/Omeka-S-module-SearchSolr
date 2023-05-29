@@ -549,6 +549,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $filterValuesPattern = $solrMap->pool('filter_values') ?: null;
         $filterUrisPattern = $solrMap->pool('filter_uris') ?: null;
 
+        $filterVisibility = $solrMap->pool('filter_visibility') ?: null;
+        $publicOnly = $filterVisibility === 'public';
+        $privateOnly = $filterVisibility === 'private';
+
         // It is not possible to exclude a type via value methods.
         $excludedDataTypes = $solrMap->pool('data_types_exclude');
         $hasExcludedDataTypes = !empty($excludedDataTypes);
@@ -556,6 +560,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         // Only value resources are managed here: other types are managed with
         // the formatter.
         foreach ($values as $value) {
+            if ($filterVisibility
+                && (($privateOnly && $value->isPublic()) || ($publicOnly && !$value->isPublic()))
+            ) {
+                continue;
+            }
             if ($hasExcludedDataTypes && in_array($value->type(), $excludedDataTypes)) {
                 continue;
             }

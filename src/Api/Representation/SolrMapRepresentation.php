@@ -134,6 +134,10 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             $this->pool[$dataTypeName] = $result;
         }
 
+        if (empty($this->pool['filter_visibility']) || !in_array($this->pool['filter_visibility'], ['public', 'private'])) {
+            $this->pool['filter_visibility'] = null;
+        }
+
         return is_null($name) ? $this->pool : ($this->pool[$name] ?? $default);
     }
 

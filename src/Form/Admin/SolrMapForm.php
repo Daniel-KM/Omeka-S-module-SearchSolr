@@ -30,6 +30,7 @@
 
 namespace SearchSolr\Form\Admin;
 
+use AdvancedSearch\Form\Element as AdvancedSearchElement;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
@@ -162,6 +163,23 @@ class SolrMapForm extends Form
                     'data-placeholder' => 'Select data types to exclude…', // @translate
                     'multiple' => true,
                     'required' => false,
+                ],
+            ])
+            ->add([
+                'name' => 'filter_visibility',
+                'type' => AdvancedSearchElement\OptionalRadio::class,
+                'options' => [
+                    'label' => 'Only visibility', // @translate
+                    'value_options' => [
+                        '' => 'All', // @translate
+                        'public' => 'Public', // @translate
+                        'private' => 'Private', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'filter_visibility',
+                    'required' => false,
+                    'value' => '',
                 ],
             ]);
 
