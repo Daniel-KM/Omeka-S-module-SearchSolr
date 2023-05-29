@@ -96,6 +96,17 @@ class SolrMapForm extends Form
         $this
             ->get('o:pool')
             ->add([
+                'name' => 'filter_resources',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Index only values of resources matching this standard query', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'filter_resources',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'filter_values',
                 'type' => Element\Text::class,
                 'options' => [
@@ -118,21 +129,10 @@ class SolrMapForm extends Form
                 ],
             ])
             ->add([
-                'name' => 'filter_resources',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Index only resources matching this standard query', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'filter_resources',
-                    'required' => false,
-                ],
-            ])
-            ->add([
                 'name' => 'filter_value_resources',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Index only value resources matching this standard query', // @translate
+                    'label' => 'Index only linked resources matching this standard query', // @translate
                 ],
                 'attributes' => [
                     'id' => 'filter_value_resources',
@@ -162,6 +162,18 @@ class SolrMapForm extends Form
                     'id' => 'data_types_exclude',
                     'data-placeholder' => 'Select data types to exclude…', // @translate
                     'multiple' => true,
+                    'required' => false,
+                ],
+            ])
+            ->add([
+                'name' => 'filter_languages',
+                'type' => AdvancedSearchElement\ArrayText::class,
+                'options' => [
+                    'label' => 'Only languages', // @translate
+                    'value_separator' => ' ',
+                ],
+                'attributes' => [
+                    'id' => 'filter_languages',
                     'required' => false,
                 ],
             ])

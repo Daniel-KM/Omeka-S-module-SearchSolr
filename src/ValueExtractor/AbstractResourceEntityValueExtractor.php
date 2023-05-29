@@ -543,7 +543,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $extractedValues = [];
 
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
-        $values = $resource->value($solrMap->firstSource(), ['all' => true, 'type' => $solrMap->pool('data_types')]);
+        $values = $resource->value($solrMap->firstSource(), [
+            'all' => true,
+            'type' => $solrMap->pool('data_types'),
+            'lang' => $solrMap->pool('filter_languages'),
+        ]);
 
         // Filter values and uris are full regex automatically checked.
         $filterValuesPattern = $solrMap->pool('filter_values') ?: null;

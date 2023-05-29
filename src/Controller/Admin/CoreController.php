@@ -53,6 +53,7 @@ class CoreController extends AbstractActionController
         'pool:filter_value_resources',
         'pool:data_types',
         'pool:data_types_exclude',
+        'pool:filter_languages',
         'pool:filter_visibility',
         'settings:label',
         'settings:formatter',
@@ -371,8 +372,10 @@ class CoreController extends AbstractActionController
                         'filter_uris' => empty($row['pool:filter_uris']) ? null : trim($row['pool:filter_uris']),
                         'filter_resources' => empty($row['pool:filter_resources']) ? null : trim($row['pool:filter_resources']),
                         'filter_value_resources' => empty($row['pool:filter_value_resources']) ? null : trim($row['pool:filter_value_resources']),
-                        'data_types' => array_filter(array_map('trim', explode('|', $row['pool:data_types']))),
-                        'data_types_exclude' => array_filter(array_map('trim', explode('|', $row['pool:data_types_exclude']))),
+                        'data_types' => empty($row['pool:data_types']) ? [] : array_filter(array_map('trim', explode('|', $row['pool:data_types']))),
+                        'data_types_exclude' => empty($row['pool:data_types_exclude']) ? [] : array_filter(array_map('trim', explode('|', $row['pool:data_types_exclude']))),
+                        // Don't filter array to keep values without language.
+                        'filter_languages' => empty($row['pool:filter_languages']) ? [] : array_unique(array_map('trim', explode('|', $row['pool:filter_languages']))),
                         'filter_visibility' => empty($row['pool:filter_visibility']) || !in_array($row['pool:filter_visibility'], ['public', 'private'])? null : $row['pool:filter_visibility'],
                     ],
                     'o:settings' => [
@@ -451,6 +454,7 @@ class CoreController extends AbstractActionController
                     (string) $map->pool('filter_value_resources'),
                     implode(' | ', $map->pool('data_types')),
                     implode(' | ', $map->pool('data_types_exclude')),
+                    implode(' | ', $map->pool('filter_languages')),
                     (string) $map->pool('filter_visibility'),
                     $map->setting('label', ''),
                     $map->setting('formatter', ''),

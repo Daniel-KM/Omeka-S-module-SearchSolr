@@ -134,6 +134,13 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             $this->pool[$dataTypeName] = $result;
         }
 
+        if (empty($this->pool['filter_languages'])) {
+            $this->pool['filter_languages'] = [];
+        } elseif (!is_array($this->pool['filter_languages'])) {
+            // Don't filter array to keep values without language.
+            $this->pool['filter_languages'] = array_unique(explode(' ', $this->pool['filter_languages']));
+        }
+
         if (empty($this->pool['filter_visibility']) || !in_array($this->pool['filter_visibility'], ['public', 'private'])) {
             $this->pool['filter_visibility'] = null;
         }
