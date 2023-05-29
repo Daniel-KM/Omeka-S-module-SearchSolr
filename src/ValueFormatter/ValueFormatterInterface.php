@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau 2020
+ * Copyright Daniel Berthereau 2020-2023
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -33,15 +33,21 @@ namespace SearchSolr\ValueFormatter;
 interface ValueFormatterInterface
 {
     /**
-     * @return string
+     * Get the label of the formatter.
      */
     public function getLabel(): string;
 
     /**
-     * Most of the time, a value is formatted into one string.
+     * Set settings to be used by the formatter, if any.
+     */
+    public function setSettings(array $settings): self;
+
+    /**
+     * Convert a value (Omeka Value, string…) into a list of values to index.
+     *
+     * Most of the time, a value is formatted into one string or integer.
      *
      * @param mixed $value
-     * @return array
      */
     public function format($value): array;
 }

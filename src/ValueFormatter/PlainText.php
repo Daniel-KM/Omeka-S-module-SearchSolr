@@ -5,7 +5,7 @@ namespace SearchSolr\ValueFormatter;
 /**
  * ValueFormatter to strip all HTML tags. Useful for HTML media content.
  */
-class PlainText implements ValueFormatterInterface
+class PlainText extends AbstractValueFormatter
 {
     public function getLabel(): string
     {

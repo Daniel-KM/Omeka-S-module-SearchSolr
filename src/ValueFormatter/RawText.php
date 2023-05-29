@@ -7,7 +7,7 @@ namespace SearchSolr\ValueFormatter;
  *
  * Similar to Standard, but for string value.
  */
-class RawText implements ValueFormatterInterface
+class RawText extends AbstractValueFormatter
 {
     public function getLabel(): string
     {

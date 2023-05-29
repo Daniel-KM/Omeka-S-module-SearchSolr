@@ -7,7 +7,7 @@ namespace SearchSolr\ValueFormatter;
  *
  * @link https://forum.omeka.org/t/solr-text-field-length/13430
  */
-class HtmlEscapedText implements ValueFormatterInterface
+class HtmlEscapedText extends AbstractValueFormatter
 {
     public function getLabel(): string
     {

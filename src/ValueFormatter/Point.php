@@ -4,7 +4,7 @@ namespace SearchSolr\ValueFormatter;
 
 use Omeka\Api\Representation\ValueRepresentation;
 
-class Point implements ValueFormatterInterface
+class Point extends AbstractValueFormatter
 {
     public function getLabel(): string
     {

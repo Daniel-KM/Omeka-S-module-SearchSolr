@@ -431,6 +431,7 @@ class SolariumIndexer extends AbstractIndexer
     {
         /** @var \SearchSolr\ValueFormatter\ValueFormatterInterface $valueFormatter */
         $valueFormatter = $this->formatters[$solrMap->setting('formatter', '')] ?: $this->formatters['standard'];
+        $valueFormatter->setSettings($solrMap->settings());
         $result = [];
         foreach ($values as $value) {
             $formattedResult = $valueFormatter->format($value);

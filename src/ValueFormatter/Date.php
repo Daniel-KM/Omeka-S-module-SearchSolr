@@ -6,7 +6,7 @@ use DateTime;
 use DateTimeZone;
 use Omeka\Api\Representation\ValueRepresentation;
 
-class Date implements ValueFormatterInterface
+class Date extends AbstractValueFormatter
 {
     public function getLabel(): string
     {

@@ -7,7 +7,7 @@ namespace SearchSolr\ValueFormatter;
  *
  * Values with a resource are already converted via display title.
  */
-class StandardWithoutUri implements ValueFormatterInterface
+class StandardWithoutUri extends AbstractValueFormatter
 {
     public function getLabel(): string
     {

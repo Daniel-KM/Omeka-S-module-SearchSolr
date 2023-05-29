@@ -5,7 +5,7 @@ namespace SearchSolr\ValueFormatter;
 /**
  * Formatter that includes only uris, mainly for value with data type uri.
  */
-class Uri implements ValueFormatterInterface
+class Uri extends AbstractValueFormatter
 {
     public function getLabel(): string
     {

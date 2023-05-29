@@ -8,7 +8,7 @@ namespace SearchSolr\ValueFormatter;
  * Manage some special types like uri, where the uri and the label are returned.
  * Values with a resource are already converted via display title.
  */
-class StandardWithUri implements ValueFormatterInterface
+class StandardWithUri extends AbstractValueFormatter
 {
     public function getLabel(): string
     {
