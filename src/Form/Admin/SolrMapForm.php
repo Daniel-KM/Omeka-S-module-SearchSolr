@@ -256,6 +256,17 @@ class SolrMapForm extends Form
                         'required' => false,
                         'value' => 'label',
                     ],
+                ])
+                ->add([
+                    'name' => 'table_index_original',
+                    'type' => Element\Checkbox::class,
+                    'options' => [
+                        'label' => 'Table: index original value too', // @translate
+                    ],
+                    'attributes' => [
+                        'id' => 'table_index_original',
+                        'required' => false,
+                    ],
                 ]);
 
             // TODO Why the fieldset does not use form manager to load and init form element?

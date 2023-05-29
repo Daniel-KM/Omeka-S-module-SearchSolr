@@ -53,24 +53,34 @@ class Table extends PlainText
         // Keep original order of values.
 
         $mode = $this->settings['table_mode'] ?? 'label';
+        $indexOriginal = !empty($this->settings['table_index_original']);
 
         $result = [];
         switch ($mode) {
             default:
             case 'label':
                 foreach ($values as $val) {
+                    if ($indexOriginal) {
+                        $result[] = $val;
+                    }
                     $result[] = $table->labelFromCode($val) ?? '';
                 }
                 break;
 
             case 'code':
                 foreach ($values as &$val) {
+                    if ($indexOriginal) {
+                        $result[] = $val;
+                    }
                     $result[] = $table->codeFromLabel($val) ?? '';
                 }
                 break;
 
             case 'both':
                 foreach ($values as $val) {
+                    if ($indexOriginal) {
+                        $result[] = $val;
+                    }
                     $result[] = $table->labelFromCode($val) ?? '';
                     $result[] = $table->codeFromLabel($val) ?? '';
                 }
