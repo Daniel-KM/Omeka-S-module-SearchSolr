@@ -54,6 +54,7 @@ class Table extends PlainText
 
         $mode = $this->settings['table_mode'] ?? 'label';
         $indexOriginal = !empty($this->settings['table_index_original']);
+        $checkStrict = !empty($this->settings['table_check_strict']);
 
         $result = [];
         switch ($mode) {
@@ -63,7 +64,7 @@ class Table extends PlainText
                     if ($indexOriginal) {
                         $result[] = $val;
                     }
-                    $result[] = $table->labelFromCode($val) ?? '';
+                    $result[] = $table->labelFromCode($val, $checkStrict) ?? '';
                 }
                 break;
 
@@ -72,7 +73,7 @@ class Table extends PlainText
                     if ($indexOriginal) {
                         $result[] = $val;
                     }
-                    $result[] = $table->codeFromLabel($val) ?? '';
+                    $result[] = $table->codeFromLabel($val, $checkStrict) ?? '';
                 }
                 break;
 
@@ -81,8 +82,8 @@ class Table extends PlainText
                     if ($indexOriginal) {
                         $result[] = $val;
                     }
-                    $result[] = $table->labelFromCode($val) ?? '';
-                    $result[] = $table->codeFromLabel($val) ?? '';
+                    $result[] = $table->labelFromCode($val, $checkStrict) ?? '';
+                    $result[] = $table->codeFromLabel($val, $checkStrict) ?? '';
                 }
                 break;
         }
