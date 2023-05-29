@@ -17,7 +17,7 @@ class Table extends PlainText
     public function format($value): array
     {
         /** @var \Table\Api\Representation\TableRepresentation[] $tables */
-        static $tables;
+        static $tables = [];
 
         $values = parent::format($value);
         if (!count($values)) {
@@ -48,13 +48,37 @@ class Table extends PlainText
             return $values;
         }
 
-        // Keep original order of values.
-        foreach ($values as &$val) {
-            $val = $tables[$tableId]->labelFromCode($val) ?? $val;
-        }
-        unset($val);
+        $table = $tables[$tableId];
 
-        $values = array_unique(array_filter($values, 'strlen'));
+        // Keep original order of values.
+
+        $mode = $this->settings['table_mode'] ?? 'label';
+
+        $result = [];
+        switch ($mode) {
+            default:
+            case 'label':
+                foreach ($values as $val) {
+                    $result[] = $table->labelFromCode($val) ?? '';
+                }
+                break;
+
+            case 'code':
+                foreach ($values as &$val) {
+                    $result[] = $table->codeFromLabel($val) ?? '';
+                }
+                break;
+
+            case 'both':
+                foreach ($values as $val) {
+                    $result[] = $table->labelFromCode($val) ?? '';
+                    $result[] = $table->codeFromLabel($val) ?? '';
+                }
+                break;
+        }
+        $values = $result;
+
+        $values = array_values(array_unique(array_filter($values, 'strlen')));
 
         return $values;
     }

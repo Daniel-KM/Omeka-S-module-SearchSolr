@@ -99,7 +99,7 @@ class SolrMapForm extends Form
                 'name' => 'filter_resources',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Index only values of resources matching this standard query', // @translate
+                    'label' => 'Only values of resources matching this standard query', // @translate
                 ],
                 'attributes' => [
                     'id' => 'filter_resources',
@@ -110,7 +110,7 @@ class SolrMapForm extends Form
                 'name' => 'filter_values',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Index only values matching this regex', // @translate
+                    'label' => 'Only values matching this regex', // @translate
                 ],
                 'attributes' => [
                     'id' => 'filter_values',
@@ -121,7 +121,7 @@ class SolrMapForm extends Form
                 'name' => 'filter_uris',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Index only uris matching this regex', // @translate
+                    'label' => 'Only uris matching this regex', // @translate
                 ],
                 'attributes' => [
                     'id' => 'filter_uris',
@@ -132,7 +132,7 @@ class SolrMapForm extends Form
                 'name' => 'filter_value_resources',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Index only linked resources matching this standard query', // @translate
+                    'label' => 'Only linked resources matching this standard query', // @translate
                 ],
                 'attributes' => [
                     'id' => 'filter_value_resources',
@@ -143,7 +143,7 @@ class SolrMapForm extends Form
                 'name' => 'data_types',
                 'type' => SearchSolrElement\DataTypeSelect::class,
                 'options' => [
-                    'label' => 'Index only these data types', // @translate
+                    'label' => 'Only these data types', // @translate
                 ],
                 'attributes' => [
                     'id' => 'data_types',
@@ -179,7 +179,7 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'filter_visibility',
-                'type' => AdvancedSearchElement\OptionalRadio::class,
+                'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Only visibility', // @translate
                     'value_options' => [
@@ -238,6 +238,24 @@ class SolrMapForm extends Form
                         'data-placeholder' => 'Select a table…', // @translate
                         'value' => '',
                     ],
+                ])
+                ->add([
+                    'name' => 'table_mode',
+                    'type' => Element\Radio::class,
+                    'options' => [
+                        'label' => 'Table: Mode of normalization', // @translate
+                        'info' => 'If the value is displayed (facets, filters…), it is recommended to index label only.', // @translate
+                        'value_options' => [
+                            'label' => 'Label only', // @translate
+                            'code' => 'Code only', // @translate
+                            'both' => 'Label and code ', // @translate
+                        ],
+                    ],
+                    'attributes' => [
+                        'id' => 'table_mode',
+                        'required' => false,
+                        'value' => 'label',
+                    ],
                 ]);
 
             // TODO Why the fieldset does not use form manager to load and init form element?
@@ -248,9 +266,20 @@ class SolrMapForm extends Form
         $this->add($settingsFieldset);
 
         $inputFilter = $this->getInputFilter();
-        $inputFilter->get('o:settings')
+        $inputFilter
+            ->get('o:pool')
+            ->add([
+                'name' => 'filter_visibility',
+                'required' => false,
+            ]);
+        $inputFilter
+            ->get('o:settings')
             ->add([
                 'name' => 'formatter',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'table_mode',
                 'required' => false,
             ]);
     }
