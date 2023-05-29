@@ -216,12 +216,17 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         if ($field === 'resource_class') {
             return $resource instanceof AbstractResourceEntityRepresentation
+                // May fix a issue when a resource has no class but trying to
+                // get the term.
+                && $resource->resourceClass()
                 ? $this->extractResourceClassValues($resource, $solrMap)
                 : [];
         }
 
         if ($field === 'resource_template') {
             return $resource instanceof AbstractResourceEntityRepresentation
+                // Prevent possible issue like resource class.
+                && $resource->resourceTemplate()
                 ? $this->extractResourceTemplateValues($resource, $solrMap)
                 : [];
         }
@@ -359,7 +364,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             if (!method_exists($resource, $specialMetadata[$field])) {
                 return [];
             }
-            $result = $resource->{$specialMetadata[$field]}();
+            try {
+                $result = $resource->{$specialMetadata[$field]}();
+            } catch (\Exception $e) {
+                $result = null;
+            }
             return is_null($result) || $result === '' || $result === []
                 ? []
                 : [$result];
@@ -637,6 +646,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
      * Use a quick connection request instead of a long procedure.
      *
      * @see \AdvancedSearch\View\Helper\AbstractFacet::itemsSetsTreeQuick()
+     * @see \BlockPlus\View\Helper\Breadcrumbs::itemsSetsTreeQuick()
      * @see \SearchSolr\ValueExtractor\AbstractResourceEntityValueExtractor::itemSetsTreeQuick()
      *
      * @todo Simplify ordering: by sql (for children too) or store.
@@ -732,6 +742,8 @@ SQL;
         }
 
         // Root is already ordered via sql.
+
+        // TODO The children are useless here.
 
         // Reorder whole structure.
         // TODO Use a while loop.
