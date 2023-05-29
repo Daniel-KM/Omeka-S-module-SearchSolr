@@ -237,6 +237,8 @@ class SolrMapForm extends Form
                         'required' => false,
                         'data-placeholder' => 'Select a table…', // @translate
                         'value' => '',
+                        // Setting for formatter "table" only.
+                        'data-formatter' => 'table',
                     ],
                 ])
                 ->add([
@@ -255,6 +257,7 @@ class SolrMapForm extends Form
                         'id' => 'table_mode',
                         'required' => false,
                         'value' => 'label',
+                        'data-formatter' => 'table',
                     ],
                 ])
                 ->add([
@@ -266,6 +269,7 @@ class SolrMapForm extends Form
                     'attributes' => [
                         'id' => 'table_index_original',
                         'required' => false,
+                        'data-formatter' => 'table',
                     ],
                 ])
                 ->add([
@@ -277,6 +281,7 @@ class SolrMapForm extends Form
                     'attributes' => [
                         'id' => 'table_check_strict',
                         'required' => false,
+                        'data-formatter' => 'table',
                     ],
                 ]);
 

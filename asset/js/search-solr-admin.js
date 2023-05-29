@@ -316,6 +316,17 @@
             })
             .trigger('keyup');
 
+        function toggleSettingsFormatter() {
+            const val = $('input[type=radio][name="o:settings[formatter]"]:checked').val();
+            $('[data-formatter]:not([data-formatter="' + val +'"])').closest('.field').hide();
+            $('[data-formatter="' + val +'"]').closest('.field').show();
+        }
+
+        $('input[type=radio][name="o:settings[formatter]"]')
+            .on('change', toggleSettingsFormatter);
+
+        toggleSettingsFormatter();
+
     });
 
 })();
