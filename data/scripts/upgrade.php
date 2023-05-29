@@ -51,12 +51,15 @@ SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-UPDATE `solr_map` SET `data_types` = "[]";
+UPDATE `solr_map`
+SET `data_types` = "[]";
 SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-UPDATE `solr_map` SET `source` = REPLACE(`source`, "item_set", "item_sets") WHERE `source` LIKE "%item_set%";
+UPDATE `solr_map`
+SET `source` = REPLACE(`source`, "item_set", "item_sets")
+WHERE `source` LIKE "%item_set%";
 SQL;
     $connection->executeStatement($sql);
 
@@ -72,17 +75,21 @@ SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
+ALTER TABLE `solr_map`
+ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
 SQL;
     try {
         $connection->executeStatement($sql);
         $sql = <<<SQL
-UPDATE `solr_map` SET `data_types` = "[]";
+UPDATE `solr_map`
+SET `data_types` = "[]";
 SQL;
         $connection->executeStatement($sql);
 
         $sql = <<<SQL
-UPDATE `solr_map` SET `source` = REPLACE(`source`, "item_set", "item_sets") WHERE `source` LIKE "%item_set%";
+UPDATE `solr_map`
+SET `source` = REPLACE(`source`, "item_set", "item_sets")
+WHERE `source` LIKE "%item_set%";
 SQL;
         $connection->executeStatement($sql);
     } catch (\Exception $e) {
@@ -387,23 +394,72 @@ if (version_compare($oldVersion, '3.5.33.3', '<')) {
 
 if (version_compare($oldVersion, '3.5.37.3', '<')) {
     $translator = $services->get('MvcTranslator');
-
-    /** @var \Omeka\Module\Manager $moduleManager */
-    $moduleManager = $services->get('Omeka\ModuleManager');
-    $advancedSearchModule = $moduleManager->getModule('AdvancedSearch');
-    if (!$advancedSearchModule) {
+    if (!$this->isModuleActive('AdvancedSearch')) {
         $message = new Message(
-            $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
+            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
             'Advanced Search', '3.3.6.16'
         );
         throw new ModuleCannotInstallException((string) $message);
     }
-    $advancedSearchVersion = $advancedSearchModule->getIni('version');
-    if (version_compare($advancedSearchVersion, '3.3.6.16', '<')) {
+    /** @var \Omeka\Module\Manager $moduleManager */
+    $moduleManager = $services->get('Omeka\ModuleManager');
+    $module = $moduleManager->getModule('AdvancedSearch');
+    $moduleVersion = $module->getIni('version');
+    if (version_compare($moduleVersion, '3.3.6.16', '<')) {
         $message = new Message(
-            $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
+            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
             'Advanced Search', '3.3.6.16'
         );
         throw new ModuleCannotInstallException((string) $message);
+    }
+}
+
+if (version_compare($oldVersion, '3.5.42', '<')) {
+    // Force to use module Table to manage tables if there is a table.
+    $translator = $services->get('MvcTranslator');
+    $config = $services->get('Config');
+    if (!empty($config['searchsolr']['table'])) {
+        if (!$this->isModuleActive('Table')) {
+            $message = new Message(
+                $translator->translate('To use a table, this module requires module "%1$s" version "%2$s" or greater. Upgrade is automatic.'), // @translate
+                'Table', '3.4.1'
+            );
+            throw new ModuleCannotInstallException((string) $message);
+        }
+        $table = $config['searchsolr']['table'];
+        /** @var \Table\Api\Representation\TableRepresentation $table */
+        $table = $api->create('tables', [
+            'o:title' => 'Advanced Search Solr',
+            'o:codes' => $table,
+        ])->getContent();
+        $tableId = (int) $table->id();
+        $sql = <<<SQL
+UPDATE `solr_map`
+SET `settings` = REPLACE(`settings`, '"formatter":"table"', '"formatter":"table","table":$tableId')
+WHERE `settings` LIKE '%"formatter":"table"%';
+SQL;
+        $connection->executeStatement($sql);
+
+        $message = new Message(
+            'It is now possible to filter values to index via a regex, a list of languages or a visibility.' // @translate
+        );
+        $messenger->addSuccess($message);
+
+        $message = new Message(
+            'It is now possible to filter resources to index, for example an item set, a template, an owner, a visibility, etc.' // @translate
+        );
+        $messenger->addSuccess($message);
+
+        $message = new Message(
+            'It is now possible to use module Table to manage tables for normalization of indexation.' // @translate
+        );
+        $messenger->addSuccess($message);
+
+        $message = new Message(
+            $translator->translate('The table used for indexation has been converted into a standard %1$stable%2$s. It is recommended to remove the old one from the config.'), // @translate
+            sprintf('<a href="%s">', $table->url()), '</a>'
+        );
+        $message->setEscapeHtml(false);
+        $messenger->addWarning($message);
     }
 }
