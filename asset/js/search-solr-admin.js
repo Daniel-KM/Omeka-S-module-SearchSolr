@@ -1,7 +1,7 @@
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2021
  * Copyright Paul Sarrassat, 2018
+ * Copyright Daniel Berthereau, 2017-2023
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,6 +28,7 @@
  */
 
 (function() {
+
     // Schema and sourceLabels are set in the form.
     // var schema;
     // var sourceLabels;
@@ -43,6 +44,7 @@
         var field = schema.fields[i];
         fieldsByName[field.name] = field;
     }
+
     for (i in schema.dynamicFields) {
         var field = schema.dynamicFields[i];
         fieldsByName[field.name] = field;
@@ -165,7 +167,7 @@
         if (checkbox.checked) {
             template = template.replace(/__index__/g, count);
             container.append(template);
-            $('input[name="o:source['+count+'][set_sub]"]').change(function() {
+            $('input[name="o:source['+count+'][set_sub]"]').on('change', function() {
                 subPropertyChange(this, count);
             });
         } else {
@@ -174,27 +176,35 @@
     }
 
     $(document).ready(function() {
+
         $('select[name="o:source[0][source]"]')
             .attr('id', 'source-selector');
-        $('select[name="o:source[0][source]"]').chosen({
-            allow_single_deselect: true,
-            disable_search_threshold: 10,
-            width: '100%',
-            search_contains: true,
-            include_group_label_in_selected: true,
-        }).on('change', function() {
-            generateFieldName();
-            generateSourceLabel();
-        });
 
-        // sub-property managing
-        $('input[name="o:source[0][set_sub]"]').change(function() {
-            subPropertyChange(this, 0);
-        });
+        $('select[name="o:source[0][source]"]')
+            .chosen({
+                allow_single_deselect: true,
+                disable_search_threshold: 10,
+                width: '100%',
+                search_contains: true,
+                include_group_label_in_selected: true,
+            })
+            .on('change', function() {
+                generateFieldName();
+                generateSourceLabel();
+            });
 
-        var select = $('<select>')
-            .attr('id', 'field-selector')
-            .attr('data-placeholder', Omeka.jsTranslate('Choose a field…'));
+        // Sub-property managing.
+        $('input[name="o:source[0][set_sub]"]')
+            .on('change', function() {
+                subPropertyChange(this, 0);
+            });
+
+        // Init main select and input.
+
+        var select = $('<select>', {
+            id: 'field-selector',
+            'data-placeholder': Omeka.jsTranslate('Choose a field…'),
+        });
 
         var emptyOption = $('<option>').val('');
         select.append(emptyOption);
@@ -216,8 +226,9 @@
         });
 
         if (fields.length) {
-            var fieldsOptGroup = $('<optgroup>')
-                .attr('label', Omeka.jsTranslate('Field'));
+            var fieldsOptGroup = $('<optgroup>', {
+                label: Omeka.jsTranslate('Field'),
+            });
             for (i in fields) {
                 var field = fields[i];
                 if (field.name.startsWith('_') && field.name.endsWith('_'))
@@ -235,13 +246,13 @@
             if (!indexed){
                 return false;
             }
-
             return true;
         });
 
         if (dynamicFields.length) {
-            var dynamicFieldsOptGroup = $('<optgroup>')
-                .attr('label', Omeka.jsTranslate('Dynamic field'));
+            var dynamicFieldsOptGroup = $('<optgroup>', {
+                label: Omeka.jsTranslate('Dynamic field'),
+            });
             for (i in dynamicFields) {
                 var field = dynamicFields[i];
                 var option = $('<option>')
@@ -255,13 +266,11 @@
         select.on('change', function() {
             generateFieldName();
         });
+
         select.on('change chosen:updated', function() {
             showTypeInfo();
         });
 
-        var input = $('input[name="o:field_name"]');
-
-        input.before(select);
         select.chosen({
             allow_single_deselect: true,
             disable_search_threshold: 10,
@@ -270,37 +279,43 @@
             include_group_label_in_selected: true,
         });
 
+        var input = $('input[name="o:field_name"]');
+
+        input.before(select);
+
         var timeout = 0;
         var regexps = {};
-        input.on('keyup', function() {
-            clearTimeout(timeout);
-            var value = $(this).val();
-            timeout = setTimeout(function() {
-                var matchedField = '';
-                for (i in fields) {
-                    var field = fields[i];
-                    if (field.name == value) {
-                        matchedField = field.name;
-                        break;
-                    }
-                }
-
-                if (!matchedField) {
-                    for (i in dynamicFields) {
-                        var field = dynamicFields[i];
-                        if (!(field.name in regexps)) {
-                            var pattern = '^' + field.name.replace('*', '.*') + '$';
-                            regexps[field.name] = new RegExp(pattern);
-                        }
-                        if (value.match(regexps[field.name])) {
+        input
+            .on('keyup', function() {
+                clearTimeout(timeout);
+                var value = $(this).val();
+                timeout = setTimeout(function() {
+                    var matchedField = '';
+                    for (i in fields) {
+                        var field = fields[i];
+                        if (field.name == value) {
                             matchedField = field.name;
                             break;
                         }
                     }
-                }
+                    if (!matchedField) {
+                        for (i in dynamicFields) {
+                            var field = dynamicFields[i];
+                            if (!(field.name in regexps)) {
+                                var pattern = '^' + field.name.replace('*', '.*') + '$';
+                                regexps[field.name] = new RegExp(pattern);
+                            }
+                            if (value.match(regexps[field.name])) {
+                                matchedField = field.name;
+                                break;
+                            }
+                        }
+                    }
+                    select.val(matchedField).trigger('chosen:updated');
+                }, 200);
+            })
+            .trigger('keyup');
 
-                select.val(matchedField).trigger('chosen:updated');
-            }, 200);
-        }).trigger('keyup');
     });
+
 })();
