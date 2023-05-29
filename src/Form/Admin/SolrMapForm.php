@@ -198,6 +198,17 @@ class SolrMapForm extends Form
         $settingsFieldset = new Fieldset('o:settings');
         $settingsFieldset
             ->add([
+                'name' => 'label',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Default label', // @translate
+                    'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'label',
+                ],
+            ])
+            ->add([
                 'name' => 'formatter',
                 'type' => Element\Radio::class,
                 'options' => [
@@ -209,18 +220,31 @@ class SolrMapForm extends Form
                     'id' => 'formatter',
                     'value' => '',
                 ],
-            ])
-            ->add([
-                'name' => 'label',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Default label', // @translate
-                    'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'label',
-                ],
             ]);
+        if (class_exists('Table\Form\Element\TablesSelect')) {
+            $settingsFieldset
+                ->add([
+                    'name' => 'table',
+                    'type' => \Table\Form\Element\TablesSelect::class,
+                    'options' => [
+                        'label' => 'Table for formatter "Table"', // @translate
+                        'disable_group_by_owner' => true,
+                        'empty_option' => '',
+                    ],
+                    'attributes' => [
+                        'id' => 'table',
+                        'class' => 'chosen-select',
+                        'required' => false,
+                        'data-placeholder' => 'Select a table…', // @translate
+                        'value' => '',
+                    ],
+                ]);
+
+            // TODO Why the fieldset does not use form manager to load and init form element?
+            $settingsFieldset->get('table')
+                ->setApiManager($this->apiManager);
+        }
+
         $this->add($settingsFieldset);
 
         $inputFilter = $this->getInputFilter();
@@ -277,9 +301,15 @@ class SolrMapForm extends Form
 
     protected function getFormatterOptions(): array
     {
+        $noTableModule = !class_exists('Table\Form\Element\TablesSelect');
+
         $options = [];
         foreach ($this->valueFormatterManager->getRegisteredNames() as $name) {
             $valueFormatter = $this->valueFormatterManager->get($name);
+            if ($noTableModule && $name === 'table') {
+                $options[$name] = sprintf('%s (require module Table)', $valueFormatter->getLabel());
+                continue;
+            }
             $options[$name] = $valueFormatter->getLabel();
         }
         return $options;
