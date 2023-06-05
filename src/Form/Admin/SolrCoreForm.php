@@ -323,6 +323,10 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
             ->add([
                 'name' => 'bypass_certificate_check',
                 'required' => false,
+            ])
+            ->add([
+                'name' => 'http_request_type',
+                'required' => false,
             ]);
     }
 }
