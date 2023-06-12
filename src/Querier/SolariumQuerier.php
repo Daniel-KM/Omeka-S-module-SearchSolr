@@ -128,6 +128,7 @@ class SolariumQuerier extends AbstractQuerier
         // There is only one grouping here: by resource name (items/item sets).
         foreach ($solariumResultSet->getGrouping() as $fieldGroup) {
             $this->response->setTotalResults($fieldGroup->getMatches());
+            /** @var \Solarium\Component\Result\Grouping\ValueGroup $valueGroup */
             foreach ($fieldGroup as $valueGroup) {
                 $groupName = $valueGroup->getValue();
                 $this->response->setResourceTotalResults($groupName, $valueGroup->getNumFound());
@@ -135,6 +136,31 @@ class SolariumQuerier extends AbstractQuerier
                     $resourceId = basename($document['id']);
                     $this->response->addResult($groupName, ['id' => is_numeric($resourceId) ? (int) $resourceId : $resourceId]);
                 }
+            }
+        }
+
+        // TODO If less than pagination, get it directly.
+        try {
+            // Normally no exception, since previous query has no issue.
+            /** @var \Solarium\QueryType\Select\Result\Result $solariumResultSetAll */
+            $this->solariumQuery->setFields(['id']);
+            $solariumResultSetAll = $this->solariumClient->execute($this->solariumQuery);
+        } catch (\Exception $e) {
+            throw new QuerierException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        // TODO Optimize output and conversion (solr argument to get id only as array).
+        foreach ($solariumResultSetAll->getGrouping() as $fieldGroup) {
+            /** @var \Solarium\Component\Result\Grouping\ValueGroup $valueGroup */
+            foreach ($fieldGroup as $valueGroup) {
+                $groupName = $valueGroup->getValue();
+                $result = array_column($valueGroup->getDocuments(), 'id');
+                foreach ($result as &$documentId) {
+                    $resourceId = basename($documentId);
+                    $documentId = is_numeric($resourceId) ? (int) $resourceId : $resourceId;
+                }
+                unset($documentId);
+                $this->response->setAllResourceIdsForResourceType($groupName, $result);
             }
         }
 
