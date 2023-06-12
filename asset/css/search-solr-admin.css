@@ -1,39 +1,42 @@
-#field-info {
-    line-height: initial;
-    font-size: 80%;
-    color: #999999;
-}
+@media screen {
+    #field-info {
+        line-height: initial;
+        font-size: 80%;
+        color: #999999;
+    }
 
-#field-info-link::after {
-    margin-left: 1em;
-    font-family: "Font Awesome 5 Free";
-    content: '\f0da';
-}
+    #field-info-link::after {
+        margin-left: 1em;
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        content: '\f0da';
+    }
 
-#field-info-link.show::after {
-    content: '\f0d7';
-}
+    #field-info-link.show::after {
+        content: '\f0d7';
+    }
 
-#field-info-contents {
-    padding-top: 1ex;
-}
+    #field-info-contents {
+        padding-top: 1ex;
+    }
 
-#field-info-contents ul {
-    margin: 0;
-}
+    #field-info-contents ul {
+        margin: 0;
+    }
 
-.solr-mapping.create form .field.required .inputs fieldset legend {
-    display: none;
-}
+    .solr-mapping.create form .field.required .inputs fieldset legend {
+        display: none;
+    }
 
-.solr-core .actions .disabled {
-    color: currentColor;
-    cursor: not-allowed;
-    opacity: 0.5;
-    text-decoration: none;
-}
+    .solr-core .actions .disabled {
+        color: currentColor;
+        cursor: not-allowed;
+        opacity: 0.5;
+        text-decoration: none;
+    }
 
-.solr-map.browse .field-generic {
-    font-style: italic;
-    font-size: 0.8em;
+    .solr-map.browse .field-generic {
+        font-style: italic;
+        font-size: 0.8em;
+    }
 }

@@ -118,15 +118,16 @@
         var fieldName = $('#field-selector').val();
         var fieldInfo = $('#field-info');
         if (fieldInfo.length == 0) {
-            var fieldInfoContents = $('<div>')
-                .attr('id', 'field-info-contents')
+            var fieldInfoContents = $('<div>', { id: 'field-info-contents' })
                 .hide();
 
-            var fieldInfoLink = $('<a>')
-                .attr('href', '#')
-                .attr('id', 'field-info-link')
+            var fieldInfoLink = $('<a>', {
+                    id: 'field-info-link',
+                    href: '#',
+                })
                 .html('Field info')
-                .on('click', function() {
+                .on('click', function(e) {
+                    e.preventDefault();
                     if (fieldInfoContents.is(':visible')) {
                         fieldInfoContents.hide();
                         $(this).removeClass('show');
@@ -136,8 +137,7 @@
                     }
                 });
 
-            fieldInfo = $('<div>')
-                .attr('id', 'field-info')
+            fieldInfo = $('<div>', { id: 'field-info' })
                 .append(fieldInfoLink)
                 .append(fieldInfoContents);
 
@@ -271,6 +271,10 @@
             showTypeInfo();
         });
 
+        var input = $('input[name="o:field_name"]');
+
+        input.before(select);
+
         select.chosen({
             allow_single_deselect: true,
             disable_search_threshold: 10,
@@ -278,10 +282,6 @@
             search_contains: true,
             include_group_label_in_selected: true,
         });
-
-        var input = $('input[name="o:field_name"]');
-
-        input.before(select);
 
         var timeout = 0;
         var regexps = {};
