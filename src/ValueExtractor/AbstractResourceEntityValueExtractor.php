@@ -93,6 +93,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'media' => 'Item: Media', // @translate
                     'content' => 'Media: Content (html or extracted text)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
+                    'access_status' => 'Access status (module Access Resource)', // @translate
                     // Urls.
                     'url_api' => 'Api url', // @translate
                     'url_admin' => 'Admin url', // @translate
@@ -264,6 +265,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         if ($field === 'is_open') {
             return $resource instanceof ItemSetRepresentation
                 ? [$resource->isOpen()]
+                : [];
+        }
+
+        if ($field === 'access_status') {
+            return $resource instanceof AbstractResourceEntityRepresentation
+                ? $this->accessStatus($resource, $solrMap)
                 : [];
         }
 
@@ -499,12 +506,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         ItemRepresentation $item,
         ?SolrMapRepresentation $solrMap
         ): array {
-            $extractedValues = [];
-            foreach ($item->itemSets() as $itemSet) {
-                $values = $this->extractValue($itemSet, $solrMap->subMap());
-                $extractedValues = array_merge($extractedValues, $values);
-            }
-            return $extractedValues;
+        $extractedValues = [];
+        foreach ($item->itemSets() as $itemSet) {
+            $values = $this->extractValue($itemSet, $solrMap->subMap());
+            $extractedValues = array_merge($extractedValues, $values);
+        }
+        return $extractedValues;
     }
 
     protected function extractItemItemSetsTreeValue(
@@ -619,6 +626,23 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return [file_get_contents($filePath)];
         }
         return [];
+    }
+
+    protected function accessStatus(
+        AbstractResourceEntityRepresentation $resource,
+        ?SolrMapRepresentation $solrMap
+    ): array {
+        /** @var \AccessResource\Mvc\Controller\Plugin\AccessStatus $accessStatus */
+        static $accessStatus;
+
+        if ($accessStatus === null) {
+            $plugins = $resource->getServiceLocator()->get('ControllerPluginManager');
+            $accessStatus = $plugins->has('accessStatus') ? $plugins->get('accessStatus') : false;
+        }
+
+        return $accessStatus
+            ? [$accessStatus($resource)]
+            : [];
     }
 
     protected function defaultSiteSlug(AbstractRepresentation $resource): ?string

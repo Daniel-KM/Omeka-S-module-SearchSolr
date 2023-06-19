@@ -387,7 +387,7 @@ class CoreController extends AbstractActionController
                         'data_types_exclude' => empty($row['pool:data_types_exclude']) ? [] : array_filter(array_map('trim', explode('|', $row['pool:data_types_exclude']))),
                         // Don't filter array to keep values without language.
                         'filter_languages' => empty($row['pool:filter_languages']) ? [] : array_unique(array_map('trim', explode('|', $row['pool:filter_languages']))),
-                        'filter_visibility' => empty($row['pool:filter_visibility']) || !in_array($row['pool:filter_visibility'], ['public', 'private'])? null : $row['pool:filter_visibility'],
+                        'filter_visibility' => empty($row['pool:filter_visibility']) || !in_array($row['pool:filter_visibility'], ['public', 'private']) ? null : $row['pool:filter_visibility'],
                     ],
                     'o:settings' => [
                         'formatter' => $row['settings:formatter'],
