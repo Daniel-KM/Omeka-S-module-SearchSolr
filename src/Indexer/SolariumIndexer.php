@@ -291,6 +291,7 @@ class SolariumIndexer extends AbstractIndexer
         // Adapted Drupal convention to be used for any single or multi-index.
         // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/solr-conf-templates/8.x/schema.xml#L131-141
         // The 0-formatted id allows to sort quickly on id.
+        // TODO Maybe propose a second version with id first, that is quicker to search for very big base. See Solr too.
         if (empty($this->serverId)) {
             return empty($this->indexField)
                 ? sprintf('%s/%07s', $resourceName, $resourceId)
