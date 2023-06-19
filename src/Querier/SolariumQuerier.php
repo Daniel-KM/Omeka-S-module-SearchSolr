@@ -105,7 +105,7 @@ class SolariumQuerier extends AbstractQuerier
             // characters instead of returning an exception.
             // @link https://lucene.apache.org/core/8_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
             // TODO Check before the query.
-            $escapedQ = $this->escapeSolrQuery($q);
+            $escapedQ = $this->escapePhrase($q);
             $this->solariumQuery->setQuery($escapedQ);
             try {
                 $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
@@ -414,22 +414,22 @@ class SolariumQuerier extends AbstractQuerier
                     $hasFrom = isset($values['from']) && $values['from'] !== '';
                     $hasTo = isset($values['to']) && $values['to'] !== '';
                     if ($hasFrom && $hasTo) {
-                        $from = $this->enclose($values['from']);
-                        $to = $this->enclose($values['to']);
+                        $from = $this->escapePhrase($values['from']);
+                        $to = $this->escapePhrase($values['to']);
                         $this->solariumQuery->addFilterQuery([
                            'key' => $name . '-facet',
                            'query' => "$name:[$from TO $to]",
                            'tag' => 'exclude',
                         ]);
                     } elseif ($hasFrom) {
-                        $from = $this->enclose($values['from']);
+                        $from = $this->escapePhrase($values['from']);
                         $this->solariumQuery->addFilterQuery([
                            'key' => $name . '-facet',
                            'query' => "$name:[$from TO *]",
                            'tag' => 'exclude',
                         ]);
                     } elseif ($hasTo) {
-                        $to = $this->enclose($values['to']);
+                        $to = $this->escapePhrase($values['to']);
                         $this->solariumQuery->addFilterQuery([
                            'key' => $name . '-facet',
                            'query' => "$name:[* TO $to]",
@@ -438,7 +438,7 @@ class SolariumQuerier extends AbstractQuerier
                     }
                     // TODO Add a exclude facet field?
                 } else {
-                    $enclosedValues = $this->encloseValue($values);
+                    $enclosedValues = $this->escapePhraseValue($values, 'OR');
                     $this->solariumQuery->addFilterQuery([
                         'key' => $name . '-facet',
                         'query' => "$name:$enclosedValues",
@@ -587,7 +587,7 @@ class SolariumQuerier extends AbstractQuerier
                         continue;
                     }
                 }
-                $value = $this->encloseValue($value);
+                $value = $this->escapePhraseValue($value, 'OR');
                 if (!strlen($value)) {
                     continue;
                 }
@@ -782,14 +782,21 @@ class SolariumQuerier extends AbstractQuerier
                     $endBool = ')';
                 }
                 switch ($queryType) {
-                    // Regex requires string (_s), not text or anything else.
-                    // So if the field is not a string, use a simple "+", that
-                    // will be enough in most of the cases.
-                    // Furthermore, unlike sql, solr regex doesn't manage
-                    // insensitive search, neither flag "i".
-                    // The pattern is limited to 1000 characters by default.
-                    // TODO Check the size of the pattern.
-                    // @link https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/util/automaton/RegExp.html
+                    /**
+                     * Regex requires string (_s), not text or anything else.
+                     * So if the field is not a string, use a simple "+", that
+                     * will be enough in most of the cases.
+                     * Furthermore, unlike sql, solr regex doesn't manage
+                     * insensitive search, neither flag "i".
+                     * The pattern is limited to 1000 characters by default.
+                     *
+                     * @todo Check the size of the pattern.
+                     *
+                     * For diacritics and case: index and query without diacritics and lowercase.
+                     *
+                     * @link https://lucene.apache.org/core/6_6_6/core/org/apache/lucene/util/automaton/RegExp.html
+                     * @link https://solr.apache.org/guide/solr/latest/indexing-guide/language-analysis.html
+                     */
 
                     // Equal.
                     case 'neq':
@@ -797,7 +804,7 @@ class SolariumQuerier extends AbstractQuerier
                         if ($this->fieldIsString($name)) {
                             $value = $this->regexDiacriticsValue($value, '', '');
                         } else {
-                            $value = $this->encloseValue($value);
+                            $value = $this->escapePhraseValue($value, 'OR');
                         }
                         $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
@@ -808,7 +815,7 @@ class SolariumQuerier extends AbstractQuerier
                         if ($this->fieldIsString($name)) {
                             $value = $this->regexDiacriticsValue($value, '.*', '.*');
                         } else {
-                            $value = $this->encloseValueAnd($value);
+                            $value = $this->escapePhraseValue($value, 'AND');
                         }
                         $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
@@ -827,7 +834,7 @@ class SolariumQuerier extends AbstractQuerier
                         if ($this->fieldIsString($name)) {
                             $value = $this->regexDiacriticsValue($value, '', '.*');
                         } else {
-                            $value = $this->encloseValueAnd($value);
+                            $value = $this->escapePhraseValue($value, 'AND');
                         }
                         $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
@@ -838,7 +845,7 @@ class SolariumQuerier extends AbstractQuerier
                         if ($this->fieldIsString($name)) {
                             $value = $this->regexDiacriticsValue($value, '.*', '');
                         } else {
-                            $value = $this->encloseValueAnd($value);
+                            $value = $this->escapePhraseValue($value, 'AND');
                         }
                         $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
@@ -851,7 +858,7 @@ class SolariumQuerier extends AbstractQuerier
                         // regex and anchors are added by default.
                         // TODO Add // or not?
                         // TODO Escape regex for regexes…
-                        $value = $this->fieldIsString($name) ? $value : $this->encloseValue($value);
+                        $value = $this->fieldIsString($name) ? $value : $this->escapePhraseValue($value, 'OR');
                         $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
 
@@ -867,11 +874,11 @@ class SolariumQuerier extends AbstractQuerier
 
                     // Exists (has a value).
                     case 'nex':
-                        $value = $this->encloseValue($value);
+                        $value = $this->escapePhraseValue($value, 'OR');
                         $fq .= " $joiner (-$name:$value)";
                         break;
                     case 'ex':
-                        $value = $this->encloseValue($value);
+                        $value = $this->escapePhraseValue($value, 'OR');
                         $fq .= " $joiner (+$name:$value)";
                         break;
 
@@ -997,47 +1004,47 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
-     * Enclose a string to protect a query for Solr.
+     * Escape a string to query, so just enclose it with a double quote.
+     *
+     * The double quote and "\" are escaped too.
+     *
+     * @see https://solr.apache.org/guide/solr/latest/query-guide/standard-query-parser.html#escaping-special-characters
+     * @uses \Solarium\Core\Query\Helper::escapePhrase()
+     */
+    protected function escapePhrase($phrase): string
+    {
+        return $this->solariumQuery->getHelper()->escapePhrase((string) $phrase);
+    }
+
+    /**
+     * Enclose a value or a list of values (OR/AND) to protect a query for Solr.
      *
      * @param array|string $string
      * @return string
      */
-    protected function encloseValue($value): string
+    protected function escapePhraseValue($valueOrValues, string $joiner = 'OR'): string
     {
-        if (is_array($value)) {
-            if (empty($value)) {
-                $value = '';
-            } else {
-                $value = '(' . implode(' OR ', array_unique(array_map([$this, 'enclose'], $value))) . ')';
-            }
+        if (!is_array($valueOrValues)) {
+            return $this->escapePhrase($valueOrValues);
+        } elseif (empty($valueOrValues)) {
+            return '';
+        } elseif (count($valueOrValues) === 1) {
+            return $this->escapePhrase(reset($valueOrValues));
         } else {
-            $value = $this->enclose($value);
+            return '(' . implode(" $joiner ", array_unique(array_map([$this, 'escapePhrase'], $valueOrValues))) . ')';
         }
-        return $value;
     }
 
+
+
     /**
-     * Enclose a string to protect a query for Solr.
+     * Prepare a value for a regular expression, managing diacritics, case and
+     * joker "*" and "?".
      *
-     * @param array|string $string
-     * @return string
-     */
-    protected function encloseValueAnd($value): string
-    {
-        if (is_array($value)) {
-            if (empty($value)) {
-                $value = '';
-            } else {
-                $value = '(' . implode(' +', array_map([$this, 'enclose'], $value)) . ')';
-            }
-        } else {
-            $value = $this->enclose($value);
-        }
-        return $value;
-    }
-
-    /**
-     * Prepare a value for a regular expression, managing diacritics and case.
+     * For the list of characters to escape:
+     * @see https://solr.apache.org/guide/solr/latest/query-guide/standard-query-parser.html#escaping-special-characters
+     *
+     * @deprecated Instead, index and query without diacritics.
      *
      * @param array|string $value
      * @param string $append
@@ -1051,8 +1058,10 @@ class SolariumQuerier extends AbstractQuerier
             $basicDiacritics = [
                 '\\' => '\\\\',
                 '.' => '\.',
+                // To expand.
                 '*' => '.*',
                 '?' => '.',
+                // To escape.
                 '+' => '\+',
                 '[' => '\[',
                 '^' => '\^',
@@ -1074,67 +1083,17 @@ class SolariumQuerier extends AbstractQuerier
                 return substr($v, 0, 1);
             }, $this->baseDiacritics);
         }
+
         $regexVal = function ($string) use ($prepend, $append, $basicDiacritics) {
             $latinized = str_replace(array_keys($basicDiacritics), array_values($basicDiacritics), mb_strtolower($string));
             return '/' . $prepend
                 . str_replace(array_keys($this->regexDiacritics), array_values($this->regexDiacritics), $latinized)
                 . $append . '/';
         };
+
         $values = array_map($regexVal, is_array($value) ? $value : [$value]);
 
         return implode(' OR ', $values);
-    }
-
-    /**
-     * Enclose a string to protect a query for Solr.
-     *
-     * @param string $string
-     * @return string
-     */
-    protected function enclose($string): string
-    {
-        return '"' . addcslashes((string) $string, '"') . '"';
-    }
-
-    /**
-     * Enclose a string to protect a filter query for Solr.
-     *
-     * @param $string $string
-     * @return $string
-     */
-    protected function escape($string): string
-    {
-        return preg_replace('/([+\-&|!(){}[\]\^"~*?:])/', '\\\\$1', (string) $string);
-    }
-
-    protected function escapeSolrQuery($q): string
-    {
-        $reservedCharacters = [
-            // The character "\" must be escaped first.
-            '\\' => '\\\\',
-            '+' => '\+',
-            '-' => '\-' ,
-            '&&' => '\&\&',
-            '||' => '\|\|',
-            '!' => '\!',
-            '(' => '\(' ,
-            ')' => '\)',
-            '{' => '\{',
-            '}' => '\}',
-            '[' => '\[',
-            ']' => '\]',
-            '^' => '\^',
-            '"' => '\"',
-            '~' => '\~',
-            '*' => '\*',
-            '?' => '\?',
-            ':' => '\:',
-        ];
-        return str_replace(
-            array_keys($reservedCharacters),
-            array_values($reservedCharacters),
-            (string) $q
-        );
     }
 
     /**
