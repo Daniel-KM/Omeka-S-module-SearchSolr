@@ -17,19 +17,31 @@ class Date extends AbstractValueFormatter
     {
         if ($value instanceof ValueRepresentation && $value->type() === 'numeric:interval') {
             $value = strtok((string) $value, '/');
-        } else {
-            $value = (string) $value;
+        } elseif (!($value instanceof ValueRepresentation && $value->type() === 'numeric:timestamp')) {
+            $value = trim((string) $value);
             // Manage the common case where the date is uncertain and wrapped
             // with "[]" or "()" or "{}". Wrap may be on part of the date only.
             $value = str_replace(['[', ']', '(', ')', '{', '}'], '', $value);
             $matches = [];
-            // Manage "1914/1918" and the common but unstandard case "1914-1918"
-            // that should not be the allowed "1918-11".
+            // Check for another format than ISO 8601 (partial or full) too.
             // Of course, garbage in, garbage out.
-            if (strpos($value, '/') > 0) {
+            if (preg_match('~^([+-]?)(\d+)$~', $value, $matches)) {
+                // A single year, but without leading 0. "0" is not a year.
+                $val = (int) $matches[2];
+                return $val ? [str_replace('+', '', $matches[1]) . sprintf('%04s', $val)] : [];
+            } elseif (strpos($value, '/') > 0) {
+                // Manage "1914/1918". To be improved to avoid American dates.
                 $value = trim(strtok($value, '/'));
-            } elseif (preg_match('~^\s*(-?\d+)\s*-\s*-?\s*(?:[\D]+|-?\s*\d\d\d+|[a-zA-Z].*)\s*\??\s*$$~', $value, $matches)) {
+            } elseif (preg_match('~^([+-]?\d+)\s*-\s*-?\s*(?:[\D]+|[+-]?\s*\d\d\d+|[a-zA-Z].*)\s*\??$~', $value, $matches)) {
+                // Manage the common but unstandard case "1914-1918" that should
+                // not be the allowed "1918-11".
                 $value = $matches[1];
+            } elseif (preg_match('~^[+-]?\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$~', $value, $matches)) {
+                // This is a mysql date.
+                $value = str_replace(' ', 'T', $value);
+            } elseif (preg_match('~^([+-]?)(\d\d\d\d:\d\d:\d\d) (\d\d:\d\d:\d\d)$~', $value, $matches)) {
+                // This is an old exif date.
+                $value = $matches[1] . str_replace(':', '-', $matches[2]) . 'T' . $matches[3];
             }
         }
         $result = (string) $this->getDateTimeFromValue((string) $value);
@@ -51,6 +63,8 @@ class Date extends AbstractValueFormatter
         $yearMax = 292277026595;
         $patternIso8601 = '^(?<date>(?<year>-?\d{4,})(-(?<month>\d{1,2}))?(-(?<day>\d{1,2}))?)(?<time>(T(?<hour>\d{1,2}))?(:(?<minute>\d{1,2}))?(:(?<second>\d{1,2}))?)(?<offset>((?<offset_hour>[+-]\d{1,2})?(:(?<offset_minute>\d{1,2}))?)|Z?)$';
         static $dateTimes = [];
+
+        $value = ltrim($value, '+');
 
         if (array_key_exists($value, $dateTimes)) {
             return $dateTimes[$value];
