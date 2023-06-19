@@ -85,7 +85,7 @@ class SolariumQuerier extends AbstractQuerier
         $this->solariumQuery = $this->getPreparedQuery();
         if (is_null($this->solariumQuery)) {
             return $this->response
-                ->setIsMessage('An issue occurred.'); // @translate
+                ->setMessage('An issue occurred.'); // @translate
         }
 
         try {
