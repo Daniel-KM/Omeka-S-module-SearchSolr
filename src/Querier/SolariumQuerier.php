@@ -562,8 +562,10 @@ class SolariumQuerier extends AbstractQuerier
                 });
                 $values = array_unique(array_map('intval', $value));
                 if (count($values)) {
-                    $value = '("items:' . implode('" OR "items:', $values)
-                        . '" OR "item_sets:' . implode('" OR "item_sets:', $values) . '")';
+                    // Manage any special indexers for third party.
+                    // TODO Add a second (hidden?) field "o_id_i".
+                    // TODO Or reindex in the other way #id/items-index-serverId.
+                    $value = '*\/' . implode(' OR *\/', $values);
                     $this->solariumQuery
                         ->createFilterQuery($name . '_' . ++$this->appendToKey)
                         ->setQuery("$name:$value");
@@ -964,6 +966,9 @@ class SolariumQuerier extends AbstractQuerier
         return $fields;
     }
 
+    /**
+     * @todo Use schema.
+     */
     protected function fieldIsTokenized($name): bool
     {
         return substr($name, -2) === '_t'
@@ -972,6 +977,9 @@ class SolariumQuerier extends AbstractQuerier
             || strpos($name, '_txt_') !== false;
     }
 
+    /**
+     * @todo Use schema.
+     */
     protected function fieldIsString($name): bool
     {
         return substr($name, -2) === '_s'
@@ -980,6 +988,9 @@ class SolariumQuerier extends AbstractQuerier
             || substr($name, -9) === '_ss_lower';
     }
 
+    /**
+     * @todo Use schema.
+     */
     protected function fieldIsLower($name): bool
     {
         return substr($name, -6) === '_lower';
