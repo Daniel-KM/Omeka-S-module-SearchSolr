@@ -261,6 +261,31 @@ class SolariumQuerier extends AbstractQuerier
                 ->setQuery("$isPublicField:1");
         }
 
+        // This is not a normal filter query, so add some rules.
+        // If needed, add a standard argument for filter query for it.
+        $accessStatusField = $this->solrCore->mapsBySource('access_status');
+        $accessStatusField = $accessStatusField ? (reset($accessStatusField))->fieldName() : null;
+        if ($accessStatusField) {
+            $accessStatus = $this->query->getAccessStatus();
+            if ($accessStatus === 'free') {
+                $this->solariumQuery
+                    ->createFilterQuery($accessStatusField)
+                    ->setQuery("$accessStatusField:free");
+            }
+            /*
+            } elseif ($accessStatus === 'forbidden') {
+                // People with access "forbidden" have access to all.
+                // Nothing to do.
+            }
+            */
+            elseif ($accessStatus === 'reserved') {
+                // People with access "reserved" have access to "free" too.
+                $this->solariumQuery
+                   ->createFilterQuery($accessStatusField)
+                   ->setQuery("$accessStatusField:(free OR reserved)");
+            }
+        }
+
         $this->solariumQuery
             ->getGrouping()
             ->addField($resourceNameField)
