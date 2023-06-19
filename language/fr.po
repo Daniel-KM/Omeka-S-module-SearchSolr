@@ -146,7 +146,7 @@ msgstr "Ajouter un cœur Solr"
 #: view/search-solr/admin/map/browse.phtml:62
 #: view/search-solr/admin/map/edit.phtml:45
 msgid "Solr cores"
-msgstr "Cœur Solr"
+msgstr "Cœurs Solr"
 
 #: view/search-solr/admin/core/add.phtml:51
 msgid "Add core"

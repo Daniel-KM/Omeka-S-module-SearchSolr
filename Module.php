@@ -184,6 +184,12 @@ SQL;
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
         $sharedEventManager->attach(
+            \AdvancedSearch\Controller\Admin\IndexController::class,
+            'view.browse.after',
+            [$this, 'appendBrowseCores']
+        );
+
+        $sharedEventManager->attach(
             Api\Adapter\SolrCoreAdapter::class,
             'api.delete.post',
             [$this, 'deletePostSolrCore']
@@ -208,6 +214,17 @@ SQL;
             'api.delete.post',
             [$this, 'deletePostSolrMap']
         );
+    }
+
+    public function appendBrowseCores(Event $event): void
+    {
+        $view = $event->getTarget();
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $response = $api->search('solr_cores');
+        $cores = $response->getContent();
+        echo $view->partial('search-solr/admin/core/browse-table', [
+            'cores' => $cores,
+        ]);
     }
 
     public function deletePostSolrCore(Event $event): void

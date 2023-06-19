@@ -54,7 +54,7 @@ return [
         ],
     ],
     'navigation' => [
-        'AdminModule' => [
+        'AdvancedSearchSolr' => [
             'search' => [
                 // Copy of the first level of navigation from the config of the module Search.
                 // It avoids an error when Advanced Search is automatically disabled for upgrading. This errors occurs one time only anyway.

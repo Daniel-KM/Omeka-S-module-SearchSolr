@@ -32,8 +32,9 @@
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $cores
  */
 
-$translate = $this->plugin('translate');
-$escape = $this->plugin('escapeHtml');
+$plugins = $this->getHelperPluginManager();
+$translate = $plugins->get('translate');
+$escape = $plugins->get('escapeHtml');
 
 $this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 ?>
@@ -52,63 +53,8 @@ $this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css',
     ?>
     <span><?= $translate('Solr cores') ?></span>
 </nav>
-<h2><?= $translate('Cores') ?></h2>
-<?php if (count($cores)): ?>
-    <table class="tablesaw" data-tablesaw-mode="stack">
-        <thead>
-            <tr>
-                <th><?= $translate('Name') ?></th>
-                <th><?= $translate('URL') ?></th>
-                <th><?= $translate('Status') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($cores as $core): ?>
-                <?php $status = $core->status(); ?>
-                <tr>
-                    <td>
-                        <span><?= $core->name() ?></span>
-                        <ul class="actions">
-                            <li>
-                                <?= $this->hyperlink('',
-                                    $core->clientUrlAdminBoard(),
-                                    ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable')]
-                                ) ?>
-                            </li>
-                            <li>
-                                <?= $core->link('', 'edit', [
-                                    'class' => 'o-icon-edit',
-                                    'title' => $translate('Edit'),
-                                ]) ?>
-                            </li>
-                            <li>
-                                <?= $status
-                                    ? $this->hyperlink('', $core->mapUrl(), [
-                                        'class' => 'o-icon- fa fa-sliders fa-sliders-h',
-                                        'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
-                                    ])
-                                    : $this->hyperlink('', '#', [
-                                        'class' => 'o-icon- fa fa-sliders fa-sliders-h disabled',
-                                        'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
-                                    ])
-                                ?>
-                            </li>
-                            <li>
-                                <a href="#"
-                                data-sidebar-content-url="<?= $escape($core->url('delete-confirm')) ?>"
-                                class="o-icon-delete sidebar-content"
-                                aria-label="<?= $escape($translate('Delete')) ?>"
-                                title="<?= $escape($translate('Delete')) ?>"></a>
-                            </li>
-                        </ul>
-                    </td>
-                    <td><?= $core->clientUrlAdmin() ?></td>
-                    <td><?= $core->statusMessage() ?></td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-<?php endif; ?>
+
+<?= $this->partial('search-solr/admin/core/browse-table') ?>
 
 <div class="sidebar">
     <a href="#"
