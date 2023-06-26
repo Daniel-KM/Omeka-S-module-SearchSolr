@@ -189,6 +189,15 @@ foreach ($sqls as $sql) {
     $connection->executeStatement($sql);
 }
 
+// Add a new key for more recent module SearchSolr.
+$sql = <<<SQL
+UPDATE `solr_map`
+SET `pool` = '[]'
+WHERE `pool` = '' OR `pool` IS NULL
+;
+SQL;
+$connection->executeStatement($sql);
+
 // Convert the settings.
 // None, but there may be "solr_bypass_certificate_check" in the local config in Omeka.
 
