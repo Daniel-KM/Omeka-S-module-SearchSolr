@@ -310,9 +310,25 @@ class SolariumIndexer extends AbstractIndexer
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
 
+        // This shortcut is not working on some databases: the representation is
+        // not fully loaded, so when getting resource values ($representation->values()),
+        // an error occurs when getting the property term: the vocabulary is not
+        // loaded and the prefix cannot be get.
+        /** @see \Omeka\Api\Representation\AbstractResourceEntityRepresentation::values() */
+
         /** @var \Omeka\Api\Representation\AbstractResourceRepresentation $representation */
-        $adapter = $this->apiAdapters->get($resourceName);
-        $representation = $adapter->getRepresentation($resource);
+        // $adapter = $this->apiAdapters->get($resourceName);
+        // $representation = $adapter->getRepresentation($resource);
+
+        try {
+            $representation = $this->api->read($resourceName, $resourceId)->getContent();
+        } catch (\Exception $e) {
+            $this->getLogger()->notice(
+                new Message('The %1$s #%2$d is no more available and cannot be indexed.', // @translate
+                $resourceName, $resourceId
+            ));
+            return;
+        }
 
         $isSingleFieldFilled = [];
 
@@ -529,9 +545,9 @@ class SolariumIndexer extends AbstractIndexer
                                 }
                                 try {
                                     $update = $client
-                                    ->createUpdate()
-                                    ->addDocument($document)
-                                    ->addCommit();
+                                        ->createUpdate()
+                                        ->addDocument($document)
+                                        ->addCommit();
                                     $client->update($update);
                                 } catch (\Exception $e) {
                                     $dId = explode('-', $documentId);
