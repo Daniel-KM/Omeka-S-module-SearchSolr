@@ -93,7 +93,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'media' => 'Item: Media', // @translate
                     'content' => 'Media: Content (html or extracted text)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
-                    'access_status' => 'Access status (module Access Resource)', // @translate
+                    'access_level' => 'Access level (module Access)', // @translate
                     // Urls.
                     'url_api' => 'Api url', // @translate
                     'url_admin' => 'Admin url', // @translate
@@ -268,9 +268,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 : [];
         }
 
-        if ($field === 'access_status') {
+        if ($field === 'access_level') {
             return $resource instanceof AbstractResourceEntityRepresentation
-                ? $this->accessStatus($resource, $solrMap)
+                ? $this->accessLevel($resource, $solrMap)
                 : [];
         }
 
@@ -628,20 +628,20 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         return [];
     }
 
-    protected function accessStatus(
+    protected function accessLevel(
         AbstractResourceEntityRepresentation $resource,
         ?SolrMapRepresentation $solrMap
     ): array {
-        /** @var \AccessResource\Mvc\Controller\Plugin\AccessStatus $accessStatus */
-        static $accessStatus;
+        /** @var \Access\Mvc\Controller\Plugin\AccessLevel $accessLevel */
+        static $accessLevel;
 
-        if ($accessStatus === null) {
+        if ($accessLevel === null) {
             $plugins = $resource->getServiceLocator()->get('ControllerPluginManager');
-            $accessStatus = $plugins->has('accessStatus') ? $plugins->get('accessStatus') : false;
+            $accessLevel = $plugins->has('accessLevel') ? $plugins->get('accessLevel') : false;
         }
 
-        return $accessStatus
-            ? [$accessStatus($resource)]
+        return $accessLevel
+            ? [$accessLevel($resource)]
             : [];
     }
 

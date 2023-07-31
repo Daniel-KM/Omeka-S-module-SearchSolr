@@ -254,48 +254,14 @@ class SolariumQuerier extends AbstractQuerier
 
         $this->solariumQuery->addField('id');
 
-        // Warning for module AccessResource: in current version, reserved
-        // resources are private, so check them first.
-        // IsPublic and accessStatus are set by the server automatically, not by the user.
+        // IsPublic is set by the server automatically, not by the user.
         // TODO Check if the arguments are set by the user and remove them.
         $isPublic = $this->query->getIsPublic();
 
-        // This is not a normal filter query, so add some rules.
-        // If needed, add a standard argument for filter query for it.
-        $accessStatusField = $this->solrCore->mapsBySource('access_status');
-        $accessStatusField = $accessStatusField ? (reset($accessStatusField))->fieldName() : null;
-        if ($accessStatusField) {
-            $accessStatus = $this->query->getAccessStatus();
-            if ($accessStatus === 'free') {
-                if ($isPublic) {
-                    $this->solariumQuery
-                        ->createFilterQuery($isPublicField)
-                        ->setQuery("$isPublicField:1");
-                }
-                $this->solariumQuery
-                    ->createFilterQuery($accessStatusField)
-                    ->setQuery("$accessStatusField:free");
-            } elseif ($accessStatus === 'forbidden') {
-                // People with access "forbidden" have access to all.
-                // So nothing to do, except if isPublic is set.
-                if ($isPublic) {
-                    $this->solariumQuery
-                        ->createFilterQuery($isPublicField)
-                        ->setQuery("$isPublicField:1");
-                }
-            } elseif ($accessStatus === 'reserved') {
-                // People with access "reserved" have access to "free" too.
-                $this->solariumQuery
-                    ->createFilterQuery($accessStatusField)
-                    ->setQuery("$accessStatusField:(free OR reserved)");
-                // Public status is not checked in that case.
-            } elseif ($isPublic) {
-                // Normally not possible here, just for security.
-                $this->solariumQuery
-                    ->createFilterQuery($isPublicField)
-                    ->setQuery("$isPublicField:1");
-            }
-        } elseif ($isPublic) {
+        // Since version of module Access 3.4.17, the access level is a standard
+        // filter that may be enable or not.
+
+        if ($isPublic) {
             $this->solariumQuery
                 ->createFilterQuery($isPublicField)
                 ->setQuery("$isPublicField:1");
