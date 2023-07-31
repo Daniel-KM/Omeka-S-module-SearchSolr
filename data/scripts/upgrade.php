@@ -463,3 +463,25 @@ SQL;
         $messenger->addWarning($message);
     }
 }
+
+if (version_compare($oldVersion, '3.5.44', '<')) {
+    $sql = <<<SQL
+UPDATE `solr_map`
+SET
+    `field_name` = REPLACE(`field_name`, 'access_source', 'access_level'),
+    `source` = REPLACE(`source`, 'access_source', 'access_level')
+;
+SQL;
+    $connection->executeStatement($sql);
+
+    $translator = $services->get('MvcTranslator');
+    $message = new Message(
+        $translator->translate('The support of module Access Resource has been removed. Support of module Access has been added.') // @translate
+    );
+    $messenger->addSuccess($message);
+
+    $message = new Message(
+        $translator->translate('A reindexing is needed.') // @translate
+    );
+    $messenger->addWarning($message);
+}
