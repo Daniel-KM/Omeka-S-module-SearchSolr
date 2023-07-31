@@ -635,12 +635,13 @@ the solr home directory is /var/solr):
 sudo cp -r /opt/solr/server/solr/configsets/_default /var/solr/data
 # The destination directory inside data is the name of the core, here "omeka".
 # It should be updated in following command if the name is different.
-sudo mv /var/solr/data/_default /var/solr/data/omeka
-sudo touch /var/solr/data/omeka/core.properties
-sudo echo "#Written by CorePropertiesLocator" >> /var/solr/data/omeka/core.properties
-sudo echo "#Mon Mar 20 00:00:00 UTC 2023" >> /var/solr/data/omeka/core.properties
-sudo echo "name=omeka" >> /var/solr/data/omeka/core.properties
-sudo chmod ug+rw /var/solr/data/omeka/core.properties
+CORE="omeka"
+sudo mv /var/solr/data/_default /var/solr/data/$CORE
+sudo touch /var/solr/data/$CORE/core.properties
+sudo bash -c "echo '#Written by CorePropertiesLocator' >> /var/solr/data/$CORE/core.properties"
+sudo bash -c "echo 'Mon Jul 31 00:00:00 UTC 2023' >> /var/solr/data/$CORE/core.properties"
+sudo bash -c "echo 'name=$CORE' >> /var/solr/data/$CORE/core.properties"
+sudo chmod ug+rw /var/solr/data/$CORE/core.properties
 sudo chown -R solr:solr /var/solr
 sudo systemctl restart solr
 ```
@@ -650,7 +651,7 @@ should be the name of the directory:
 
 ```ini
 #Written by CorePropertiesLocator
-#Mon Mar 20 00:00:00 UTC 2023
+#Mon Jul 31 00:00:00 UTC 2023
 name=omeka
 ```
 
