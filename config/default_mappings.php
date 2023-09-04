@@ -265,6 +265,13 @@ return [
         'pool' => [],
         'settings' => ['formatter' => '', 'label' => 'Item Set'],
     ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'property_values_txt',
+        'source' => 'property_values',
+        'pool' => [],
+        'settings' => ['formatter' => 'alphanumeric', 'label' => 'Values'],
+    ],
 
     // Fields to sort.
     [

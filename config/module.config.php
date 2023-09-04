@@ -240,6 +240,7 @@ return [
             'standard' => ValueFormatter\Standard::class,
             'standard_with_uri' => ValueFormatter\StandardWithUri::class,
             'standard_without_uri' => ValueFormatter\StandardWithoutUri::class,
+            'alphanumeric' => ValueFormatter\Alphanumeric::class,
             'plain_text' => ValueFormatter\PlainText::class,
             'raw_text' => ValueFormatter\RawText::class,
             'html_escaped_text' => ValueFormatter\HtmlEscapedText::class,
