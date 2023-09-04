@@ -748,7 +748,7 @@ FROM item_sets_tree_edge
 JOIN resource ON resource.id = item_sets_tree_edge.item_set_id
 WHERE item_sets_tree_edge.item_set_id IN (:ids)
 GROUP BY resource.id
-ORDER BY $sortingMethodSql;
+ORDER BY $sortingMethodSql ASC;
 SQL;
         $flatTree = $connection->executeQuery($sql, ['ids' => array_keys($itemSetTitles)], ['ids' => $connection::PARAM_INT_ARRAY])->fetchAllAssociativeIndexed();
 

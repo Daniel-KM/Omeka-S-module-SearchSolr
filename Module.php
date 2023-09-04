@@ -401,7 +401,7 @@ SQL;
         $sqlSolrCoreId = <<<'SQL'
 SELECT `id`
 FROM `solr_core`
-ORDER BY `id`
+ORDER BY `id` ASC
 SQL;
         $solrCoreId = (int) $connection->fetchColumn($sqlSolrCoreId);
         if ($solrCoreId) {
