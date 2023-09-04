@@ -22,6 +22,9 @@ any other module, in particular on any shared web hosting services. Of course,
 it still requires a Solr server, but it can be provided by another server or by
 a third party.
 
+Solr can be installed quickly from official solr tarball or from debian packages
+for [Debian 10/11].
+
 
 Installation
 ------------
@@ -414,13 +417,11 @@ See [taking Solr to production].
 
 ```sh
 sudo touch /etc/security/limits.d/200-solr.conf
-sudo chmod o+w /etc/security/limits.d/200-solr.conf
-# On CentOs, you main it set params as global, so to use `*` instead of `solr` for each following command:
-sudo echo "solr    hard    nofile  65000" >> /etc/security/limits.d/200-solr.conf
-sudo echo "solr    hard    nproc   65000" >> /etc/security/limits.d/200-solr.conf
-sudo echo "solr    soft    nofile  65000" >> /etc/security/limits.d/200-solr.conf
-sudo echo "solr    soft    nproc   65000" >> /etc/security/limits.d/200-solr.conf
-sudo chmod o-w /etc/security/limits.d/200-solr.conf
+# On CentOs, you may set params as global, so to use `*` instead of `solr` for each following command:
+echo "solr    hard    nofile  65000" | sudo tee -a /etc/security/limits.d/200-solr.conf
+echo "solr    hard    nproc   65000" | sudo tee -a /etc/security/limits.d/200-solr.conf
+echo "solr    soft    nofile  65000" | sudo tee -a /etc/security/limits.d/200-solr.conf
+echo "solr    soft    nproc   65000" | sudo tee -a /etc/security/limits.d/200-solr.conf
 sudo systemctl restart solr
 ```
 
@@ -820,6 +821,7 @@ currently managed with [Greenstone].
 [documentation]: https://solr.apache.org/guide/the-dismax-query-parser.html#q-alt-parameter
 [this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
 [Solr PHP extension]: https://pecl.php.net/package/solr
+[Debian 10/11]: https://github.com/Daniel-KM/Omeka-S-module-SearchSolr/releases/tag/3.5.44
 [below]: #manage-solr
 [below for Debian]: #solr-install
 [below "Solr management"]: #solr-management
