@@ -586,6 +586,7 @@ class SolariumIndexer extends AbstractIndexer
             $this->getLogger()->err($message);
             return $this;
         }
+
         $error = method_exists($exception, 'getBody') ? json_decode((string) $exception->getBody(), true) : null;
         $message = is_array($error) && isset($error['error']['msg'])
             ? $error['error']['msg']
@@ -595,8 +596,9 @@ class SolariumIndexer extends AbstractIndexer
             $message = new Message('Invalid document (wrong field type or missing required field).'); // @translate
         } elseif ($message === 'Solr HTTP error: HTTP request failed') {
             $message = new Message('Solr HTTP error: HTTP request failed due to network or certificate issue.'); // @translate
+        } else {
+            $message = new Message('Indexing of resource %1$s failed: %2$s', $dId, $message);
         }
-        $message = new Message('Indexing of resource %1$s failed: %2$s', $dId, $message);
         $this->getLogger()->err($message);
         return $this;
     }
