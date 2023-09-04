@@ -123,6 +123,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'o:original_url' => 'Original url', // @translate
                     'o:thumbnail' => 'Thumbnail (asset)', // @translate
                     'o:term' => 'Property or class term', // @translate
+                    'property_values' => 'All property values', // @translate
                 ],
             ],
             // Set dcterms first.
@@ -381,6 +382,13 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 : [$result];
         }
 
+        if ($field === 'property_values') {
+            if (!method_exists($resource, 'values')) {
+                return [];
+            }
+            return $this->extractPropertyValues($resource, $solrMap);
+        }
+
         if (strpos($field, ':')) {
             return $this->extractPropertyValue($resource, $solrMap);
         }
@@ -545,6 +553,26 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     }
 
     /**
+     * Extract the values or all properties of the given resource.
+     *
+     * @param AbstractResourceEntityRepresentation $resource
+     * @param SolrMapRepresentation|null $solrMap
+     * @return mixed[]|\Omeka\Api\Representation\ValueRepresentation[]
+     * Null values and empty strings should be skipped.
+     */
+    protected function extractPropertyValues(
+        AbstractResourceEntityRepresentation $resource,
+        SolrMapRepresentation $solrMap
+    ): array {
+        /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
+        $values = [];
+        foreach (array_keys($resource->values()) as $term) {
+            $values = array_merge($values, $resource->value($term, ['all' => true, 'type' => $solrMap->pool('data_types')]));
+        }
+        return $this->extractPropertyValuesEach($resource, $solrMap, $values);
+    }
+
+    /**
      * Extract the property values of the given resource.
      *
      * @param AbstractResourceEntityRepresentation $resource
@@ -556,14 +584,29 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         AbstractResourceEntityRepresentation $resource,
         SolrMapRepresentation $solrMap
     ): array {
-        $extractedValues = [];
-
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
         $values = $resource->value($solrMap->firstSource(), [
             'all' => true,
             'type' => $solrMap->pool('data_types'),
             'lang' => $solrMap->pool('filter_languages'),
         ]);
+        return $this->extractPropertyValuesEach($resource, $solrMap, $values);
+    }
+
+    /**
+     * Normalize the extracted values of the given resource.
+     *
+     * @param AbstractResourceEntityRepresentation $resource
+     * @param SolrMapRepresentation|null $solrMap
+     * @return mixed[]|\Omeka\Api\Representation\ValueRepresentation[]
+     * Null values and empty strings should be skipped.
+     */
+    protected function extractPropertyValuesEach(
+        AbstractResourceEntityRepresentation $resource,
+        SolrMapRepresentation $solrMap,
+        array $values
+    ): array {
+        $extractedValues = [];
 
         // Filter values and uris are full regex automatically checked.
         $filterValuesPattern = $solrMap->pool('filter_values') ?: null;
