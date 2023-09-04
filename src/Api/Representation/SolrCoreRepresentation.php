@@ -205,7 +205,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function status(): bool
     {
-        return $this->statusMessage() === 'OK';
+        return mb_substr($this->statusMessage(), 0, 2) === 'OK';
     }
 
     /**
