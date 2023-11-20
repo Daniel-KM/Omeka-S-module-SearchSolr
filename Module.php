@@ -111,10 +111,10 @@ class Module extends AbstractModule
 
         // Module AdvancedSearch is already checked as dependency.
         $advancedSearchVersion = $moduleManager->getModule('AdvancedSearch')->getIni('version');
-        if (version_compare($advancedSearchVersion, '3.3.6.16', '<')) {
+        if (version_compare($advancedSearchVersion, '3.4.15', '<')) {
             $message = new \Omeka\Stdlib\Message(
                 $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
-                'Advanced Search', '3.3.6.16'
+                'Advanced Search', '3.4.15'
             );
             throw new ModuleCannotInstallException((string) $message);
         }

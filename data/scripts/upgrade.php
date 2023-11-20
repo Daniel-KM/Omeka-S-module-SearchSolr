@@ -485,3 +485,25 @@ SQL;
     );
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.5.45', '<')) {
+    $translator = $services->get('MvcTranslator');
+    if (!$this->isModuleActive('AdvancedSearch')) {
+        $message = new Message(
+            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
+            'Advanced Search', '3.4.15'
+        );
+        throw new ModuleCannotInstallException((string) $message);
+    }
+    /** @var \Omeka\Module\Manager $moduleManager */
+    $moduleManager = $services->get('Omeka\ModuleManager');
+    $module = $moduleManager->getModule('AdvancedSearch');
+    $moduleVersion = $module->getIni('version');
+    if (version_compare($moduleVersion, '3.4.15', '<')) {
+        $message = new Message(
+            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
+            'Advanced Search', '3.4.15.'
+        );
+        throw new ModuleCannotInstallException((string) $message);
+    }
+}
