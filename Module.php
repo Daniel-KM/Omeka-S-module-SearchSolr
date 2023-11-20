@@ -381,9 +381,6 @@ SQL;
         $this->createDefaultSolrConfig();
     }
 
-    /**
-     * @todo Replace this method by the standard InstallResources() when the upgrade from Search will be removed.
-     */
     protected function createDefaultSolrConfig(): void
     {
         // Note: during installation or upgrade, the api may not be available
@@ -443,7 +440,7 @@ SQL;
         }
 
         $message = new \Omeka\Stdlib\Message(
-            'The default core is available. Configure it in the %ssearch manager%s.', // @translate
+            'The default core can be configured in the %1$ssearch manager%2$s.', // @translate
             // Don't use the url helper, the route is not available during install.
             sprintf('<a href="%s">', $urlHelper('admin') . '/search-manager/solr/core/' . $solrCoreId . '/edit'),
             '</a>'
