@@ -46,6 +46,14 @@ class SolariumAdapter extends AbstractAdapter
      */
     protected $translator;
 
+    protected $label = 'Solr [via Solarium]'; // @translate
+
+    protected $configFieldsetClass = \SearchSolr\Form\Admin\SolrConfigFieldset::class;
+
+    protected $indexerClass = \SearchSolr\Indexer\SolariumIndexer::class;
+
+    protected $querierClass = \SearchSolr\Querier\SolariumQuerier::class;
+
     /**
      * @param ApiManager $api
      * @param TranslatorInterface $translator
@@ -56,25 +64,10 @@ class SolariumAdapter extends AbstractAdapter
         $this->translator = $translator;
     }
 
-    public function getLabel(): string
-    {
-        return 'Solr [via Solarium]';
-    }
-
     public function getConfigFieldset(): ?\Laminas\Form\Fieldset
     {
         $solrCores = $this->api->search('solr_cores')->getContent();
         return new SolrConfigFieldset(null, ['solrCores' => $solrCores]);
-    }
-
-    public function getIndexerClass(): string
-    {
-        return \SearchSolr\Indexer\SolariumIndexer::class;
-    }
-
-    public function getQuerierClass(): string
-    {
-        return \SearchSolr\Querier\SolariumQuerier::class;
     }
 
     public function getAvailableFields(): array
