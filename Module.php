@@ -151,7 +151,7 @@ class Module extends AbstractModule
         $this->installResources();
     }
 
-    protected function preUninstall(): void
+    protected function postUninstall(): void
     {
         $serviceLocator = $this->getServiceLocator();
         $moduleManager = $serviceLocator->get('Omeka\ModuleManager');
@@ -163,9 +163,9 @@ class Module extends AbstractModule
             $sql = <<<'SQL'
 DELETE FROM `search_engine` WHERE `adapter` = 'solarium';
 SQL;
+            $connection = $serviceLocator->get('Omeka\Connection');
+            $connection->executeStatement($sql);
         }
-        $connection = $serviceLocator->get('Omeka\Connection');
-        $connection->executeStatement($sql);
     }
 
     /**
