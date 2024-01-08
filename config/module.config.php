@@ -239,6 +239,7 @@ return [
             'plain_text' => ValueFormatter\PlainText::class,
             'raw_text' => ValueFormatter\RawText::class,
             'html_escaped_text' => ValueFormatter\HtmlEscapedText::class,
+            'uc_first_text' => ValueFormatter\UcFirstText::class,
             'uri' => ValueFormatter\Uri::class,
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
