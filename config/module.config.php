@@ -243,6 +243,7 @@ return [
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
             'year' => ValueFormatter\Year::class,
+            'place' => ValueFormatter\Place::class,
             'point' => ValueFormatter\Point::class,
             'table' => ValueFormatter\Table::class,
         ],

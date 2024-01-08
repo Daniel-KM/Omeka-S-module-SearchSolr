@@ -211,6 +211,23 @@ class SolrMapForm extends Form
                     'id' => 'formatter',
                     'value' => '',
                 ],
+            ])
+            ->add([
+                'name' => 'place_mode',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Place', // @translate
+                    'value_options' => [
+                        'toponym_and_country' => 'Toponym and country', // @translate
+                        'toponym' => 'Toponym', // @translate
+                        'country' => 'Country', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'place_mode',
+                    'value' => 'toponym_and_country',
+                    'data-formatter' => 'place',
+                ],
             ]);
         if (class_exists('Table\Form\Element\TablesSelect')) {
             $settingsFieldset
