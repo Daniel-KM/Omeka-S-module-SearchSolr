@@ -19,8 +19,12 @@ class StandardWithUri extends AbstractValueFormatter
     {
         if (is_object($value)) {
             if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-                // Order is the one used in full text.
-                $value = trim($value->uri() . ' ' . $value->value());
+                if ($value->type() === 'place') {
+                    $value = (string) $value;
+                } else {
+                    // Order is the one used in full text.
+                    $value = trim($value->uri() . ' ' . $value->value());
+                }
             } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
                 $value = trim($value->assetUrl() . ' ' . $value->altText());
             } else {
