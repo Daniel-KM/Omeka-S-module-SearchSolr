@@ -152,7 +152,7 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'filter_languages',
-                'type' => AdvancedSearchElement\ArrayText::class,
+                'type' => CommonElement\ArrayText::class,
                 'options' => [
                     'label' => 'Only languages', // @translate
                     'value_separator' => ' ',

@@ -583,12 +583,12 @@ class SolariumIndexer extends AbstractIndexer
         if (!$document) {
             if ($dId) {
                 $this->getLogger()->err(
-                    'Indexing of resource failed: empty of invalid document {document_id}: {exception}', // @translate
+                    'Indexing of resource failed: empty or invalid document {document_id}: {exception}', // @translate
                     ['document_id' => $dId, 'exception' => $exception]
                 );
             } else {
                 $this->getLogger()->err(
-                    'Indexing of resource failed: empty of invalid document: {exception}', // @translate
+                    'Indexing of resource failed: empty or invalid document: {exception}', // @translate
                     ['exception' => $exception]
                 );
             }
