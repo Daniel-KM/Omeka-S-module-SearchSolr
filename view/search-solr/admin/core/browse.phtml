@@ -1,7 +1,7 @@
 <?php
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2023
+ * Copyright Daniel Berthereau, 2017-2024
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -33,10 +33,13 @@
  */
 
 $plugins = $this->getHelperPluginManager();
-$translate = $plugins->get('translate');
+$url = $plugins->get('url');
 $escape = $plugins->get('escapeHtml');
+$assetUrl = $plugins->get('assetUrl');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
 
-$this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+$this->headLink()->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 ?>
 
 <?php $this->htmlElement('body')->appendAttribute('class', 'solr-core browse'); ?>
@@ -44,14 +47,12 @@ $this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css',
 <?= $this->pageTitle($translate('Solr configuration')) ?>
 
 <div id="page-actions">
-    <a class="button" href="<?= $this->url('admin/search/solr/core', ['action' => 'add']) ?>"><?= $translate('Add new core') ?></a>
+    <a class="button" href="<?= $url('admin/search/solr/core', ['action' => 'add']) ?>"><?= $translate('Add new core') ?></a>
 </div>
 
-<nav class="breadcrumbs">
-    <?php
-    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    ?>
-    <span><?= $translate('Solr cores') ?></span>
+<nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
+    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <span aria-current="page"><?= $translate('Solr cores') ?></span>
 </nav>
 
 <?= $this->partial('search-solr/admin/core/browse-table') ?>

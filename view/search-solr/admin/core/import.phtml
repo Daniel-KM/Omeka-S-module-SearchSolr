@@ -5,8 +5,10 @@
  * @var \SearchSolr\Form\Admin\SolrCoreMappingImportForm $form
  */
 
-$translate = $this->plugin('translate');
-$url = $this->plugin('url');
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
 
 $form->prepare();
 ?>
@@ -22,12 +24,10 @@ $form->prepare();
     <button type="submit" form="<?= $form->getAttribute('id') ?>"><?= $translate('Submit') ?></button>
 </div>
 
-<nav class="breadcrumbs">
-    <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
-    <?= $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')) ?>
-    <span>
-    <?= sprintf($translate('Import mapping for core "%s"'), $solrCore->name()) ?>
-    </span>
+<nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
+    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
+    <span aria-current="page"><?= sprintf($translate('Import mapping for core "%s"'), $solrCore->name()) ?></span>
 </nav>
 
 <p>

@@ -32,7 +32,10 @@
  * @var \SearchSolr\Form\Admin\SolrCoreForm $form
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
 
 $form->prepare();
 ?>
@@ -43,12 +46,10 @@ $form->prepare();
 <div id="page-actions">
     <button type="submit"><?= $translate('Save') ?></button>
 </div>
-<nav class="breadcrumbs">
-    <?php
-    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
-    ?>
-    <span><?= $translate('Edit core') ?></span>
+<nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
+    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
+    <span aria-current="page"><?= $translate('Edit core') ?></span>
 </nav>
 <?= $this->formCollection($form, false) ?>
 <?php $this->trigger('view.edit.form.after'); ?>

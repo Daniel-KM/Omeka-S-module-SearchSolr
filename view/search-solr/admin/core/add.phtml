@@ -1,7 +1,7 @@
 <?php
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2020
+ * Copyright Daniel Berthereau, 2020-2024
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -32,7 +32,10 @@
  * @var \SearchSolr\Form\Admin\SolrCoreForm $form
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
 
 $form->prepare();
 ?>
@@ -43,12 +46,10 @@ $form->prepare();
 <div id="page-actions">
     <button type="submit"><?= $translate('Add') ?></button>
 </div>
-<nav class="breadcrumbs">
-    <?php
-    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
-    ?>
-    <span><?= $translate('Add core') ?></span>
+<nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
+    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
+    <span aria-current="page"><?= $translate('Add core') ?></span>
 </nav>
 <?= $this->formCollection($form, false) ?>
 <?php $this->trigger('view.add.form.after'); ?>
