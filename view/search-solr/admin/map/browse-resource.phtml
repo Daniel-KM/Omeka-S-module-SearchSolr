@@ -81,10 +81,12 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
-                <th><?= $translate('Solr field') ?></th>
-                <th><?= $translate('Source') ?></th>
-                <th><?= $translate('Pool') ?></th>
-                <th><?= $translate('Translated default label') ?></th>
+                <th><?= $translate('Source Omeka') ?></th>
+                <th><?= $translate('Pool / Filter') ?></th>
+                <th><?= $translate('Index Solr') ?></th>
+                <th><?= $translate('Format') ?></th>
+                <?php // This is the default translated label. ?>
+                <th><?= $translate('Label') ?></th>
             </tr>
         </thead>
         <tbody>
@@ -92,7 +94,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                 <?php $mapSettings = $map->settings(); ?>
                 <tr>
                     <td>
-                        <span><?= $map->fieldName() ?></span>
+                        <span><?= $map->source() ?></span>
                         <div></div>
                         <ul class="actions">
                         <?php if ($map->resourceName() !== $resourceName): ?>
@@ -115,7 +117,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                             </li>
                         </ul>
                     </td>
-                    <td><?= $map->source() ?></td>
                     <td><?php
                         $filterValues = $map->pool('filter_values');
                         $filterUris = $map->pool('filter_uris');
@@ -156,7 +157,12 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                         <div><?= $translate('Filtered by visibility Private') ?></div>
                         <?php endif; ?>
                     </td>
-                    <td><?php if (!empty($mapSettings['label'])) echo $translate($mapSettings['label']); ?></td>
+                    <td><?= $map->fieldName() ?></td>
+                    <td>
+                        <?= $formatter = $mapSettings['formatter'] ?? '' ?>
+                        <?= $formatter === 'table' ? $mapSettings['table'] ?? '' : '' ?>
+                    </td>
+                    <td><?= !empty($mapSettings['label']) ? $translate($mapSettings['label']) : '' ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

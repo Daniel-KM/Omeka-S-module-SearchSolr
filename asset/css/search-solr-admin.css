@@ -39,4 +39,7 @@
         font-style: italic;
         font-size: 0.8em;
     }
+    .solr-map.browse td:first-child, .browse th:first-child {
+        width: 30%;
+    }
 }
