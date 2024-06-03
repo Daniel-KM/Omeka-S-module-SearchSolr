@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2023
+ * Copyright Daniel Berthereau, 2017-2024
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -30,23 +30,33 @@
 
 namespace SearchSolr;
 
-if (!class_exists(\Generic\AbstractModule::class)) {
-    require file_exists(dirname(__DIR__) . '/Generic/AbstractModule.php')
-        ? dirname(__DIR__) . '/Generic/AbstractModule.php'
-        : __DIR__ . '/src/Generic/AbstractModule.php';
+if (!class_exists(\Common\TraitModule::class)) {
+    require_once dirname(__DIR__) . '/Common/TraitModule.php';
 }
 
 use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
 use AdvancedSearch\Api\Representation\SearchEngineRepresentation;
-use Generic\AbstractModule;
+use Common\Stdlib\PsrMessage;
+use Common\TraitModule;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\ModuleManager\ModuleManager;
 use Laminas\Mvc\MvcEvent;
+use Omeka\Module\AbstractModule;
 use Omeka\Module\Exception\ModuleCannotInstallException;
 
+/**
+ * SearchSolr
+ *
+ * Use search engine Solr with Omeka.
+ *
+ * @copyright Daniel Berthereau, 2017-2024
+ * @license http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
+ */
 class Module extends AbstractModule
 {
+    use TraitModule;
+
     const NAMESPACE = __NAMESPACE__;
 
     protected $dependencies = [
@@ -95,26 +105,35 @@ class Module extends AbstractModule
     protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
+        $translate = $services->get('ControllerPluginManager')->get('translate');
         $translator = $services->get('MvcTranslator');
-        $messenger = $services->get('ControllerPluginManager')->get('messenger');
+
+        if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.58')) {
+            $message = new \Omeka\Stdlib\Message(
+                $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+                'Common', '3.4.58'
+            );
+            throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        }
 
         if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
-            $message = new \Omeka\Stdlib\Message(
+            $message = new PsrMessage(
                 'The composer library "%s" is not installed. See readme.', // @translate
                 'Solarium'
             );
-            throw new ModuleCannotInstallException((string) $message);
+            throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
         }
 
         /** @var \Omeka\Module\Manager $moduleManager */
         $moduleManager = $services->get('Omeka\ModuleManager');
+        $messenger = $services->get('ControllerPluginManager')->get('messenger');
 
         // Module AdvancedSearch is already checked as dependency.
         $advancedSearchVersion = $moduleManager->getModule('AdvancedSearch')->getIni('version');
-        if (version_compare($advancedSearchVersion, '3.4.15', '<')) {
-            $message = new \Omeka\Stdlib\Message(
+        if (version_compare($advancedSearchVersion, '3.4.23', '<')) {
+            $message = new PsrMessage(
                 $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
-                'Advanced Search', '3.4.15'
+                'Advanced Search', '3.4.23'
             );
             throw new ModuleCannotInstallException((string) $message);
         }

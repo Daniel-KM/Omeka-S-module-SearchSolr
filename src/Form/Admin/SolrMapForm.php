@@ -30,13 +30,11 @@
 
 namespace SearchSolr\Form\Admin;
 
-use AdvancedSearch\Form\Element as AdvancedSearchElement;
 use Common\Form\Element as CommonElement;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\Form\Form;
 use Omeka\Api\Manager as ApiManager;
-use SearchSolr\Form\Element as SearchSolrElement;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 use SearchSolr\ValueFormatter\Manager as ValueFormatterManager;
 
@@ -142,7 +140,7 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'data_types',
-                'type' => SearchSolrElement\DataTypeSelect::class,
+                'type' => CommonElement\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Only these data types', // @translate
                 ],
@@ -155,7 +153,7 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'data_types_exclude',
-                'type' => SearchSolrElement\DataTypeSelect::class,
+                'type' => CommonElement\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Exclude data types', // @translate
                 ],
