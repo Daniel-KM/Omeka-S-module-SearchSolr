@@ -2,8 +2,8 @@
 
 namespace SearchSolr;
 
+use Common\Stdlib\PsrMessage;
 use Omeka\Module\Exception\ModuleCannotInstallException;
-use Omeka\Stdlib\Message;
 
 /**
  * @var Module $this
@@ -20,6 +20,8 @@ use Omeka\Stdlib\Message;
 $plugins = $services->get('ControllerPluginManager');
 $api = $plugins->get('api');
 $settings = $services->get('Omeka\Settings');
+$translate = $plugins->get('translate');
+$translator = $services->get('MvcTranslator');
 $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
 $entityManager = $services->get('Omeka\EntityManager');
@@ -155,15 +157,14 @@ if (version_compare($oldVersion, '3.5.25.3', '<')) {
             || $module2->getState() !== \Omeka\Module\Manager::STATE_ACTIVE;
 
     if ($missingModule1 && $missingModule2) {
-        $message = new Message(
-            'This module requires the module "%s", version %s or above.', // @translate
-            'Search / AdvancedSearch',
-            '3.5.22.3 / 3.3.6'
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'Search / AdvancedSearch', 'version' => '3.5.22.3 / 3.3.6']
         );
         throw new ModuleCannotInstallException((string) $message);
     }
 
-    $message = new Message(
+    $message = new PsrMessage(
         'The auto-suggestion requires a specific url for now.' // @translate
     );
     $messenger->addWarning($message);
@@ -174,10 +175,9 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
     /** @var \Omeka\Module\Module $module */
     $module = $moduleManager->getModule('AdvancedSearch');
     if (!$module) {
-        $message = new Message(
-            'This module requires the module "%s", version %s or above.', // @translate
-            'AdvancedSearch',
-            '3.3.6'
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.3.6']
         );
         throw new ModuleCannotInstallException((string) $message);
     }
@@ -198,10 +198,9 @@ SQL;
     /** @var \Omeka\Module\Module $module */
     $module = $moduleManager->getModule('AdvancedSearch');
     if (!$module || version_compare($module->getIni('version') ?? '', '3.3.6.7', '<')) {
-        $message = new Message(
-            'This module requires the module "%s", version %s or above.', // @translate
-            'AdvancedSearch',
-            '3.3.6.7'
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.3.6.7']
         );
         throw new ModuleCannotInstallException((string) $message);
     }
@@ -371,22 +370,22 @@ WHERE
 SQL;
     $connection->executeStatement($sql);
 
-    $message = new Message(
+    $message = new PsrMessage(
         'The resource types are now structured to simplify config: "generic" and "resource" allow to set mapping for any resource.' // @translate
     );
     $messenger->addSuccess($message);
-    $message = new Message(
+    $message = new PsrMessage(
         'All mapping for items and item sets have been copied to resources.' // @translate
     );
     $messenger->addWarning($message);
-    $message = new Message(
+    $message = new PsrMessage(
         'It is recommended to check mappings, to remove the useless and duplicate ones, and to run a full reindexation.' // @translate
     );
     $messenger->addWarning($message);
 }
 
 if (version_compare($oldVersion, '3.5.33.3', '<')) {
-    $message = new Message(
+    $message = new PsrMessage(
         'It is now possible to index original and thumbnails urls.' // @translate
     );
     $messenger->addSuccess($message);
@@ -395,22 +394,22 @@ if (version_compare($oldVersion, '3.5.33.3', '<')) {
 if (version_compare($oldVersion, '3.5.37.3', '<')) {
     $translator = $services->get('MvcTranslator');
     if (!$this->isModuleActive('AdvancedSearch')) {
-        $message = new Message(
-            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
-            'Advanced Search', '3.3.6.16'
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.3.6.16']
         );
-        throw new ModuleCannotInstallException((string) $message);
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
     /** @var \Omeka\Module\Manager $moduleManager */
     $moduleManager = $services->get('Omeka\ModuleManager');
     $module = $moduleManager->getModule('AdvancedSearch');
     $moduleVersion = $module->getIni('version');
     if (version_compare($moduleVersion, '3.3.6.16', '<')) {
-        $message = new Message(
-            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
-            'Advanced Search', '3.3.6.16'
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.3.6.16']
         );
-        throw new ModuleCannotInstallException((string) $message);
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
 }
 
@@ -420,12 +419,13 @@ if (version_compare($oldVersion, '3.5.42', '<')) {
     $config = $services->get('Config');
     if (!empty($config['searchsolr']['table'])) {
         if (!$this->isModuleActive('Table')) {
-            $message = new Message(
-                $translator->translate('To use a table, this module requires module "%1$s" version "%2$s" or greater. Upgrade is automatic.'), // @translate
-                'Table', '3.4.1'
+            $message = new PsrMessage(
+                'This module requires the module "{module}", version {version} or above.', // @translate
+                ['module' => 'Table', 'version' => '3.4.1']
             );
-            throw new ModuleCannotInstallException((string) $message);
+            throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
         }
+
         $table = $config['searchsolr']['table'];
         /** @var \Table\Api\Representation\TableRepresentation $table */
         $table = $api->create('tables', [
@@ -440,24 +440,24 @@ WHERE `settings` LIKE '%"formatter":"table"%';
 SQL;
         $connection->executeStatement($sql);
 
-        $message = new Message(
+        $message = new PsrMessage(
             'It is now possible to filter values to index via a regex, a list of languages or a visibility.' // @translate
         );
         $messenger->addSuccess($message);
 
-        $message = new Message(
+        $message = new PsrMessage(
             'It is now possible to filter resources to index, for example an item set, a template, an owner, a visibility, etc.' // @translate
         );
         $messenger->addSuccess($message);
 
-        $message = new Message(
+        $message = new PsrMessage(
             'It is now possible to use module Table to manage tables for normalization of indexation.' // @translate
         );
         $messenger->addSuccess($message);
 
-        $message = new Message(
-            $translator->translate('The table used for indexation has been converted into a standard %1$stable%2$s. It is recommended to remove the old one from the config.'), // @translate
-            sprintf('<a href="%s">', $table->url()), '</a>'
+        $message = new PsrMessage(
+            'The table used for indexation has been converted into a standard {link}table{link_end}. It is recommended to remove the old one from the config.', // @translate
+            ['link' => sprintf('<a href="%s">', $table->url()), 'link_end' => '</a>']
         );
         $message->setEscapeHtml(false);
         $messenger->addWarning($message);
@@ -475,35 +475,35 @@ SQL;
     $connection->executeStatement($sql);
 
     $translator = $services->get('MvcTranslator');
-    $message = new Message(
-        $translator->translate('The support of module Access Resource has been removed. Support of module Access has been added.') // @translate
+    $message = new PsrMessage(
+        'The support of module Access Resource has been removed. Support of module Access has been added.' // @translate
     );
     $messenger->addSuccess($message);
 
-    $message = new Message(
-        $translator->translate('A reindexing is needed.') // @translate
+    $message = new PsrMessage(
+        'A reindexing is needed.' // @translate
     );
     $messenger->addWarning($message);
 }
 
 if (version_compare($oldVersion, '3.5.45', '<')) {
-    $translator = $services->get('MvcTranslator');
     if (!$this->isModuleActive('AdvancedSearch')) {
-        $message = new Message(
-            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
-            'Advanced Search', '3.4.15'
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.4.16']
         );
-        throw new ModuleCannotInstallException((string) $message);
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
+
     /** @var \Omeka\Module\Manager $moduleManager */
     $moduleManager = $services->get('Omeka\ModuleManager');
     $module = $moduleManager->getModule('AdvancedSearch');
     $moduleVersion = $module->getIni('version');
-    if (version_compare($moduleVersion, '3.4.15', '<')) {
-        $message = new Message(
-            $translator->translate('This module requires module "%1$s" version "%2$s" or greater.'), // @translate
-            'Advanced Search', '3.4.15.'
+    if (version_compare($moduleVersion, '3.4.16', '<')) {
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.4.16']
         );
-        throw new ModuleCannotInstallException((string) $message);
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
 }

@@ -2,7 +2,7 @@
 
 namespace SearchSolr\Schema;
 
-use Omeka\Stdlib\Message;
+use Common\Stdlib\PsrMessage;
 use Solarium\Exception\HttpException as SolariumException;
 
 /**
@@ -78,14 +78,14 @@ class Schema
                 $credentials = isset($parsed['username']) ? substr($parsed['username'], 0, 1) . '***:***@' : '';
                 $url = $parsed['scheme'] . '://' . $credentials . $parsed['host'] . ':' . $parsed['port'] . $parsed['path'];
                 if ($credentials) {
-                    $message = new Message(
-                        'Solr core is not available. Check config or certificate to get Solr core schema "%s".', // @translate
-                        $url
+                    $message = new PsrMessage(
+                        'Solr core is not available. Check config or certificate to get Solr core schema {url}.', // @translate
+                        ['url' => $url]
                     );
                 } else {
-                    $message = new Message(
-                        'Solr core is not available. Check config to get Solr core schema "%s".', // @translate
-                        $url
+                    $message = new PsrMessage(
+                        'Solr core is not available. Check config to get Solr core schema {url}.', // @translate
+                        ['url' => $url]
                     );
                 }
                 throw new SolariumException((string) $message);
@@ -97,9 +97,9 @@ class Schema
                 $parsed = parse_url($this->schemaUrl);
                 $credentials = isset($parsed['username']) ? substr($parsed['username'], 0, 1) . '***:***@' : '';
                 $url = $parsed['scheme'] . '://' . $credentials . $parsed['host'] . ':' . $parsed['port'] . $parsed['path'];
-                $message = new Message(
-                    'Response is not valid. Check output of %s, that should be valid json data.', // @translate
-                    $url
+                $message = new PsrMessage(
+                    'Response is not valid. Check output of {url}, that should be valid json data.', // @translate
+                    ['url' => $url]
                 );
                 throw new SolariumException((string) $message);
             }
@@ -109,9 +109,9 @@ class Schema
                 $parsed = parse_url($this->schemaUrl);
                 $credentials = isset($parsed['username']) ? substr($parsed['username'], 0, 1) . '***:***@' : '';
                 $url = $parsed['scheme'] . '://' . $credentials . $parsed['host'] . ':' . $parsed['port'] . $parsed['path'];
-                $message = new Message(
-                    'Response is not valid. Check output of %s, that should be a json with a key "schema".', // @translate
-                    $url
+                $message = new PsrMessage(
+                    'Response is not valid. Check output of {ur}, that should be a json with a key "schema".', // @translate
+                    ['url' => $url]
                 );
                 throw new SolariumException((string) $message);
             }

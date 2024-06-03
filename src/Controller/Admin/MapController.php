@@ -32,11 +32,11 @@
 namespace SearchSolr\Controller\Admin;
 
 use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
+use Common\Stdlib\PsrMessage;
 use Doctrine\DBAL\Connection;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
-use Omeka\Stdlib\Message;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use SearchSolr\Form\Admin\SolrMapForm;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
@@ -71,9 +71,9 @@ class MapController extends AbstractActionController
 
         $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
-            $this->messenger()->addError(new Message(
-                'Some required fields are missing or not available in the core: "%s". Update the generic or the resource mappings.', // @translate
-                implode('", "', array_unique($missingMaps))
+            $this->messenger()->addError(new PsrMessage(
+                'Some required fields are missing or not available in the core: {fields}. Update the generic or the resource mappings.', // @translate
+                ['fields' => implode(', ', array_unique($missingMaps))]
             ));
         }
 
@@ -98,9 +98,9 @@ class MapController extends AbstractActionController
         $maps = $solrCore->mapsByResourceName($resourceName);
 
         if (!$solrCore->schema()->checkDefaultField()) {
-            $this->messenger()->addWarning(new Message(
+            $this->messenger()->addWarning(
                 'This core seems to have no default field. If there are no results to a default query, add the copy field "_text_" with source "*".' // @translate
-            ));
+            );
         }
 
         return new ViewModel([
@@ -157,8 +157,10 @@ class MapController extends AbstractActionController
         }
 
         if ($result) {
-            $this->messenger()->addSuccess(new Message('%d maps successfully created: "%s".', // @translate
-                count($result), implode('", "', $result)));
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} maps successfully created: {list}.', // @translate
+                ['count' => count($result), 'list' => implode(', ', $result)]
+            ));
             $this->messenger()->addWarning('Check all new maps and remove useless ones.'); // @translate
             $this->messenger()->addWarning('Don’t forget to run the indexation of the core.'); // @translate
         } else {
@@ -218,8 +220,10 @@ class MapController extends AbstractActionController
         }
 
         if ($result) {
-            $this->messenger()->addSuccess(new Message('%d maps successfully deleted: "%s".', // @translate
-                count($result), implode('", "', $result)));
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} maps successfully deleted: {list}.', // @translate
+                ['count' => count($result), 'list' => implode(', ', $result)]
+            ));
             $this->messenger()->addNotice('Don’t forget to run the indexation of the core.'); // @translate
         } else {
             $this->messenger()->addWarning('No maps deleted.'); // @translate
@@ -253,8 +257,10 @@ class MapController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_maps', $data);
 
-                $this->messenger()->addSuccess(new Message('Solr map created: %s.', // @translate
-                    $data['o:field_name']));
+                $this->messenger()->addSuccess(new PsrMessage(
+                    'Solr map created: {solr_map_name}.', // @translate
+                    ['solr_map_name' => $data['o:field_name']]
+                ));
 
                 return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
                     'coreId' => $solrCoreId,
@@ -263,9 +269,13 @@ class MapController extends AbstractActionController
             } else {
                 $messages = $form->getMessages();
                 if (isset($messages['csrf'])) {
-                    $this->messenger()->addError('Invalid or missing CSRF token'); // @translate
+                    $this->messenger()->addError(
+                        'Invalid or missing CSRF token' // @translate
+                    );
                 } else {
-                    $this->messenger()->addError('There was an error during validation'); // @translate
+                    $this->messenger()->addError(
+                        'There was an error during validation' // @translate
+                    );
                 }
             }
         }
@@ -305,8 +315,10 @@ class MapController extends AbstractActionController
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->update('solr_maps', $id, $data);
 
-                $this->messenger()->addSuccess(new Message('Solr map modified: %s.', // @translate
-                    $data['o:field_name']));
+                $this->messenger()->addSuccess(new PsrMessage(
+                    'Solr map modified: {solr_map_name}.', // @translate
+                    ['solr_map_name' => $data['o:field_name']]
+                ));
 
                 $this->messenger()->addWarning('Don’t forget to check search pages that use this map.'); // @translate
 

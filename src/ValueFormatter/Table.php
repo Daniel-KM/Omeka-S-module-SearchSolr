@@ -2,8 +2,6 @@
 
 namespace SearchSolr\ValueFormatter;
 
-use Omeka\Stdlib\Message;
-
 /**
  * ValueFormatter to replace a value by another one(s).
  */
@@ -37,10 +35,10 @@ class Table extends PlainText
                 $tables[$tableId] = $api->read('tables', is_numeric($tableId) ? ['id' => $tableId] : ['slug' => $tableId])->getContent();
             } catch (\Exception $e) {
                 $tables[$tableId] = null;
-                $this->services->get('Omeka\Logger')->err(new Message(
-                    'For formatter "Table", the table #%s does not exist and values are not normalized.', // @translate
-                    $tableId
-                ));
+                $this->services->get('Omeka\Logger')->err(
+                    'For formatter "Table", the table #{table_id} does not exist and values are not normalized.', // @translate
+                    ['table_id' => $tableId]
+                );
                 return $values;
             }
         }

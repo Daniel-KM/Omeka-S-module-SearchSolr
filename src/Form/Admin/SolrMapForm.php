@@ -258,7 +258,7 @@ class SolrMapForm extends Form
                         'value_options' => [
                             'label' => 'Label only', // @translate
                             'code' => 'Code only', // @translate
-                            'both' => 'Label and code ', // @translate
+                            'both' => 'Label and code', // @translate
                         ],
                     ],
                     'attributes' => [

@@ -34,7 +34,6 @@ use AdvancedSearch\Indexer\AbstractIndexer;
 use AdvancedSearch\Indexer\IndexerInterface;
 use AdvancedSearch\Query;
 use Omeka\Entity\Resource;
-use Omeka\Stdlib\Message;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use Solarium\Client as SolariumClient;
@@ -219,10 +218,10 @@ class SolariumIndexer extends AbstractIndexer
             $resourcesIds[] = $resourceNames[$resource->getResourceName()] . ' #' . $resource->getId();
         }
 
-        $this->getLogger()->info(new Message(
-            'Indexing in Solr core "%1$s": %2$s', // @translate
-            $this->solrCore->name(), implode(', ', $resourcesIds)
-        ));
+        $this->getLogger()->info(
+            'Indexing in Solr core "{solr_core}": {ids}', // @translate
+            ['solr_core' => $this->solrCore->name(), 'ids' => implode(', ', $resourcesIds)]
+        );
 
         foreach ($resources as $resource) {
             $this->addResource($resource);
@@ -274,10 +273,10 @@ class SolariumIndexer extends AbstractIndexer
         // So check required fields one time and abord early.
         $missingMaps = $this->getSolrCore()->missingRequiredMaps();
         if ($missingMaps) {
-            $this->getLogger()->err(new Message(
-                'Unable to index resources in Solr core "%1$s". Some required fields are not mapped: %2$s', // @translate
-                $this->getSolrCore()->name(), implode(', ', $missingMaps)
-            ));
+            $this->getLogger()->err(
+                'Unable to index resources in Solr core "{solr_core}". Some required fields are not mapped: {list}', // @translate
+                ['solr_core' => $this->getSolrCore()->name(), 'list' => implode(', ', $missingMaps)]
+            );
             return null;
         }
 
@@ -324,9 +323,9 @@ class SolariumIndexer extends AbstractIndexer
             $representation = $this->api->read($resourceName, $resourceId)->getContent();
         } catch (\Exception $e) {
             $this->getLogger()->notice(
-                new Message('The %1$s #%2$d is no more available and cannot be indexed.', // @translate
-                $resourceName, $resourceId
-            ));
+                'The {resource_type} #{resource_id} is no more available and cannot be indexed.', // @translate
+                ['resource_type' => $resourceName, 'resource_id' => $resourceId]
+            );
             return;
         }
 
@@ -582,8 +581,17 @@ class SolariumIndexer extends AbstractIndexer
     protected function commitError(?SolariumInputDocument $document, string $dId, \Exception $exception): self
     {
         if (!$document) {
-            $message = new Message('Indexing of resource failed: empty of invalid document: %s', $exception);
-            $this->getLogger()->err($message);
+            if ($dId) {
+                $this->getLogger()->err(
+                    'Indexing of resource failed: empty of invalid document {document_id}: {exception}', // @translate
+                    ['document_id' => $dId, 'exception' => $exception]
+                );
+            } else {
+                $this->getLogger()->err(
+                    'Indexing of resource failed: empty of invalid document: {exception}', // @translate
+                    ['exception' => $exception]
+                );
+            }
             return $this;
         }
 
@@ -593,13 +601,21 @@ class SolariumIndexer extends AbstractIndexer
             : $exception->getMessage();
         if ($message === 'Solr HTTP error: Bad Request (400)') {
             // TODO Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
-            $message = new Message('Invalid document (wrong field type or missing required field).'); // @translate
+            /** @see \Solarium\Core\Client\Adapter\Http::createContext() */
+            $this->getLogger()->err(
+                'Indexing of resource {document_id} failed: Invalid document (wrong field type or missing required field).', // @translate
+                ['document_id' => $dId]
+            );
         } elseif ($message === 'Solr HTTP error: HTTP request failed') {
-            $message = new Message('Solr HTTP error: HTTP request failed due to network or certificate issue.'); // @translate
+            $this->getLogger()->err(
+                'Solr HTTP error: HTTP request failed due to network or certificate issue.' // @translate
+            );
         } else {
-            $message = new Message('Indexing of resource %1$s failed: %2$s', $dId, $message);
+            $this->getLogger()->err(
+                'Indexing of resource {document_id} failed: {message}', // @translate
+                ['document_id' => $dId, 'message' => $message]
+            );
         }
-        $this->getLogger()->err($message);
         return $this;
     }
 

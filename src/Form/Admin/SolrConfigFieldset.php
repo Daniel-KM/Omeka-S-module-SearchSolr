@@ -98,7 +98,10 @@ class SolrConfigFieldset extends Fieldset
                 && !$solrCore->mapsBySource('search_index', 'resources')
                 && !in_array($searchEngineId, $coreIndexes[$solrCore->id()])
             ) {
-                $option['label'] = sprintf($translator->translate('%s (unavailable: option multi-index not set)'), $option['label']); // @translate
+                $option['label'] = (string) (new \Common\Stdlib\PsrMessage(
+                    '{label} (unavailable: option multi-index not set)', // @translate
+                    ['label' => $option['label']]
+                ))->setTranslator($translator);
                 $option['disabled'] = true;
             }
             $options[] = $option;

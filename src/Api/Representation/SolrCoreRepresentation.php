@@ -30,8 +30,8 @@
 
 namespace SearchSolr\Api\Representation;
 
+use Common\Stdlib\PsrMessage;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use Omeka\Stdlib\Message;
 use SearchSolr\Schema;
 use Solarium\Client as SolariumClient;
 use Solarium\Core\Client\Adapter\Http as SolariumAdapter;
@@ -215,20 +215,27 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
+        $translator = $services->get('MvcTranslator');
 
         if (!file_exists(dirname(__DIR__, 3) . '/vendor/solarium/solarium/src/Client.php')) {
-            $message = new Message('The composer library "%s" is not installed. See readme.', 'Solarium'); // @translate
-            $logger->err($message);
-            return (string) $message;
+            $message = new PsrMessage(
+                'The composer library "{library}" is not installed. See readme.', // @translate
+                ['library' => 'Solarium']
+            );
+            $logger->err($message->getMessage(), $message->getContext());
+            return (string) $message->setTranslator($translator);
         }
 
         $clientSettings = $this->clientSettings();
         $client = $this->solariumClient();
 
         if (!$client) {
-            $message = new Message('Solr core #%d: incorrect or incomplete configuration.', $this->id()); // @translate
-            $logger->err($message);
-            return (string) $message;
+            $message = new PsrMessage(
+                'Solr core #{solr_core_id}: incorrect or incomplete configuration.', // @translate
+                ['solr_core_id' => $this->id()]
+            );
+            $logger->err($message->getMessage(), $message->getContext());
+            return (string) $message->setTranslator($translator);
         }
 
         try {
@@ -238,22 +245,28 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             @$client->ping($query);
         } catch (SolariumException $e) {
             if ($e->getCode() === 404) {
-                $message = new Message('Solr core not found. Check your url.'); // @translate
-                $logger->err($message);
-                return (string) $message;
+                $message = new PsrMessage('Solr core not found. Check your url.'); // @translate
+                $logger->err($message->getMessage());
+                return (string) $message->setTranslator($translator);
             }
             if ($e->getCode() === 401) {
-                $message = new Message('Solr core not found or unauthorized. Check your url and your credentials.'); // @translate
-                $logger->err($message);
-                return (string) $message;
+                $message = new PsrMessage('Solr core not found or unauthorized. Check your url and your credentials.'); // @translate
+                $logger->err($message->getMessage());
+                return (string) $message->setTranslator($translator);
             }
-            $message = new Message('Solr core #%d: %s', $this->id(), $e->getMessage()); // @translate
-            $logger->err($message);
+            $message = new PsrMessage(
+                'Solr core #{solr_core_id}: {message}', // @translate
+                ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
+            );
+            $logger->err($message->getMessage(), $message->getContext());
             return $e->getMessage();
         } catch (\Exception $e) {
-            $message = new Message('Solr core #%d: %s', $this->id(), $e->getMessage()); // @translate
-            $logger->err($message);
-            return $e->getMessage();
+            $message = new PsrMessage(
+                'Solr core #{solr_core_id}: {message}', // @translate
+                ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
+            );
+            $logger->err($message->getMessage(), $message->getContext());
+            return (string) $message->setTranslator($translator);
         }
 
         // Check the schema too, in particular when there are credentials, but
@@ -261,22 +274,34 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         try {
             $this->schema()->getSchema();
         } catch (SolariumException $e) {
-            $message = new Message('Solr core #%d enpoint: %s', $this->id(), $e->getMessage()); // @translate
-            $logger->err($message);
-            return $e->getMessage();
+            $message = new PsrMessage(
+                'Solr core #{solr_core_id} enpoint: {message}', // @translate
+                ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
+            );
+            $logger->err($message->getMessage(), $message->getContext());
+            return (string) $message->setTranslator($translator);
         } catch (\Exception $e) {
-            $message = new Message('Solr core #%d: %s', $this->id(), $e->getMessage()); // @translate
-            $logger->err($message);
-            return $e->getMessage();
+            $message = new PsrMessage(
+                'Solr core #{solr_core_id}: {message}', // @translate
+                ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
+            );
+            $logger->err($message->getMessage(), $message->getContext());
+            return (string) $message->setTranslator($translator);
         }
 
         // Check if the config bypass certificate check.
         if (!empty($clientSettings['secure']) && !empty($clientSettings['bypass_certificate_check'])) {
             $logger->warn('Solr: the config bypasses the check of the certificate.'); // @translate
-            return 'OK (warning: check of certificate disabled)'; // @translate
+            $message = new PsrMessage(
+                'OK (warning: check of certificate disabled)' // @translate
+            );
+            return (string) $message->setTranslator($translator);
         }
 
-        return 'OK'; // @translate
+        $message = new PsrMessage(
+            'OK' // @translate
+        );
+        return (string) $message->setTranslator($translator);
     }
 
     public function mapUrl(?string $action = null, $canonical = false): string
@@ -530,6 +555,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function missingRequiredMaps(): ?array
     {
         // Check if the specified fields are available.
+        // Value is "is required", but not used for now.
         $fields = [
             'resource_name' => true,
             'is_public' => true,
@@ -539,7 +565,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         ];
 
         $unavailableFields = [];
-        foreach ($fields as $source => $isRequired) {
+        foreach (array_keys($fields) as $source) {
             $maps = $this->mapsBySource($source, 'resources');
             if (!count($maps)) {
                 $unavailableFields[] = $source;

@@ -27,13 +27,14 @@
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
+
 namespace SearchSolr\Controller\Admin;
 
+use Common\Stdlib\PsrMessage;
 use finfo;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
-use Omeka\Stdlib\Message;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
@@ -95,7 +96,10 @@ class CoreController extends AbstractActionController
         ];
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
         $core = $this->api()->create('solr_cores', $data)->getContent();
-        $this->messenger()->addSuccess(new Message('Solr core "%s" created.', $core->name())); // @translate
+        $this->messenger()->addSuccess(new PsrMessage(
+            'Solr core "{solr_core_name}" created.', // @translate
+            ['solr_core_name' => $core->name()]
+        ));
         return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
     }
 
@@ -139,13 +143,16 @@ class CoreController extends AbstractActionController
         unset($data['o:settings']['clear_full_index']);
         $this->api()->update('solr_cores', $id, $data);
 
-        $this->messenger()->addSuccess(new Message('Solr core "%s" updated.', $core->name())); // @translate
+        $this->messenger()->addSuccess(new PsrMessage(
+            'Solr core "{solr_core_name}" updated.', // @translate
+            ['solr_core_name' => $core->name()]
+        ));
 
         $missingMaps = $core->missingRequiredMaps();
         if ($missingMaps) {
-            $this->messenger()->addError(new Message(
-                'Some required fields are missing or not available in the core: "%s". Update the generic or the resource mappings.', // @translate
-                implode('", "', array_unique($missingMaps))
+            $this->messenger()->addError(new PsrMessage(
+                'Some required fields are missing or not available in the core: {list}. Update the generic or the resource mappings.', // @translate
+                ['list' => implode(', ', array_unique($missingMaps))]
             ));
         }
 
@@ -155,9 +162,9 @@ class CoreController extends AbstractActionController
                 return empty($v);
             });
             if (count($unsupportedFields)) {
-                $this->messenger()->addError(new Message(
-                    'Some specific static or dynamic fields are missing or not available for "%s" in the core: "%s".', // @translate
-                    $data['o:settings']['support'], implode('", "', array_keys($unsupportedFields))
+                $this->messenger()->addError(new PsrMessage(
+                    'Some specific static or dynamic fields are missing or not available for "{value}" in the core: {list}.', // @translate
+                    ['value' => $data['o:settings']['support'], 'list' => implode(', ', array_keys($unsupportedFields))]
                 ));
             }
             $this->messenger()->addWarning('Don’t forget to reindex this core with external indexers.'); // @translate
@@ -167,7 +174,10 @@ class CoreController extends AbstractActionController
 
         if ($clearFullIndex) {
             $this->clearFullIndex($core);
-            $this->messenger()->addWarning(new Message('All indexes of core "%s" are been deleted.', $core->name())); // @translate
+            $this->messenger()->addWarning(new PsrMessage(
+                'All indexes of core "{solr_core_name}" were deleted.', // @translate
+                ['solr_core_name' => $core->name()]
+            ));
         }
 
         return $this->redirect()->toRoute('admin/search/solr');
@@ -250,9 +260,9 @@ class CoreController extends AbstractActionController
         if (!empty($file['error'])) {
             $this->messenger()->addError('An error occurred when uploading the file.'); // @translate
         } elseif ($fileCheck === false) {
-            $this->messenger()->addError(new Message(
-                'Wrong media type ("%s") for file.', // @translate
-                $file['type']
+            $this->messenger()->addError(new PsrMessage(
+                'Wrong media type ({media_type}) for file.', // @translate
+                ['media_type' => $file['type']]
             ));
         } elseif (empty($file['size'])) {
             $this->messenger()->addError('The file is empty.'); // @translate
@@ -362,15 +372,15 @@ class CoreController extends AbstractActionController
                 || empty($row['field_name'])
                 || empty($row['source'])
             ) {
-                $this->messenger()->addWarning(new Message(
-                    'The row #%d does not contain required data.', // @translate
-                    $key + 1
+                $this->messenger()->addWarning(new PsrMessage(
+                    'The row #{index} does not contain required data.', // @translate
+                    ['index' => $key + 1]
                 ));
                 unset($rows[$key]);
             } elseif (!in_array($row['resource_name'], ['generic', 'resources', 'items', 'item_sets', 'media'])) {
-                $this->messenger()->addWarning(new Message(
-                    'The row #%d does not manage resource "%s".', // @translate
-                    $key + 1, $row['resource_name']
+                $this->messenger()->addWarning(new PsrMessage(
+                    'The row #{index} does not manage resource "{resource_name}".', // @translate
+                    ['index' => $key + 1, 'resource_name' => $row['resource_name']]
                 ));
             } else {
                 $result[] = [
@@ -409,24 +419,24 @@ class CoreController extends AbstractActionController
         $maps = $solrCore->maps();
         if (count($maps)) {
             $api->batchDelete('solr_maps', array_keys($maps));
-            $this->messenger()->addNotice(new Message(
-                'The existing mapping of core "%s" (#%d) has been deleted.', // @translate
-                $solrCore->name(), $solrCore->id()
+            $this->messenger()->addNotice(new PsrMessage(
+                'The existing mapping of core "{solr_core_name}" (#{solr_core_id}) has been deleted.', // @translate
+                ['solr_core_name' => $solrCore->name(), 'solr_core_id' => $solrCore->id()]
             ));
         }
 
         $response = $api->batchCreate('solr_maps', $result);
         if (!$response) {
-            $this->messenger()->addError(new Message(
-                'An error has occurred during import of the mapping for core "%s" (#%d).', // @translate
-                $solrCore->name(), $solrCore->id()
+            $this->messenger()->addError(new PsrMessage(
+                'An error has occurred during import of the mapping for core "{solr_core_name}" (#{solr_core_id}).', // @translate
+                ['solr_core_name' => $solrCore->name(), 'solr_core_id' => $solrCore->id()]
             ));
             return false;
         }
 
-        $this->messenger()->addSuccess(new Message(
-            '%d fields have been mapped for core "%s" (#%d).', // @translate
-            count($result), $solrCore->name(), $solrCore->id()
+        $this->messenger()->addSuccess(new PsrMessage(
+            '{count} fields have been mapped for core "{solr_core_name}" (#{solr_core_id}).', // @translate
+            ['count' => count($result), 'solr_core_name' => $solrCore->name(), 'solr_core_id' => $solrCore->id()]
         ));
 
         return true;
