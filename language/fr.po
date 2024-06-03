@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-20 00:00+0000\n"
-"PO-Revision-Date: 2023-11-20 00:00+0000\n"
+"POT-Creation-Date: 2024-06-03 00:00+0000\n"
+"PO-Revision-Date: 2024-06-03 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -18,53 +18,30 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Poedit 3.2.2\n"
 
-#: data/scripts/upgrade.php:399 data/scripts/upgrade.php:410
-#: data/scripts/upgrade.php:493 data/scripts/upgrade.php:504
+#: data/scripts/upgrade.php:32 Module.php:113
 #, php-format
-msgid "This module requires module \"%1$s\" version \"%2$s\" or greater."
-msgstr "Ce module requiert le module « %1$s » version « %2$s » ou supérieure."
+msgid "The module %1$s should be upgraded to version %2$s or later."
+msgstr "Le module %1$s doit être mis à niveau à la version %2$s ou supérieure."
 
-#: data/scripts/upgrade.php:424
-#, php-format
-msgid ""
-"To use a table, this module requires module \"%1$s\" version \"%2$s\" or "
-"greater. Upgrade is automatic."
-msgstr ""
-"Pour utiliser une table, ce module requiert le module « %1$s » version "
-"« %2$s » ou supérieure. La mise à niveau est automatique."
-
-#: data/scripts/upgrade.php:459
-#, php-format
-msgid ""
-"The table used for indexation has been converted into a standard "
-"%1$stable%2$s. It is recommended to remove the old one from the config."
-msgstr ""
-
-#: data/scripts/upgrade.php:479
-msgid ""
-"The support of module Access Resource has been removed. Support of module "
-"Access has been added."
-msgstr ""
-
-#: data/scripts/upgrade.php:484
-msgid "A reindexing is needed."
-msgstr ""
-
-#: Module.php:116
+#: Module.php:135
 #, php-format
 msgid "This module requires module \"%s\" version \"%s\" or greater."
 msgstr "Ce module requiert le module « %s » version « %s » ou supérieure."
 
-#: Module.php:135
+#: Module.php:154
 msgid ""
 "The module Solr can be upgraded only for version between 3.5.5 and 3.5.14."
 msgstr ""
+"Le module Solr ne peut être mis à jour que pour les versions comprises entre "
+"3.5.5 et 3.5.14."
 
-#: Module.php:143
+#: Module.php:162
 msgid ""
 "To upgrade module Solr automatically, this module should be lower or equal "
 "to 3.5.30.3."
 msgstr ""
+"Pour mettre à jour le module Solr automatiquement, ce module doit être "
+"inférieur ou égal à 3.5.30.3."
 
 #: src/Adapter/SolariumAdapter.php:126
 msgid "Asc"
@@ -73,54 +50,6 @@ msgstr "Asc"
 #: src/Adapter/SolariumAdapter.php:127
 msgid "Desc"
 msgstr "Desc"
-
-#: src/Form/Admin/SolrConfigFieldset.php:101
-#, php-format
-msgid "%s (unavailable: option multi-index not set)"
-msgstr "%s (indisponible : l’option multi-index n’est pas spécifié)"
-
-#: src/Generic/AbstractModule.php:80 src/Generic/AbstractModule.php:88
-#: src/Generic/AbstractModule.php:890
-#, php-format
-msgid "This module requires the module \"%s\"."
-msgstr "Ce module requiert le module « %s »."
-
-#: src/Generic/AbstractModule.php:93
-#, php-format
-msgid "This module requires modules \"%s\"."
-msgstr "Ce module requiert les modules « %s »."
-
-#: src/Generic/AbstractModule.php:101
-msgid "This module has resources that cannot be installed."
-msgstr "Ce module a des ressources qui ne peuvent pas être installées."
-
-#: src/Generic/AbstractModule.php:108
-msgid ""
-"This module cannot install its tables, because they exist already. Try to "
-"remove them first."
-msgstr ""
-"Ce module ne peut pas installer ses tables car elles existent déjà. Essayez "
-"de les supprimer manuellement."
-
-#: src/Generic/AbstractModule.php:398
-#, php-format
-msgid "The module removed tables \"%s\" from a previous broken install."
-msgstr ""
-"Le module a supprimé les tables \"%s\" depuis une installation échouée."
-
-#: src/Generic/AbstractModule.php:885
-#, php-format
-msgid "This module requires the module \"%1$s\", version %2$s or above."
-msgstr "Ce module requiert le module « %1$s », version %2$s ou supérieure."
-
-#: src/Generic/AbstractModule.php:982
-#, php-format
-msgid ""
-"The module \"%s\" was automatically deactivated because the dependencies are "
-"unavailable."
-msgstr ""
-"Le module « %s » a été automatiquement désactivé car ses dépendances ne sont "
-"plus disponibles."
 
 #: view/common/solr-core-delete-confirm-details.phtml:13
 #: view/common/solr-map-delete-confirm-details.phtml:17
@@ -133,23 +62,31 @@ msgid ""
 "This will delete all search indexes (%d), all search pages (%d), and all "
 "Solr maps (%d) that use this Solr core."
 msgstr ""
+"Cela supprimera tous les index de recherche (%d), toutes les pages de "
+"recherche (%d) et toutes les correspondances Solr (%d) qui utilisent ce cœur "
+"Solr."
 
 #: view/common/solr-core-delete-confirm-details.phtml:19
 msgid ""
 "To keep search indexes and pages, create a new core and set it for the "
 "related indexes before deletion."
 msgstr ""
+"Pour conserver les index et les pages de recherche, créez un nouveau cœur et "
+"définissez-le pour les index concernés avant de les supprimer."
 
 #: view/common/solr-core-delete-confirm-details.phtml:24
 msgid ""
 "There is no search indexes, search pages, neither Solr maps associated with "
 "this Solr core."
 msgstr ""
+"Il n'y a pas d'index de recherche, de pages de recherche, ni de "
+"correspondances Solr associés à ce cœur Solr."
 
 #: view/common/solr-map-delete-confirm-details.phtml:15
 #, php-format
 msgid "Map between property \"%s\" and Solr field \"%s\" for \"%s\""
 msgstr ""
+"Correspondance entre la propriété « %s » et le champ Solr « %s » pour « %s »"
 
 #: view/common/solr-map-delete-confirm-details.phtml:19
 #, php-format
@@ -157,20 +94,30 @@ msgid ""
 "This will remove all references to this Solr map in search pages that use it "
 "(%d, of which %d are enabled for facets or sort fields)."
 msgstr ""
+"Cela supprimera toutes les références à cette correspondance Solr dans les "
+"pages de recherche qui l'utilisent (%d, dont %d sont activées pour les "
+"facettes ou les champs de tri)."
 
 #: view/common/solr-map-delete-confirm-details.phtml:24
 msgid "There is no search pages associated with this Solr map."
-msgstr ""
+msgstr "Aucune page de recherche n'est associée à cette correspondance Solr."
 
-#: view/search-solr/admin/core/add.phtml:40
+#: view/search-solr/admin/core/add.phtml:43
 msgid "Add Solr core"
 msgstr "Ajouter un cœur Solr"
 
 #: view/search-solr/admin/core/add.phtml:49
-#: view/search-solr/admin/core/browse-table.phtml:40
-#: view/search-solr/admin/core/browse.phtml:54
+#: view/search-solr/admin/core/browse.phtml:53
 #: view/search-solr/admin/core/edit.phtml:49
 #: view/search-solr/admin/core/import.phtml:27
+msgid "Breadcrumb"
+msgstr "Fil d’Ariane"
+
+#: view/search-solr/admin/core/add.phtml:51
+#: view/search-solr/admin/core/browse-table.phtml:40
+#: view/search-solr/admin/core/browse.phtml:55
+#: view/search-solr/admin/core/edit.phtml:51
+#: view/search-solr/admin/core/import.phtml:29
 #: view/search-solr/admin/map/add.phtml:44
 #: view/search-solr/admin/map/browse-resource.phtml:73
 #: view/search-solr/admin/map/browse.phtml:62
@@ -178,69 +125,77 @@ msgstr "Ajouter un cœur Solr"
 msgid "Solr cores"
 msgstr "Cœurs Solr"
 
-#: view/search-solr/admin/core/add.phtml:51
+#: view/search-solr/admin/core/add.phtml:52
 msgid "Add core"
 msgstr "Ajouter un cœur Solr"
 
 #: view/search-solr/admin/core/browse-table.phtml:60
 msgid "Solr admin interface, if reachable"
-msgstr ""
+msgstr "Interface d'administration de Solr, si accessible"
 
 #: view/search-solr/admin/core/browse-table.phtml:73
 #: view/search-solr/admin/core/browse-table.phtml:77
 msgid "Map Omeka metadata and Solr fields"
-msgstr ""
+msgstr "Aligner les métadonnées d'Omeka et les champs de Solr"
 
-#: view/search-solr/admin/core/browse.phtml:44
+#: view/search-solr/admin/core/browse.phtml:47
 msgid "Solr configuration"
 msgstr "Configuration de Solr"
 
-#: view/search-solr/admin/core/browse.phtml:47
+#: view/search-solr/admin/core/browse.phtml:50
 msgid "Add new core"
 msgstr "Ajouter un nouveau cœur"
 
-#: view/search-solr/admin/core/edit.phtml:40
+#: view/search-solr/admin/core/edit.phtml:43
 msgid "Edit Solr core"
 msgstr "Modifier le cœur Solr"
 
-#: view/search-solr/admin/core/edit.phtml:51
+#: view/search-solr/admin/core/edit.phtml:52
 msgid "Edit core"
 msgstr "Modifier le cœur Solr"
 
-#: view/search-solr/admin/core/edit.phtml:58
+#: view/search-solr/admin/core/edit.phtml:59
 msgid ""
 "WARNING: Changing the required values will require a complete reindexation."
 msgstr ""
+"ATTENTION : La modification des valeurs obligatoires nécessitera une "
+"réindexation complète."
 
-#: view/search-solr/admin/core/import.phtml:14
+#: view/search-solr/admin/core/import.phtml:16
 msgid "Import Solr core mapping"
-msgstr ""
+msgstr "Importer les correspondances du cœur Solr"
 
-#: view/search-solr/admin/core/import.phtml:21
+#: view/search-solr/admin/core/import.phtml:23
 #: view/search-solr/admin/map/browse.phtml:52
 msgid "Export maps for easier spreadsheet mapping."
 msgstr ""
+"Exporter les correspondances pour faciliter l'alignement à l'aide d'un "
+"tableur."
 
-#: view/search-solr/admin/core/import.phtml:21
+#: view/search-solr/admin/core/import.phtml:23
 #: view/search-solr/admin/map/browse.phtml:52
 msgid "Export mapping"
-msgstr ""
+msgstr "Export des correspondances"
 
-#: view/search-solr/admin/core/import.phtml:29
+#: view/search-solr/admin/core/import.phtml:30
 #, php-format
 msgid "Import mapping for core \"%s\""
-msgstr ""
+msgstr "Import des correspondances pour le cœur « %s »"
 
 #: view/search-solr/admin/core/import.phtml:34
 msgid ""
 "Warning: To import a mapping will reset the current mapping for all "
 "resources of the core. It is recommended to export it first."
 msgstr ""
+"Attention : l'import d'une correspondance réinitialise l'alignement actuel "
+"pour toutes les ressources du cœur. Il est recommandé de l'exporter d'abord."
 
 #: view/search-solr/admin/core/import.phtml:38
 msgid ""
 "The form should be a spreadsheet with the same headers than the export ones."
 msgstr ""
+"Le formulaire doit être un tableur avec les mêmes en-têtes que ceux de "
+"l'export."
 
 #: view/search-solr/admin/map/add.phtml:40
 msgid "Add Solr map"
@@ -252,19 +207,19 @@ msgstr "Ajouter une correspondance avec Solr"
 #: view/search-solr/admin/map/edit.phtml:46
 #, php-format
 msgid "Resources list for core \"%s\""
-msgstr ""
+msgstr "Liste des ressources pour le cœur « %s »"
 
 #: view/search-solr/admin/map/add.phtml:46
 #: view/search-solr/admin/map/browse-resource.phtml:76
 #: view/search-solr/admin/map/edit.phtml:47
 #, php-format
 msgid "Maps for \"%s\""
-msgstr ""
+msgstr "Correspondances pour « %s »"
 
 #: view/search-solr/admin/map/browse-resource.phtml:47
 #, php-format
 msgid "Solr maps for \"%s\""
-msgstr ""
+msgstr "Correspondances Solr pour « %s »"
 
 #: view/search-solr/admin/map/browse-resource.phtml:55
 msgid "Add new map"
@@ -278,65 +233,66 @@ msgstr ""
 
 #: view/search-solr/admin/map/browse-resource.phtml:61
 msgid "Map all used properties"
-msgstr ""
+msgstr "Aligner toutes les propriétés utilisées"
 
 #: view/search-solr/admin/map/browse-resource.phtml:67
 msgid "Remove maps of properties that are not used."
 msgstr ""
+"Supprimer les correspondances des propriétés qui ne sont pas utilisées."
 
 #: view/search-solr/admin/map/browse-resource.phtml:67
 msgid "Remove unused properties"
-msgstr ""
+msgstr "Supprimer les propriétés inutilisées"
 
 #: view/search-solr/admin/map/browse-resource.phtml:84
-msgid "Solr field"
-msgstr "Champ Solr"
+msgid "Source Omeka"
+msgstr "Source Omeka"
+
+#: view/search-solr/admin/map/browse-resource.phtml:85
+msgid "Pool / Filter"
+msgstr "Entrepôt / Filtre"
 
 #: view/search-solr/admin/map/browse-resource.phtml:86
-msgid "Pool"
-msgstr "Réservoir"
+msgid "Index Solr"
+msgstr "Index Solr"
 
-#: view/search-solr/admin/map/browse-resource.phtml:87
-msgid "Translated default label"
-msgstr "Libellé par défaut traduit"
-
-#: view/search-solr/admin/map/browse-resource.phtml:130
+#: view/search-solr/admin/map/browse-resource.phtml:131
 msgid "Filtered by values"
-msgstr ""
+msgstr "Filtré par les valeurs"
 
-#: view/search-solr/admin/map/browse-resource.phtml:133
+#: view/search-solr/admin/map/browse-resource.phtml:134
 msgid "Filtered by uris"
-msgstr ""
+msgstr "Filtré par uris"
 
-#: view/search-solr/admin/map/browse-resource.phtml:136
+#: view/search-solr/admin/map/browse-resource.phtml:137
 msgid "Filtered by resources"
-msgstr ""
+msgstr "Filtré par les ressources"
 
-#: view/search-solr/admin/map/browse-resource.phtml:139
+#: view/search-solr/admin/map/browse-resource.phtml:140
 msgid "Filtered by value resources"
-msgstr ""
+msgstr "Filtré par les ressources des valeurs"
 
-#: view/search-solr/admin/map/browse-resource.phtml:144
+#: view/search-solr/admin/map/browse-resource.phtml:145
 msgid "Excluded data types"
 msgstr "Types de données exclues"
 
-#: view/search-solr/admin/map/browse-resource.phtml:149
+#: view/search-solr/admin/map/browse-resource.phtml:150
 msgid "Only languages"
 msgstr "Seulement les langues"
 
-#: view/search-solr/admin/map/browse-resource.phtml:154
+#: view/search-solr/admin/map/browse-resource.phtml:155
 msgid "Filtered by visibility Public"
-msgstr ""
+msgstr "Filtré par visibilité Public"
 
-#: view/search-solr/admin/map/browse-resource.phtml:156
+#: view/search-solr/admin/map/browse-resource.phtml:157
 msgid "Filtered by visibility Private"
-msgstr ""
+msgstr "Filtré par visibilité Privé"
 
-#: view/search-solr/admin/map/browse-resource.phtml:166
+#: view/search-solr/admin/map/browse-resource.phtml:172
 msgid "There is no maps defined yet."
-msgstr ""
+msgstr "Aucune correspondance n'a encore été définie."
 
-#: view/search-solr/admin/map/browse-resource.phtml:167
+#: view/search-solr/admin/map/browse-resource.phtml:173
 msgid "Add a new map"
 msgstr "Ajouter une correspondance"
 
@@ -350,10 +306,13 @@ msgid ""
 "Import maps. Warning: it will reset the current mapping for all resources. "
 "It is recommended to export it first."
 msgstr ""
+"Importer des correspondances. Attention : cette opération réinitialise les "
+"correspondances en cours de toutes les ressources. Il est recommandé de les "
+"exporter d'abord."
 
 #: view/search-solr/admin/map/browse.phtml:57
 msgid "Import mapping"
-msgstr ""
+msgstr "Importer des correspondances"
 
 #: view/search-solr/admin/map/browse.phtml:85
 msgid "Rules"
@@ -363,109 +322,167 @@ msgstr "Règles"
 msgid "Edit Solr map"
 msgstr "Modifier l’alignement Solr"
 
-#: view/search-solr/admin/map/form.phtml:26
-msgid "Metadata to extract"
-msgstr "Métadonnée à extraire"
+#: view/search-solr/admin/map/form.phtml:29
+msgid "Metadata to extract from Omeka"
+msgstr "Métadonnée à extraire depuis Omeka"
 
-#: view/search-solr/admin/map/form.phtml:31
-msgid "Metadata to index"
-msgstr "Métadonnée à indexer"
+#: view/search-solr/admin/map/form.phtml:33
+msgid "Destination"
+msgstr "Destination"
+
+#: view/search-solr/admin/map/form.phtml:34
+msgid "Index of metadata in Solr"
+msgstr "Index des métadonnées dans Solr"
+
+#: view/search-solr/admin/map/form.phtml:38
+msgid "Adapt the metadata"
+msgstr "Adapter les métadonnées"
 
 #: data/scripts/upgrade_from_solr.php:46
 #, php-format
 msgid "The version of the module Solr should be at least %s."
-msgstr ""
+msgstr "La version du module Solr doit être au moins %s."
 
 #: data/scripts/upgrade_from_solr.php:205
 msgid "The module Solr was upgraded by module SearchSolr and uninstalled."
 msgstr ""
+"Le module Solr a été mis à niveau par le module SearchSolr et désinstallé."
 
-#: data/scripts/upgrade.php:44
+#: data/scripts/upgrade.php:55
 msgid "You should reindex your Solr cores."
 msgstr "Vous devez réindexer vos cœurs Solr."
 
-#: data/scripts/upgrade.php:66
+#: data/scripts/upgrade.php:77
 msgid "Now, values can be indexed differently for each data type, if wanted."
 msgstr ""
+"Désormais, les valeurs peuvent être indexées différemment pour chaque type "
+"de données, si on le souhaite."
 
-#: data/scripts/upgrade.php:67
+#: data/scripts/upgrade.php:78
 msgid "Use the new import/export tool to simplify config."
 msgstr ""
+"Utilisez le nouvel outil d'import/export pour simplifier la configuration."
 
-#: data/scripts/upgrade.php:159 data/scripts/upgrade.php:178
-#: data/scripts/upgrade.php:202
-#, php-format
-msgid "This module requires the module \"%s\", version %s or above."
-msgstr "Ce module requiert le module « %s », version « %s » ou supérieure."
-
-#: data/scripts/upgrade.php:167
-msgid "The auto-suggestion requires a specific url for now."
+#: data/scripts/upgrade.php:170 data/scripts/upgrade.php:188
+#: data/scripts/upgrade.php:211 data/scripts/upgrade.php:407
+#: data/scripts/upgrade.php:418 data/scripts/upgrade.php:432
+#: data/scripts/upgrade.php:501 data/scripts/upgrade.php:513
+msgid ""
+"This module requires the module \"{module}\", version {version} or above."
 msgstr ""
+"Ce module requiert le module « {module} », version {version} ou supérieure."
 
-#: data/scripts/upgrade.php:375
+#: data/scripts/upgrade.php:177
+msgid "The auto-suggestion requires a specific url for now."
+msgstr "L'auto-suggestion nécessite une url spécifique pour l'instant."
+
+#: data/scripts/upgrade.php:383
 msgid ""
 "The resource types are now structured to simplify config: \"generic\" and "
 "\"resource\" allow to set mapping for any resource."
 msgstr ""
+"Les types de ressources sont désormais structurés pour simplifier la "
+"configuration : « générique » et « ressource » permettent de définir les "
+"correspondances pour toutes les ressource."
 
-#: data/scripts/upgrade.php:379
+#: data/scripts/upgrade.php:387
 msgid "All mapping for items and item sets have been copied to resources."
 msgstr ""
+"Toutes les correspondances pour les éléments et les ensembles d'éléments ont "
+"été copiées dans les ressources."
 
-#: data/scripts/upgrade.php:383
+#: data/scripts/upgrade.php:391
 msgid ""
 "It is recommended to check mappings, to remove the useless and duplicate "
 "ones, and to run a full reindexation."
 msgstr ""
+"Il est recommandé de vérifier les correspondances, de supprimer celles "
+"inutiles ou en double et de lancer une réindexation complète."
 
-#: data/scripts/upgrade.php:390
+#: data/scripts/upgrade.php:398
 msgid "It is now possible to index original and thumbnails urls."
 msgstr ""
+"Il est désormais possible d'indexer les urls des fichiers originaux et des "
+"vignettes."
 
-#: data/scripts/upgrade.php:444
+#: data/scripts/upgrade.php:453
 msgid ""
 "It is now possible to filter values to index via a regex, a list of "
 "languages or a visibility."
 msgstr ""
+"Il est désormais possible de filtrer les valeurs à indexer via une "
+"expression rationnelle, une liste de langues ou une visibilité."
 
-#: data/scripts/upgrade.php:449
+#: data/scripts/upgrade.php:458
 msgid ""
 "It is now possible to filter resources to index, for example an item set, a "
 "template, an owner, a visibility, etc."
 msgstr ""
+"Il est désormais possible de filtrer les ressources à indexer, par exemple "
+"une collection, un modèle, un propriétaire, une visibilité, etc."
 
-#: data/scripts/upgrade.php:454
+#: data/scripts/upgrade.php:463
 msgid ""
 "It is now possible to use module Table to manage tables for normalization of "
 "indexation."
 msgstr ""
+"Il est désormais possible d'utiliser le module Table pour gérer les tables "
+"de normalisation de l'indexation."
 
-#: Module.php:103
+#: data/scripts/upgrade.php:468
+msgid ""
+"The table used for indexation has been converted into a standard {link}"
+"table{link_end}. It is recommended to remove the old one from the config."
+msgstr ""
+"La table utilisée pour l'indexation a été convertie en une {link}"
+"table{link_end} standard. Il est recommandé de supprimer l'ancienne table de "
+"la configuration."
+
+#: data/scripts/upgrade.php:488
+msgid ""
+"The support of module Access Resource has been removed. Support of module "
+"Access has been added."
+msgstr ""
+"La prise en charge du module Access Resource a été supprimée. Le module "
+"Access est désormais pris en charge."
+
+#: data/scripts/upgrade.php:493
+msgid "A reindexing is needed."
+msgstr "Une réindexation est nécessaire."
+
+#: Module.php:121
 #, php-format
 msgid "The composer library \"%s\" is not installed. See readme."
 msgstr ""
 "La bibliothèque composer « %s » n'est pas installée. Voir le lisez-moi."
 
-#: Module.php:131
+#: Module.php:150
 msgid ""
 "To be upgraded automatically, the module Solr should be between versions "
 "3.5.5 and 3.5.14. Upgrade it or disable it to install this module."
 msgstr ""
+"Pour être mis à jour automatiquement, le module Solr doit être entre les "
+"versions 3.5.5 et 3.5.14. Mettez-le à niveau ou désactivez-le pour installer "
+"ce module."
 
-#: Module.php:139
+#: Module.php:158
 msgid ""
 "To upgrade module Solr automatically, this module should be lower or equal "
 "to 3.5.30.3. Install this version of this module, then upgrade it."
 msgstr ""
+"Pour mettre à jour le module Solr automatiquement, ce module doit être "
+"inférieur ou égal à 3.5.30.3. Installez cette version de ce module, puis "
+"mettez-le à jour."
 
-#: Module.php:145
+#: Module.php:164
 msgid "A new config will be created instead."
 msgstr "Une nouvelle config sera créée à la place."
 
-#: Module.php:443
+#: Module.php:462
 #, php-format
 msgid "The default core can be configured in the %1$ssearch manager%2$s."
 msgstr ""
+"Le cœur par défaut peut être configuré dans les %1$smoteurs de recherche%2$s."
 
 #: src/ValueFormatter/RawText.php:14
 msgid "Raw text"
@@ -479,32 +496,41 @@ msgstr "Point"
 msgid "Uri"
 msgstr "Uri"
 
-#: src/ValueFormatter/Table.php:14
+#: src/ValueFormatter/Table.php:12
 msgid "Table"
 msgstr "Table"
 
-#: src/ValueFormatter/Table.php:41
-#, php-format
+#: src/ValueFormatter/Table.php:39
 msgid ""
-"For formatter \"Table\", the table #%s does not exist and values are not "
-"normalized."
+"For formatter \"Table\", the table #{table_id} does not exist and values are "
+"not normalized."
 msgstr ""
+"Pour le formateur « Table », la table #{table_id} n'existe pas et les "
+"valeurs ne seront pas normalisées."
 
 #: src/ValueFormatter/StandardWithUri.php:15
 msgid "Standard with uri"
-msgstr ""
+msgstr "Standard avec uri"
 
 #: src/ValueFormatter/PlainText.php:12
 msgid "Plain text"
 msgstr "Texte simple"
 
+#: src/ValueFormatter/Place.php:14 src/Form/Admin/SolrMapForm.php:220
+msgid "Place"
+msgstr "Lieu"
+
+#: src/ValueFormatter/UcFirstText.php:14
+msgid "First character uppercase"
+msgstr "Premier caractère majuscule"
+
 #: src/ValueFormatter/StandardWithoutUri.php:14
 msgid "Standard without uri"
-msgstr ""
+msgstr "Standard sans uri"
 
 #: src/ValueFormatter/HtmlEscapedText.php:14
 msgid "HTML escaped text"
-msgstr ""
+msgstr "Texte échappé HTML"
 
 #: src/ValueFormatter/DateRange.php:37
 msgid "Date range"
@@ -519,40 +545,43 @@ msgid "Year"
 msgstr "Année"
 
 #: src/Schema/Schema.php:82
-#, php-format
 msgid ""
 "Solr core is not available. Check config or certificate to get Solr core "
-"schema \"%s\"."
+"schema {url}."
 msgstr ""
+"Le cœur Solr n'est pas disponible. Vérifier la configuration ou le "
+"certificat pour obtenir le schéma du cœur Solr {url}."
 
 #: src/Schema/Schema.php:87
-#, php-format
-msgid ""
-"Solr core is not available. Check config to get Solr core schema \"%s\"."
+msgid "Solr core is not available. Check config to get Solr core schema {url}."
 msgstr ""
+"Le cœur Solr n'est pas disponible. Vérifier la configuration pour obtenir le "
+"schéma du cœur Solr {url}."
 
 #: src/Schema/Schema.php:101
-#, php-format
 msgid ""
-"Response is not valid. Check output of %s, that should be valid json data."
+"Response is not valid. Check output of {url}, that should be valid json data."
 msgstr ""
+"La réponse n'est pas valide. Vérifiez la sortie de {url}, qui devrait être "
+"une donnée json valide."
 
 #: src/Schema/Schema.php:113
-#, php-format
 msgid ""
-"Response is not valid. Check output of %s, that should be a json with a key "
-"\"schema\"."
+"Response is not valid. Check output of {ur}, that should be a json with a "
+"key \"schema\"."
 msgstr ""
+"La réponse n'est pas valide. Vérifiez la sortie de {ur}, qui devrait être un "
+"json avec une clé « schéma »."
 
 #: src/Adapter/SolariumAdapter.php:49
 msgid "Solr [via Solarium]"
-msgstr ""
+msgstr "Solr [via Solarium]"
 
 #: src/Form/Admin/SourceFieldset.php:25
 msgid "Select a metadata from the resource…"
-msgstr ""
+msgstr "Choisir une métadonnée dans la ressource…"
 
-#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:211
+#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:206
 msgid "Set sub-property"
 msgstr "Indiquer la sous-propriété"
 
@@ -562,14 +591,14 @@ msgstr "Schéma"
 
 #: src/Form/Admin/SolrCoreForm.php:81
 msgid "IP or hostname"
-msgstr "IP ou nom d’hôte"
+msgstr "IP ou hôte"
 
 #: src/Form/Admin/SolrCoreForm.php:93
 msgid "Port"
 msgstr "Port"
 
 #: src/Form/Admin/SolrCoreForm.php:105 src/Form/Admin/SolrConfigFieldset.php:45
-#: src/Controller/Admin/CoreController.php:188
+#: src/Controller/Admin/CoreController.php:198
 msgid "Solr core"
 msgstr "Ajouter un cœur Solr"
 
@@ -583,13 +612,15 @@ msgstr "Utilisateur Solr"
 
 #: src/Form/Admin/SolrCoreForm.php:139
 msgid "Solr password"
-msgstr ""
+msgstr "Mot de passe Solr"
 
 #: src/Form/Admin/SolrCoreForm.php:140
 msgid ""
 "Note: the password is saved clear in the database, so it is recommended to "
 "create a specific user."
 msgstr ""
+"Note : le mot de passe est enregistré en clair dans la base de données. Il "
+"est donc recommandé de créer un utilisateur spécifique."
 
 #: src/Form/Admin/SolrCoreForm.php:152
 msgid "Bypass certificate check"
@@ -601,28 +632,31 @@ msgstr "Évite un problème lorsque le certificat expire."
 
 #: src/Form/Admin/SolrCoreForm.php:163
 msgid "Http request type"
-msgstr ""
+msgstr "Type de requête Http"
 
 #: src/Form/Admin/SolrCoreForm.php:164
 msgid "Choose if requests to Solr use \"get\" or \"post\"."
 msgstr ""
+"Choisissez si les demandes adressées à Solr utilisent « get » ou « post »."
 
 #: src/Form/Admin/SolrCoreForm.php:167
 msgid "Post (allow big queries and numerous facets)"
-msgstr ""
+msgstr "Post (permet des requêtes importantes et de nombreuses facettes)"
 
 #: src/Form/Admin/SolrCoreForm.php:168
 msgid "Get (cacheable)"
-msgstr ""
+msgstr "Get (cachable)"
 
 #: src/Form/Admin/SolrCoreForm.php:184
 msgid "Filter resources to index with a specific query"
-msgstr ""
+msgstr "Filtrer les ressources à indexer avec une requête spécifique"
 
 #: src/Form/Admin/SolrCoreForm.php:185
 msgid ""
 "Allow to store only an item set, a template, an owner, a visibility, etc."
 msgstr ""
+"Permet de stocker uniquement un ensemble d'éléments, un modèle, un "
+"propriétaire, une visibilité, etc."
 
 #: src/Form/Admin/SolrCoreForm.php:197
 msgid "Index specific fields"
@@ -637,10 +671,12 @@ msgid ""
 "Allow to store specific data needed to share a core with a third party. All "
 "field names should be manually adapted."
 msgstr ""
+"Permet de stocker des données spécifiques nécessaires au partage d'un noyau "
+"avec un tiers. Tous les noms de champs doivent être adaptés manuellement."
 
 #: src/Form/Admin/SolrCoreForm.php:214
 msgid "Server id for shared core"
-msgstr ""
+msgstr "Identifiant du serveur pour le cœur partagé"
 
 #: src/Form/Admin/SolrCoreForm.php:215
 #, php-format
@@ -649,10 +685,13 @@ msgid ""
 "party, depending on its configuration. For information, the unique id of the "
 "install is \"%s\"."
 msgstr ""
+"Peut être vide ou peut être ou ne pas être le même identifiant unique que le "
+"tiers en fonction de sa configuration. Pour information, l'identifiant "
+"unique de l'installation est « %s »."
 
 #: src/Form/Admin/SolrCoreForm.php:229
 msgid "Resource languages 2-letters iso codes for shared core"
-msgstr ""
+msgstr "Codes des langues des ressources iso à 2 lettres pour le cœur partagé"
 
 #: src/Form/Admin/SolrCoreForm.php:230
 msgid ""
@@ -664,17 +703,19 @@ msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:243
 msgid "Clear all indexes, included external ones"
-msgstr ""
+msgstr "Effacer tous les index, y compris les index externes"
 
 #: src/Form/Admin/SolrCoreForm.php:244
 msgid ""
 "Warning: this button will clear all indexes on the core, included indexes "
 "externally managed if multi-index is set."
 msgstr ""
+"Attention : ce bouton effacera tous les index du cœur, y compris les index "
+"gérés en externe si le multi-index est activé."
 
 #: src/Form/Admin/SolrCoreForm.php:247
 msgid "clear_full_index"
-msgstr ""
+msgstr "clear_full_index"
 
 #: src/Form/Admin/SolrCoreForm.php:266
 msgid "Minimum match (or/and)"
@@ -699,20 +740,24 @@ msgid ""
 "Increase score according to the number of matched fields.\n"
 "If empty, the config of the solr core (solrconfig.xml) will be used."
 msgstr ""
+"Augmente le score en fonction du nombre de champs correspondants.\n"
+"Si vide, la configuration du cœur Solr (solrconfig.xml) sera utilisée."
 
 #: src/Form/Admin/SolrConfigFieldset.php:57
 msgid "Solr index name for shared core"
-msgstr ""
+msgstr "Nom de l'index Solr pour le cœur partagé"
 
 #: src/Form/Admin/SolrConfigFieldset.php:58
 msgid ""
 "May be empty, or may be or may not be the same index name than the third "
 "party, depending on its configuration."
 msgstr ""
+"Peut être vide ou peut être ou ne pas être le même nom d'index que le tiers "
+"en fonction de sa configuration."
 
-#: src/Form/Admin/SolrConfigFieldset.php:101
-msgid "label"
-msgstr "libellé"
+#: src/Form/Admin/SolrConfigFieldset.php:102
+msgid "{label} (unavailable: option multi-index not set)"
+msgstr "{label} (indisponible : l’option multi-index n’est pas spécifié)"
 
 #: src/Form/Admin/SolrMapForm.php:70
 msgid ""
@@ -721,88 +766,112 @@ msgid ""
 "value of a linked item. For example an issue of a journal can be linked with "
 "the journal, so the issue can be found from the title of the journal."
 msgstr ""
+"La sélection d'une sous-propriété permet de stocker une métadonnée liée "
+"lorsque la propriété contient une ressource. Ainsi, un contenu peut être "
+"trouvé à partir de la valeur spécifiée d'un contenu lié. Par exemple, un "
+"numéro d'une revue peut être lié à la revue, de sorte que le numéro peut "
+"être trouvé à partir du titre de la revue."
 
-#: src/Form/Admin/SolrMapForm.php:102
+#: src/Form/Admin/SolrMapForm.php:88
 msgid "Only values of resources matching this standard query"
 msgstr ""
+"Seules les valeurs des ressources correspondant à cette requête standard"
 
-#: src/Form/Admin/SolrMapForm.php:113
+#: src/Form/Admin/SolrMapForm.php:99
 msgid "Only values matching this regex"
-msgstr ""
+msgstr "Seulement les valeurs correspondant à cette expression rationnelle"
 
-#: src/Form/Admin/SolrMapForm.php:124
+#: src/Form/Admin/SolrMapForm.php:110
 msgid "Only uris matching this regex"
-msgstr ""
+msgstr "Seulement les uris correspondant à cette expression"
 
-#: src/Form/Admin/SolrMapForm.php:135
+#: src/Form/Admin/SolrMapForm.php:121
 msgid "Only linked resources matching this standard query"
-msgstr ""
+msgstr "Seules les ressources liées correspondant à cette requête standard"
 
-#: src/Form/Admin/SolrMapForm.php:146
+#: src/Form/Admin/SolrMapForm.php:132
 msgid "Only these data types"
 msgstr "Seulement ces types de données"
 
-#: src/Form/Admin/SolrMapForm.php:159
+#: src/Form/Admin/SolrMapForm.php:145
 msgid "Exclude data types"
 msgstr "Exclure des types de données"
 
-#: src/Form/Admin/SolrMapForm.php:163
+#: src/Form/Admin/SolrMapForm.php:149
 msgid "Select data types to exclude…"
 msgstr "Indiquer les types de données à exclure…"
 
-#: src/Form/Admin/SolrMapForm.php:184
+#: src/Form/Admin/SolrMapForm.php:170
 msgid "Only visibility"
 msgstr "Seulement la visibilité"
 
-#: src/Form/Admin/SolrMapForm.php:204
-msgid "Default label"
-msgstr "Libellé par défaut"
+#: src/Form/Admin/SolrMapForm.php:192
+msgid "Solr field"
+msgstr "Champ Solr"
 
-#: src/Form/Admin/SolrMapForm.php:205
-msgid "The label is automatically translated if it exists in Omeka."
-msgstr ""
-
-#: src/Form/Admin/SolrMapForm.php:215
+#: src/Form/Admin/SolrMapForm.php:207
 msgid "Formatter"
 msgstr "Formateur"
 
-#: src/Form/Admin/SolrMapForm.php:230
-msgid "Table for formatter \"Table\""
-msgstr ""
+#: src/Form/Admin/SolrMapForm.php:222
+msgid "Toponym and country"
+msgstr "Toponyme et pays"
 
-#: src/Form/Admin/SolrMapForm.php:238
+#: src/Form/Admin/SolrMapForm.php:223
+msgid "Toponym"
+msgstr "Toponyme"
+
+#: src/Form/Admin/SolrMapForm.php:224
+msgid "Country"
+msgstr "Pays"
+
+#: src/Form/Admin/SolrMapForm.php:239
+msgid "Table for formatter \"Table\""
+msgstr "Tableau pour le formateur « Table »"
+
+#: src/Form/Admin/SolrMapForm.php:247
 msgid "Select a table…"
 msgstr "Choisissez une table…"
 
-#: src/Form/Admin/SolrMapForm.php:248
+#: src/Form/Admin/SolrMapForm.php:257
 msgid "Table: Mode of normalization"
-msgstr ""
+msgstr "Table : mode de normalisation"
 
-#: src/Form/Admin/SolrMapForm.php:249
+#: src/Form/Admin/SolrMapForm.php:258
 msgid ""
 "If the value is displayed (facets, filters…), it is recommended to index "
 "label only."
 msgstr ""
+"Si la valeur est affichée (facettes, filtres...), il est recommandé de "
+"n'indexer que le libellé."
 
-#: src/Form/Admin/SolrMapForm.php:251
+#: src/Form/Admin/SolrMapForm.php:260
 msgid "Label only"
 msgstr "Libellé seul"
 
-#: src/Form/Admin/SolrMapForm.php:252
+#: src/Form/Admin/SolrMapForm.php:261
 msgid "Code only"
-msgstr ""
+msgstr "Code seul"
 
-#: src/Form/Admin/SolrMapForm.php:253
-msgid "Label and code "
-msgstr ""
+#: src/Form/Admin/SolrMapForm.php:262
+msgid "Label and code"
+msgstr "Libellé et code"
 
-#: src/Form/Admin/SolrMapForm.php:267
+#: src/Form/Admin/SolrMapForm.php:276
 msgid "Table: index original value too"
-msgstr ""
+msgstr "Table : indexer également la valeur originale"
 
-#: src/Form/Admin/SolrMapForm.php:279
+#: src/Form/Admin/SolrMapForm.php:288
 msgid "Table: strict check (same case, same diacritics)"
-msgstr ""
+msgstr "Table : vérification stricte (même casse, mêmes diacritiques)"
+
+#: src/Form/Admin/SolrMapForm.php:307
+msgid "Default label"
+msgstr "Libellé par défaut"
+
+#: src/Form/Admin/SolrMapForm.php:308
+msgid "The label is automatically translated if it exists in Omeka."
+msgstr "Le libellé est automatiquement traduite s'il existe dans Omeka."
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:14
 msgid "comma"
@@ -830,7 +899,7 @@ msgstr "apostrophe droite"
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:28
 msgid "hash"
-msgstr "dièse"
+msgstr "somme de contrôle"
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:29
 msgid "empty"
@@ -844,7 +913,7 @@ msgstr "Tableur (tsv ou csv)"
 msgid "LibreOffice and tsv are recommended for compliant formats."
 msgstr ""
 "Les formats LibreOffice et tsv sont recommandés en tant que formats "
-"conformes."
+"standards."
 
 #: src/Form/Admin/SolrCoreMappingImportForm.php:54
 msgid "Column delimiter"
@@ -868,264 +937,314 @@ msgstr ""
 "Un caractère unique utilisé pour séparer les colonnes dans le fichier csv. "
 "Le délimiteur peut être omis quand le contenu ne contient pas le délimiteur."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:220
-msgid "Solarium"
-msgstr "Solarium"
-
-#: src/Api/Representation/SolrCoreRepresentation.php:229
-#, php-format
-msgid "Solr core #%d: incorrect or incomplete configuration."
+#: src/Api/Representation/SolrCoreRepresentation.php:222
+msgid "The composer library \"{library}\" is not installed. See readme."
 msgstr ""
+"La bibliothèque composer « {library} » n'est pas installée. Voir le lisez-"
+"moi."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:241
+#: src/Api/Representation/SolrCoreRepresentation.php:234
+msgid "Solr core #{solr_core_id}: incorrect or incomplete configuration."
+msgstr "Cœur Solr #{solr_core_id} : configuration incorrecte ou incomplète."
+
+#: src/Api/Representation/SolrCoreRepresentation.php:248
 msgid "Solr core not found. Check your url."
-msgstr ""
+msgstr "Le cœur Solr n'a pas été trouvé. Vérifiez votre url."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:246
+#: src/Api/Representation/SolrCoreRepresentation.php:253
 msgid ""
 "Solr core not found or unauthorized. Check your url and your credentials."
 msgstr ""
+"Le cœur Solr est introuvable ou non autorisé. Vérifiez votre url et vos "
+"informations d'identification."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:250
-#: src/Api/Representation/SolrCoreRepresentation.php:254
-#: src/Api/Representation/SolrCoreRepresentation.php:268
-#, php-format
-msgid "Solr core #%d: %s"
-msgstr "Cœur Solr #%d : %s"
+#: src/Api/Representation/SolrCoreRepresentation.php:258
+#: src/Api/Representation/SolrCoreRepresentation.php:265
+#: src/Api/Representation/SolrCoreRepresentation.php:285
+msgid "Solr core #{solr_core_id}: {message}"
+msgstr "Solr core #{solr_core_id} : {message}"
 
-#: src/Api/Representation/SolrCoreRepresentation.php:264
-#, php-format
-msgid "Solr core #%d enpoint: %s"
-msgstr ""
+#: src/Api/Representation/SolrCoreRepresentation.php:278
+msgid "Solr core #{solr_core_id} enpoint: {message}"
+msgstr "Solr core #{solr_core_id} enpoint : {message}"
 
-#: src/Api/Representation/SolrCoreRepresentation.php:275
+#: src/Api/Representation/SolrCoreRepresentation.php:294
 msgid "Solr: the config bypasses the check of the certificate."
-msgstr ""
+msgstr "Solr : la configuration contourne la vérification du certificat."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:276
+#: src/Api/Representation/SolrCoreRepresentation.php:296
 msgid "OK (warning: check of certificate disabled)"
-msgstr "OK (attention : vérification du certificat désactivée)"
+msgstr "Ok (attention : vérification du certificat désactivée)"
 
-#: src/Api/Representation/SolrCoreRepresentation.php:279
+#: src/Api/Representation/SolrCoreRepresentation.php:302
 msgid "OK"
 msgstr "Ok"
 
-#: src/Indexer/SolariumIndexer.php:223
-#, php-format
-msgid "Indexing in Solr core \"%1$s\": %2$s"
-msgstr ""
+#: src/Indexer/SolariumIndexer.php:222
+msgid "Indexing in Solr core \"{solr_core}\": {ids}"
+msgstr "Indexation dans le cœur Solr « {solr_core} » : {ids}"
 
-#: src/Indexer/SolariumIndexer.php:278
-#, php-format
+#: src/Indexer/SolariumIndexer.php:277
 msgid ""
-"Unable to index resources in Solr core \"%1$s\". Some required fields are "
-"not mapped: %2$s"
+"Unable to index resources in Solr core \"{solr_core}\". Some required fields "
+"are not mapped: {list}"
 msgstr ""
+"Impossible d'indexer les ressources dans le cœur Solr « {solr_core} ». "
+"Certains champs obligatoires ne sont pas alignés : {list}"
 
-#: src/Indexer/SolariumIndexer.php:327
-#, php-format
-msgid "The %1$s #%2$d is no more available and cannot be indexed."
+#: src/Indexer/SolariumIndexer.php:326
+msgid ""
+"The {resource_type} #{resource_id} is no more available and cannot be "
+"indexed."
 msgstr ""
+"Le {resource_type} #{resource_id} n'est plus disponible et ne peut être "
+"indexé."
 
-#: src/Indexer/SolariumIndexer.php:511
+#: src/Indexer/SolariumIndexer.php:510
 msgid "No document to commit in Solr."
 msgstr "Aucun document à indexer dans Solr."
 
-#: src/Indexer/SolariumIndexer.php:596
-msgid "Invalid document (wrong field type or missing required field)."
+#: src/Indexer/SolariumIndexer.php:586
+msgid ""
+"Indexing of resource failed: empty or invalid document {document_id}: "
+"{exception}"
 msgstr ""
+"L'indexation de la ressource a échoué : document {document_id} vide ou "
+"invalide : {exception}"
 
-#: src/Indexer/SolariumIndexer.php:598
+#: src/Indexer/SolariumIndexer.php:591
+msgid "Indexing of resource failed: empty or invalid document: {exception}"
+msgstr ""
+"L'indexation de la ressource a échoué : document vide ou invalide : "
+"{exception}"
+
+#: src/Indexer/SolariumIndexer.php:606
+msgid ""
+"Indexing of resource {document_id} failed: Invalid document (wrong field "
+"type or missing required field)."
+msgstr ""
+"L'indexation de la ressource {document_id} a échoué : document non valide "
+"(mauvais type de champ ou champ obligatoire manquant)."
+
+#: src/Indexer/SolariumIndexer.php:611
 msgid ""
 "Solr HTTP error: HTTP request failed due to network or certificate issue."
 msgstr ""
+"Erreur HTTP Solr : La requête HTTP a échoué en raison d'un problème de "
+"réseau ou de certificat."
 
-#: src/Indexer/SolariumIndexer.php:886
+#: src/Indexer/SolariumIndexer.php:615
+msgid "Indexing of resource {document_id} failed: {message}"
+msgstr "L'indexation de la ressource {document_id} a échoué : {message}"
+
+#: src/Indexer/SolariumIndexer.php:902
 msgid "Solr core is not available."
 msgstr "Le cœur Solr n’est pas disponible."
 
 #: src/Controller/Admin/MapController.php:75
-#: src/Controller/Admin/CoreController.php:147
-#, php-format
 msgid ""
-"Some required fields are missing or not available in the core: \"%s\". "
+"Some required fields are missing or not available in the core: {fields}. "
 "Update the generic or the resource mappings."
 msgstr ""
+"Certains champs obligatoires sont manquants ou non disponibles dans le "
+"cœur : {fields}. Mettez à jour l'alignement générique ou l'alignement des "
+"ressources."
 
 #: src/Controller/Admin/MapController.php:102
 msgid ""
 "This core seems to have no default field. If there are no results to a "
 "default query, add the copy field \"_text_\" with source \"*\"."
 msgstr ""
+"Ce noyau ne semble pas avoir de champ par défaut. S'il n'y a pas de "
+"résultats à une requête par défaut, ajoutez le champ de copie \"_text_\" "
+"avec la source \"*\"."
 
-#: src/Controller/Admin/MapController.php:160
-#, php-format
-msgid "%d maps successfully created: \"%s\"."
-msgstr "%d correspondances créés avec succès : « %s »."
+#: src/Controller/Admin/MapController.php:161
+msgid "{count} maps successfully created: {list}."
+msgstr "{count} correspondances créés avec succès : {list}."
 
-#: src/Controller/Admin/MapController.php:162
+#: src/Controller/Admin/MapController.php:164
 msgid "Check all new maps and remove useless ones."
 msgstr ""
-
-#: src/Controller/Admin/MapController.php:163
-#: src/Controller/Admin/MapController.php:223
-msgid "Don’t forget to run the indexation of the core."
-msgstr "N’oubliez pas de lancer l’indexation du moteur de recherche."
+"Vérifier toutes les nouvelles correspondances et supprimer les "
+"correspondances inutiles."
 
 #: src/Controller/Admin/MapController.php:165
+#: src/Controller/Admin/MapController.php:227
+msgid "Don’t forget to run the indexation of the core."
+msgstr "N’oubliez pas de lancer l’indexation du cœur."
+
+#: src/Controller/Admin/MapController.php:167
 msgid "No new maps added."
-msgstr ""
+msgstr "Aucune nouvelle correspondance n'a été ajoutée."
 
-#: src/Controller/Admin/MapController.php:221
-#, php-format
-msgid "%d maps successfully deleted: \"%s\"."
-msgstr "%d correspondances supprimées avec succès : \"%s\"."
+#: src/Controller/Admin/MapController.php:224
+msgid "{count} maps successfully deleted: {list}."
+msgstr "{count} correspondances supprimées avec succès : {list}."
 
-#: src/Controller/Admin/MapController.php:225
+#: src/Controller/Admin/MapController.php:229
 msgid "No maps deleted."
-msgstr ""
+msgstr "Aucune correspondance n'a été supprimée."
 
-#: src/Controller/Admin/MapController.php:256
-#, php-format
-msgid "Solr map created: %s."
-msgstr ""
+#: src/Controller/Admin/MapController.php:261
+msgid "Solr map created: {solr_map_name}."
+msgstr "Correspondance Solr créée : {solr_map_name}."
 
-#: src/Controller/Admin/MapController.php:268
-#: src/Controller/Admin/MapController.php:322
-#: src/Controller/Admin/CoreController.php:319
+#: src/Controller/Admin/MapController.php:277
+#: src/Controller/Admin/MapController.php:334
+#: src/Controller/Admin/CoreController.php:329
 msgid "There was an error during validation"
 msgstr "Il y a eu une erreur durant la validation"
 
-#: src/Controller/Admin/MapController.php:308
-#, php-format
-msgid "Solr map modified: %s."
-msgstr "Correspondance avec Solr modifié : %s."
+#: src/Controller/Admin/MapController.php:319
+msgid "Solr map modified: {solr_map_name}."
+msgstr "Correspondance Solr modifié : {solr_map_name}."
 
-#: src/Controller/Admin/MapController.php:311
+#: src/Controller/Admin/MapController.php:323
 msgid "Don’t forget to check search pages that use this map."
 msgstr ""
+"N'oubliez pas de vérifier les pages de recherche qui utilisent cette "
+"correspondance."
 
-#: src/Controller/Admin/MapController.php:350
+#: src/Controller/Admin/MapController.php:362
 msgid "Solr map"
 msgstr "Correspondance Solr"
 
-#: src/Controller/Admin/MapController.php:371
+#: src/Controller/Admin/MapController.php:383
 msgid "Solr map successfully deleted"
-msgstr ""
+msgstr "Suppression réussie de la correspondance Solr"
 
-#: src/Controller/Admin/MapController.php:372
+#: src/Controller/Admin/MapController.php:384
 msgid "Don’t forget to check search pages that used this map."
 msgstr ""
+"N'oubliez pas de vérifier les pages de recherche qui ont utilisé cette carte."
 
-#: src/Controller/Admin/MapController.php:374
+#: src/Controller/Admin/MapController.php:386
 msgid "Solr map could not be deleted"
-msgstr ""
+msgstr "La correspondance Solr n'a pas pu être supprimée"
 
-#: src/Controller/Admin/MapController.php:394
+#: src/Controller/Admin/MapController.php:406
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:82
 msgid "Internal id"
 msgstr "Id interne"
 
-#: src/Controller/Admin/CoreController.php:98
-#, php-format
-msgid "Solr core \"%s\" created."
-msgstr "Cœur Solr « %s » créé."
+#: src/Controller/Admin/CoreController.php:100
+msgid "Solr core \"{solr_core_name}\" created."
+msgstr "Cœur Solr « {solr_core_name} » créé."
 
-#: src/Controller/Admin/CoreController.php:142
-#, php-format
-msgid "Solr core \"%s\" updated."
-msgstr "Cœur Solr « %s » mis à jour."
+#: src/Controller/Admin/CoreController.php:147
+msgid "Solr core \"{solr_core_name}\" updated."
+msgstr "Cœur Solr « {solr_core_name} » mis à jour."
 
-#: src/Controller/Admin/CoreController.php:159
-#, php-format
+#: src/Controller/Admin/CoreController.php:154
+msgid ""
+"Some required fields are missing or not available in the core: {list}. "
+"Update the generic or the resource mappings."
+msgstr ""
+"Certains champs obligatoires sont manquants ou non disponibles dans le "
+"cœur : {list}. Mettez à jour l'alignement générique ou l'alignement des "
+"ressources."
+
+#: src/Controller/Admin/CoreController.php:166
 msgid ""
 "Some specific static or dynamic fields are missing or not available for "
-"\"%s\" in the core: \"%s\"."
+"\"{value}\" in the core: {list}."
 msgstr ""
+"Certains champs statiques ou dynamiques spécifiques sont manquants ou "
+"indisponibles pour « {value} » dans le cœur : {list}."
 
-#: src/Controller/Admin/CoreController.php:163
+#: src/Controller/Admin/CoreController.php:170
 msgid "Don’t forget to reindex this core with external indexers."
-msgstr ""
+msgstr "N'oubliez pas de ré-indexer ce noyau avec des indexeurs externes."
 
-#: src/Controller/Admin/CoreController.php:165
+#: src/Controller/Admin/CoreController.php:172
 msgid ""
 "Don’t forget to reindex the resources and to check the mapping of the search "
 "pages that use this core."
 msgstr ""
+"N'oubliez pas de ré-indexer les ressources et de vérifier les "
+"correspondances des pages de recherche qui utilisent ce cœur."
 
-#: src/Controller/Admin/CoreController.php:170
-#, php-format
-msgid "All indexes of core \"%s\" are been deleted."
-msgstr "Toutes les correspondances du cœur \"%s\" seront supprimées."
+#: src/Controller/Admin/CoreController.php:178
+msgid "All indexes of core \"{solr_core_name}\" were deleted."
+msgstr ""
+"Toutes les correspondances du cœur « {solr_core_name} » ont été supprimées."
 
-#: src/Controller/Admin/CoreController.php:207
+#: src/Controller/Admin/CoreController.php:217
 msgid "Solr core successfully deleted"
-msgstr ""
+msgstr "Suppression réussie du cœur Solr"
 
-#: src/Controller/Admin/CoreController.php:209
+#: src/Controller/Admin/CoreController.php:219
 msgid "Solr core could not be deleted"
-msgstr ""
+msgstr "Le cœur Solr n'a pas pu être supprimé"
 
-#: src/Controller/Admin/CoreController.php:237
+#: src/Controller/Admin/CoreController.php:247
 msgid "Missing file."
 msgstr "Fichier manquant."
 
-#: src/Controller/Admin/CoreController.php:244
+#: src/Controller/Admin/CoreController.php:254
 msgid "Wrong request for file."
 msgstr "Requête du fichier incorrecte."
 
-#: src/Controller/Admin/CoreController.php:251
+#: src/Controller/Admin/CoreController.php:261
 msgid "An error occurred when uploading the file."
 msgstr "Une erreur est survenue lors du chargement du fichier."
 
-#: src/Controller/Admin/CoreController.php:254
-#, php-format
-msgid "Wrong media type (\"%s\") for file."
-msgstr "Média-type incorrect (« %s ») pour le fichier."
+#: src/Controller/Admin/CoreController.php:264
+msgid "Wrong media type ({media_type}) for file."
+msgstr "Type de média incorrect ({media_type}) pour le fichier."
 
-#: src/Controller/Admin/CoreController.php:258
+#: src/Controller/Admin/CoreController.php:268
 msgid "The file is empty."
 msgstr "Le fichier est vide."
 
-#: src/Controller/Admin/CoreController.php:340
+#: src/Controller/Admin/CoreController.php:350
 msgid "The file does not contain any row."
 msgstr "Le fichier ne contient aucune ligne."
 
-#: src/Controller/Admin/CoreController.php:348
+#: src/Controller/Admin/CoreController.php:358
 msgid ""
 "The headers of the file are not the default ones. Or the delimiter is not "
 "the good one according to the media-type or extension."
 msgstr ""
+"Les en-têtes du fichier ne sont pas ceux par défaut. Ou le délimiteur n'est "
+"pas le bon en fonction du type de média ou de l'extension."
 
-#: src/Controller/Admin/CoreController.php:366
-#, php-format
-msgid "The row #%d does not contain required data."
-msgstr ""
+#: src/Controller/Admin/CoreController.php:376
+msgid "The row #{index} does not contain required data."
+msgstr "La ligne #{index} ne contient pas les données obligatoires."
 
-#: src/Controller/Admin/CoreController.php:372
-#, php-format
-msgid "The row #%d does not manage resource \"%s\"."
-msgstr ""
+#: src/Controller/Admin/CoreController.php:382
+msgid "The row #{index} does not manage resource \"{resource_name}\"."
+msgstr "La ligne #{index} ne gère pas la ressource « {nom_de_la_ressource} »."
 
-#: src/Controller/Admin/CoreController.php:401
+#: src/Controller/Admin/CoreController.php:411
 msgid "The file does not contain any valid data."
-msgstr ""
+msgstr "Le fichier ne contient pas de données valides."
 
-#: src/Controller/Admin/CoreController.php:413
-#, php-format
-msgid "The existing mapping of core \"%s\" (#%d) has been deleted."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:421
-#, php-format
+#: src/Controller/Admin/CoreController.php:423
 msgid ""
-"An error has occurred during import of the mapping for core \"%s\" (#%d)."
+"The existing mapping of core \"{solr_core_name}\" (#{solr_core_id}) has been "
+"deleted."
 msgstr ""
+"La correspondance du cœur « {solr_core_name} » (#{solr_core_id}) a été "
+"supprimée."
 
-#: src/Controller/Admin/CoreController.php:428
-#, php-format
-msgid "%d fields have been mapped for core \"%s\" (#%d)."
-msgstr "%d champs ont été mis en correspondance pour le cœur « %s » (#%d)."
+#: src/Controller/Admin/CoreController.php:431
+msgid ""
+"An error has occurred during import of the mapping for core "
+"\"{solr_core_name}\" (#{solr_core_id})."
+msgstr ""
+"Une erreur s'est produite lors de l'importation des correspondances pour le "
+"cœur « {solr_core_name} » (#{solr_core_id})."
+
+#: src/Controller/Admin/CoreController.php:438
+msgid ""
+"{count} fields have been mapped for core "
+"\"{solr_core_name}\" (#{solr_core_id})."
+msgstr ""
+"{count} champs ont été alignés pour le cœur "
+"« {solr_core_name} » (#{solr_core_id})."
 
 #: src/ValueExtractor/GenericValueExtractor.php:12
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:79
@@ -1134,7 +1253,7 @@ msgstr "Générique"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:90
 msgid "Asset (attached thumbnail)"
-msgstr ""
+msgstr "Fichier (vignette jointe)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:91
 msgid "Item: Item set"
@@ -1142,7 +1261,7 @@ msgstr "Contenu : collection"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:92
 msgid "Item: Item sets tree"
-msgstr "Contenu : hiérat des collections"
+msgstr "Contenu : hiérarchie des collections"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:93
 msgid "Item: Media"
@@ -1150,7 +1269,7 @@ msgstr "Média attaché à un contenu"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:94
 msgid "Media: Content (html or extracted text)"
-msgstr ""
+msgstr "Média : Contenu (html ou texte extrait)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:95
 msgid "Item set: Is open"
@@ -1158,7 +1277,7 @@ msgstr "Collection : ouvert"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:96
 msgid "Access level (module Access)"
-msgstr ""
+msgstr "Niveau d'accès (module Access)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:98
 msgid "Api url"
@@ -1166,61 +1285,67 @@ msgstr "Url de l’api"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:99
 msgid "Admin url"
-msgstr ""
+msgstr "URL de l'administrateur"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:100
 msgid "Site url (default or first site only)"
-msgstr ""
+msgstr "Url du site (site par défaut ou premier site)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:101
 msgid "Asset/Thumbnail: file url"
-msgstr ""
+msgstr "Fichier/Vignette : url du fichier"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:102
 msgid "Primary media: original file url"
-msgstr ""
+msgstr "Média principal : url du fichier original"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:104
 msgid "Primary media: large thumbnail url"
-msgstr ""
+msgstr "Média principal : grande vignette url"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:105
 msgid "Primary media: medium thumbnail url"
-msgstr ""
+msgstr "Média principal : url de la vignette moyenne"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:106
 msgid "Primary media: square thumbnail url"
-msgstr ""
+msgstr "Média principal : vignette carrée url"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:107
 msgid "Representative image (asset if any, else primary media large thumbnail)"
 msgstr ""
+"Image représentative (vignette spécifique le cas échéant, sinon vignette "
+"large du média principal)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:108
 msgid ""
 "Representative image (asset if any, else primary media medium thumbnail)"
 msgstr ""
+"Image représentative (vignette spécifique le cas échéant, sinon vignette du "
+"média principal)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:109
 msgid ""
 "Representative image (asset if any, else primary media square thumbnail)"
 msgstr ""
+"Image représentative (vignette spécifique le cas échéant, sinon vignette "
+"carrée du média principal)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:114
 msgid "Media language"
-msgstr ""
+msgstr "Langue du média"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:115
 msgid "Media ingester"
-msgstr ""
+msgstr "Ingéreur de média"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:116
 msgid "Media renderer"
-msgstr ""
+msgstr "Rendu du média"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:117
 msgid "Media size"
-msgstr ""
+msgstr "Taille du fichier"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:118
 msgid "Media source"
@@ -1236,23 +1361,23 @@ msgstr "Texte alternatif"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:122
 msgid "Asset url"
-msgstr ""
+msgstr "Url du fichier"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:123
 msgid "Original url"
-msgstr ""
+msgstr "Url original"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:124
 msgid "Thumbnail (asset)"
-msgstr ""
+msgstr "Vignette (fichier)"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:125
 msgid "Property or class term"
-msgstr ""
+msgstr "Terme de propriété ou de classe"
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:126
 msgid "All property values"
-msgstr ""
+msgstr "Toutes les valeurs immobilières"
 
 #: src/Querier/SolariumQuerier.php:88
 msgid "An issue occurred."
@@ -1268,25 +1393,87 @@ msgstr ""
 msgid "Search type \"%s\" is not managed currently by SearchSolr."
 msgstr "Le type de recherche « %s » n’est pas géré actuellement par le module."
 
-#: config/module.config.php:61
+#: config/module.config.php:56
 msgid "Search manager"
 msgstr "Moteurs de recherche"
 
-#: config/module.config.php:68
+#: config/module.config.php:63
 msgid "Solr"
 msgstr "Solr"
 
-#: config/module.config.php:209
+#: config/module.config.php:204
 msgid "Field"
 msgstr "Champ"
 
-#: config/module.config.php:212
+#: config/module.config.php:207
 msgid "Choose a field…"
 msgstr "Choisir un champ…"
 
-#: config/module.config.php:213
+#: config/module.config.php:208
 msgid "Dynamic field"
 msgstr "Champ dynamique"
+
+#~ msgid "label"
+#~ msgstr "libellé"
+
+#, php-format
+#~ msgid ""
+#~ "To use a table, this module requires module \"%1$s\" version \"%2$s\" or "
+#~ "greater. Upgrade is automatic."
+#~ msgstr ""
+#~ "Pour utiliser une table, ce module requiert le module « %1$s » version "
+#~ "« %2$s » ou supérieure. La mise à niveau est automatique."
+
+#, php-format
+#~ msgid "This module requires the module \"%s\"."
+#~ msgstr "Ce module requiert le module « %s »."
+
+#, php-format
+#~ msgid "This module requires modules \"%s\"."
+#~ msgstr "Ce module requiert les modules « %s »."
+
+#~ msgid "This module has resources that cannot be installed."
+#~ msgstr "Ce module a des ressources qui ne peuvent pas être installées."
+
+#~ msgid ""
+#~ "This module cannot install its tables, because they exist already. Try to "
+#~ "remove them first."
+#~ msgstr ""
+#~ "Ce module ne peut pas installer ses tables car elles existent déjà. "
+#~ "Essayez de les supprimer manuellement."
+
+#, php-format
+#~ msgid "The module removed tables \"%s\" from a previous broken install."
+#~ msgstr ""
+#~ "Le module a supprimé les tables \"%s\" depuis une installation échouée."
+
+#, php-format
+#~ msgid "This module requires the module \"%1$s\", version %2$s or above."
+#~ msgstr "Ce module requiert le module « %1$s », version %2$s ou supérieure."
+
+#, php-format
+#~ msgid ""
+#~ "The module \"%s\" was automatically deactivated because the dependencies "
+#~ "are unavailable."
+#~ msgstr ""
+#~ "Le module « %s » a été automatiquement désactivé car ses dépendances ne "
+#~ "sont plus disponibles."
+
+#~ msgid "Pool"
+#~ msgstr "Réservoir"
+
+#~ msgid "Translated default label"
+#~ msgstr "Libellé par défaut traduit"
+
+#~ msgid "Metadata to index"
+#~ msgstr "Métadonnée à indexer"
+
+#~ msgid "Solarium"
+#~ msgstr "Solarium"
+
+#, php-format
+#~ msgid "Solr core #%d: %s"
+#~ msgstr "Cœur Solr #%d : %s"
 
 #~ msgid "Relevance"
 #~ msgstr "Pertinence"
@@ -1306,56 +1493,11 @@ msgstr "Champ dynamique"
 #~ msgid "Is public field"
 #~ msgstr "Champ Est public"
 
-#~ msgid ""
-#~ "Name of Solr field that will be set when a resource is public.\n"
-#~ "It must be a single-valued, boolean-based field (*_b in default solr "
-#~ "config)."
-#~ msgstr ""
-#~ "Le nom du champ Solr utilisé pour indiquer que la ressource est "
-#~ "publique.\n"
-#~ "Ce doit être un champ non multi-valué, de type booléen (*_b dans la "
-#~ "configuration par défaut de Solr)."
-
 #~ msgid "Resource name field"
 #~ msgstr "Champ Nom de la ressource"
 
-#~ msgid ""
-#~ "Name of Solr field that will contain the resource name (or resource type, "
-#~ "e.g. \"items\", \"item_sets\"…).\n"
-#~ "It must be a single-valued, string-based field (*_s in default solr "
-#~ "config)."
-#~ msgstr ""
-#~ "Le nom du champ Solr qui contiendra le nom de la ressource (ou son type, "
-#~ "par exemple \"items\", \"item_sets\"…).\n"
-#~ "Ce doit être un champ non multi-valué, de type chaîne de caractères (*_s "
-#~ "dans la configuration par défaut de Solr)."
-
 #~ msgid "Site ids field"
 #~ msgstr "Champ Ids de site"
-
-#~ msgid ""
-#~ "Name of Solr field that will contain the sites ids.\n"
-#~ "It must be a multi-valued, integer-based field (*_is in default solr "
-#~ "config)."
-#~ msgstr ""
-#~ "Le nom du champ Solr qui contiendra les identifiants des sites.\n"
-#~ "Ce doit être un champ multi-valué, de type entier (*_is dans la "
-#~ "configuration par défaut de Solr)."
-
-#~ msgid "Index field"
-#~ msgstr "Champ pour l’index"
-
-#~ msgid ""
-#~ "Name of Solr field that will contain the index name in order to support "
-#~ "multiple indexes on the same core.\n"
-#~ "This is an advanced feature that is not required in most of the cases.\n"
-#~ "It must be a single-valued, string-based field."
-#~ msgstr ""
-#~ "Le nom du champ Solr qui contiendra le nom de l’index de façon à gérer "
-#~ "plusieurs index sur le même cœur.\n"
-#~ "Il s’agit d’une fonctionnalité avancée qui n’est pas utile dans la "
-#~ "plupart des cas.\n"
-#~ "Ce doit être un champ non multi-valué, de type chaîne de caractères."
 
 #~ msgid "[unknown]"
 #~ msgstr "[Inconnu]"
@@ -1373,17 +1515,11 @@ msgstr "Champ dynamique"
 #~ msgid "Name"
 #~ msgstr "Nom"
 
-#~ msgid "Description"
-#~ msgstr "Description"
-
 #~ msgid "Multi-valued"
 #~ msgstr "Multi-valué"
 
 #~ msgid "Path"
 #~ msgstr "Chemin"
-
-#~ msgid "Source"
-#~ msgstr "Source"
 
 #~ msgid "None"
 #~ msgstr "Aucun"
