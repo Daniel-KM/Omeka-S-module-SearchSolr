@@ -19,24 +19,28 @@ $form->prepare();
 ?>
 
 <?= $this->form()->openTag($form) ?>
+
 <div id="page-actions">
     <?= $this->cancelButton() ?>
     <button type="submit"><?= $translate('Save') ?></button>
 </div>
-<h4><?= $translate('Metadata to extract') ?></h4>
-<?php
-echo $this->formRow($form->get('o:source'));
-echo $this->formCollection($form->get('o:pool'));
-?>
-<h4><?= $translate('Metadata to index') ?></h4>
-<?php
-echo $this->formRow($form->get('o:field_name'));
-echo $this->formCollection($form->get('o:settings'));
 
-echo $this->formRow($form->get('csrf'));
+<h4><?= $translate('Source') ?></h4>
+<p><?= $translate('Metadata to extract from Omeka') ?></p>
+<?= $this->formRow($form->get('o:source')) ?>
+<?= $this->formCollection($form->get('o:pool')) ?>
 
-$this->trigger('view.add.form.after');
-?>
+<h4><?= $translate('Destination') ?></h4>
+<p><?= $translate('Index of metadata in Solr') ?></p>
+<?= $this->formRow($form->get('o:field_name')) ?>
+
+<h4><?= $translate('Format') ?></h4>
+<p><?= $translate('Adapt the metadata') ?></p>
+<?= $this->formCollection($form->get('o:settings')) ?>
+
+<?= $this->formRow($form->get('csrf')) ?>
+
+<?php $this->trigger('view.add.form.after'); ?>
 <?= $this->form()->closeTag() ?>
 
 <?php $this->trigger('view.add.after'); ?>

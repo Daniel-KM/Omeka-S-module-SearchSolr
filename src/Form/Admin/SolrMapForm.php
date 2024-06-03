@@ -76,24 +76,10 @@ class SolrMapForm extends Form
                     'required' => true,
                 ],
             ])
-            ->add([
-                'name' => 'o:pool',
-                'type' => Fieldset::class,
-            ])
-            ->add([
-                'name' => 'o:field_name',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Solr field', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'o:pool',
-                    'required' => true,
-                ],
-            ]);
+        ;
 
-        $this
-            ->get('o:pool')
+        $poolFieldset = new Fieldset('o:pool');
+        $poolFieldset
             ->add([
                 'name' => 'filter_resources',
                 'type' => Element\Text::class,
@@ -194,19 +180,25 @@ class SolrMapForm extends Form
                 ],
             ]);
 
-        $settingsFieldset = new Fieldset('o:settings');
-        $settingsFieldset
+
+        $this
+            ->add($poolFieldset)
+
             ->add([
-                'name' => 'label',
+                'name' => 'o:field_name',
                 'type' => Element\Text::class,
                 'options' => [
-                    'label' => 'Default label', // @translate
-                    'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
+                    'label' => 'Solr field', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'label',
+                    'id' => 'o:pool',
+                    'required' => true,
                 ],
             ])
+        ;
+
+        $settingsFieldset = new Fieldset('o:settings');
+        $settingsFieldset
             ->add([
                 'name' => 'formatter',
                 'type' => Element\Radio::class,
@@ -289,7 +281,23 @@ class SolrMapForm extends Form
                 ->setApiManager($this->apiManager);
         }
 
-        $this->add($settingsFieldset);
+        $settingsFieldset
+            ->add([
+                'name' => 'label',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Default label', // @translate
+                    'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'label',
+                ],
+            ])
+        ;
+
+        $this
+            ->add($settingsFieldset)
+        ;
 
         $inputFilter = $this->getInputFilter();
         $inputFilter
