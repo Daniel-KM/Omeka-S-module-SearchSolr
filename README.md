@@ -29,10 +29,8 @@ for [Debian 10/11].
 Installation
 ------------
 
-This module uses the module [Advanced Search] that should be installed first
-(version 3.3.6 or above).
-
-The optional module [Generic] may be installed first.
+This module uses the modules [Advanced Search] (version 3.3.6 or above) and
+[Common], that should be installed first.
 
 The module uses an external library, [Solarium], so use the release zip to
 install it, or use and init the source.
@@ -633,7 +631,11 @@ the solr home directory is /var/solr):
 
 ```sh
 # HERE, for solr home as "/var/solr/data". Change it if it is "/opt/solr/server/solr"
+# Either:
+# When installed with the tarball.
 sudo cp -r /opt/solr/server/solr/configsets/_default /var/solr/data
+# When installed with the debian package.
+sudo cp -r /usr/share/solr/server/solr/configsets/_default /var/solr/data
 # The destination directory inside data is the name of the core, here "omeka".
 # It should be updated in following command if the name is different.
 CORE="omeka"
@@ -677,7 +679,8 @@ command, as indicated in the [reference guide to copy a field]:
 curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-field":{"source":"*","dest":"_text_" }}' 'http://localhost:8983/solr/omeka/schema'
 ```
 
-Of course, you need to reindex resources after modifying schema.
+The response status should be 0. Of course, you need to reindex resources after
+modifying schema.
 
 ### Upgrade a config
 
@@ -816,8 +819,8 @@ currently managed with [Greenstone].
 [Apache Solr]: https://solr.apache.org/
 [Solarium]: https://www.solarium-project.org/
 [full documentation]: https://solarium.readthedocs.io/en/stable/
-[Generic]: https://gitlab.com/Daniel-KM/Omeka-S-module-Generic
-[Installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
+[Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
+[installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
 [documentation]: https://solr.apache.org/guide/the-dismax-query-parser.html#q-alt-parameter
 [this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
 [Solr PHP extension]: https://pecl.php.net/package/solr
