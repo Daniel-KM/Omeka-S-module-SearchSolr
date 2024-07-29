@@ -20,6 +20,7 @@ use Omeka\Module\Exception\ModuleCannotInstallException;
  */
 $plugins = $services->get('ControllerPluginManager');
 $api = $plugins->get('api');
+$config = $services->get('Config');
 $settings = $services->get('Omeka\Settings');
 $translate = $plugins->get('translate');
 $translator = $services->get('MvcTranslator');
@@ -401,7 +402,6 @@ if (version_compare($oldVersion, '3.5.33.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.5.37.3', '<')) {
-    $translator = $services->get('MvcTranslator');
     if (!$this->isModuleActive('AdvancedSearch')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
@@ -424,8 +424,6 @@ if (version_compare($oldVersion, '3.5.37.3', '<')) {
 
 if (version_compare($oldVersion, '3.5.42', '<')) {
     // Force to use module Table to manage tables if there is a table.
-    $translator = $services->get('MvcTranslator');
-    $config = $services->get('Config');
     if (!empty($config['searchsolr']['table'])) {
         if (!$this->isModuleActive('Table')) {
             $message = new PsrMessage(
@@ -483,7 +481,6 @@ SET
 SQL;
     $connection->executeStatement($sql);
 
-    $translator = $services->get('MvcTranslator');
     $message = new PsrMessage(
         'The support of module Access Resource has been removed. Support of module Access has been added.' // @translate
     );
@@ -495,11 +492,11 @@ SQL;
     $messenger->addWarning($message);
 }
 
-if (version_compare($oldVersion, '3.5.45', '<')) {
+if (version_compare($oldVersion, '3.5.47', '<')) {
     if (!$this->isModuleActive('AdvancedSearch')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.16']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.31']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -508,11 +505,27 @@ if (version_compare($oldVersion, '3.5.45', '<')) {
     $moduleManager = $services->get('Omeka\ModuleManager');
     $module = $moduleManager->getModule('AdvancedSearch');
     $moduleVersion = $module->getIni('version');
-    if (version_compare($moduleVersion, '3.4.16', '<')) {
+    if (version_compare($moduleVersion, '3.4.31', '<')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.16']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.31']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
+
+    // Force to clean the config if there is a table.
+    if (array_key_exists('searchsolr', $config) && array_key_exists('table', $config['searchsolr'])) {
+        $message = new PsrMessage(
+            'You should remove key "table" from the file config/local.config.php before upgrading.' // @translate
+        );
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
+    }
+
+    $sql = <<<SQL
+    UPDATE `search_config`
+    SET
+        `settings` = REPLACE(`settings`, '"score desc"', '"relevance desc"')
+    ;
+    SQL;
+    $connection->executeStatement($sql);
 }
