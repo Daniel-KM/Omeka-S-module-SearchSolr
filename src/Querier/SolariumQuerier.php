@@ -168,6 +168,8 @@ class SolariumQuerier extends AbstractQuerier
         $facetSet = $solariumResultSet->getFacetSet();
         if ($facetSet) {
             $facetCounts = [];
+            $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
+            $queryFacets = $this->query->getfacets();
             $facetListAll = $this->query->getOption('facet_list') === 'all';
             /** @var \Solarium\Component/Result/Facet/FacetResultInterface $facetResult */
             // foreach $facetSet = foreach $facetSet->getFacets().
@@ -186,6 +188,19 @@ class SolariumQuerier extends AbstractQuerier
                             $value = $bucket->getValue();
                             $facetCount[$value] = ['value' => $value, 'count' => $count];
                         }
+                    }
+                    $facetData = $queryFacets[$name] ?? [];
+                    if (!empty($facetData['order'])
+                        && !empty($facetData['values'])
+                        && in_array($facetData['order'], ['values', 'values asc', 'values desc'])
+                    ) {
+                        $orderValues = is_array($facetData['values']) ? $facetData['values'] : $explode($facetData['values']);
+                        if ($facetData['order'] === 'values desc') {
+                            $orderValues = array_reverse($orderValues, true);
+                        }
+                        $orderValues = array_fill_keys($orderValues, ['value' => '', 'count' => 0]);
+                        $facetCountFiltered = array_intersect_key($facetCount, $orderValues);
+                        $facetCount = array_replace(array_intersect_key($orderValues, $facetCountFiltered), $facetCountFiltered);
                     }
                     $facetCounts[$name] = $facetCount;
                 }
@@ -322,45 +337,46 @@ class SolariumQuerier extends AbstractQuerier
         /** @var \Solarium\Component\FacetSet $solariumFacetSet */
         $solariumFacetSet = $this->solariumQuery->getFacetSet();
 
-        // TODO Manage facets individually by fields for limit and order.
+        $facetOrders = [
+            // Default alphabetic order is asc.
+            'alphabetic' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
+            'alphabetic asc' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
+            'alphabetic desc' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC,
+            // Default total order is desc.
+            'total' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
+            'total asc' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC,
+            'total desc' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
+            // Default values order is asc.
+            'values' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
+            'values asc' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
+            'values desc' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC,
+            // Default values order is alphabetic asc.
+            'default' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
+        ];
 
-        $queryFacets = $this->query->getFacets();
-        $firstFacet = reset($queryFacets);
-
-        // This is the default limit for facets.
-        $facetLimit = $firstFacet ? $firstFacet['limit'] ?? 0 : 0;
-        if ($facetLimit) {
-            $solariumFacetSet->setLimit($facetLimit);
-        }
-
-        // This is the default order for facets.
-        // Only two choices here: index asc (alphabetic/numeric) or count desc.
-        // Default is by total desc.
-        $facetOrder = $firstFacet ? $firstFacet['order'] ?? '' : '';
-        $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC;
-        if ($facetOrder === 'total desc') {
-            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC;
-            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC);
-        } elseif ($facetOrder === 'total asc') {
-            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC;
-            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC);
-        } elseif ($facetOrder === 'alphabetic asc') {
-            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC;
-            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC);
-        } elseif ($facetOrder === 'alphabetic desc') {
-            $facetSort = \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC;
-            $solariumFacetSet->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC);
-        }
+        $facetOrderDefault = \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC;
 
         $facets = $this->query->getFacets();
         if (count($facets)) {
+            // Explode with separator "|" if present, else ",".
+            // For complex cases, an array should be used.
+            $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
             // Use "json facets" output, that is recommended by Solr.
             /* @see https://solr.apache.org/guide/solr/latest/query-guide/json-facet-api.html */
-            foreach ($facets as $facetField => $facetData) {
+            foreach ($facets as $facetName => $facetData) {
+                if (empty($facetData['field'])) {
+                    continue;
+                }
+                $facetField = $facetData['field'];
+                $facetOrder = isset($facetData['order'])
+                    ? $facetOrders[$facetData['order']] ?? $facetOrderDefault
+                    : $facetOrderDefault;
+                $facetLimit = $facetData['limit'] ?? 0;
+                $facetValues = $facetData['values'] ?? [];
                 if ($facetData['type'] === 'SelectRange') {
                     // TODO Use arbitrary range to use default values for start/end/gap? No, the range are not arbitrary.
-                    $solariumFacetSet
-                        ->createJsonFacetRange($facetField)
+                    $facet = $solariumFacetSet
+                        ->createJsonFacetRange($facetName)
                         ->setField($facetField)
                         // For year.
                         // FIXME Find a way to get min and max year (with query?).
@@ -372,12 +388,20 @@ class SolariumQuerier extends AbstractQuerier
                         // ->setMinCount(1)
                     ;
                 } else {
-                    $solariumFacetSet
-                        ->createJsonFacetTerms($facetField)
+                    /** @var \Solarium\Component\Facet\FieldValueParametersInterface $facet */
+                    $facet = $solariumFacetSet
+                        ->createJsonFacetTerms($facetName)
                         ->setField($facetField)
                         ->setLimit($facetLimit)
-                        ->setSort($facetSort)
+                        ->setSort($facetOrder)
                     ;
+                }
+                if ($facetValues) {
+                    if (is_string($facetValues)) {
+                        $facetValues = $explode($facetValues);
+                    }
+                    $facet
+                        ->setMatches('~^' . implode('|', array_map(fn($v) => preg_quote($v, '~'), $facetValues)) . '$~');
                 }
             }
         }
