@@ -118,8 +118,8 @@ class Module extends AbstractModule
 
         if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
             $message = new PsrMessage(
-                'The composer library "%s" is not installed. See readme.', // @translate
-                'Solarium'
+                'The composer library "{library}" is not installed. See readme.', // @translate
+                ['library' => 'Solarium']
             );
             throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
         }
@@ -130,10 +130,10 @@ class Module extends AbstractModule
 
         // Module AdvancedSearch is already checked as dependency.
         $advancedSearchVersion = $moduleManager->getModule('AdvancedSearch')->getIni('version');
-        if (version_compare($advancedSearchVersion, '3.4.23', '<')) {
+        if (version_compare($advancedSearchVersion, '3.4.29', '<')) {
             $message = new PsrMessage(
-                $translator->translate('This module requires module "%s" version "%s" or greater.'), // @translate
-                'Advanced Search', '3.4.23'
+                $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
+                ['module' => 'Advanced Search', 'version' => '3.4.29']
             );
             throw new ModuleCannotInstallException((string) $message);
         }
