@@ -540,7 +540,7 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function appendHiddenFilters(): void
     {
-        $hiddenFilters = $this->query->getHiddenQueryFilters();
+        $hiddenFilters = $this->query->getFiltersQueryHidden();
         if (!$hiddenFilters) {
             return;
         }
@@ -555,8 +555,8 @@ class SolariumQuerier extends AbstractQuerier
     protected function filterQuery(): void
     {
         $this->filterQueryValues($this->query->getFilters());
-        $this->filterQueryDateRange($this->query->getDateRangeFilters());
-        $this->filterQueryFilters($this->query->getFilterQueries());
+        $this->filterQueryDateRange($this->query->getFiltersRange());
+        $this->filterQueryFilters($this->query->getFiltersQuery());
     }
 
     protected function filterQueryValues(array $filters): void
@@ -590,7 +590,9 @@ class SolariumQuerier extends AbstractQuerier
                         continue;
                     }
                     // Skip queries filters (for hidden queries).
-                    if (isset($value['joiner']) || isset($value['type']) || isset($value['text']) || isset($value['join']) || isset($value['value'])) {
+                    if (isset($value['joiner']) || isset($value['type']) || isset($value['text'])
+                        || isset($value['join']) || isset($value['val']) || isset($value['value'])
+                    ) {
                         continue;
                     }
                 }
@@ -616,12 +618,12 @@ class SolariumQuerier extends AbstractQuerier
                     $value = new \DateTime($value);
                     return $value->format('Y-m-d\TH:i:s\Z');
                 } catch (\Exception $e) {
+                    // Nothing.
                 }
             }
             return '*';
         };
 
-        $dateRangeFilters = $this->query->getDateRangeFilters();
         foreach ($dateRangeFilters as $name => $filterValues) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
             if (!is_array($filterValues)) {
@@ -662,7 +664,7 @@ class SolariumQuerier extends AbstractQuerier
      * Filters are boolean: in or out. nevertheless, the check can be more
      * complex than "equal": before or after a date, like a string, etc.
      *
-     * @see \AdvancedSearch\Mvc\Controller\Plugin\SearchResources::buildPropertyQuery()
+     * @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyQuery()
      *
      * Warning: filter queries use "name" (as key) + "join", "type", "value", not "property", "joiner", "type", "text".
      *
@@ -679,7 +681,7 @@ class SolariumQuerier extends AbstractQuerier
             'nma',
         ];
 
-        $allReciprocalTypes = SearchResources::PROPERTY_QUERY['reciprocal']
+        $allReciprocalTypes = SearchResources::FIELD_QUERY['reciprocal']
             + $moreSupportedQueryTypes;
 
         $unsupportedQueryTypes = [
@@ -716,16 +718,17 @@ class SolariumQuerier extends AbstractQuerier
 
                 // There is no default in Omeka.
                 /** @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery() */
+                /** @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyFilters() */
                 $queryType = $queryFilter['type'];
-                $value = $queryFilter['value'] ?? '';
+                $value = $queryFilter['val'] ?? '';
 
                 // Quick check of value.
                 // A empty string "" is not a value, but "0" is a value.
-                if (in_array($queryType, SearchResources::PROPERTY_QUERY['value_none'], true)) {
+                if (in_array($queryType, SearchResources::FIELD_QUERY['value_none'], true)) {
                     $value = null;
                 }
                 // Check array of values.
-                elseif (in_array($queryType, SearchResources::PROPERTY_QUERY['value_array'], true)) {
+                elseif (in_array($queryType, SearchResources::FIELD_QUERY['value_array'], true)) {
                     if ((is_array($value) && !count($value))
                         || (!is_array($value) && !strlen((string) $value))
                     ) {
@@ -735,7 +738,7 @@ class SolariumQuerier extends AbstractQuerier
                         $value = [$value];
                     }
                     // To use array_values() avoids doctrine issue with string keys.
-                    $value = in_array($queryType, SearchResources::PROPERTY_QUERY['value_integer'])
+                    $value = in_array($queryType, SearchResources::FIELD_QUERY['value_integer'])
                         ? array_values(array_unique(array_map('intval', $value)))
                         : array_values(array_unique(array_filter(array_map('trim', array_map('strval', $value)), 'strlen')));
                     if (empty($value)) {
@@ -750,7 +753,7 @@ class SolariumQuerier extends AbstractQuerier
                     if (!strlen($value)) {
                         continue;
                     }
-                    if (in_array($queryType, SearchResources::PROPERTY_QUERY['value_integer'])) {
+                    if (in_array($queryType, SearchResources::FIELD_QUERY['value_integer'])) {
                         if (!is_numeric($value)) {
                             continue;
                         }
@@ -778,8 +781,8 @@ class SolariumQuerier extends AbstractQuerier
 
                 // "AND/NOT" cannot be used as first.
                 // TODO Will be simplified in version 3.5.38.3.
-                $isNegative = isset(SearchResources::PROPERTY_QUERY['negative'])
-                    ? (in_array($queryType, SearchResources::PROPERTY_QUERY['negative']) || $queryType === 'nma')
+                $isNegative = isset(SearchResources::FIELD_QUERY['negative'])
+                    ? (in_array($queryType, SearchResources::FIELD_QUERY['negative']) || $queryType === 'nma')
                     : substr($queryType, 0, 1) === 'n';
                 if ($isNegative) {
                     $bool = '(NOT ';
