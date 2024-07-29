@@ -373,17 +373,17 @@ class SolariumQuerier extends AbstractQuerier
                     : $facetOrderDefault;
                 $facetLimit = $facetData['limit'] ?? 0;
                 $facetValues = $facetData['values'] ?? [];
-                if ($facetData['type'] === 'SelectRange') {
-                    // TODO Use arbitrary range to use default values for start/end/gap? No, the range are not arbitrary.
+                if (in_array($facetData['type'], ['Range', 'RangeDouble', 'SelectRange'])) {
+                    // For year by default.
+                    $min = isset($facetData['min']) ? (int) $facetData['min'] : 0;
+                    $max = isset($facetData['max']) ? (int) $facetData['max'] : 2100;
+                    $step = isset($facetData['step']) ? (int) $facetData['step'] : 1;
                     $facet = $solariumFacetSet
                         ->createJsonFacetRange($facetName)
                         ->setField($facetField)
-                        // For year.
-                        // FIXME Find a way to get min and max year (with query?).
-                        // FIXME Start, end, and gap for facet range are required and hard coded, but depends on values.
-                        ->setStart(0)
-                        ->setEnd(2100)
-                        ->setGap(1)
+                        ->setStart($min)
+                        ->setEnd($max)
+                        ->setGap($step ?: 1)
                         // MinCount is used only with standard facet range.
                         // ->setMinCount(1)
                     ;
