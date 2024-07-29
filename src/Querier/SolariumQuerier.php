@@ -30,10 +30,10 @@
 
 namespace SearchSolr\Querier;
 
-use AdvancedSearch\Mvc\Controller\Plugin\SearchResources;
 use AdvancedSearch\Querier\AbstractQuerier;
 use AdvancedSearch\Querier\Exception\QuerierException;
 use AdvancedSearch\Response;
+use AdvancedSearch\Stdlib\SearchResources;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Feature\TransliteratorCharacterTrait;
 use Solarium\Client as SolariumClient;
@@ -242,13 +242,13 @@ class SolariumQuerier extends AbstractQuerier
             return $this->solariumQuery;
         }
 
-        $resourceNameField = $this->solrCore->mapsBySource('resource_name', 'generic');
-        $resourceNameField = $resourceNameField ? (reset($resourceNameField))->fieldName() : null;
+        $resourceTypeField = $this->solrCore->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
         $isPublicField = $this->solrCore->mapsBySource('is_public', 'generic');
         $isPublicField = $isPublicField ? (reset($isPublicField))->fieldName() : null;
         $sitesField = $this->solrCore->mapsBySource('site/o:id', 'generic');
         $sitesField = $sitesField ? (reset($sitesField))->fieldName() : null;
-        if (!$resourceNameField || !$isPublicField || !$sitesField) {
+        if (!$resourceTypeField || !$isPublicField || !$sitesField) {
             $this->solariumQuery = null;
             return $this->solariumQuery;
         }
@@ -286,13 +286,13 @@ class SolariumQuerier extends AbstractQuerier
 
         $this->solariumQuery
             ->getGrouping()
-            ->addField($resourceNameField)
+            ->addField($resourceTypeField)
             ->setNumberOfGroups(true);
 
-        $resources = $this->query->getResources();
+        $resourceTypes = $this->query->getResourceTypes();
         $this->solariumQuery
-            ->createFilterQuery($resourceNameField)
-            ->setQuery($resourceNameField . ':(' . implode(' OR ', $resources) . ')');
+            ->createFilterQuery($resourceTypeField)
+            ->setQuery($resourceTypeField . ':(' . implode(' OR ', $resourceTypes) . ')');
 
         if ($sitesField) {
             $siteId = $this->query->getSiteId();
