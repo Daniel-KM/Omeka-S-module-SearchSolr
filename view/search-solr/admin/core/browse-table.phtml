@@ -37,60 +37,60 @@ $translate = $plugins->get('translate');
 $escape = $plugins->get('escapeHtml');
 ?>
 
-<h2><?= $translate('Solr cores') ?></h2>
+<h2 id="table-cores-caption"><?= $translate('Solr cores') ?></h2>
 <?php if (count($cores)): ?>
-    <table class="tablesaw" data-tablesaw-mode="stack">
-        <thead>
+<table aria-labelledby="table-cores-caption" class="tablesaw" data-tablesaw-mode="stack">
+    <thead>
+        <tr>
+            <th><?= $translate('Name') ?></th>
+            <th><?= $translate('URL') ?></th>
+            <th><?= $translate('Status') ?></th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($cores as $core): ?>
+            <?php $status = $core->status(); ?>
             <tr>
-                <th><?= $translate('Name') ?></th>
-                <th><?= $translate('URL') ?></th>
-                <th><?= $translate('Status') ?></th>
+                <td>
+                    <span><?= $core->name() ?></span>
+                    <ul class="actions">
+                        <li>
+                            <?= $this->hyperlink('',
+                                $core->clientUrlAdminBoard(),
+                                ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable')]
+                            ) ?>
+                        </li>
+                        <li>
+                            <?= $core->link('', 'edit', [
+                                'class' => 'o-icon-edit',
+                                'title' => $translate('Edit'),
+                            ]) ?>
+                        </li>
+                        <li>
+                            <?= $status
+                                ? $this->hyperlink('', $core->mapUrl(), [
+                                    'class' => 'o-icon- fa fa-sliders fa-sliders-h',
+                                    'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
+                                ])
+                                : $this->hyperlink('', '#', [
+                                    'class' => 'o-icon- fa fa-sliders fa-sliders-h disabled',
+                                    'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
+                                ])
+                            ?>
+                        </li>
+                        <li>
+                            <a href="#"
+                            data-sidebar-content-url="<?= $escape($core->url('delete-confirm')) ?>"
+                            class="o-icon-delete sidebar-content"
+                            aria-label="<?= $escape($translate('Delete')) ?>"
+                            title="<?= $escape($translate('Delete')) ?>"></a>
+                        </li>
+                    </ul>
+                </td>
+                <td><?= $core->clientUrlAdmin() ?></td>
+                <td><?= $core->statusMessage() ?></td>
             </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($cores as $core): ?>
-                <?php $status = $core->status(); ?>
-                <tr>
-                    <td>
-                        <span><?= $core->name() ?></span>
-                        <ul class="actions">
-                            <li>
-                                <?= $this->hyperlink('',
-                                    $core->clientUrlAdminBoard(),
-                                    ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable')]
-                                ) ?>
-                            </li>
-                            <li>
-                                <?= $core->link('', 'edit', [
-                                    'class' => 'o-icon-edit',
-                                    'title' => $translate('Edit'),
-                                ]) ?>
-                            </li>
-                            <li>
-                                <?= $status
-                                    ? $this->hyperlink('', $core->mapUrl(), [
-                                        'class' => 'o-icon- fa fa-sliders fa-sliders-h',
-                                        'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
-                                    ])
-                                    : $this->hyperlink('', '#', [
-                                        'class' => 'o-icon- fa fa-sliders fa-sliders-h disabled',
-                                        'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
-                                    ])
-                                ?>
-                            </li>
-                            <li>
-                                <a href="#"
-                                data-sidebar-content-url="<?= $escape($core->url('delete-confirm')) ?>"
-                                class="o-icon-delete sidebar-content"
-                                aria-label="<?= $escape($translate('Delete')) ?>"
-                                title="<?= $escape($translate('Delete')) ?>"></a>
-                            </li>
-                        </ul>
-                    </td>
-                    <td><?= $core->clientUrlAdmin() ?></td>
-                    <td><?= $core->statusMessage() ?></td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+        <?php endforeach; ?>
+    </tbody>
+</table>
 <?php endif; ?>
