@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-06-03 00:00+0000\n"
-"PO-Revision-Date: 2024-06-03 00:00+0000\n"
+"POT-Creation-Date: 2024-07-29 00:00+0000\n"
+"PO-Revision-Date: 2024-07-29 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -18,38 +18,30 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Poedit 3.2.2\n"
 
-#: data/scripts/upgrade.php:32 Module.php:113
+#: data/scripts/upgrade.php:33 Module.php:113
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr "Le module %1$s doit être mis à niveau à la version %2$s ou supérieure."
 
-#: Module.php:135
-#, php-format
-msgid "This module requires module \"%s\" version \"%s\" or greater."
-msgstr "Ce module requiert le module « %s » version « %s » ou supérieure."
-
-#: Module.php:154
+#: Module.php:129
 msgid ""
-"The module Solr can be upgraded only for version between 3.5.5 and 3.5.14."
+"This module requires module \"{module}\" version \"{version}\" or greater."
 msgstr ""
-"Le module Solr ne peut être mis à jour que pour les versions comprises entre "
-"3.5.5 et 3.5.14."
+"Ce module requiert le module « {module} », version {version} ou supérieure."
 
-#: Module.php:162
-msgid ""
-"To upgrade module Solr automatically, this module should be lower or equal "
-"to 3.5.30.3."
-msgstr ""
-"Pour mettre à jour le module Solr automatiquement, ce module doit être "
-"inférieur ou égal à 3.5.30.3."
-
-#: src/Adapter/SolariumAdapter.php:126
+#: src/Adapter/SolariumAdapter.php:128 src/Adapter/SolariumAdapter.php:239
 msgid "Asc"
 msgstr "Asc"
 
-#: src/Adapter/SolariumAdapter.php:127
+#: src/Adapter/SolariumAdapter.php:129 src/Adapter/SolariumAdapter.php:240
 msgid "Desc"
 msgstr "Desc"
+
+#: src/Adapter/SolariumAdapter.php:205 src/Adapter/SolariumAdapter.php:254
+#: src/Adapter/SolariumAdapter.php:287
+#, php-format
+msgid "%1$s (%2$s)"
+msgstr "%1$s (%2$s)"
 
 #: view/common/solr-core-delete-confirm-details.phtml:13
 #: view/common/solr-map-delete-confirm-details.phtml:17
@@ -119,7 +111,7 @@ msgstr "Fil d’Ariane"
 #: view/search-solr/admin/core/edit.phtml:51
 #: view/search-solr/admin/core/import.phtml:29
 #: view/search-solr/admin/map/add.phtml:44
-#: view/search-solr/admin/map/browse-resource.phtml:73
+#: view/search-solr/admin/map/browse-resource.phtml:74
 #: view/search-solr/admin/map/browse.phtml:62
 #: view/search-solr/admin/map/edit.phtml:45
 msgid "Solr cores"
@@ -202,7 +194,7 @@ msgid "Add Solr map"
 msgstr "Ajouter une correspondance avec Solr"
 
 #: view/search-solr/admin/map/add.phtml:45
-#: view/search-solr/admin/map/browse-resource.phtml:74
+#: view/search-solr/admin/map/browse-resource.phtml:75
 #: view/search-solr/admin/map/browse.phtml:64
 #: view/search-solr/admin/map/edit.phtml:46
 #, php-format
@@ -216,83 +208,87 @@ msgstr "Liste des ressources pour le cœur « %s »"
 msgid "Maps for \"%s\""
 msgstr "Correspondances pour « %s »"
 
-#: view/search-solr/admin/map/browse-resource.phtml:47
+#: view/search-solr/admin/map/browse-resource.phtml:49
 #, php-format
 msgid "Solr maps for \"%s\""
 msgstr "Correspondances Solr pour « %s »"
 
-#: view/search-solr/admin/map/browse-resource.phtml:55
+#: view/search-solr/admin/map/browse-resource.phtml:57
 msgid "Add new map"
 msgstr "Ajouter une correspondance"
 
-#: view/search-solr/admin/map/browse-resource.phtml:61
+#: view/search-solr/admin/map/browse-resource.phtml:63
 msgid "Add a text index to all missing and used properties."
 msgstr ""
 "Ajouter une correspondance texte pour toutes les propriétés utilisées qui "
 "n’en ont pas."
 
-#: view/search-solr/admin/map/browse-resource.phtml:61
+#: view/search-solr/admin/map/browse-resource.phtml:63
 msgid "Map all used properties"
 msgstr "Aligner toutes les propriétés utilisées"
 
-#: view/search-solr/admin/map/browse-resource.phtml:67
+#: view/search-solr/admin/map/browse-resource.phtml:69
 msgid "Remove maps of properties that are not used."
 msgstr ""
 "Supprimer les correspondances des propriétés qui ne sont pas utilisées."
 
-#: view/search-solr/admin/map/browse-resource.phtml:67
+#: view/search-solr/admin/map/browse-resource.phtml:69
 msgid "Remove unused properties"
 msgstr "Supprimer les propriétés inutilisées"
 
-#: view/search-solr/admin/map/browse-resource.phtml:84
+#: view/search-solr/admin/map/browse-resource.phtml:80
+msgid "Maps"
+msgstr "Alignements"
+
+#: view/search-solr/admin/map/browse-resource.phtml:83
 msgid "Source Omeka"
 msgstr "Source Omeka"
 
-#: view/search-solr/admin/map/browse-resource.phtml:85
+#: view/search-solr/admin/map/browse-resource.phtml:84
 msgid "Pool / Filter"
 msgstr "Entrepôt / Filtre"
 
-#: view/search-solr/admin/map/browse-resource.phtml:86
+#: view/search-solr/admin/map/browse-resource.phtml:85
 msgid "Index Solr"
 msgstr "Index Solr"
 
-#: view/search-solr/admin/map/browse-resource.phtml:131
+#: view/search-solr/admin/map/browse-resource.phtml:130
 msgid "Filtered by values"
 msgstr "Filtré par les valeurs"
 
-#: view/search-solr/admin/map/browse-resource.phtml:134
+#: view/search-solr/admin/map/browse-resource.phtml:133
 msgid "Filtered by uris"
 msgstr "Filtré par uris"
 
-#: view/search-solr/admin/map/browse-resource.phtml:137
+#: view/search-solr/admin/map/browse-resource.phtml:136
 msgid "Filtered by resources"
 msgstr "Filtré par les ressources"
 
-#: view/search-solr/admin/map/browse-resource.phtml:140
+#: view/search-solr/admin/map/browse-resource.phtml:139
 msgid "Filtered by value resources"
 msgstr "Filtré par les ressources des valeurs"
 
-#: view/search-solr/admin/map/browse-resource.phtml:145
+#: view/search-solr/admin/map/browse-resource.phtml:144
 msgid "Excluded data types"
 msgstr "Types de données exclues"
 
-#: view/search-solr/admin/map/browse-resource.phtml:150
+#: view/search-solr/admin/map/browse-resource.phtml:149
 msgid "Only languages"
 msgstr "Seulement les langues"
 
-#: view/search-solr/admin/map/browse-resource.phtml:155
+#: view/search-solr/admin/map/browse-resource.phtml:154
 msgid "Filtered by visibility Public"
 msgstr "Filtré par visibilité Public"
 
-#: view/search-solr/admin/map/browse-resource.phtml:157
+#: view/search-solr/admin/map/browse-resource.phtml:156
 msgid "Filtered by visibility Private"
 msgstr "Filtré par visibilité Privé"
 
-#: view/search-solr/admin/map/browse-resource.phtml:172
+#: view/search-solr/admin/map/browse-resource.phtml:171
 msgid "There is no maps defined yet."
 msgstr "Aucune correspondance n'a encore été définie."
 
-#: view/search-solr/admin/map/browse-resource.phtml:173
+#: view/search-solr/admin/map/browse-resource.phtml:172
 msgid "Add a new map"
 msgstr "Ajouter une correspondance"
 
@@ -338,45 +334,35 @@ msgstr "Index des métadonnées dans Solr"
 msgid "Adapt the metadata"
 msgstr "Adapter les métadonnées"
 
-#: data/scripts/upgrade_from_solr.php:46
-#, php-format
-msgid "The version of the module Solr should be at least %s."
-msgstr "La version du module Solr doit être au moins %s."
-
-#: data/scripts/upgrade_from_solr.php:205
-msgid "The module Solr was upgraded by module SearchSolr and uninstalled."
-msgstr ""
-"Le module Solr a été mis à niveau par le module SearchSolr et désinstallé."
-
-#: data/scripts/upgrade.php:55
+#: data/scripts/upgrade.php:56
 msgid "You should reindex your Solr cores."
 msgstr "Vous devez réindexer vos cœurs Solr."
 
-#: data/scripts/upgrade.php:77
+#: data/scripts/upgrade.php:78
 msgid "Now, values can be indexed differently for each data type, if wanted."
 msgstr ""
 "Désormais, les valeurs peuvent être indexées différemment pour chaque type "
 "de données, si on le souhaite."
 
-#: data/scripts/upgrade.php:78
+#: data/scripts/upgrade.php:79
 msgid "Use the new import/export tool to simplify config."
 msgstr ""
 "Utilisez le nouvel outil d'import/export pour simplifier la configuration."
 
-#: data/scripts/upgrade.php:170 data/scripts/upgrade.php:188
-#: data/scripts/upgrade.php:211 data/scripts/upgrade.php:407
-#: data/scripts/upgrade.php:418 data/scripts/upgrade.php:432
-#: data/scripts/upgrade.php:501 data/scripts/upgrade.php:513
+#: data/scripts/upgrade.php:171 data/scripts/upgrade.php:189
+#: data/scripts/upgrade.php:212 data/scripts/upgrade.php:407
+#: data/scripts/upgrade.php:418 data/scripts/upgrade.php:430
+#: data/scripts/upgrade.php:498 data/scripts/upgrade.php:510
 msgid ""
 "This module requires the module \"{module}\", version {version} or above."
 msgstr ""
 "Ce module requiert le module « {module} », version {version} ou supérieure."
 
-#: data/scripts/upgrade.php:177
+#: data/scripts/upgrade.php:178
 msgid "The auto-suggestion requires a specific url for now."
 msgstr "L'auto-suggestion nécessite une url spécifique pour l'instant."
 
-#: data/scripts/upgrade.php:383
+#: data/scripts/upgrade.php:384
 msgid ""
 "The resource types are now structured to simplify config: \"generic\" and "
 "\"resource\" allow to set mapping for any resource."
@@ -385,13 +371,13 @@ msgstr ""
 "configuration : « générique » et « ressource » permettent de définir les "
 "correspondances pour toutes les ressource."
 
-#: data/scripts/upgrade.php:387
+#: data/scripts/upgrade.php:388
 msgid "All mapping for items and item sets have been copied to resources."
 msgstr ""
 "Toutes les correspondances pour les éléments et les ensembles d'éléments ont "
 "été copiées dans les ressources."
 
-#: data/scripts/upgrade.php:391
+#: data/scripts/upgrade.php:392
 msgid ""
 "It is recommended to check mappings, to remove the useless and duplicate "
 "ones, and to run a full reindexation."
@@ -399,13 +385,13 @@ msgstr ""
 "Il est recommandé de vérifier les correspondances, de supprimer celles "
 "inutiles ou en double et de lancer une réindexation complète."
 
-#: data/scripts/upgrade.php:398
+#: data/scripts/upgrade.php:399
 msgid "It is now possible to index original and thumbnails urls."
 msgstr ""
 "Il est désormais possible d'indexer les urls des fichiers originaux et des "
 "vignettes."
 
-#: data/scripts/upgrade.php:453
+#: data/scripts/upgrade.php:451
 msgid ""
 "It is now possible to filter values to index via a regex, a list of "
 "languages or a visibility."
@@ -413,7 +399,7 @@ msgstr ""
 "Il est désormais possible de filtrer les valeurs à indexer via une "
 "expression rationnelle, une liste de langues ou une visibilité."
 
-#: data/scripts/upgrade.php:458
+#: data/scripts/upgrade.php:456
 msgid ""
 "It is now possible to filter resources to index, for example an item set, a "
 "template, an owner, a visibility, etc."
@@ -421,7 +407,7 @@ msgstr ""
 "Il est désormais possible de filtrer les ressources à indexer, par exemple "
 "une collection, un modèle, un propriétaire, une visibilité, etc."
 
-#: data/scripts/upgrade.php:463
+#: data/scripts/upgrade.php:461
 msgid ""
 "It is now possible to use module Table to manage tables for normalization of "
 "indexation."
@@ -429,7 +415,7 @@ msgstr ""
 "Il est désormais possible d'utiliser le module Table pour gérer les tables "
 "de normalisation de l'indexation."
 
-#: data/scripts/upgrade.php:468
+#: data/scripts/upgrade.php:466
 msgid ""
 "The table used for indexation has been converted into a standard {link}"
 "table{link_end}. It is recommended to remove the old one from the config."
@@ -438,7 +424,7 @@ msgstr ""
 "table{link_end} standard. Il est recommandé de supprimer l'ancienne table de "
 "la configuration."
 
-#: data/scripts/upgrade.php:488
+#: data/scripts/upgrade.php:485
 msgid ""
 "The support of module Access Resource has been removed. Support of module "
 "Access has been added."
@@ -446,39 +432,25 @@ msgstr ""
 "La prise en charge du module Access Resource a été supprimée. Le module "
 "Access est désormais pris en charge."
 
-#: data/scripts/upgrade.php:493
+#: data/scripts/upgrade.php:490
 msgid "A reindexing is needed."
 msgstr "Une réindexation est nécessaire."
 
-#: Module.php:121
-#, php-format
-msgid "The composer library \"%s\" is not installed. See readme."
-msgstr ""
-"La bibliothèque composer « %s » n'est pas installée. Voir le lisez-moi."
-
-#: Module.php:150
+#: data/scripts/upgrade.php:519
 msgid ""
-"To be upgraded automatically, the module Solr should be between versions "
-"3.5.5 and 3.5.14. Upgrade it or disable it to install this module."
+"You should remove key \"table\" from the file config/local.config.php before "
+"upgrading."
 msgstr ""
-"Pour être mis à jour automatiquement, le module Solr doit être entre les "
-"versions 3.5.5 et 3.5.14. Mettez-le à niveau ou désactivez-le pour installer "
-"ce module."
+"Vous devez supprimer la clé « table » du fichier config/local.config.php "
+"avant la mise à jour."
 
-#: Module.php:158
-msgid ""
-"To upgrade module Solr automatically, this module should be lower or equal "
-"to 3.5.30.3. Install this version of this module, then upgrade it."
+#: Module.php:121 src/Api/Representation/SolrCoreRepresentation.php:222
+msgid "The composer library \"{library}\" is not installed. See readme."
 msgstr ""
-"Pour mettre à jour le module Solr automatiquement, ce module doit être "
-"inférieur ou égal à 3.5.30.3. Installez cette version de ce module, puis "
-"mettez-le à jour."
+"La bibliothèque composer « {library} » n'est pas installée. Voir le lisez-"
+"moi."
 
-#: Module.php:164
-msgid "A new config will be created instead."
-msgstr "Une nouvelle config sera créée à la place."
-
-#: Module.php:462
+#: Module.php:430
 #, php-format
 msgid "The default core can be configured in the %1$ssearch manager%2$s."
 msgstr ""
@@ -516,7 +488,7 @@ msgstr "Standard avec uri"
 msgid "Plain text"
 msgstr "Texte simple"
 
-#: src/ValueFormatter/Place.php:14 src/Form/Admin/SolrMapForm.php:220
+#: src/ValueFormatter/Place.php:14 src/Form/Admin/SolrMapForm.php:219
 msgid "Place"
 msgstr "Lieu"
 
@@ -581,7 +553,7 @@ msgstr "Solr [via Solarium]"
 msgid "Select a metadata from the resource…"
 msgstr "Choisir une métadonnée dans la ressource…"
 
-#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:206
+#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:205
 msgid "Set sub-property"
 msgstr "Indiquer la sous-propriété"
 
@@ -733,7 +705,7 @@ msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:281
 msgid "Tie breaker"
-msgstr ""
+msgstr "Rupture d’égalité"
 
 #: src/Form/Admin/SolrCoreForm.php:282
 msgid ""
@@ -759,7 +731,7 @@ msgstr ""
 msgid "{label} (unavailable: option multi-index not set)"
 msgstr "{label} (indisponible : l’option multi-index n’est pas spécifié)"
 
-#: src/Form/Admin/SolrMapForm.php:70
+#: src/Form/Admin/SolrMapForm.php:69
 msgid ""
 "To select a sub-property allows to store a linked metadata when the property "
 "is filled with a resource. Thereby, an item can be found from the specified "
@@ -772,72 +744,72 @@ msgstr ""
 "numéro d'une revue peut être lié à la revue, de sorte que le numéro peut "
 "être trouvé à partir du titre de la revue."
 
-#: src/Form/Admin/SolrMapForm.php:88
+#: src/Form/Admin/SolrMapForm.php:87
 msgid "Only values of resources matching this standard query"
 msgstr ""
 "Seules les valeurs des ressources correspondant à cette requête standard"
 
-#: src/Form/Admin/SolrMapForm.php:99
+#: src/Form/Admin/SolrMapForm.php:98
 msgid "Only values matching this regex"
 msgstr "Seulement les valeurs correspondant à cette expression rationnelle"
 
-#: src/Form/Admin/SolrMapForm.php:110
+#: src/Form/Admin/SolrMapForm.php:109
 msgid "Only uris matching this regex"
 msgstr "Seulement les uris correspondant à cette expression"
 
-#: src/Form/Admin/SolrMapForm.php:121
+#: src/Form/Admin/SolrMapForm.php:120
 msgid "Only linked resources matching this standard query"
 msgstr "Seules les ressources liées correspondant à cette requête standard"
 
-#: src/Form/Admin/SolrMapForm.php:132
+#: src/Form/Admin/SolrMapForm.php:131
 msgid "Only these data types"
 msgstr "Seulement ces types de données"
 
-#: src/Form/Admin/SolrMapForm.php:145
+#: src/Form/Admin/SolrMapForm.php:144
 msgid "Exclude data types"
 msgstr "Exclure des types de données"
 
-#: src/Form/Admin/SolrMapForm.php:149
+#: src/Form/Admin/SolrMapForm.php:148
 msgid "Select data types to exclude…"
 msgstr "Indiquer les types de données à exclure…"
 
-#: src/Form/Admin/SolrMapForm.php:170
+#: src/Form/Admin/SolrMapForm.php:169
 msgid "Only visibility"
 msgstr "Seulement la visibilité"
 
-#: src/Form/Admin/SolrMapForm.php:192
+#: src/Form/Admin/SolrMapForm.php:191
 msgid "Solr field"
 msgstr "Champ Solr"
 
-#: src/Form/Admin/SolrMapForm.php:207
+#: src/Form/Admin/SolrMapForm.php:206
 msgid "Formatter"
 msgstr "Formateur"
 
-#: src/Form/Admin/SolrMapForm.php:222
+#: src/Form/Admin/SolrMapForm.php:221
 msgid "Toponym and country"
 msgstr "Toponyme et pays"
 
-#: src/Form/Admin/SolrMapForm.php:223
+#: src/Form/Admin/SolrMapForm.php:222
 msgid "Toponym"
 msgstr "Toponyme"
 
-#: src/Form/Admin/SolrMapForm.php:224
+#: src/Form/Admin/SolrMapForm.php:223
 msgid "Country"
 msgstr "Pays"
 
-#: src/Form/Admin/SolrMapForm.php:239
+#: src/Form/Admin/SolrMapForm.php:238
 msgid "Table for formatter \"Table\""
 msgstr "Tableau pour le formateur « Table »"
 
-#: src/Form/Admin/SolrMapForm.php:247
+#: src/Form/Admin/SolrMapForm.php:246
 msgid "Select a table…"
 msgstr "Choisissez une table…"
 
-#: src/Form/Admin/SolrMapForm.php:257
+#: src/Form/Admin/SolrMapForm.php:256
 msgid "Table: Mode of normalization"
 msgstr "Table : mode de normalisation"
 
-#: src/Form/Admin/SolrMapForm.php:258
+#: src/Form/Admin/SolrMapForm.php:257
 msgid ""
 "If the value is displayed (facets, filters…), it is recommended to index "
 "label only."
@@ -845,31 +817,31 @@ msgstr ""
 "Si la valeur est affichée (facettes, filtres...), il est recommandé de "
 "n'indexer que le libellé."
 
-#: src/Form/Admin/SolrMapForm.php:260
+#: src/Form/Admin/SolrMapForm.php:259
 msgid "Label only"
 msgstr "Libellé seul"
 
-#: src/Form/Admin/SolrMapForm.php:261
+#: src/Form/Admin/SolrMapForm.php:260
 msgid "Code only"
 msgstr "Code seul"
 
-#: src/Form/Admin/SolrMapForm.php:262
+#: src/Form/Admin/SolrMapForm.php:261
 msgid "Label and code"
 msgstr "Libellé et code"
 
-#: src/Form/Admin/SolrMapForm.php:276
+#: src/Form/Admin/SolrMapForm.php:275
 msgid "Table: index original value too"
 msgstr "Table : indexer également la valeur originale"
 
-#: src/Form/Admin/SolrMapForm.php:288
+#: src/Form/Admin/SolrMapForm.php:287
 msgid "Table: strict check (same case, same diacritics)"
 msgstr "Table : vérification stricte (même casse, mêmes diacritiques)"
 
-#: src/Form/Admin/SolrMapForm.php:307
+#: src/Form/Admin/SolrMapForm.php:306
 msgid "Default label"
 msgstr "Libellé par défaut"
 
-#: src/Form/Admin/SolrMapForm.php:308
+#: src/Form/Admin/SolrMapForm.php:307
 msgid "The label is automatically translated if it exists in Omeka."
 msgstr "Le libellé est automatiquement traduite s'il existe dans Omeka."
 
@@ -936,12 +908,6 @@ msgid ""
 msgstr ""
 "Un caractère unique utilisé pour séparer les colonnes dans le fichier csv. "
 "Le délimiteur peut être omis quand le contenu ne contient pas le délimiteur."
-
-#: src/Api/Representation/SolrCoreRepresentation.php:222
-msgid "The composer library \"{library}\" is not installed. See readme."
-msgstr ""
-"La bibliothèque composer « {library} » n'est pas installée. Voir le lisez-"
-"moi."
 
 #: src/Api/Representation/SolrCoreRepresentation.php:234
 msgid "Solr core #{solr_core_id}: incorrect or incomplete configuration."
@@ -1216,7 +1182,7 @@ msgstr "La ligne #{index} ne contient pas les données obligatoires."
 
 #: src/Controller/Admin/CoreController.php:382
 msgid "The row #{index} does not manage resource \"{resource_name}\"."
-msgstr "La ligne #{index} ne gère pas la ressource « {nom_de_la_ressource} »."
+msgstr "La ligne #{index} ne gère pas la ressource « {resource_name} »."
 
 #: src/Controller/Admin/CoreController.php:411
 msgid "The file does not contain any valid data."
@@ -1379,16 +1345,16 @@ msgstr "Terme de propriété ou de classe"
 msgid "All property values"
 msgstr "Toutes les valeurs immobilières"
 
-#: src/Querier/SolariumQuerier.php:88
+#: src/Querier/SolariumQuerier.php:101
 msgid "An issue occurred."
 msgstr "Un problème est survenu."
 
-#: src/Querier/SolariumQuerier.php:206
+#: src/Querier/SolariumQuerier.php:263
 msgid "Suggestions are not implemented here. Use direct url."
 msgstr ""
 "Les suggestions ne sont pas implémentées ici. Utilisez une url directe."
 
-#: src/Querier/SolariumQuerier.php:907
+#: src/Querier/SolariumQuerier.php:979
 #, php-format
 msgid "Search type \"%s\" is not managed currently by SearchSolr."
 msgstr "Le type de recherche « %s » n’est pas géré actuellement par le module."
@@ -1401,17 +1367,66 @@ msgstr "Moteurs de recherche"
 msgid "Solr"
 msgstr "Solr"
 
-#: config/module.config.php:204
+#: config/module.config.php:203
 msgid "Field"
 msgstr "Champ"
 
-#: config/module.config.php:207
+#: config/module.config.php:206
 msgid "Choose a field…"
 msgstr "Choisir un champ…"
 
-#: config/module.config.php:208
+#: config/module.config.php:207
 msgid "Dynamic field"
 msgstr "Champ dynamique"
+
+#, php-format
+#~ msgid "This module requires module \"%s\" version \"%s\" or greater."
+#~ msgstr "Ce module requiert le module « %s » version « %s » ou supérieure."
+
+#~ msgid ""
+#~ "The module Solr can be upgraded only for version between 3.5.5 and 3.5.14."
+#~ msgstr ""
+#~ "Le module Solr ne peut être mis à jour que pour les versions comprises "
+#~ "entre 3.5.5 et 3.5.14."
+
+#~ msgid ""
+#~ "To upgrade module Solr automatically, this module should be lower or "
+#~ "equal to 3.5.30.3."
+#~ msgstr ""
+#~ "Pour mettre à jour le module Solr automatiquement, ce module doit être "
+#~ "inférieur ou égal à 3.5.30.3."
+
+#, php-format
+#~ msgid "The version of the module Solr should be at least %s."
+#~ msgstr "La version du module Solr doit être au moins %s."
+
+#~ msgid "The module Solr was upgraded by module SearchSolr and uninstalled."
+#~ msgstr ""
+#~ "Le module Solr a été mis à niveau par le module SearchSolr et désinstallé."
+
+#, php-format
+#~ msgid "The composer library \"%s\" is not installed. See readme."
+#~ msgstr ""
+#~ "La bibliothèque composer « %s » n'est pas installée. Voir le lisez-moi."
+
+#~ msgid ""
+#~ "To be upgraded automatically, the module Solr should be between versions "
+#~ "3.5.5 and 3.5.14. Upgrade it or disable it to install this module."
+#~ msgstr ""
+#~ "Pour être mis à jour automatiquement, le module Solr doit être entre les "
+#~ "versions 3.5.5 et 3.5.14. Mettez-le à niveau ou désactivez-le pour "
+#~ "installer ce module."
+
+#~ msgid ""
+#~ "To upgrade module Solr automatically, this module should be lower or "
+#~ "equal to 3.5.30.3. Install this version of this module, then upgrade it."
+#~ msgstr ""
+#~ "Pour mettre à jour le module Solr automatiquement, ce module doit être "
+#~ "inférieur ou égal à 3.5.30.3. Installez cette version de ce module, puis "
+#~ "mettez-le à jour."
+
+#~ msgid "A new config will be created instead."
+#~ msgstr "Une nouvelle config sera créée à la place."
 
 #~ msgid "label"
 #~ msgstr "libellé"
