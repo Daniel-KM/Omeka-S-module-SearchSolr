@@ -53,12 +53,13 @@ composer install --no-dev
 
 ### Requirements
 
-- Module [Advanced Search] version 3.4.6.20 or above.
+- Module [Advanced Search] version 3.5.46 or above.
 - A running Apache Solr. Compatibility:
   - version 3.5.15 of this module has been tested with Solr 5 and Solr 6.
   - version 3.5.15.2 of this module has been tested with Solr 6 to Solr 8.
   - version 3.5.32.3 of this module has been tested with Solr 8 and above.
   - version 3.5.39.4 of this module has been tested with Solr 9 and above.
+  - version 3.5.47 of this module has been tested with Solr 9 and above.
 
 Quick start
 -----------
@@ -743,6 +744,7 @@ TODO
 - [ ] Include all new advanced filters mode for properties.
 - [ ] Manage indexation of item sets when module Item Set Tree is used.
 - [ ] Facet range: determine start/end/gap automatically or add option.
+- [ ] Rename "resource_name" by "resource_type" anywhere.
 
 
 Warning
@@ -800,14 +802,14 @@ Copyright
 See commits for full list of contributors.
 
 * Copyright BibLibre, 2016-2017 (see [BibLibre])
-* Copyright Daniel Berthereau, 2017-2023 (see [Daniel-KM])
+* Copyright Daniel Berthereau, 2017-2024 (see [Daniel-KM])
 * Copyright Paul Sarrassat, 2018
 
-This module is a full replacement of the module [Solr], a deprecated fork of the
-module [Solr by BibLibre]. This later was built for the [digital library Explore]
-of [Université Paris Sciences & Lettres]. The fork [Advanced Search adapter for Solr]
-is built for the future [digital library Manioc] of [Université des Antilles et de la Guyane],
-currently managed with [Greenstone].
+This module is a full replacement of the module [Solr], a deprecated fork based
+on the version 0.4 of the module [Solr by BibLibre]. This later was built for
+the [digital library Explore] of [Université Paris Sciences & Lettres]. The fork
+[Advanced Search adapter for Solr] is built for the [digital library Manioc] of
+[Université des Antilles et de la Guyane], formerly managed with [Greenstone].
 
 
 [Advanced Search adapter for Solr]: https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr
