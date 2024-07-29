@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2023
+ * Copyright Daniel Berthereau, 2017-2024
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -157,7 +157,7 @@ class SolariumIndexer extends AbstractIndexer
         if ($isQuery) {
             $query = $solariumQuery->getQuery() ?: '*:*';
             $isDefaultQuery = $query === '*:*';
-            $filterQueries = $solariumQuery->getFilterQueries();
+            $filterQueries = $solariumQuery->getFiltersQuery();
             if (count($filterQueries)) {
                 foreach ($filterQueries as $filterQuery) {
                     $query .= ' AND ' . $filterQuery->getQuery();
