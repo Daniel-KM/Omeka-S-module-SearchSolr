@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016
- * Copyright Daniel Berthereau, 2017-2023
+ * Copyright Daniel Berthereau, 2017-2024
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -168,6 +168,7 @@ class SolariumQuerier extends AbstractQuerier
         $facetSet = $solariumResultSet->getFacetSet();
         if ($facetSet) {
             $facetCounts = [];
+            $facetListAll = $this->query->getOption('facet_list') === 'all';
             /** @var \Solarium\Component/Result/Facet/FacetResultInterface $facetResult */
             // foreach $facetSet = foreach $facetSet->getFacets().
             foreach ($facetSet->getFacets() as $name => $facetResult) {
@@ -180,9 +181,10 @@ class SolariumQuerier extends AbstractQuerier
                     // foreach $facetResult = foreach $facetResult->getBuckets().
                     foreach ($facetResult->getBuckets() as $bucket) {
                         $count = $bucket->getCount();
-                        if ($count > 0) {
+                        if ($facetListAll || $count) {
                             // $this->response->addFacetCount($name, $value, $count);
-                            $facetCount[] = ['value' => $bucket->getValue(), 'count' => $count];
+                            $value = $bucket->getValue();
+                            $facetCount[$value] = ['value' => $value, 'count' => $count];
                         }
                     }
                     $facetCounts[$name] = $facetCount;
