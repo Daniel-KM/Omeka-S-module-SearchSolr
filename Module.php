@@ -124,44 +124,12 @@ class Module extends AbstractModule
             throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
         }
 
-        /** @var \Omeka\Module\Manager $moduleManager */
-        $moduleManager = $services->get('Omeka\ModuleManager');
-        $messenger = $services->get('ControllerPluginManager')->get('messenger');
-
-        // Module AdvancedSearch is already checked as dependency.
-        $advancedSearchVersion = $moduleManager->getModule('AdvancedSearch')->getIni('version');
-        if (version_compare($advancedSearchVersion, '3.4.29', '<')) {
+        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.29')) {
             $message = new PsrMessage(
                 $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
                 ['module' => 'Advanced Search', 'version' => '3.4.29']
             );
             throw new ModuleCannotInstallException((string) $message);
-        }
-
-        $moduleVersion = $moduleManager->getModule('SearchSolr')->getIni('version');
-        $module = $moduleManager->getModule('Solr');
-        $moduleSolrVersion = $module ? $module->getIni('version') : null;
-        if ($moduleSolrVersion) {
-            if (version_compare($moduleSolrVersion, '3.5.5', '<')
-                || version_compare($moduleSolrVersion, '3.5.14', '>')
-            ) {
-                if ($module->getState() === \Omeka\Module\Manager::STATE_ACTIVE) {
-                    $message = new \Omeka\Stdlib\Message(
-                        'To be upgraded automatically, the module Solr should be between versions 3.5.5 and 3.5.14. Upgrade it or disable it to install this module.' // @translate
-                    );
-                    throw new ModuleCannotInstallException((string) $message);
-                }
-                $messenger->addWarning($translator->translate('The module Solr can be upgraded only for version between 3.5.5 and 3.5.14.')); // @translate
-            } elseif (version_compare($moduleVersion, '3.5.30.3', '>=')) {
-                if ($module->getState() === \Omeka\Module\Manager::STATE_ACTIVE) {
-                    $message = new \Omeka\Stdlib\Message(
-                        'To upgrade module Solr automatically, this module should be lower or equal to 3.5.30.3. Install this version of this module, then upgrade it.' // @translate
-                    );
-                    throw new ModuleCannotInstallException((string) $message);
-                }
-                $messenger->addWarning($translator->translate('To upgrade module Solr automatically, this module should be lower or equal to 3.5.30.3.')); // @translate
-            }
-            $messenger->addWarning('A new config will be created instead.'); // @translate
         }
     }
 

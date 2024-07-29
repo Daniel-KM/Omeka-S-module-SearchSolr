@@ -97,7 +97,6 @@ return [
             'admin' => [
                 'child_routes' => [
                     'search' => [
-                        // Kept to simplify upgrade.
                         'type' => \Laminas\Router\Http\Literal::class,
                         'options' => [
                             'route' => '/search-manager',
