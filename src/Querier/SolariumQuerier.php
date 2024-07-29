@@ -355,7 +355,10 @@ class SolariumQuerier extends AbstractQuerier
         $sort = $this->query->getSort();
         if ($sort) {
             @[$sortField, $sortOrder] = explode(' ', $sort, 2);
-            if ($sortField === 'score') {
+            if ($sortField === 'relevance'
+                // Support old config.
+                || $sortField === 'score'
+            ) {
                 $sortOrder = $sortOrder === 'asc' ? SolariumQuery::SORT_ASC : SolariumQuery::SORT_DESC;
             } else {
                 $sortOrder = $sortOrder === 'desc' ? SolariumQuery::SORT_DESC : SolariumQuery::SORT_ASC;

@@ -118,8 +118,8 @@ class SolariumAdapter extends AbstractAdapter
         $schema = $solrCore->schema();
 
         $sortFields = [
-            'score desc' => [
-                'name' => 'score desc',
+            'relevance desc' => [
+                'name' => 'relevance desc',
                 'label' => $this->translator->translate('Relevance'),
             ],
         ];
@@ -229,8 +229,8 @@ class SolariumAdapter extends AbstractAdapter
         $schema = $solrCore->schema();
 
         $sortFields = [
-            'score desc' => [
-                'name' => 'score desc',
+            'relevance desc' => [
+                'name' => 'relevance desc',
                 'label' => $this->translator->translate('Relevance'),
             ],
         ];
