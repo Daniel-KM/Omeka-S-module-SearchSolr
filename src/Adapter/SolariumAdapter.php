@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 /*
- * Copyright Daniel Berthereau, 2017-2023
+ * Copyright Daniel Berthereau, 2017-2024
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -89,13 +89,15 @@ class SolariumAdapter extends AbstractAdapter
         $fields = [];
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $name = $map->fieldName();
-            $label = $map->setting('label', '');
+            $fieldLabel = $map->setting('label', '');
             $fields[$name] = [
                 'name' => $name,
-                'label' => $label,
+                'label' => $fieldLabel,
                 'from' => $map->source(),
             ];
         }
+
+        // TODO Add support of aliases. See internal engine. Support aliases of Omeka arguments by default.
 
         return $fields;
     }
@@ -133,12 +135,12 @@ class SolariumAdapter extends AbstractAdapter
             if (!$schemaField || $schemaField->isMultivalued()) {
                 continue;
             }
-            $label = $map->setting('label', '');
+            $fieldLabel = $map->setting('label', '');
             foreach ($directionLabel as $direction => $labelDirection) {
                 $name = $fieldName . ' ' . $direction;
                 $sortFields[$name] = [
                     'name' => $name,
-                    'label' => $label ? $label . ' ' . $labelDirection : '',
+                    'label' => $fieldLabel ? $fieldLabel . ' ' . $labelDirection : '',
                 ];
             }
         }
@@ -168,10 +170,121 @@ class SolariumAdapter extends AbstractAdapter
             if (!$schemaField || $schemaField->isGeneralText()) {
                 continue;
             }
-            $label = $map->setting('label', '');
+            $fieldLabel = $map->setting('label', '');
             $fields[$name] = [
                 'name' => $name,
-                'label' => $label,
+                'label' => $fieldLabel,
+            ];
+        }
+
+        return $fields;
+    }
+
+    public function getAvailableFieldsForSelect(): array
+    {
+        if (!$this->searchEngine) {
+            return [];
+        }
+
+        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        if (!$solrCoreId) {
+            return [];
+        }
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
+
+        // TODO Add support of input field for id (from o:id).
+
+        $fields = [];
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
+            $name = $map->fieldName();
+            $fieldLabel = $map->setting('label', '');
+            $fields[$name] = [
+                'name' => $name,
+                'label' => sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel, $name),
+            ];
+        }
+
+        // Manage the case when there is no label.
+        return array_replace(
+            array_column($fields, 'name', 'name'),
+            array_filter(array_column($fields, 'label', 'name'))
+        );
+    }
+
+    public function getAvailableSortFieldsForSelect(): array
+    {
+        if (!$this->searchEngine) {
+            return [];
+        }
+
+        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        if (!$solrCoreId) {
+            return [];
+        }
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
+        $schema = $solrCore->schema();
+
+        $sortFields = [
+            'score desc' => [
+                'name' => 'score desc',
+                'label' => $this->translator->translate('Relevance'),
+            ],
+        ];
+
+        $directionLabel = [
+            'asc' => $this->translator->translate('Asc'),
+            'desc' => $this->translator->translate('Desc'),
+        ];
+
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
+            $fieldName = $map->fieldName();
+            $schemaField = $schema->getField($fieldName);
+            if (!$schemaField || $schemaField->isMultivalued()) {
+                continue;
+            }
+            $fieldLabel = $map->setting('label', '');
+            foreach ($directionLabel as $direction => $labelDirection) {
+                $name = $fieldName . ' ' . $direction;
+                $sortFields[$name] = [
+                    'name' => $name,
+                    'label' => $fieldLabel ? sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel . ' ' . $labelDirection, $name) : $name,
+                ];
+            }
+        }
+
+        return $sortFields;
+    }
+
+    public function getAvailableFacetFieldsForSelect(): array
+    {
+        if (!$this->searchEngine) {
+            return [];
+        }
+
+        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        if (!$solrCoreId) {
+            return [];
+        }
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
+        $schema = $solrCore->schema();
+
+        $fields = [];
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
+            $name = $map->fieldName();
+            $schemaField = $schema->getField($name);
+            if (!$schemaField || $schemaField->isGeneralText()) {
+                continue;
+            }
+            $fieldLabel = $map->setting('label', '');
+            $fields[$name] = [
+                'name' => $name,
+                'label' => sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel, $name),
             ];
         }
 
