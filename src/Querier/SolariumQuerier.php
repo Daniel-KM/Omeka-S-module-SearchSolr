@@ -41,8 +41,6 @@ use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 
 /**
  * @todo Rewrite the querier to simplify it and to use all solarium features directly.
- * @todo Remove grouping (item/itemset): this is native in Omeka and most of the time, user want them mixed.
- *
  * @todo Use Solarium helpers (geo, escape, xml, etc.).
  * @see \Solarium\Core\Query\Helper
  */
@@ -54,6 +52,16 @@ class SolariumQuerier extends AbstractQuerier
      * @var Response
      */
     protected $response;
+
+    /**
+     * @var array
+     */
+    protected $resourceTypes;
+
+    /**
+     * @var bool
+     */
+    protected $byResourceType = false;
 
     /**
      * @var SolariumQuery
@@ -82,11 +90,18 @@ class SolariumQuerier extends AbstractQuerier
         $this->response = new Response;
         $this->response->setApi($this->services->get('Omeka\ApiManager'));
 
+        $this->byResourceType = $this->query ? $this->query->getByResourceType() : false;
+        $this->response->setByResourceType($this->byResourceType);
+
         $this->solariumQuery = $this->getPreparedQuery();
+
+        // When no query or resource types are set.
         if (is_null($this->solariumQuery)) {
             return $this->response
                 ->setMessage('An issue occurred.'); // @translate
         }
+
+        // TODO Rewrite the process by resource types, etc. Use more solarium features. Use the response directly.
 
         try {
             /** @var \Solarium\QueryType\Select\Result\Result $solariumResultSet */
@@ -120,12 +135,14 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
-        // Normalize the response for module Search.
+        // Fill the response according to settings.
         // getData() allows to get everything as array.
         // $solariumResultSet->getData();
 
         // The result is always grouped, so getNumFound() is empty. The same for getDocuments().
-        // There is only one grouping here: by resource name (items/item sets).
+        // There is only one grouping here: by resource type (items, item sets,
+        // etc.), and only if needed in query.
+
         foreach ($solariumResultSet->getGrouping() as $fieldGroup) {
             $this->response->setTotalResults($fieldGroup->getMatches());
             /** @var \Solarium\Component\Result\Grouping\ValueGroup $valueGroup */
@@ -210,6 +227,29 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         $this->response->setActiveFacets($this->query->getActiveFacets());
+
+        // Remove specific results when settings are not by resource type.
+        // TODO Check option "by resource type" earlier.
+        // Facets are always grouped.
+        // This is the same in InternalQuerier.
+        if (!$this->byResourceType && count($this->resourceTypes) > 1) {
+            $allResourceIdsByType = $this->response->getAllResourceIds(null, true);
+            if (isset($allResourceIdsByType['resources'])) {
+                $this->response->setAllResourceIdsByResourceType(['resources' => $allResourceIdsByType['resources']]);
+            } else {
+                $this->response->setAllResourceIdsByResourceType(['resources' => array_merge(...array_values($allResourceIdsByType))]);
+            }
+            $resultsByType = $this->response->getResults();
+            if (isset($resultsByType['resources'])) {
+                $this->response->setResults(['resources' => $resultsByType['resources']]);
+            } else {
+                $this->response->setResults(['resources' => array_replace(...$resultsByType)]);
+            }
+            $totalResultsByType = $this->response->getResourceTotalResults();
+            $total = isset($totalResultsByType['resources']) ? $totalResultsByType['resources'] : array_sum($totalResultsByType);
+            $this->response->setResourceTotalResults(['resources' => $total]);
+            $this->response->setTotalResults($total);
+        }
 
         return $this->response
             ->setIsSuccess(true);
