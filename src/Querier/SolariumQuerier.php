@@ -181,6 +181,29 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
+        // Remove specific results when settings are not by resource type.
+        // TODO Check option "by resource type" earlier.
+        // Facets are always grouped.
+        // This is the same in InternalQuerier.
+        if (!$this->byResourceType && count($this->resourceTypes) > 1) {
+            $allResourceIdsByType = $this->response->getAllResourceIds(null, true);
+            if (isset($allResourceIdsByType['resources'])) {
+                $this->response->setAllResourceIdsByResourceType(['resources' => $allResourceIdsByType['resources']]);
+            } else {
+                $this->response->setAllResourceIdsByResourceType(['resources' => array_merge(...array_values($allResourceIdsByType))]);
+            }
+            $resultsByType = $this->response->getResults();
+            if (isset($resultsByType['resources'])) {
+                $this->response->setResults(['resources' => $resultsByType['resources']]);
+            } else {
+                $this->response->setResults(['resources' => array_replace(...array_values($resultsByType))]);
+            }
+            $totalResultsByType = $this->response->getResourceTotalResults();
+            $total = isset($totalResultsByType['resources']) ? $totalResultsByType['resources'] : array_sum($totalResultsByType);
+            $this->response->setResourceTotalResults('resources', $total);
+            $this->response->setTotalResults($total);
+        }
+
         /** @var \Solarium\Component\Result\FacetSet $facetSet */
         $facetSet = $solariumResultSet->getFacetSet();
         if ($facetSet) {
@@ -227,29 +250,6 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         $this->response->setActiveFacets($this->query->getActiveFacets());
-
-        // Remove specific results when settings are not by resource type.
-        // TODO Check option "by resource type" earlier.
-        // Facets are always grouped.
-        // This is the same in InternalQuerier.
-        if (!$this->byResourceType && count($this->resourceTypes) > 1) {
-            $allResourceIdsByType = $this->response->getAllResourceIds(null, true);
-            if (isset($allResourceIdsByType['resources'])) {
-                $this->response->setAllResourceIdsByResourceType(['resources' => $allResourceIdsByType['resources']]);
-            } else {
-                $this->response->setAllResourceIdsByResourceType(['resources' => array_merge(...array_values($allResourceIdsByType))]);
-            }
-            $resultsByType = $this->response->getResults();
-            if (isset($resultsByType['resources'])) {
-                $this->response->setResults(['resources' => $resultsByType['resources']]);
-            } else {
-                $this->response->setResults(['resources' => array_replace(...array_values($resultsByType))]);
-            }
-            $totalResultsByType = $this->response->getResourceTotalResults();
-            $total = isset($totalResultsByType['resources']) ? $totalResultsByType['resources'] : array_sum($totalResultsByType);
-            $this->response->setResourceTotalResults('resources', $total);
-            $this->response->setTotalResults($total);
-        }
 
         return $this->response
             ->setIsSuccess(true);
