@@ -230,6 +230,7 @@ return [
             'standard' => ValueFormatter\Standard::class,
             'standard_with_uri' => ValueFormatter\StandardWithUri::class,
             'standard_without_uri' => ValueFormatter\StandardWithoutUri::class,
+            'text' => ValueFormatter\Text::class,
             'alphanumeric' => ValueFormatter\Alphanumeric::class,
             'plain_text' => ValueFormatter\PlainText::class,
             'raw_text' => ValueFormatter\RawText::class,

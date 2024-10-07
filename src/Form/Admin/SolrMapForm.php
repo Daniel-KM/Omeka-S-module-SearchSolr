@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2017-2023
+ * Copyright Daniel Berthereau, 2017-2024
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -212,6 +212,42 @@ class SolrMapForm extends Form
                     'value' => '',
                 ],
             ])
+
+            ->add([
+                'name' => 'transformations',
+                'type' => Element\MultiCheckbox::class,
+                'options' => [
+                    'label' => 'Text transformations', // @translate
+                    'value_options' => [
+                        'html_escaped' => 'Escape html', // @translate
+                        'strip_tags' => 'Strip tags', // @translate
+                        'lowercase' => 'Lower case', // @translate
+                        'uppercase' => 'Upper case', // @translate
+                        'ucfirst' => 'Upper case first character', // @translate
+                        'remove_diacritics' => 'Remove diacritics', // @translate
+                        'alphanumeric' => 'Alphanumeric only', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'transformations',
+                    'value' => [
+                        'strip_tags',
+                    ],
+                    'data-formatter' => 'text',
+                ],
+            ])
+            ->add([
+                'name' => 'max_length',
+                'type' => Element\Number::class,
+                'options' => [
+                    'label' => 'Text max length', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'max_length',
+                    'data-formatter' => 'text',
+                ],
+            ])
+
             ->add([
                 'name' => 'place_mode',
                 'type' => Element\Radio::class,
@@ -229,6 +265,7 @@ class SolrMapForm extends Form
                     'data-formatter' => 'place',
                 ],
             ]);
+
         if (class_exists('Table\Form\Element\TablesSelect')) {
             $settingsFieldset
                 ->add([
@@ -327,6 +364,14 @@ class SolrMapForm extends Form
             ->get('o:settings')
             ->add([
                 'name' => 'formatter',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'transformations',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'max_length',
                 'required' => false,
             ])
             ->add([

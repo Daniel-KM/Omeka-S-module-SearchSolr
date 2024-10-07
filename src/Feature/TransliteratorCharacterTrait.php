@@ -7,7 +7,7 @@ trait TransliteratorCharacterTrait
     /**
      * Unlike sql, solr regex does not manage insensitive search, neither flag
      * "i", so when a filter query "contains" is done, this list is used.
-     * Of course, it's simpler to remove diacritic during indexation.
+     * Of course, it's simpler to remove diacritics during indexation.
      *
      * @link https://github.com/bcit-ci/CodeIgniter/blob/develop/application/config/foreign_chars.php
      * FIXME Use the unicode functions to map better for regex. To be removed with the multi-index. Manage multiple characters and ligatures.
@@ -660,7 +660,7 @@ trait TransliteratorCharacterTrait
      * @param string $string
      * @return string
      */
-    protected function latinize($string)
+    protected function latinize($string): string
     {
         /*
         static $transliterator;
