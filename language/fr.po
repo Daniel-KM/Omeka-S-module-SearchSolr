@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-29 00:00+0000\n"
-"PO-Revision-Date: 2024-07-29 00:00+0000\n"
+"POT-Creation-Date: 2024-10-07 00:00+0000\n"
+"PO-Revision-Date: 2024-10-07 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -444,7 +444,7 @@ msgstr ""
 "Vous devez supprimer la clé « table » du fichier config/local.config.php "
 "avant la mise à jour."
 
-#: Module.php:121 src/Api/Representation/SolrCoreRepresentation.php:222
+#: Module.php:121 src/Api/Representation/SolrCoreRepresentation.php:214
 msgid "The composer library \"{library}\" is not installed. See readme."
 msgstr ""
 "La bibliothèque composer « {library} » n'est pas installée. Voir le lisez-"
@@ -488,7 +488,7 @@ msgstr "Standard avec uri"
 msgid "Plain text"
 msgstr "Texte simple"
 
-#: src/ValueFormatter/Place.php:14 src/Form/Admin/SolrMapForm.php:219
+#: src/ValueFormatter/Place.php:14 src/Form/Admin/SolrMapForm.php:255
 msgid "Place"
 msgstr "Lieu"
 
@@ -785,31 +785,67 @@ msgstr "Champ Solr"
 msgid "Formatter"
 msgstr "Formateur"
 
-#: src/Form/Admin/SolrMapForm.php:221
+#: src/Form/Admin/SolrMapForm.php:220
+msgid "Text transformations"
+msgstr "Transformations du texte"
+
+#: src/Form/Admin/SolrMapForm.php:222
+msgid "Escape html"
+msgstr "Échapper le html"
+
+#: src/Form/Admin/SolrMapForm.php:223
+msgid "Strip tags"
+msgstr "Supprimer les balises html"
+
+#: src/Form/Admin/SolrMapForm.php:224
+msgid "Lower case"
+msgstr "Minuscules"
+
+#: src/Form/Admin/SolrMapForm.php:225
+msgid "Upper case"
+msgstr "Majuscules"
+
+#: src/Form/Admin/SolrMapForm.php:226
+msgid "Upper case first character"
+msgstr "Majuscule pour le premier caractère"
+
+#: src/Form/Admin/SolrMapForm.php:227
+msgid "Remove diacritics"
+msgstr "Supprimer les diacritics"
+
+#: src/Form/Admin/SolrMapForm.php:228
+msgid "Alphanumeric only"
+msgstr "Alphanumérique seulement"
+
+#: src/Form/Admin/SolrMapForm.php:243
+msgid "Text max length"
+msgstr "Longueur maximale"
+
+#: src/Form/Admin/SolrMapForm.php:257
 msgid "Toponym and country"
 msgstr "Toponyme et pays"
 
-#: src/Form/Admin/SolrMapForm.php:222
+#: src/Form/Admin/SolrMapForm.php:258
 msgid "Toponym"
 msgstr "Toponyme"
 
-#: src/Form/Admin/SolrMapForm.php:223
+#: src/Form/Admin/SolrMapForm.php:259
 msgid "Country"
 msgstr "Pays"
 
-#: src/Form/Admin/SolrMapForm.php:238
+#: src/Form/Admin/SolrMapForm.php:275
 msgid "Table for formatter \"Table\""
 msgstr "Tableau pour le formateur « Table »"
 
-#: src/Form/Admin/SolrMapForm.php:246
+#: src/Form/Admin/SolrMapForm.php:283
 msgid "Select a table…"
 msgstr "Choisissez une table…"
 
-#: src/Form/Admin/SolrMapForm.php:256
+#: src/Form/Admin/SolrMapForm.php:293
 msgid "Table: Mode of normalization"
 msgstr "Table : mode de normalisation"
 
-#: src/Form/Admin/SolrMapForm.php:257
+#: src/Form/Admin/SolrMapForm.php:294
 msgid ""
 "If the value is displayed (facets, filters…), it is recommended to index "
 "label only."
@@ -817,31 +853,31 @@ msgstr ""
 "Si la valeur est affichée (facettes, filtres...), il est recommandé de "
 "n'indexer que le libellé."
 
-#: src/Form/Admin/SolrMapForm.php:259
+#: src/Form/Admin/SolrMapForm.php:296
 msgid "Label only"
 msgstr "Libellé seul"
 
-#: src/Form/Admin/SolrMapForm.php:260
+#: src/Form/Admin/SolrMapForm.php:297
 msgid "Code only"
 msgstr "Code seul"
 
-#: src/Form/Admin/SolrMapForm.php:261
+#: src/Form/Admin/SolrMapForm.php:298
 msgid "Label and code"
 msgstr "Libellé et code"
 
-#: src/Form/Admin/SolrMapForm.php:275
+#: src/Form/Admin/SolrMapForm.php:312
 msgid "Table: index original value too"
 msgstr "Table : indexer également la valeur originale"
 
-#: src/Form/Admin/SolrMapForm.php:287
+#: src/Form/Admin/SolrMapForm.php:324
 msgid "Table: strict check (same case, same diacritics)"
 msgstr "Table : vérification stricte (même casse, mêmes diacritiques)"
 
-#: src/Form/Admin/SolrMapForm.php:306
+#: src/Form/Admin/SolrMapForm.php:343
 msgid "Default label"
 msgstr "Libellé par défaut"
 
-#: src/Form/Admin/SolrMapForm.php:307
+#: src/Form/Admin/SolrMapForm.php:344
 msgid "The label is automatically translated if it exists in Omeka."
 msgstr "Le libellé est automatiquement traduite s'il existe dans Omeka."
 
@@ -909,40 +945,40 @@ msgstr ""
 "Un caractère unique utilisé pour séparer les colonnes dans le fichier csv. "
 "Le délimiteur peut être omis quand le contenu ne contient pas le délimiteur."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:234
+#: src/Api/Representation/SolrCoreRepresentation.php:226
 msgid "Solr core #{solr_core_id}: incorrect or incomplete configuration."
 msgstr "Cœur Solr #{solr_core_id} : configuration incorrecte ou incomplète."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:248
+#: src/Api/Representation/SolrCoreRepresentation.php:240
 msgid "Solr core not found. Check your url."
 msgstr "Le cœur Solr n'a pas été trouvé. Vérifiez votre url."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:253
+#: src/Api/Representation/SolrCoreRepresentation.php:245
 msgid ""
 "Solr core not found or unauthorized. Check your url and your credentials."
 msgstr ""
 "Le cœur Solr est introuvable ou non autorisé. Vérifiez votre url et vos "
 "informations d'identification."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:258
-#: src/Api/Representation/SolrCoreRepresentation.php:265
-#: src/Api/Representation/SolrCoreRepresentation.php:285
+#: src/Api/Representation/SolrCoreRepresentation.php:250
+#: src/Api/Representation/SolrCoreRepresentation.php:257
+#: src/Api/Representation/SolrCoreRepresentation.php:277
 msgid "Solr core #{solr_core_id}: {message}"
 msgstr "Solr core #{solr_core_id} : {message}"
 
-#: src/Api/Representation/SolrCoreRepresentation.php:278
+#: src/Api/Representation/SolrCoreRepresentation.php:270
 msgid "Solr core #{solr_core_id} enpoint: {message}"
 msgstr "Solr core #{solr_core_id} enpoint : {message}"
 
-#: src/Api/Representation/SolrCoreRepresentation.php:294
+#: src/Api/Representation/SolrCoreRepresentation.php:286
 msgid "Solr: the config bypasses the check of the certificate."
 msgstr "Solr : la configuration contourne la vérification du certificat."
 
-#: src/Api/Representation/SolrCoreRepresentation.php:296
+#: src/Api/Representation/SolrCoreRepresentation.php:288
 msgid "OK (warning: check of certificate disabled)"
 msgstr "Ok (attention : vérification du certificat désactivée)"
 
-#: src/Api/Representation/SolrCoreRepresentation.php:302
+#: src/Api/Representation/SolrCoreRepresentation.php:294
 msgid "OK"
 msgstr "Ok"
 
@@ -1349,12 +1385,12 @@ msgstr "Toutes les valeurs immobilières"
 msgid "An issue occurred."
 msgstr "Un problème est survenu."
 
-#: src/Querier/SolariumQuerier.php:263
+#: src/Querier/SolariumQuerier.php:271
 msgid "Suggestions are not implemented here. Use direct url."
 msgstr ""
 "Les suggestions ne sont pas implémentées ici. Utilisez une url directe."
 
-#: src/Querier/SolariumQuerier.php:979
+#: src/Querier/SolariumQuerier.php:1005
 #, php-format
 msgid "Search type \"%s\" is not managed currently by SearchSolr."
 msgstr "Le type de recherche « %s » n’est pas géré actuellement par le module."
