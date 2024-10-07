@@ -529,3 +529,25 @@ if (version_compare($oldVersion, '3.5.47', '<')) {
     SQL;
     $connection->executeStatement($sql);
 }
+
+if (version_compare($oldVersion, '3.5.48', '<')) {
+    if (!$this->isModuleActive('AdvancedSearch')) {
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.4.32']
+        );
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
+    }
+
+    /** @var \Omeka\Module\Manager $moduleManager */
+    $moduleManager = $services->get('Omeka\ModuleManager');
+    $module = $moduleManager->getModule('AdvancedSearch');
+    $moduleVersion = $module->getIni('version');
+    if (version_compare($moduleVersion, '3.4.32', '<')) {
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.4.32']
+        );
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
+    }
+}
