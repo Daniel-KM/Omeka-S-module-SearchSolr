@@ -201,17 +201,9 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Check if Solr is working.
      *
-     * @todo Add a true status check and use it for status message.
+     * @return bool|PsrMessage
      */
-    public function status(): bool
-    {
-        return mb_substr($this->statusMessage(), 0, 2) === 'OK';
-    }
-
-    /**
-     * Check if Solr is working.
-     */
-    public function statusMessage(): string
+    public function status(bool $returnMessage = false)
     {
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
@@ -223,7 +215,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 ['library' => 'Solarium']
             );
             $logger->err($message->getMessage(), $message->getContext());
-            return (string) $message->setTranslator($translator);
+            return $returnMessage ? $message->setTranslator($translator) : false;
         }
 
         $clientSettings = $this->clientSettings();
@@ -235,7 +227,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 ['solr_core_id' => $this->id()]
             );
             $logger->err($message->getMessage(), $message->getContext());
-            return (string) $message->setTranslator($translator);
+            return $returnMessage ? $message->setTranslator($translator) : false;
         }
 
         try {
@@ -247,26 +239,26 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             if ($e->getCode() === 404) {
                 $message = new PsrMessage('Solr core not found. Check your url.'); // @translate
                 $logger->err($message->getMessage());
-                return (string) $message->setTranslator($translator);
+                return $returnMessage ? $message->setTranslator($translator) : false;
             }
             if ($e->getCode() === 401) {
                 $message = new PsrMessage('Solr core not found or unauthorized. Check your url and your credentials.'); // @translate
                 $logger->err($message->getMessage());
-                return (string) $message->setTranslator($translator);
+                return $returnMessage ? $message->setTranslator($translator) : false;
             }
             $message = new PsrMessage(
                 'Solr core #{solr_core_id}: {message}', // @translate
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
             );
             $logger->err($message->getMessage(), $message->getContext());
-            return $e->getMessage();
+            return $returnMessage ? $e->getMessage() : false;
         } catch (\Exception $e) {
             $message = new PsrMessage(
                 'Solr core #{solr_core_id}: {message}', // @translate
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
             );
             $logger->err($message->getMessage(), $message->getContext());
-            return (string) $message->setTranslator($translator);
+            return $returnMessage ? $message->setTranslator($translator) : false;
         }
 
         // Check the schema too, in particular when there are credentials, but
@@ -279,14 +271,14 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
             );
             $logger->err($message->getMessage(), $message->getContext());
-            return (string) $message->setTranslator($translator);
+            return $returnMessage ? $message->setTranslator($translator) : false;
         } catch (\Exception $e) {
             $message = new PsrMessage(
                 'Solr core #{solr_core_id}: {message}', // @translate
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
             );
             $logger->err($message->getMessage(), $message->getContext());
-            return (string) $message->setTranslator($translator);
+            return $returnMessage ? $message->setTranslator($translator) : false;
         }
 
         // Check if the config bypass certificate check.
@@ -295,13 +287,13 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             $message = new PsrMessage(
                 'OK (warning: check of certificate disabled)' // @translate
             );
-            return (string) $message->setTranslator($translator);
+            return $returnMessage ? $message->setTranslator($translator) : true;
         }
 
         $message = new PsrMessage(
             'OK' // @translate
         );
-        return (string) $message->setTranslator($translator);
+        return $returnMessage ? $message->setTranslator($translator) : true;
     }
 
     public function mapUrl(?string $action = null, $canonical = false): string
