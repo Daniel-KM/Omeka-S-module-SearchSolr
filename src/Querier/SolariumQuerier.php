@@ -121,6 +121,14 @@ class SolariumQuerier extends AbstractQuerier
             // @link https://lucene.apache.org/core/8_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
             // TODO Check before the query.
             $escapedQ = $this->escapePhrase($q);
+            if ($this->query->getOption('remove_diacritics', false)) {
+                if (extension_loaded('intl')) {
+                    $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                    $escapedQ = $transliterator->transliterate($escapedQ);
+                } elseif (extension_loaded('iconv')) {
+                    $escapedQ = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $escapedQ);
+                }
+            }
             $this->solariumQuery->setQuery($escapedQ);
             try {
                 $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
@@ -548,6 +556,14 @@ class SolariumQuerier extends AbstractQuerier
             ) {
                 $this->mainQueryWithExcludedFields();
             } else {
+                if ($this->query->getOption('remove_diacritics', false)) {
+                    if (extension_loaded('intl')) {
+                        $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                        $q = $transliterator->transliterate($q);
+                    } elseif (extension_loaded('iconv')) {
+                        $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
+                    }
+                }
                 $this->solariumQuery->setQuery($q);
             }
         }
@@ -574,6 +590,16 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         $q = $this->query->getQuery();
+
+        if ($this->query->getOption('remove_diacritics', false)) {
+            if (extension_loaded('intl')) {
+                $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                $q = $transliterator->transliterate($q);
+            } elseif (extension_loaded('iconv')) {
+                $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
+            }
+        }
+
         $qq = [];
         foreach ($usedFields as $field) {
             $qq[] = $field . ':' . $q;
