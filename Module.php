@@ -124,10 +124,10 @@ class Module extends AbstractModule
             throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
         }
 
-        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.32')) {
+        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.33')) {
             $message = new PsrMessage(
                 $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-                ['module' => 'Advanced Search', 'version' => '3.4.32']
+                ['module' => 'Advanced Search', 'version' => '3.4.33']
             );
             throw new ModuleCannotInstallException((string) $message);
         }

@@ -522,11 +522,11 @@ if (version_compare($oldVersion, '3.5.47', '<')) {
     }
 
     $sql = <<<SQL
-    UPDATE `search_config`
-    SET
-        `settings` = REPLACE(`settings`, '"score desc"', '"relevance desc"')
-    ;
-    SQL;
+        UPDATE `search_config`
+        SET
+            `settings` = REPLACE(`settings`, '"score desc"', '"relevance desc"')
+        ;
+        SQL;
     $connection->executeStatement($sql);
 }
 
@@ -547,6 +547,20 @@ if (version_compare($oldVersion, '3.5.48', '<')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
             ['module' => 'AdvancedSearch', 'version' => '3.4.32']
+        );
+        throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
+    }
+}
+
+if (version_compare($oldVersion, '3.5.49', '<')) {
+    /** @var \Omeka\Module\Manager $moduleManager */
+    $moduleManager = $services->get('Omeka\ModuleManager');
+    $module = $moduleManager->getModule('AdvancedSearch');
+    $moduleVersion = $module->getIni('version');
+    if (version_compare($moduleVersion, '3.4.33', '<')) {
+        $message = new PsrMessage(
+            'This module requires the module "{module}", version {version} or above.', // @translate
+            ['module' => 'AdvancedSearch', 'version' => '3.4.33']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
