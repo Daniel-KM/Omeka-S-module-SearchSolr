@@ -229,10 +229,7 @@ class SolariumAdapter extends AbstractAdapter
         $schema = $solrCore->schema();
 
         $sortFields = [
-            'relevance desc' => [
-                'name' => 'relevance desc',
-                'label' => $this->translator->translate('Relevance'),
-            ],
+            'relevance desc' => $this->translator->translate('Relevance'),
         ];
 
         $directionLabel = [
@@ -249,10 +246,9 @@ class SolariumAdapter extends AbstractAdapter
             $fieldLabel = $map->setting('label', '');
             foreach ($directionLabel as $direction => $labelDirection) {
                 $name = $fieldName . ' ' . $direction;
-                $sortFields[$name] = [
-                    'name' => $name,
-                    'label' => $fieldLabel ? sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel . ' ' . $labelDirection, $name) : $name,
-                ];
+                $sortFields[$name] = $fieldLabel
+                    ? sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel . ' ' . $labelDirection, $name)
+                    : $name;
             }
         }
 
@@ -282,10 +278,7 @@ class SolariumAdapter extends AbstractAdapter
                 continue;
             }
             $fieldLabel = $map->setting('label', '');
-            $fields[$name] = [
-                'name' => $name,
-                'label' => sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel, $name),
-            ];
+            $fields[$name] = sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel, $name);
         }
 
         return $fields;
