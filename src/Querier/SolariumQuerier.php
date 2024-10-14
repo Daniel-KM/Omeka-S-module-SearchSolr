@@ -375,9 +375,10 @@ class SolariumQuerier extends AbstractQuerier
         if ($sort) {
             @[$sortField, $sortOrder] = explode(' ', $sort, 2);
             if ($sortField === 'relevance'
-                // Support old config.
+                // Support old config, but the default solr field name anyway.
                 || $sortField === 'score'
             ) {
+                $sortField = 'score';
                 $sortOrder = $sortOrder === 'asc' ? SolariumQuery::SORT_ASC : SolariumQuery::SORT_DESC;
             } else {
                 $sortOrder = $sortOrder === 'desc' ? SolariumQuery::SORT_DESC : SolariumQuery::SORT_ASC;
