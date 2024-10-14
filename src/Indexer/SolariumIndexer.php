@@ -356,22 +356,25 @@ class SolariumIndexer extends AbstractIndexer
             if ($source === 'site/o:id') {
                 switch ($resourceName) {
                     case 'items':
-                        $sites = array_map(function (\Omeka\Entity\Site $v) {
-                            return $v->getId();
-                        }, $resource->getSites()->toArray());
-                        $document->addField($solrField, array_values($sites));
+                        $sites = $resource->getSites()->toArray();
+                        if ($sites) {
+                            $sites = array_map(fn (\Omeka\Entity\Site $v) => $v->getId(), $sites);
+                            $document->addField($solrField, array_values($sites));
+                        }
                         break;
                     case 'item_sets':
-                        $sites = array_map(function (\Omeka\Entity\SiteItemSet $v) {
-                            return $v->getSite()->getId();
-                        }, $resource->getSiteItemSets()->toArray());
-                        $document->addField($solrField, $sites);
+                        $sites = $resource->getSiteItemSets()->toArray();
+                        if ($sites) {
+                            $sites = array_map(fn (\Omeka\Entity\SiteItemSet $v) => $v->getSite()->getId(), $sites);
+                            $document->addField($solrField, array_values($sites));
+                        }
                         break;
                     case 'media':
-                        $sites = array_map(function (\Omeka\Entity\Site $v) {
-                            return $v->getId();
-                        }, $resource->getItem()->getSites()->toArray());
-                        $document->addField($solrField, array_values($sites));
+                        $sites = $resource->getItem()->getSites()->toArray();
+                        if ($sites) {
+                            $sites = array_map(fn (\Omeka\Entity\Site $v) => $v->getId(), $sites);
+                            $document->addField($solrField, array_values($sites));
+                        }
                         break;
                     default:
                         // Nothing to do.
