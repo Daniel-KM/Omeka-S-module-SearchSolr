@@ -193,7 +193,10 @@ class SolariumQuerier extends AbstractQuerier
         // TODO Check option "by resource type" earlier.
         // Facets are always grouped.
         // This is the same in InternalQuerier.
-        if (!$this->byResourceType && count($this->resourceTypes) > 1) {
+        if (!$this->byResourceType
+            && $this->resourceTypes
+            && count($this->resourceTypes) > 1
+        ) {
             $allResourceIdsByType = $this->response->getAllResourceIds(null, true);
             if (isset($allResourceIdsByType['resources'])) {
                 $this->response->setAllResourceIdsByResourceType(['resources' => $allResourceIdsByType['resources']]);
@@ -297,6 +300,14 @@ class SolariumQuerier extends AbstractQuerier
         $sitesField = $this->solrCore->mapsBySource('site/o:id', 'generic');
         $sitesField = $sitesField ? (reset($sitesField))->fieldName() : null;
         if (!$resourceTypeField || !$isPublicField || !$sitesField) {
+            $this->solariumQuery = null;
+            return $this->solariumQuery;
+        }
+
+        $indexerResourceTypes = $this->engine->setting('resource_types', []);
+        $this->resourceTypes = $this->query->getResourceTypes() ?: $indexerResourceTypes;
+        $this->resourceTypes = array_intersect($this->resourceTypes, $indexerResourceTypes);
+        if (empty($this->resourceTypes)) {
             $this->solariumQuery = null;
             return $this->solariumQuery;
         }
