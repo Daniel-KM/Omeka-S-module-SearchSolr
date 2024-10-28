@@ -148,19 +148,29 @@ class SolariumQuerier extends AbstractQuerier
         // $solariumResultSet->getData();
 
         // The result is always grouped, so getNumFound() is empty. The same for getDocuments().
-        // There is only one grouping here: by resource type (items, item sets,
+        // There is only one grouping here: by resource type (item sets, items,
         // etc.), and only if needed in query.
 
         foreach ($solariumResultSet->getGrouping() as $fieldGroup) {
             $this->response->setTotalResults($fieldGroup->getMatches());
             /** @var \Solarium\Component\Result\Grouping\ValueGroup $valueGroup */
+            // The order of the group fields may be different than the original
+            // resource types, so store them in a temp variable.
+            $resourceTotalResults = array_fill_keys($this->resourceTypes, 0);
             foreach ($fieldGroup as $valueGroup) {
-                $groupName = $valueGroup->getValue();
-                $this->response->setResourceTotalResults($groupName, $valueGroup->getNumFound());
+                // The group name is the resource type.
+                $resourceType = $valueGroup->getValue();
+                // TODO To be removed for next version 3.5.50 for Advanced Search 3.4.34.
+                $this->response->setResourceTotalResults($resourceType, $valueGroup->getNumFound());
+                $resourceTotalResults[$resourceType] = $valueGroup->getNumFound();
                 foreach ($valueGroup as $document) {
                     $resourceId = basename($document['id']);
-                    $this->response->addResult($groupName, ['id' => is_numeric($resourceId) ? (int) $resourceId : $resourceId]);
+                    $this->response->addResult($resourceType, ['id' => is_numeric($resourceId) ? (int) $resourceId : $resourceId]);
                 }
+            }
+            if (method_exists($this->response, 'setAllResourceTotalResults')) {
+                $this->response->setAllResourceTotalResults($resourceTotalResults);
+                $this->response->setResults(array_replace(array_fill_keys($this->resourceTypes, []), $this->response->getResults()));
             }
         }
 
@@ -178,14 +188,15 @@ class SolariumQuerier extends AbstractQuerier
         foreach ($solariumResultSetAll->getGrouping() as $fieldGroup) {
             /** @var \Solarium\Component\Result\Grouping\ValueGroup $valueGroup */
             foreach ($fieldGroup as $valueGroup) {
-                $groupName = $valueGroup->getValue();
+                // The group name is the resource type.
+                $resourceType = $valueGroup->getValue();
                 $result = array_column($valueGroup->getDocuments(), 'id');
                 foreach ($result as &$documentId) {
                     $resourceId = basename($documentId);
                     $documentId = is_numeric($resourceId) ? (int) $resourceId : $resourceId;
                 }
                 unset($documentId);
-                $this->response->setAllResourceIdsForResourceType($groupName, $result);
+                $this->response->setAllResourceIdsForResourceType($resourceType, $result);
             }
         }
 
