@@ -496,7 +496,7 @@ if (version_compare($oldVersion, '3.5.47', '<')) {
     if (!$this->isModuleActive('AdvancedSearch')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.31']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.34']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -505,10 +505,10 @@ if (version_compare($oldVersion, '3.5.47', '<')) {
     $moduleManager = $services->get('Omeka\ModuleManager');
     $module = $moduleManager->getModule('AdvancedSearch');
     $moduleVersion = $module->getIni('version');
-    if (version_compare($moduleVersion, '3.4.31', '<')) {
+    if (version_compare($moduleVersion, '3.4.34', '<')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.31']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.34']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -534,7 +534,7 @@ if (version_compare($oldVersion, '3.5.48', '<')) {
     if (!$this->isModuleActive('AdvancedSearch')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.32']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.34']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -543,10 +543,10 @@ if (version_compare($oldVersion, '3.5.48', '<')) {
     $moduleManager = $services->get('Omeka\ModuleManager');
     $module = $moduleManager->getModule('AdvancedSearch');
     $moduleVersion = $module->getIni('version');
-    if (version_compare($moduleVersion, '3.4.32', '<')) {
+    if (version_compare($moduleVersion, '3.4.34', '<')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.32']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.34']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -557,10 +557,10 @@ if (version_compare($oldVersion, '3.5.49', '<')) {
     $moduleManager = $services->get('Omeka\ModuleManager');
     $module = $moduleManager->getModule('AdvancedSearch');
     $moduleVersion = $module->getIni('version');
-    if (version_compare($moduleVersion, '3.4.33', '<')) {
+    if (version_compare($moduleVersion, '3.4.34', '<')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.33']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.34']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
