@@ -539,7 +539,7 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function defaultQuery()
     {
-        // The default query is managed by the module Search.
+        // The default query is managed by the module Advanced Search.
         // Here, this is a catch-them-all query.
         // The default query with Solarium returns all results.
         // $defaultQuery = '';
@@ -558,6 +558,8 @@ class SolariumQuerier extends AbstractQuerier
     protected function mainQuery(): void
     {
         $q = $this->query->getQuery();
+        $qr = $this->query->getQueryRefine();
+        $q = trim($q . ' ' . $qr);
         $excludedFiles = $this->query->getExcludedFields();
 
         $solrCoreSettings = $this->solrCore->settings();
@@ -577,7 +579,7 @@ class SolariumQuerier extends AbstractQuerier
             if ($excludedFiles
                 && $q !== '*:*' && $q !== '*%3A*' && $q !== '*'
             ) {
-                $this->mainQueryWithExcludedFields();
+                $this->mainQueryWithExcludedFields($q);
             } else {
                 if ($this->query->getOption('remove_diacritics', false)) {
                     if (extension_loaded('intl')) {
@@ -595,7 +597,7 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Only called from mainQuery(). $q is never empty.
      */
-    protected function mainQueryWithExcludedFields(): void
+    protected function mainQueryWithExcludedFields($q): void
     {
         // Currently, the only way to exclude fields is to search in all other
         // fields.
@@ -611,8 +613,6 @@ class SolariumQuerier extends AbstractQuerier
         if (!count($usedFields)) {
             return;
         }
-
-        $q = $this->query->getQuery();
 
         if ($this->query->getOption('remove_diacritics', false)) {
             if (extension_loaded('intl')) {
