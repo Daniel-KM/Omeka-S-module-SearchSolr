@@ -184,32 +184,36 @@ cd /tmp
 # Check if java is installed with the good version.
 java -version
 # If not installed, install it (uncomment line below).
-#sudo apt install default-jdk-headless
+#sudo apt install default-jre-headless
 # On CentOs:
-#sudo dnf install java-17-openjdk-headless
+#sudo dnf install java-17-openjre-headless
 # On CentOs, Solr requires lsof:
 #sudo dnf install lsof
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
-wget https://dlcdn.apache.org/solr/solr/9.1.1/solr-9.1.1.tgz
+wget https://dlcdn.apache.org/solr/solr/9.7.0/solr-9.7.0.tgz
 # Extract the install script
-tar zxvf solr-9.1.1.tgz solr-9.1.1/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-9.7.0.tgz solr-9.7.0/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
-sudo bash ./install_solr_service.sh solr-9.1.1.tgz
+sudo bash ./install_solr_service.sh solr-9.7.0.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-9.1.1 /opt/solr
+#sudo ln -s /opt/solr-9.7.0 /opt/solr
 # In some cases, there may be a issue on start due to missing log directory:
 #sudo mkdir /opt/solr/server/logs && sudo chown solr:adm /opt/solr/server/logs && sudo systemctl restart solr
 # Clean the sources.
-rm solr-9.1.1.tgz
+rm solr-9.7.0.tgz
 rm install_solr_service.sh
 ```
 
-If not protected by a firewall or a proxy, you will access to solr admin page at
-http://example.org:8983/solr. See below to create a ssh tunnel to access it when
-protected.
+If not protected by a firewall or a proxy or a complex environment, you will
+access to solr admin page at http://example.org:8983/solr. See below to create a
+ssh tunnel to access it when protected.
+
+Anyway, you don't need to access to the Solr user interface to use it with Omeka.
 
 ### Integration in the system
+
+#### Services
 
 Solr may be managed as a system service:
 
@@ -219,7 +223,7 @@ sudo systemctl stop solr
 sudo systemctl start solr
 ```
 
-The result may be more complete with direct command:
+The result may be more complete with direct commands:
 
 ```sh
 sudo su - solr -c "/opt/solr/bin/solr status"
@@ -229,7 +233,8 @@ sudo su - solr -c "/opt/solr/bin/solr restart"
 ```
 
 **Warning**: Solr is a java application, so it is very slow to start, stop and
-restart. You may need to wait until five minutes between two commands.
+restart on some environments. You may need to wait until five minutes between
+two commands stop/start/restart.
 
 In case of an issue, you may stop the service or kill it. In that case, you need
 to kill java too.
@@ -239,12 +244,15 @@ Solr is automatically launched and available in your browser at [http://localhos
 Solr is available via command line too at `/opt/solr/bin/solr`. If solr created
 a group "solr", you may need to add yourself to it (`sudo usermod -aG solr myName`).
 
-If the service is not available after the install, and ***only*** if the service
-is not available as init or service, you can create the file
-"/etc/systemd/system/solr.service", that may need to be adapted for the
-distribution, here for Debian 11 or CentOs 8 (see the [solr service gist]).
+#### Creation of the service in old versions of Solr or distributions
 
-It is usually useless if the file "/etc/init.d/solr" exists, since systemctl
+For some old versions of Solr on some linux distributionsn, the service may not
+be  available after the install. In that case, and ***only*** if the service is
+not available as init or service, you can create the file "/etc/systemd/system/solr.service",
+that may need to be adapted for the distribution, here for Debian 11 or CentOs 8
+(see the [solr service gist]).
+
+It is usually useless when the file "/etc/init.d/solr" exists, because systemctl
 manages old services managed as init. Note that the default init doesn't manage
 restart on failure. The following service sets it at 30 seconds. Furthermore,
 the logs are simpler with systemd.
@@ -301,6 +309,8 @@ LimitNPROC=1048576
 WantedBy=multi-user.target
 ```
 
+### Checks
+
 ***Warning*** Avoid to start solr by the cli and by systemctl, else you will
 find issues, port already used, nodes lost, etc.
 To check if there is only one server running in standalone mode:
@@ -310,10 +320,22 @@ sudo /opt/solr/bin/solr status
 sudo systemctl status solr
 ```
 
-Even if it seems that solr is stopped, wait a least 5 minutes between command
-start/restart/stop to let more time to java to stop really.
+Even if it seems that solr is stopped, wait at least 5 minutes between command
+start/restart/stop to let more time to java to stop really. There is a warning,
+but not in all cases:
 
-### Protect access to Solr (Solr 8 and above)
+```
+Sending stop command to Solr running on port 8983...
+waiting up to 180 seconds to allow Jetty process 2917645 to stop gracefully.
+```
+
+You may check if there is a remaining pid file `/var/solr/solr-8983.pid`, and
+remove if it is still present while solr is stopped.
+
+### Protect access to Solr when needed (Solr 8 and above)
+
+The protection of solr may not be required when there are other security
+measures. So you may skip all this point.
 
 For documentation before Solr 8, see the readme of this module until version 3.5.31.3.
 
@@ -327,8 +349,8 @@ admin board. Search on your not-favorite search engine to add such a protection.
 
 As indicated in [Solr Basic Authentication], add the file `security.json`,
 with the user roles you want (here the user `omeka_admin` is added as `admin`).
-The directory where to place the file is usually `/opt/solr/server/solr`, but it
-may be `/var/solr/data/` in some cases. The good one ("solr home") is visible
+The directory where to place the file is usually `/var/solr/data/`, but it may
+be `/opt/solr/server/solr` in some cases. The good one ("solr home") is visible
 when you check the status:
 
 ```sh
@@ -373,10 +395,10 @@ Don't forget to change rights of this file, then to restart Solr and wait some
 minutes for java:
 
 ```sh
-# if the directory is "/opt/solr/server/solr":
-sudo chown -R solr:solr /opt/solr/server/solr && sudo chmod -R g+r,o-rw /opt/solr/server/solr
-# or if it is "/var/solr/data":
+# if the directory is "/var/solr/data":
 sudo chown -R solr:solr /var/solr/data && sudo chmod -R g+r,o-rw /var/solr/data
+# else if the directory is "/opt/solr/server/solr":
+#sudo chown -R solr:solr /opt/solr/server/solr && sudo chmod -R g+r,o-rw /opt/solr/server/solr
 # If an issue occurs, it may be a previous java session not closed. Check it with:
 #sudo /opt/solr/bin/solr status
 # And try to stop it:
@@ -530,11 +552,11 @@ cd /tmp
 # Check if java 17 recommended (or 11).
 java -version
 #sudo apt install default-jre
-wget https://archive.apache.org/dist/lucene/solr/9.1.1/solr-9.1.1.tgz
-tar zxvf solr-9.1.1.tgz solr-9.1.1/bin/install_solr_service.sh --strip-components=2
+wget https://archive.apache.org/dist/lucene/solr/9.7.0/solr-9.7.0.tgz
+tar zxvf solr-9.7.0.tgz solr-9.7.0/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-9.1.1.tgz -f
-rm solr-9.1.1.tgz
+sudo bash ./install_solr_service.sh solr-9.7.0.tgz -f
+rm solr-9.7.0.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -555,7 +577,7 @@ sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm /etc/security/limits.d/200-solr.conf
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-9.1.1
+sudo rm -r /opt/solr-9.7.0
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -590,14 +612,29 @@ At least one index ("core", "collection", or "node")  should be created in Solr
 to be used with Omeka. The simpler is to create one via the command line to
 avoid permissions issues.
 
+Most of the times, when installed manually, there are strange issues during the
+creation of the core. So if you want to create the core quicker without any
+issue, see below the "manual way".
+
+#### Automatic way
+
+The automatic way often creates issues. So see the official [full documentation].
+
+Important: don't mix old commands (`sudo su - solr -c "/opt/solr/bin/solr`) and
+curl ones. Check first if there are not multiple solr running (with or without
+sudo, with or without systemctl). See above to check them.
+
+In the following commands, skip the user and password when there is no such a
+security.
+
 ```sh
-# Via command ("old school"):
-sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
-# Via api:
+# Via api, with a user:
 curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/admin/cores?action=CREATE&name=omeka&instanceDir=omeka&schema=data_driven_schema_configs'
+# Via command ("old school"):
+#sudo su - solr -c "/opt/solr/bin/solr create -c omeka -n data_driven_schema_configs"
 ```
 
-Here, the user `solr` launches the command `solr` to create the core `omeka`,
+Here, the user `omeka_admin` launches the command `solr` to create the core `omeka`,
 and it will use the default config schema `data_driven_schema_configs`. This
 schema simplifies the management of fields, because they are guessed from the
 data.
@@ -617,8 +654,7 @@ Possible issues (always **restart solr after trying next commands**):
   ```sh
   sudo cp -r /opt/solr/server/solr/configsets/_default/conf /opt/solr/server/resources/
   ```
-- There may be remaining files after a failed creation, so run first `sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"`
-  or `curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/admin/cores?action=UNLOAD&core=omeka&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true'`
+- There may be remaining files after a failed creation, so run first `curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/admin/cores?action=UNLOAD&core=omeka&deleteIndex=true&deleteDataDir=true&deleteInstanceDir=true'` (or `sudo su - solr -c "/opt/solr/bin/solr delete -c omeka"`)
 - There may be a remaining lock file after a kill, so check in solr home: `sudo rm /var/solr/solr-8983.pid`.
 - Check if it is a service issue: try to run it as a user the `sudo -u solr /opt/solr/bin/solr start`.
 - Check if it is a rights issue: try to run it as a user the `sudo /opt/solr/bin/solr start -force`.
@@ -626,24 +662,31 @@ Possible issues (always **restart solr after trying next commands**):
   from the data directory, then create the core with the command above, then
   restore the file "security.json".
 
+#### Manual way
+
 If nothing is working (you don't see the core inside the front-end), create the
 core yourself with these commands, here with a core named `omeka` (here when
 the solr home directory is /var/solr):
 
+First, you need to stop or kill all solr and associated java processes.
+
 ```sh
+# The destination directory inside data is the name of the core, here "omeka".
+# It should be updated in following command if the name is different.
+CORE="omeka"
 # HERE, for solr home as "/var/solr/data". Change it if it is "/opt/solr/server/solr"
+# Clean previous failed installations.
+sudo rm -rf /var/solr/data/$CORE
 # Either:
 # When installed with the tarball.
 sudo cp -r /opt/solr/server/solr/configsets/_default /var/solr/data
 # When installed with the debian package.
 sudo cp -r /usr/share/solr/server/solr/configsets/_default /var/solr/data
-# The destination directory inside data is the name of the core, here "omeka".
-# It should be updated in following command if the name is different.
-CORE="omeka"
+# Rename and create the main file.
 sudo mv /var/solr/data/_default /var/solr/data/$CORE
 sudo touch /var/solr/data/$CORE/core.properties
 sudo bash -c "echo '#Written by CorePropertiesLocator' >> /var/solr/data/$CORE/core.properties"
-sudo bash -c "echo 'Mon Jul 31 00:00:00 UTC 2023' >> /var/solr/data/$CORE/core.properties"
+sudo bash -c "echo 'Mon Oct 28 00:00:00 UTC 2024' >> /var/solr/data/$CORE/core.properties"
 sudo bash -c "echo 'name=$CORE' >> /var/solr/data/$CORE/core.properties"
 sudo chmod ug+rw /var/solr/data/$CORE/core.properties
 sudo chown -R solr:solr /var/solr
@@ -655,7 +698,7 @@ should be the name of the directory:
 
 ```ini
 #Written by CorePropertiesLocator
-#Mon Jul 31 00:00:00 UTC 2023
+#Mon Oct 28 00:00:00 UTC 2024
 name=omeka
 ```
 
@@ -665,6 +708,9 @@ You can check if the Solr core is working via the user interface or via such a
 command:
 
 ```sh
+# When there is no security:
+curl 'http://localhost:8983/solr/omeka/select?q=*:*&indent=on&wt=json'
+# When there is a user with a password:
 curl --user 'omeka_admin:MySecretPassPhrase' 'http://localhost:8983/solr/omeka/select?q=*:*&indent=on&wt=json'
 ```
 
@@ -677,6 +723,9 @@ It can be done via the user interface (in the menu Schema). Or you can use this
 command, as indicated in the [reference guide to copy a field]:
 
 ```sh
+# Without user/password.
+curl -X POST --data-binary '{"add-copy-field":{"source":"*","dest":"_text_" }}' 'http://localhost:8983/solr/omeka/schema'
+# Or with a user/password.
 curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-field":{"source":"*","dest":"_text_" }}' 'http://localhost:8983/solr/omeka/schema'
 ```
 
