@@ -277,7 +277,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         if ($field === 'url_site') {
             if (is_null($defaultSiteSlug)) {
-                $defaultSiteSlug = $this->defaultSiteSlug($resource) ?: false;
+                /** @var \Common\View\Helper\DefaultSite $defaultSite */
+                $defaultSite = $resource->getServiceLocator()->get('ViewHelperManager')->get('defaultSite');
+                $defaultSiteSlug = $defaultSite('slug') ?: false;
             }
             if ($defaultSiteSlug === false || !method_exists($resource, 'siteUrl')) {
                 return [];
@@ -686,25 +688,6 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         return $accessLevel
             ? [$accessLevel($resource)]
             : [];
-    }
-
-    protected function defaultSiteSlug(AbstractRepresentation $resource): ?string
-    {
-        $services = $resource->getServiceLocator();
-        $api = $services->get('Omeka\ApiManager');
-        $settings = $services->get('Omeka\Settings');
-        $defaultSiteId = (int) $settings->get('default_site');
-        if ($defaultSiteId) {
-            try {
-                $result = $api->read('sites', $defaultSiteId, [], ['responseContent' => 'resource'])->getContent();
-                return $result->getSlug();
-            } catch (\Omeka\Api\Exception\NotFoundException $e) {
-            }
-        }
-        $result = $api->search('sites', ['limit' => 1], ['returnScalar' => 'slug'])->getContent();
-        return count($result)
-            ? reset($result)
-            : null;
     }
 
     /**
