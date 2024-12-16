@@ -903,6 +903,8 @@ class SolariumQuerier extends AbstractQuerier
                     // Equal.
                     case 'neq':
                     case 'eq':
+                    case 'nlist':
+                    case 'list':
                         if ($this->fieldIsString($name)) {
                             $value = $this->regexDiacriticsValue($value, '', '');
                         } else {
@@ -921,14 +923,6 @@ class SolariumQuerier extends AbstractQuerier
                         }
                         $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
-
-                    /*
-                    // In list.
-                    case 'nlist':
-                    case 'list':
-                        // TODO Manage api filter in list (not used in standard forms).
-                        break;
-                    */
 
                     // Starts with.
                     case 'nsw':
