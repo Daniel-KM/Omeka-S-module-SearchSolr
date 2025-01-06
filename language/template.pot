@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-07 00:00+0000\n"
+"POT-Creation-Date: 2025-01-06 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,16 +27,16 @@ msgid ""
 "This module requires module \"{module}\" version \"{version}\" or greater."
 msgstr ""
 
-#: src/Adapter/SolariumAdapter.php:128 src/Adapter/SolariumAdapter.php:239
+#: src/EngineAdapter/Solarium.php:128 src/EngineAdapter/Solarium.php:236
 msgid "Asc"
 msgstr ""
 
-#: src/Adapter/SolariumAdapter.php:129 src/Adapter/SolariumAdapter.php:240
+#: src/EngineAdapter/Solarium.php:129 src/EngineAdapter/Solarium.php:237
 msgid "Desc"
 msgstr ""
 
-#: src/Adapter/SolariumAdapter.php:205 src/Adapter/SolariumAdapter.php:254
-#: src/Adapter/SolariumAdapter.php:287
+#: src/EngineAdapter/Solarium.php:205 src/EngineAdapter/Solarium.php:250
+#: src/EngineAdapter/Solarium.php:281
 #, php-format
 msgid "%1$s (%2$s)"
 msgstr ""
@@ -323,6 +323,8 @@ msgstr ""
 #: data/scripts/upgrade.php:212 data/scripts/upgrade.php:407
 #: data/scripts/upgrade.php:418 data/scripts/upgrade.php:430
 #: data/scripts/upgrade.php:498 data/scripts/upgrade.php:510
+#: data/scripts/upgrade.php:536 data/scripts/upgrade.php:548
+#: data/scripts/upgrade.php:562
 msgid ""
 "This module requires the module \"{module}\", version {version} or above."
 msgstr ""
@@ -458,6 +460,10 @@ msgstr ""
 msgid "Year"
 msgstr ""
 
+#: src/EngineAdapter/Solarium.php:49
+msgid "Solr [via Solarium]"
+msgstr ""
+
 #: src/Schema/Schema.php:82
 msgid ""
 "Solr core is not available. Check config or certificate to get Solr core "
@@ -477,10 +483,6 @@ msgstr ""
 msgid ""
 "Response is not valid. Check output of {ur}, that should be a json with a "
 "key \"schema\"."
-msgstr ""
-
-#: src/Adapter/SolariumAdapter.php:49
-msgid "Solr [via Solarium]"
 msgstr ""
 
 #: src/Form/Admin/SourceFieldset.php:25
@@ -504,7 +506,7 @@ msgid "Port"
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:105 src/Form/Admin/SolrConfigFieldset.php:45
-#: src/Controller/Admin/CoreController.php:198
+#: src/Controller/Admin/CoreController.php:199
 msgid "Solr core"
 msgstr ""
 
@@ -896,36 +898,36 @@ msgid ""
 "indexed."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:510
+#: src/Indexer/SolariumIndexer.php:513
 msgid "No document to commit in Solr."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:586
+#: src/Indexer/SolariumIndexer.php:589
 msgid ""
 "Indexing of resource failed: empty or invalid document {document_id}: "
 "{exception}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:591
+#: src/Indexer/SolariumIndexer.php:594
 msgid "Indexing of resource failed: empty or invalid document: {exception}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:606
+#: src/Indexer/SolariumIndexer.php:609
 msgid ""
 "Indexing of resource {document_id} failed: Invalid document (wrong field "
 "type or missing required field)."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:611
+#: src/Indexer/SolariumIndexer.php:614
 msgid ""
 "Solr HTTP error: HTTP request failed due to network or certificate issue."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:615
+#: src/Indexer/SolariumIndexer.php:618
 msgid "Indexing of resource {document_id} failed: {message}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:902
+#: src/Indexer/SolariumIndexer.php:905
 msgid "Solr core is not available."
 msgstr ""
 
@@ -1238,11 +1240,11 @@ msgstr ""
 msgid "An issue occurred."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:271
+#: src/Querier/SolariumQuerier.php:285
 msgid "Suggestions are not implemented here. Use direct url."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1005
+#: src/Querier/SolariumQuerier.php:1022
 #, php-format
 msgid "Search type \"%s\" is not managed currently by SearchSolr."
 msgstr ""

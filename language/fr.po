@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-07 00:00+0000\n"
-"PO-Revision-Date: 2024-10-07 00:00+0000\n"
+"POT-Creation-Date: 2025-01-06 00:00+0000\n"
+"PO-Revision-Date: 2025-01-06 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -29,16 +29,16 @@ msgid ""
 msgstr ""
 "Ce module requiert le module « {module} », version {version} ou supérieure."
 
-#: src/Adapter/SolariumAdapter.php:128 src/Adapter/SolariumAdapter.php:239
+#: src/EngineAdapter/Solarium.php:128 src/EngineAdapter/Solarium.php:236
 msgid "Asc"
 msgstr "Asc"
 
-#: src/Adapter/SolariumAdapter.php:129 src/Adapter/SolariumAdapter.php:240
+#: src/EngineAdapter/Solarium.php:129 src/EngineAdapter/Solarium.php:237
 msgid "Desc"
 msgstr "Desc"
 
-#: src/Adapter/SolariumAdapter.php:205 src/Adapter/SolariumAdapter.php:254
-#: src/Adapter/SolariumAdapter.php:287
+#: src/EngineAdapter/Solarium.php:205 src/EngineAdapter/Solarium.php:250
+#: src/EngineAdapter/Solarium.php:281
 #, php-format
 msgid "%1$s (%2$s)"
 msgstr "%1$s (%2$s)"
@@ -353,6 +353,8 @@ msgstr ""
 #: data/scripts/upgrade.php:212 data/scripts/upgrade.php:407
 #: data/scripts/upgrade.php:418 data/scripts/upgrade.php:430
 #: data/scripts/upgrade.php:498 data/scripts/upgrade.php:510
+#: data/scripts/upgrade.php:536 data/scripts/upgrade.php:548
+#: data/scripts/upgrade.php:562
 msgid ""
 "This module requires the module \"{module}\", version {version} or above."
 msgstr ""
@@ -516,6 +518,10 @@ msgstr "Alphanumérique"
 msgid "Year"
 msgstr "Année"
 
+#: src/EngineAdapter/Solarium.php:49
+msgid "Solr [via Solarium]"
+msgstr "Solr [via Solarium]"
+
 #: src/Schema/Schema.php:82
 msgid ""
 "Solr core is not available. Check config or certificate to get Solr core "
@@ -545,10 +551,6 @@ msgstr ""
 "La réponse n'est pas valide. Vérifiez la sortie de {ur}, qui devrait être un "
 "json avec une clé « schéma »."
 
-#: src/Adapter/SolariumAdapter.php:49
-msgid "Solr [via Solarium]"
-msgstr "Solr [via Solarium]"
-
 #: src/Form/Admin/SourceFieldset.php:25
 msgid "Select a metadata from the resource…"
 msgstr "Choisir une métadonnée dans la ressource…"
@@ -570,9 +572,9 @@ msgid "Port"
 msgstr "Port"
 
 #: src/Form/Admin/SolrCoreForm.php:105 src/Form/Admin/SolrConfigFieldset.php:45
-#: src/Controller/Admin/CoreController.php:198
+#: src/Controller/Admin/CoreController.php:199
 msgid "Solr core"
-msgstr "Ajouter un cœur Solr"
+msgstr "Cœur Solr"
 
 #: src/Form/Admin/SolrCoreForm.php:117
 msgid "Is secure"
@@ -1002,11 +1004,11 @@ msgstr ""
 "Le {resource_type} #{resource_id} n'est plus disponible et ne peut être "
 "indexé."
 
-#: src/Indexer/SolariumIndexer.php:510
+#: src/Indexer/SolariumIndexer.php:513
 msgid "No document to commit in Solr."
 msgstr "Aucun document à indexer dans Solr."
 
-#: src/Indexer/SolariumIndexer.php:586
+#: src/Indexer/SolariumIndexer.php:589
 msgid ""
 "Indexing of resource failed: empty or invalid document {document_id}: "
 "{exception}"
@@ -1014,13 +1016,13 @@ msgstr ""
 "L'indexation de la ressource a échoué : document {document_id} vide ou "
 "invalide : {exception}"
 
-#: src/Indexer/SolariumIndexer.php:591
+#: src/Indexer/SolariumIndexer.php:594
 msgid "Indexing of resource failed: empty or invalid document: {exception}"
 msgstr ""
 "L'indexation de la ressource a échoué : document vide ou invalide : "
 "{exception}"
 
-#: src/Indexer/SolariumIndexer.php:606
+#: src/Indexer/SolariumIndexer.php:609
 msgid ""
 "Indexing of resource {document_id} failed: Invalid document (wrong field "
 "type or missing required field)."
@@ -1028,18 +1030,18 @@ msgstr ""
 "L'indexation de la ressource {document_id} a échoué : document non valide "
 "(mauvais type de champ ou champ obligatoire manquant)."
 
-#: src/Indexer/SolariumIndexer.php:611
+#: src/Indexer/SolariumIndexer.php:614
 msgid ""
 "Solr HTTP error: HTTP request failed due to network or certificate issue."
 msgstr ""
 "Erreur HTTP Solr : La requête HTTP a échoué en raison d'un problème de "
 "réseau ou de certificat."
 
-#: src/Indexer/SolariumIndexer.php:615
+#: src/Indexer/SolariumIndexer.php:618
 msgid "Indexing of resource {document_id} failed: {message}"
 msgstr "L'indexation de la ressource {document_id} a échoué : {message}"
 
-#: src/Indexer/SolariumIndexer.php:902
+#: src/Indexer/SolariumIndexer.php:905
 msgid "Solr core is not available."
 msgstr "Le cœur Solr n’est pas disponible."
 
@@ -1385,12 +1387,12 @@ msgstr "Toutes les valeurs immobilières"
 msgid "An issue occurred."
 msgstr "Un problème est survenu."
 
-#: src/Querier/SolariumQuerier.php:271
+#: src/Querier/SolariumQuerier.php:285
 msgid "Suggestions are not implemented here. Use direct url."
 msgstr ""
 "Les suggestions ne sont pas implémentées ici. Utilisez une url directe."
 
-#: src/Querier/SolariumQuerier.php:1005
+#: src/Querier/SolariumQuerier.php:1022
 #, php-format
 msgid "Search type \"%s\" is not managed currently by SearchSolr."
 msgstr "Le type de recherche « %s » n’est pas géré actuellement par le module."
