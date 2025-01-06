@@ -66,9 +66,8 @@ Quick start
 
 1. Installation
     1. Install Solr (see a Solr tutorial or documentation, or [below for Debian]).
-    2. Create a Solr index (= "core", "collection", or "node") (see [below "Solr management"]),
-       that is named `omeka` or whatever you want (use it for the path in
-       point 2.1).
+    2. Create a Solr index (= "core") (see [below "Solr management"]), that is
+       named `omeka` or whatever you want (use it for the path in point 2.1).
     3. Install the module [Advanced Search].
     4. Install this module [Advanced Search adapter for Solr].
 2. In Solr admin
@@ -608,13 +607,12 @@ redirected to the real server.
 
 ### Create a config
 
-At least one index ("core", "collection", or "node")  should be created in Solr
-to be used with Omeka. The simpler is to create one via the command line to
-avoid permissions issues.
+At least one index ("core")  should be created in Solr to be used with Omeka.
+The simpler is to create one via the UI or via the command line.
 
-Most of the times, when installed manually, there are strange issues during the
-creation of the core. So if you want to create the core quicker without any
-issue, see below the "manual way".
+Most of the times, when installed manually, there are permissions issues and
+strange issues during the creation of the core. So if you want to create the
+core quicker without any issue, use the web interface or see below the "manual way".
 
 #### Automatic way
 
@@ -674,23 +672,35 @@ First, you need to stop or kill all solr and associated java processes.
 # The destination directory inside data is the name of the core, here "omeka".
 # It should be updated in following command if the name is different.
 CORE="omeka"
-# HERE, for solr home as "/var/solr/data". Change it if it is "/opt/solr/server/solr"
+
+# Here, for solr home as "/var/solr/data". Change it if it is "/opt/solr/server/solr"
 # Clean previous failed installations.
 sudo rm -rf /var/solr/data/$CORE
+
 # Either:
-# When installed with the tarball.
+# When installed with the tarball or from the official docker images.
 sudo cp -r /opt/solr/server/solr/configsets/_default /var/solr/data
 # When installed with the debian package.
 sudo cp -r /usr/share/solr/server/solr/configsets/_default /var/solr/data
+
 # Rename and create the main file.
 sudo mv /var/solr/data/_default /var/solr/data/$CORE
+
+# Fill the core.properties (only the last line is really needed)
 sudo touch /var/solr/data/$CORE/core.properties
 sudo bash -c "echo '#Written by CorePropertiesLocator' >> /var/solr/data/$CORE/core.properties"
-sudo bash -c "echo 'Mon Oct 28 00:00:00 UTC 2024' >> /var/solr/data/$CORE/core.properties"
+sudo bash -c "echo '#Mon Jan 06 00:00:00 UTC 2025' >> /var/solr/data/$CORE/core.properties"
 sudo bash -c "echo 'name=$CORE' >> /var/solr/data/$CORE/core.properties"
 sudo chmod ug+rw /var/solr/data/$CORE/core.properties
+
+# Set the permissions
 sudo chown -R solr:solr /var/solr
+
+# Restart
 sudo systemctl restart solr
+
+# Test (no error output)
+curl "http://localhost:8983/solr/$CORE/select?omitHeader=true&wt=json&json.nl=flat&q=%2A%3A%2A&start=0&rows=10"
 ```
 
 The file `core.properties` above should contain the name of the core, that
@@ -698,9 +708,11 @@ should be the name of the directory:
 
 ```ini
 #Written by CorePropertiesLocator
-#Mon Oct 28 00:00:00 UTC 2024
+#Mon Jan 06 00:00:00 UTC 2025
 name=omeka
 ```
+
+It is possible to create the authentication file `security.json` manually too.
 
 ### Querying Solr
 
@@ -730,7 +742,7 @@ curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-f
 ```
 
 The response status should be 0. Of course, you need to reindex resources after
-modifying schema.
+this modification of the schema.
 
 ### Upgrade a config
 
@@ -851,7 +863,7 @@ Copyright
 See commits for full list of contributors.
 
 * Copyright BibLibre, 2016-2017 (see [BibLibre])
-* Copyright Daniel Berthereau, 2017-2024 (see [Daniel-KM])
+* Copyright Daniel Berthereau, 2017-2025 (see [Daniel-KM])
 * Copyright Paul Sarrassat, 2018
 
 This module is a full replacement of the module [Solr], a deprecated fork based
