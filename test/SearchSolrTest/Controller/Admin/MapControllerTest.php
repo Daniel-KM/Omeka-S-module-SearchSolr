@@ -2,7 +2,7 @@
 
 namespace SearchSolrTest\Controller\Admin;
 
-use SolrTest\Controller\SolrControllerTestCase;
+use SearchSolrTest\Controller\SolrControllerTestCase;
 
 class MapControllerTest extends SolrControllerTestCase
 {

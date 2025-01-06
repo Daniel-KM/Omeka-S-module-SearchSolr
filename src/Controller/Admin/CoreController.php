@@ -195,8 +195,8 @@ class CoreController extends AbstractActionController
         $solrMaps = $core->maps();
 
         $view = new ViewModel([
-            'resourceLabel' => 'Solr core', // @translate
             'resource' => $core,
+            'resourceLabel' => 'Solr core', // @translate
             'partialPath' => 'common/solr-core-delete-confirm-details',
             'totalSearchEngines' => count($searchEngines),
             'totalSearchConfigs' => count($searchConfigs),

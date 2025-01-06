@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2018-2023
+ * Copyright Daniel Berthereau, 2018-2025
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,19 +28,19 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace SearchSolr\Service\Adapter;
+namespace SearchSolr\Service\EngineAdapter;
 
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use SearchSolr\Adapter\SolariumAdapter;
+use SearchSolr\EngineAdapter\Solarium;
 
-class SolariumAdapterFactory implements FactoryInterface
+class SolariumFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $api = $services->get('Omeka\ApiManager');
-        $translator = $services->get('MvcTranslator');
-        $adapter = new SolariumAdapter($api, $translator);
-        return $adapter;
+        return new Solarium(
+            $services->get('Omeka\ApiManager'),
+            $services->get('MvcTranslator')
+        );
     }
 }

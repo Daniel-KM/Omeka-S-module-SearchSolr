@@ -315,7 +315,7 @@ class SolariumQuerier extends AbstractQuerier
             return $this->solariumQuery;
         }
 
-        $indexerResourceTypes = $this->engine->setting('resource_types', []);
+        $indexerResourceTypes = $this->searchEngine->setting('resource_types', []);
         $this->resourceTypes = $this->query->getResourceTypes() ?: $indexerResourceTypes;
         $this->resourceTypes = array_intersect($this->resourceTypes, $indexerResourceTypes);
         if (empty($this->resourceTypes)) {
@@ -323,7 +323,7 @@ class SolariumQuerier extends AbstractQuerier
             return $this->solariumQuery;
         }
 
-        if (empty($this->engine->settingAdapter('index_name'))) {
+        if (empty($this->searchEngine->settingEngineAdapter('index_name'))) {
             $indexField = null;
         } else {
             $indexField = $this->solrCore->mapsBySource('search_index', 'generic');
@@ -376,7 +376,7 @@ class SolariumQuerier extends AbstractQuerier
         if ($indexField) {
             $this->solariumQuery
                 ->createFilterQuery($indexField)
-                ->setQuery($indexField . ':' . $this->engine->shortName());
+                ->setQuery($indexField . ':' . $this->searchEngine->shortName());
         }
 
         $this->appendHiddenFilters();
@@ -1204,7 +1204,7 @@ class SolariumQuerier extends AbstractQuerier
     protected function getSolrCore(): \SearchSolr\Api\Representation\SolrCoreRepresentation
     {
         if (!isset($this->solrCore)) {
-            $solrCoreId = $this->engine->settingAdapter('solr_core_id');
+            $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
             if ($solrCoreId) {
                 $api = $this->services->get('Omeka\ApiManager');
                 // Automatically throw an exception when empty.

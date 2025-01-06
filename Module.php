@@ -334,7 +334,7 @@ SQL;
         /** @var \AdvancedSearch\Api\Representation\SearchEngineRepresentation[] $searchEngines */
         $searchEngines = $api->search('search_engines', ['adapter' => 'solarium'])->getContent();
         foreach ($searchEngines as $searchEngine) {
-            if ($searchEngine->settingAdapter('solr_core_id') == $solrCoreId) {
+            if ($searchEngine->settingEngineAdapter('solr_core_id') == $solrCoreId) {
                 $result[$searchEngine->id()] = $searchEngine;
             }
         }

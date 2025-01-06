@@ -41,6 +41,8 @@ interface ValueFormatterInterface
 
     /**
      * Set services to be used by the formatter.
+     *
+     * @deprecated Use factories.
      */
     public function setServiceLocator(ServiceLocatorInterface $services): self;
 

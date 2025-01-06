@@ -206,9 +206,9 @@ return [
         'Choose a field…', // @translate
         'Dynamic field', // @translate
     ],
-    'advanced_search_adapters' => [
+    'advanced_search_engine_adapters' => [
         'factories' => [
-            'solarium' => Service\Adapter\SolariumAdapterFactory::class,
+            'solarium' => Service\EngineAdapter\SolariumFactory::class,
         ],
     ],
     'searchsolr' => [

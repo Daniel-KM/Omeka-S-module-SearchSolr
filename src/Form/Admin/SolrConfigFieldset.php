@@ -84,7 +84,7 @@ class SolrConfigFieldset extends Fieldset
         $searchEngines = $services->get('Omeka\ApiManager')->search('search_engines', ['adapter' => 'solarium'])->getContent();
         $coreIndexes = [];
         foreach ($searchEngines as $searchEngine) {
-            $coreId = $searchEngine->settingAdapter('solr_core_id', '');
+            $coreId = $searchEngine->settingEngineAdapter('solr_core_id', '');
             $coreIndexes[$coreId][] = $searchEngine->id();
         }
 

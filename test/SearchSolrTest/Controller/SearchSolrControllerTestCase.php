@@ -46,7 +46,7 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
 
         $response = $this->api()->create('search_engines', [
             'o:name' => 'TestIndex',
-            'o:adapter' => 'solarium',
+            'o:engine_adapter' => 'solarium',
             'o:settings' => [
                 'resources' => [
                     'items',
@@ -60,12 +60,18 @@ abstract class SolrControllerTestCase extends OmekaControllerTestCase
         $searchEngine = $response->getContent();
         $response = $this->api()->create('search_configs', [
             'o:name' => 'TestPage',
-            'o:path' => 'test/search',
-            'o:engine_id' => $searchEngine->id(),
-            'o:form' => 'basic',
+            'o:slug' => 'test/search',
+            'o:search_engine' => [
+                'o:id' => $searchEngine->id(),
+            ],
+            'o:form_adapter' => 'basic',
             'o:settings' => [
-                'facets' => [],
-                'sort_fields' => [],
+                'request' => [],
+                'q' => [],
+                'index' => [],
+                'form' => [],
+                'results' => [],
+                'facet' => [],
             ],
         ]);
         $searchConfig = $response->getContent();

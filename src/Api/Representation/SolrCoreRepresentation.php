@@ -515,7 +515,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             ->search('search_engines', ['adapter' => 'solarium'])->getContent();
         $id = $this->id();
         foreach ($searchEngines as $searchEngine) {
-            if ($searchEngine->settingAdapter('solr_core_id') == $id) {
+            if ($searchEngine->settingEngineAdapter('solr_core_id') == $id) {
                 $result[$searchEngine->id()] = $searchEngine;
             }
         }

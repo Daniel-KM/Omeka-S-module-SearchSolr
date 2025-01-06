@@ -148,7 +148,7 @@ class SolariumIndexer extends AbstractIndexer
         $isQuery = false;
         if ($query) {
             /** @var \Solarium\QueryType\Select\Query\Query|null $solariumQuery */
-            $solariumQuery = $this->engine->querier()
+            $solariumQuery = $this->searchEngine->querier()
                 ->setQuery($query)
                 ->getPreparedQuery();
             $isQuery = !is_null($solariumQuery);
@@ -640,7 +640,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function prepareIndexFieldAndName()
     {
         $fields = $this->getSolrCore()->mapsBySource('search_index', 'generic') ?: [];
-        $name = $this->engine->settingAdapter('index_name') ?: false;
+        $name = $this->searchEngine->settingEngineAdapter('index_name') ?: false;
         if ($fields && $name) {
             $this->indexField = reset($fields);
             $this->indexField = $this->indexField->fieldName();
@@ -891,7 +891,7 @@ class SolariumIndexer extends AbstractIndexer
     protected function getSolrCore(): SolrCoreRepresentation
     {
         if (!isset($this->solrCore)) {
-            $solrCoreId = $this->engine->settingAdapter('solr_core_id');
+            $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
             if ($solrCoreId) {
                 // Automatically throw an exception when empty.
                 $this->solrCore = $this->getServiceLocator()->get('Omeka\ApiManager')

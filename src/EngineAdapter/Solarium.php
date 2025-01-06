@@ -27,22 +27,22 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace SearchSolr\Adapter;
+namespace SearchSolr\EngineAdapter;
 
-use AdvancedSearch\Adapter\AbstractAdapter;
+use AdvancedSearch\EngineAdapter\AbstractEngineAdapter;
 use Laminas\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
 use SearchSolr\Form\Admin\SolrConfigFieldset;
 
-class SolariumAdapter extends AbstractAdapter
+class Solarium extends AbstractEngineAdapter
 {
     /**
-     * @param ApiManager $api
+     * @param \Omeka\Api\Manager
      */
     protected $api;
 
     /**
-     * @param TranslatorInterface $translator
+     * @param \Laminas\I18n\Translator\TranslatorInterface
      */
     protected $translator;
 
@@ -76,7 +76,7 @@ class SolariumAdapter extends AbstractAdapter
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -108,7 +108,7 @@ class SolariumAdapter extends AbstractAdapter
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -154,7 +154,7 @@ class SolariumAdapter extends AbstractAdapter
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -186,7 +186,7 @@ class SolariumAdapter extends AbstractAdapter
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -219,7 +219,7 @@ class SolariumAdapter extends AbstractAdapter
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
@@ -261,7 +261,7 @@ class SolariumAdapter extends AbstractAdapter
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingAdapter('solr_core_id');
+        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
         if (!$solrCoreId) {
             return [];
         }
