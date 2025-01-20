@@ -201,6 +201,45 @@ SQL;
             'api.delete.post',
             [$this, 'deletePostSolrMap']
         );
+
+        $sharedEventManager->attach(
+            \SearchSolr\Api\Representation\SolrCoreRepresentation::class,
+            'rep.resource.json',
+            [$this, 'filterJsonLd']
+        );
+    }
+
+    /**
+     * Add a check for rights for api requests.
+     *
+     * @see https://github.com/Daniel-KM/Omeka-S-module-SearchSolr/issues/17
+     * @todo Protect via acl or route, not via checks here.
+     */
+    public function filterJsonLd(Event $event)
+    {
+        /**
+         * @var \Omeka\Mvc\Status $status
+         * @var \Omeka\Entity\User|null $user
+         * @var \Omeka\Permissions\Acl $acl
+         */
+        $services = $this->getServiceLocator();
+        $status = $services->get('Omeka\Status');
+        if (!$status->isApiRequest()
+            && !$status->isKeyauthRequest()
+        ) {
+            return;
+        }
+
+        $user = $services->get('Omeka\AuthenticationService')->getIdentity();
+        $hasRights = $user
+            && $services->get('Omeka\Acl')->isAdminRole($user->getRole());
+        if ($hasRights) {
+            return;
+        }
+
+        $jsonLd = $event->getParam('jsonLd');
+        $jsonLd['o:settings'] = [];
+        $event->setParam('jsonLd', $jsonLd);
     }
 
     public function appendBrowseCores(Event $event): void
