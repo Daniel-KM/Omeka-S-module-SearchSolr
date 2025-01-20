@@ -20,7 +20,7 @@ class StandardWithoutUri extends AbstractValueFormatter
             if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
                 if ($value->type() === 'place') {
                     $val = json_decode($value->value(), true);
-                    $value = (empty($val['country']) ? '': ' (' . $val['country'] . ')')
+                    $value = (empty($val['country']) ? '' : ' (' . $val['country'] . ')')
                         . (array_key_exists('latitude', $val) && array_key_exists('longitude', $val) ? sprintf(' [%1$s/%2$s]', $val['latitude'], $val['longitude']) : '');
                 } else {
                     $value = trim((string) $value->value());

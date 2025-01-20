@@ -148,8 +148,8 @@ class Module extends AbstractModule
             \Omeka\Module\Manager::STATE_NOT_ACTIVE,
         ])) {
             $sql = <<<'SQL'
-DELETE FROM `search_engine` WHERE `adapter` = 'solarium';
-SQL;
+                DELETE FROM `search_engine` WHERE `adapter` = 'solarium';
+                SQL;
             $connection = $services->get('Omeka\Connection');
             $connection->executeStatement($sql);
         }
@@ -422,10 +422,10 @@ SQL;
 
         // Check if the internal index exists.
         $sqlSolrCoreId = <<<'SQL'
-SELECT `id`
-FROM `solr_core`
-ORDER BY `id` ASC
-SQL;
+            SELECT `id`
+            FROM `solr_core`
+            ORDER BY `id` ASC
+            SQL;
         $solrCoreId = (int) $connection->fetchColumn($sqlSolrCoreId);
         if ($solrCoreId) {
             return;
@@ -438,9 +438,9 @@ SQL;
 
         // Install a default config.
         $sql = <<<'SQL'
-INSERT INTO `solr_core` (`name`, `settings`)
-VALUES (?, ?);
-SQL;
+            INSERT INTO `solr_core` (`name`, `settings`)
+            VALUES (?, ?);
+            SQL;
         $solrCoreData = require __DIR__ . '/data/solr_cores/default.php';
         $connection->executeStatement($sql, [
             $solrCoreData['o:name'],
@@ -450,9 +450,9 @@ SQL;
 
         // Install a default mapping.
         $sql = <<<'SQL'
-INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
-VALUES (?, ?, ?, ?, ?, ?);
-SQL;
+            INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+            VALUES (?, ?, ?, ?, ?, ?);
+            SQL;
         $defaultMaps = require __DIR__ . '/config/default_mappings.php';
         foreach ($defaultMaps as $map) {
             $connection->executeStatement($sql, [

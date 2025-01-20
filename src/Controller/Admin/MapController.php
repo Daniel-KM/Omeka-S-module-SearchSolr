@@ -123,9 +123,7 @@ class MapController extends AbstractActionController
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
         $maps = $solrCore->mapsByResourceName($resourceName);
         // Keep only the source.
-        $maps = array_map(function ($v) {
-            return $v->source();
-        }, $maps);
+        $maps = array_map(fn ($v) => $v->source(), $maps);
 
         // Add all missing maps with a generic multivalued text field.
         // Don't add a map if it exists at a upper level.
@@ -211,9 +209,7 @@ class MapController extends AbstractActionController
             }
 
             // There may be multiple maps with the same term.
-            $ids = array_keys(array_filter($mapList, function ($v) use ($term) {
-                return $v === $term;
-            }));
+            $ids = array_keys(array_filter($mapList, fn ($v) => $v === $term));
             $api->batchDelete('solr_maps', $ids);
 
             $result[] = $term;
@@ -509,15 +505,7 @@ class MapController extends AbstractActionController
      */
     protected function sourceArrayToString($source)
     {
-        return implode(
-            '/',
-            array_map(
-                function ($v) {
-                    return $v['source'];
-                },
-                $source
-            )
-        );
+        return implode('/', array_map(fn ($v) => $v['source'], $source));
     }
 
     /**
@@ -529,11 +517,6 @@ class MapController extends AbstractActionController
      */
     protected function sourceStringToArray($source)
     {
-        return array_map(
-            function ($v) {
-                return ['source' => $v];
-            },
-            explode('/', $source)
-        );
+        return array_map(fn ($v) => ['source' => $v], explode('/', $source));
     }
 }

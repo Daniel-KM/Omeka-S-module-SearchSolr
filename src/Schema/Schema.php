@@ -239,13 +239,9 @@ class Schema
             default:
                 return $dynamicFieldsMapBy;
             case 'prefix':
-                return array_filter($dynamicFieldsMapBy, function ($v) {
-                    return !$v['is_suffix'];
-                });
+                return array_filter($dynamicFieldsMapBy, fn ($v) => !$v['is_suffix']);
             case 'suffix':
-                return array_filter($dynamicFieldsMapBy, function ($v) {
-                    return $v['is_suffix'];
-                });
+                return array_filter($dynamicFieldsMapBy, fn ($v) => $v['is_suffix']);
         }
     }
 

@@ -38,16 +38,16 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
 
 if (version_compare($oldVersion, '3.5.15.2', '<')) {
     $sql = <<<SQL
-CREATE INDEX `IDX_39A565C527B35A195103DEBC` ON `solr_map` (`solr_core_id`, `resource_name`);
-SQL;
+        CREATE INDEX `IDX_39A565C527B35A195103DEBC` ON `solr_map` (`solr_core_id`, `resource_name`);
+        SQL;
     $connection->executeStatement($sql);
     $sql = <<<SQL
-CREATE INDEX `IDX_39A565C527B35A194DEF17BC` ON `solr_map` (`solr_core_id`, `field_name`);
-SQL;
+        CREATE INDEX `IDX_39A565C527B35A194DEF17BC` ON `solr_map` (`solr_core_id`, `field_name`);
+        SQL;
     $connection->executeStatement($sql);
     $sql = <<<SQL
-CREATE INDEX `IDX_39A565C527B35A195F8A7F73` ON `solr_map` (`solr_core_id`, `source`);
-SQL;
+        CREATE INDEX `IDX_39A565C527B35A195F8A7F73` ON `solr_map` (`solr_core_id`, `source`);
+        SQL;
     $connection->executeStatement($sql);
 
     $serverId = strtolower(substr(str_replace(['+', '/', '='], ['', '', ''], base64_encode(random_bytes(128))), 0, 6));
@@ -58,21 +58,21 @@ SQL;
 
 if (version_compare($oldVersion, '3.5.15.3.6', '<')) {
     $sql = <<<SQL
-ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
-SQL;
+        ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
+        SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-UPDATE `solr_map`
-SET `data_types` = "[]";
-SQL;
+        UPDATE `solr_map`
+        SET `data_types` = "[]";
+        SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-UPDATE `solr_map`
-SET `source` = REPLACE(`source`, "item_set", "item_sets")
-WHERE `source` LIKE "%item_set%";
-SQL;
+        UPDATE `solr_map`
+        SET `source` = REPLACE(`source`, "item_set", "item_sets")
+        WHERE `source` LIKE "%item_set%";
+        SQL;
     $connection->executeStatement($sql);
 
     $messenger->addNotice('Now, values can be indexed differently for each data type, if wanted.'); // @translate
@@ -81,73 +81,73 @@ SQL;
 
 if (version_compare($oldVersion, '3.5.16.3', '<')) {
     $sql = <<<SQL
-ALTER TABLE `solr_core`
-CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
-SQL;
+        ALTER TABLE `solr_core`
+        CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+        SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-ALTER TABLE `solr_map`
-ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
-SQL;
+        ALTER TABLE `solr_map`
+        ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
+        SQL;
     try {
         $connection->executeStatement($sql);
         $sql = <<<SQL
-UPDATE `solr_map`
-SET `data_types` = "[]";
-SQL;
+            UPDATE `solr_map`
+            SET `data_types` = "[]";
+            SQL;
         $connection->executeStatement($sql);
 
         $sql = <<<SQL
-UPDATE `solr_map`
-SET `source` = REPLACE(`source`, "item_set", "item_sets")
-WHERE `source` LIKE "%item_set%";
-SQL;
+            UPDATE `solr_map`
+            SET `source` = REPLACE(`source`, "item_set", "item_sets")
+            WHERE `source` LIKE "%item_set%";
+            SQL;
         $connection->executeStatement($sql);
     } catch (\Exception $e) {
     }
 
     $sql = <<<SQL
-ALTER TABLE `solr_map`
-CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
-CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
-SQL;
+        ALTER TABLE `solr_map`
+        CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
+        CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+        SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-UPDATE `solr_map`
-SET `pool` = "[]"
-WHERE `pool` = "[]" OR `pool` = "{}" OR `pool` = "" OR `pool` IS NULL;
-SQL;
+        UPDATE `solr_map`
+        SET `pool` = "[]"
+        WHERE `pool` = "[]" OR `pool` = "{}" OR `pool` = "" OR `pool` IS NULL;
+        SQL;
     $connection->executeStatement($sql);
 
     $sql = <<<SQL
-UPDATE `solr_map`
-SET `pool` = CONCAT('{"data_types":', `pool`, "}")
-WHERE `pool` != "[]" AND `pool` IS NOT NULL;
-SQL;
+        UPDATE `solr_map`
+        SET `pool` = CONCAT('{"data_types":', `pool`, "}")
+        WHERE `pool` != "[]" AND `pool` IS NOT NULL;
+        SQL;
     $connection->executeStatement($sql);
 
     // Keep the standard formatter to simplify improvment.
     $sql = <<<SQL
-UPDATE `solr_map`
-SET `settings` = REPLACE(`settings`, '"formatter":"standard_no_uri"', '"formatter":"standard_without_uri"')
-WHERE `settings` LIKE '%"formatter":"standard_no_uri"%';
-SQL;
+        UPDATE `solr_map`
+        SET `settings` = REPLACE(`settings`, '"formatter":"standard_no_uri"', '"formatter":"standard_without_uri"')
+        WHERE `settings` LIKE '%"formatter":"standard_no_uri"%';
+        SQL;
     $connection->executeStatement($sql);
     $sql = <<<SQL
-UPDATE `solr_map`
-SET `settings` = REPLACE(`settings`, '"formatter":"uri_only"', '"formatter":"uri"')
-WHERE `settings` LIKE '%"formatter":"uri_only"%';
-SQL;
+        UPDATE `solr_map`
+        SET `settings` = REPLACE(`settings`, '"formatter":"uri_only"', '"formatter":"uri"')
+        WHERE `settings` LIKE '%"formatter":"uri_only"%';
+        SQL;
     $connection->executeStatement($sql);
 }
 
 if (version_compare($oldVersion, '3.5.18.3', '<')) {
     $sql = <<<SQL
-ALTER TABLE `solr_map`
-CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
-SQL;
+        ALTER TABLE `solr_map`
+        CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+        SQL;
     try {
         $connection->executeStatement($sql);
     } catch (\Exception $e) {
@@ -196,9 +196,9 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
 if (version_compare($oldVersion, '3.5.31.3', '<')) {
     // Fix upgrade issue in 3.5.18.3.
     $sql = <<<SQL
-ALTER TABLE `solr_map`
-CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
-SQL;
+        ALTER TABLE `solr_map`
+        CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
+        SQL;
     try {
         $connection->executeStatement($sql);
     } catch (\Exception $e) {
@@ -226,13 +226,13 @@ SQL;
         $solrCoreSettings = json_decode($solrCoreSettings, true) ?: [];
         unset($solrCoreSettings['site_url']);
         $sql = <<<'SQL'
-UPDATE `solr_core`
-SET
-    `settings` = ?
-WHERE
-    `id` = ?
-;
-SQL;
+            UPDATE `solr_core`
+            SET
+                `settings` = ?
+            WHERE
+                `id` = ?
+            ;
+            SQL;
         $connection->executeStatement($sql, [
             json_encode($solrCoreSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
             $solrCoreId,
@@ -303,9 +303,9 @@ SQL;
                 continue;
             }
             $sql = <<<'SQL'
-INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
-VALUES (?, ?, ?, ?, ?, ?);
-SQL;
+                INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+                VALUES (?, ?, ?, ?, ?, ?);
+                SQL;
             $connection->executeStatement($sql, [
                 $solrCoreId,
                 $newField['resource_name'],
@@ -316,13 +316,13 @@ SQL;
             ]);
         }
         $sql = <<<'SQL'
-UPDATE `solr_core`
-SET
-    `settings` = ?
-WHERE
-    `id` = ?
-;
-SQL;
+            UPDATE `solr_core`
+            SET
+                `settings` = ?
+            WHERE
+                `id` = ?
+            ;
+            SQL;
         $connection->executeStatement($sql, [
             json_encode($solrCoreSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
             $solrCoreId,
@@ -331,53 +331,53 @@ SQL;
 
     // Rename any source from "item_sets/xxx" into "item_set/xxx".
     $sql = <<<'SQL'
-UPDATE `solr_map`
-SET `source` = REPLACE(`source`, "item_sets", "item_set")
-SQL;
+        UPDATE `solr_map`
+        SET `source` = REPLACE(`source`, "item_sets", "item_set")
+        SQL;
     $connection->executeStatement($sql);
 
     // Rename "resource_class".
     $sql = <<<'SQL'
-UPDATE `solr_map`
-SET `source` = "resource_class/o:term"
-WHERE `source` = "resource_class";
-SQL;
+        UPDATE `solr_map`
+        SET `source` = "resource_class/o:term"
+        WHERE `source` = "resource_class";
+        SQL;
     $connection->executeStatement($sql);
 
     // Rename "resource_class".
     $sql = <<<'SQL'
-UPDATE `solr_map`
-SET `source` = "resource_template/o:label"
-WHERE `source` = "resource_template";
-SQL;
+        UPDATE `solr_map`
+        SET `source` = "resource_template/o:label"
+        WHERE `source` = "resource_template";
+        SQL;
     $connection->executeStatement($sql);
 
     // Copy all mapping "items" and "item_sets" into "resources", except "item_set/xxx".
     $sql = <<<'SQL'
-INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
-SELECT `solr_core_id`, "resources", `field_name`, `source`, `pool`, `settings`
-FROM `solr_map`
-WHERE `resource_name` != "generic"
-    AND `resource_name` != "resource"
-    AND `source` NOT LIKE "item_set%"
-;
-SQL;
+        INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+        SELECT `solr_core_id`, "resources", `field_name`, `source`, `pool`, `settings`
+        FROM `solr_map`
+        WHERE `resource_name` != "generic"
+            AND `resource_name` != "resource"
+            AND `source` NOT LIKE "item_set%"
+        ;
+        SQL;
     $connection->executeStatement($sql);
 
     // Remove duplicate mappings
     $sql = <<<'SQL'
-DELETE `t1` FROM `solr_map` as `t1`
-INNER JOIN `solr_map` as `t2`
-WHERE
-    `t1`.`id` > `t2`.`id`
-    AND `t1`.`solr_core_id` = `t2`.`solr_core_id`
-    AND `t1`.`resource_name` = `t2`.`resource_name`
-    AND `t1`.`field_name` = `t2`.`field_name`
-    AND `t1`.`source` = `t2`.`source`
-    AND `t1`.`pool` = `t2`.`pool`
-    AND `t1`.`settings` = `t2`.`settings`
-;
-SQL;
+        DELETE `t1` FROM `solr_map` as `t1`
+        INNER JOIN `solr_map` as `t2`
+        WHERE
+            `t1`.`id` > `t2`.`id`
+            AND `t1`.`solr_core_id` = `t2`.`solr_core_id`
+            AND `t1`.`resource_name` = `t2`.`resource_name`
+            AND `t1`.`field_name` = `t2`.`field_name`
+            AND `t1`.`source` = `t2`.`source`
+            AND `t1`.`pool` = `t2`.`pool`
+            AND `t1`.`settings` = `t2`.`settings`
+        ;
+        SQL;
     $connection->executeStatement($sql);
 
     $message = new PsrMessage(
@@ -441,10 +441,10 @@ if (version_compare($oldVersion, '3.5.42', '<')) {
         ])->getContent();
         $tableId = (int) $table->id();
         $sql = <<<SQL
-UPDATE `solr_map`
-SET `settings` = REPLACE(`settings`, '"formatter":"table"', '"formatter":"table","table":$tableId')
-WHERE `settings` LIKE '%"formatter":"table"%';
-SQL;
+            UPDATE `solr_map`
+            SET `settings` = REPLACE(`settings`, '"formatter":"table"', '"formatter":"table","table":$tableId')
+            WHERE `settings` LIKE '%"formatter":"table"%';
+            SQL;
         $connection->executeStatement($sql);
 
         $message = new PsrMessage(
@@ -473,12 +473,12 @@ SQL;
 
 if (version_compare($oldVersion, '3.5.44', '<')) {
     $sql = <<<SQL
-UPDATE `solr_map`
-SET
-    `field_name` = REPLACE(`field_name`, 'access_source', 'access_level'),
-    `source` = REPLACE(`source`, 'access_source', 'access_level')
-;
-SQL;
+        UPDATE `solr_map`
+        SET
+            `field_name` = REPLACE(`field_name`, 'access_source', 'access_level'),
+            `source` = REPLACE(`source`, 'access_source', 'access_level')
+        ;
+        SQL;
     $connection->executeStatement($sql);
 
     $message = new PsrMessage(

@@ -180,7 +180,6 @@ class SolrMapForm extends Form
                 ],
             ]);
 
-
         $this
             ->add($poolFieldset)
 

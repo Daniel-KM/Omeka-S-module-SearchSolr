@@ -404,9 +404,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         if (is_null($maps)) {
             $maps = $this->mapsByResourceName();
             foreach ($maps as &$mapss) {
-                usort($mapss, function ($a, $b) {
-                    return $a->fieldName() <=> $b->fieldName();
-                });
+                usort($mapss, fn ($a, $b) => $a->fieldName() <=> $b->fieldName());
             }
             if ($maps) {
                 $maps = array_merge(...array_values($maps));

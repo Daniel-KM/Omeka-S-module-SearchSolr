@@ -158,9 +158,7 @@ class CoreController extends AbstractActionController
 
         if (!empty($data['o:settings']['support'])) {
             $supportFields = $core->schemaSupport($data['o:settings']['support']);
-            $unsupportedFields = array_filter($supportFields, function ($v) {
-                return empty($v);
-            });
+            $unsupportedFields = array_filter($supportFields, fn ($v) => empty($v));
             if (count($unsupportedFields)) {
                 $this->messenger()->addError(new PsrMessage(
                     'Some specific static or dynamic fields are missing or not available for "{value}" in the core: {list}.', // @translate
@@ -519,9 +517,7 @@ class CoreController extends AbstractActionController
         }
 
         $countHeaders = count($this->mappingHeaders);
-        $rows = array_map(function ($v) use ($delimiter, $enclosure) {
-            return str_getcsv($v, $delimiter, $enclosure);
-        }, array_map('trim', explode("\n", $content)));
+        $rows = array_map(fn ($v) => str_getcsv($v, $delimiter, $enclosure), array_map('trim', explode("\n", $content)));
         foreach ($rows as $key => $row) {
             if (empty(array_filter($row))) {
                 unset($rows[$key]);

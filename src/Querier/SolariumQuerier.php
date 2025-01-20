@@ -230,7 +230,7 @@ class SolariumQuerier extends AbstractQuerier
         $facetSet = $solariumResultSet->getFacetSet();
         if ($facetSet) {
             $facetCounts = [];
-            $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
+            $explode = fn ($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
             $queryFacets = $this->query->getfacets();
             $facetListAll = $this->query->getOption('facet_list') === 'all';
             /** @var \Solarium\Component/Result/Facet/FacetResultInterface $facetResult */
@@ -434,7 +434,7 @@ class SolariumQuerier extends AbstractQuerier
         if (count($facets)) {
             // Explode with separator "|" if present, else ",".
             // For complex cases, an array should be used.
-            $explode = fn($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
+            $explode = fn ($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
             // Use "json facets" output, that is recommended by Solr.
             /* @see https://solr.apache.org/guide/solr/latest/query-guide/json-facet-api.html */
             foreach ($facets as $facetName => $facetData) {
@@ -475,7 +475,7 @@ class SolariumQuerier extends AbstractQuerier
                         $facetValues = $explode($facetValues);
                     }
                     $facet
-                        ->setMatches('~^' . implode('|', array_map(fn($v) => preg_quote($v, '~'), $facetValues)) . '$~');
+                        ->setMatches('~^' . implode('|', array_map(fn ($v) => preg_quote($v, '~'), $facetValues)) . '$~');
                 }
             }
         }
@@ -903,6 +903,7 @@ class SolariumQuerier extends AbstractQuerier
                     // Equal.
                     case 'neq':
                     case 'eq':
+                    // list/nlist are deprecated, since eq/neq supports array.
                     case 'nlist':
                     case 'list':
                         if ($this->fieldIsString($name)) {
@@ -1131,8 +1132,6 @@ class SolariumQuerier extends AbstractQuerier
         }
     }
 
-
-
     /**
      * Prepare a value for a regular expression, managing diacritics, case and
      * joker "*" and "?".
@@ -1175,9 +1174,7 @@ class SolariumQuerier extends AbstractQuerier
                 ':' => '\:',
                 '-' => '\-',
                 '/' => '\/',
-            ] + array_map(function ($v) {
-                return substr($v, 0, 1);
-            }, $this->baseDiacritics);
+            ] + array_map(fn ($v) => substr($v, 0, 1), $this->baseDiacritics);
         }
 
         $regexVal = function ($string) use ($prepend, $append, $basicDiacritics) {

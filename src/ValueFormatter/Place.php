@@ -31,7 +31,7 @@ class Place extends AbstractValueFormatter
         }
 
         $mode = $this->settings['place_mode'] ?? null;
-        switch($mode){
+        switch ($mode) {
             case 'toponym':
                 return [$val['toponym']];
             case 'country':

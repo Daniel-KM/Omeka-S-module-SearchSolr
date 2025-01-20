@@ -455,9 +455,7 @@ class SolariumIndexer extends AbstractIndexer
         foreach ($values as $value) {
             $formattedResult = $valueFormatter->format($value);
             // FIXME Indexation of "0" breaks Solr, so currently replaced by "00".
-            $formattedResult = array_map(function ($v) {
-                return $v === '0' ? '00' : $v;
-            }, $formattedResult);
+            $formattedResult = array_map(fn ($v) => $v === '0' ? '00' : $v, $formattedResult);
             $result = array_merge($result, $formattedResult);
         }
         // Don't use array_unique before, because objects may not be stringable.
