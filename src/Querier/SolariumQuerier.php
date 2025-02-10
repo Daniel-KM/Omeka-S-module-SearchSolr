@@ -762,38 +762,31 @@ class SolariumQuerier extends AbstractQuerier
      * Filters are boolean: in or out. nevertheless, the check can be more
      * complex than "equal": before or after a date, like a string, etc.
      *
-     * @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyQuery()
+     * @see \AdvancedSearch\Stdlib\SearchResources::buildFilterQuery()
      *
-     * Warning: filter queries use "name" (as key) + "join", "type", "value", not "property", "joiner", "type", "text".
+     * Filter queries use the api filter keys:
+     * "field" (as key) + "join", "field", "except", "type", "val", "datatype".
+     * The property keys are not supported: "joiner", "property", "type", "text".
      *
-     * Solr does not support query on omeka datatypes.
+     * "except" and "datatype" are currently not supported in Query, neither here.
      *
      * Solr supports two more query types:
      *   - ma: matches a simple regex
      *   - nma: does not match a simple regex
+     *
+     * Solr does not support query on omeka datatypes.
      */
     protected function filterQueryFilters(array $filters): void
     {
         $moreSupportedQueryTypes = [
-            'ma',
-            'nma',
+            'ma' => 'nma',
+            'nma' => 'ma',
         ];
 
         $allReciprocalTypes = SearchResources::FIELD_QUERY['reciprocal']
             + $moreSupportedQueryTypes;
 
-        $unsupportedQueryTypes = [
-            'tp',
-            'ntp',
-            'tpl',
-            'ntpl',
-            'tpr',
-            'ntpr',
-            'tpu',
-            'ntpu',
-            'dtp',
-            'ndtp',
-        ];
+        $unsupportedQueryTypes = SearchResources::FIELD_QUERY['value_data_type'];
 
         foreach ($filters as $name => $queryFilters) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
@@ -801,9 +794,15 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
+            /**
+             * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+             * @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyFilters()
+             */
+
             $fq = '';
             $first = true;
             foreach ($queryFilters as $queryFilter) {
+                // There is no default in Omeka.
                 // Skip simple filters (for hidden queries).
                 if (!$queryFilter
                     || !is_array($queryFilter)
@@ -814,37 +813,58 @@ class SolariumQuerier extends AbstractQuerier
                     continue;
                 }
 
-                // There is no default in Omeka.
-                /** @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery() */
-                /** @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyFilters() */
+                $joiner = $queryFilter['join'] ?? '';
+                $field = $queryFilter['field'] ?? null;
+                $except = $queryFilter['except'] ?? null;
                 $queryType = $queryFilter['type'];
                 $value = $queryFilter['val'] ?? '';
+                $dataType = $queryFilter['datatype'] ?? '';
+                if ($except || $dataType) {
+                    $this->logger->warn(
+                        'Solr does not support search with "except" or "data type": {url}', // @translate
+                        ['url' => $_SERVER['REQUEST_URI']]
+                    );
+                }
 
+                // Adapted from SearchResources.
                 // Quick check of value.
-                // A empty string "" is not a value, but "0" is a value.
+                // An empty string "" is not a value, but "0" is a value.
                 if (in_array($queryType, SearchResources::FIELD_QUERY['value_none'], true)) {
                     $value = null;
                 }
-                // Check array of values.
-                elseif (in_array($queryType, SearchResources::FIELD_QUERY['value_array'], true)) {
+                // Check array of values, that are allowed only by filters.
+                elseif (!in_array($queryType, SearchResources::FIELD_QUERY['value_single'], true)) {
                     if ((is_array($value) && !count($value))
                         || (!is_array($value) && !strlen((string) $value))
                     ) {
                         continue;
                     }
-                    if (!is_array($value)) {
-                        $value = [$value];
-                    }
-                    // To use array_values() avoids doctrine issue with string keys.
-                    $value = in_array($queryType, SearchResources::FIELD_QUERY['value_integer'])
-                        ? array_values(array_unique(array_map('intval', $value)))
-                        : array_values(array_unique(array_filter(array_map('trim', array_map('strval', $value)), 'strlen')));
-                    if (empty($value)) {
-                        continue;
+                    if (!in_array($queryType, SearchResources::FIELD_QUERY['value_single_array_or_string'])) {
+                        if (!is_array($value)) {
+                            $value = [$value];
+                        }
+                        // Normalize as array of integers or strings for next process.
+                        // To use array_values() avoids doctrine issue with string keys.
+                        if (in_array($queryType, SearchResources::FIELD_QUERY['value_integer'])) {
+                            $value = array_values(array_unique(array_map('intval', array_filter($value, fn ($v) => is_numeric($v) && $v == (int) $v))));
+                        } elseif (in_array($queryType, ['<', '≤', '≥', '>'])) {
+                            // Casting to float is complex and rarely used, so only integer.
+                            $value = array_values(array_unique(array_map(fn ($v) => is_numeric($v) && $v == (int) $v ? (int) $v : $v, $value)));
+                            // When there is at least one string, set all values as
+                            // string for doctrine.
+                            if (count(array_filter($value, 'is_int')) !== count($value)) {
+                                $value = array_map('strval', $value);
+                            }
+                        } else {
+                            $value = array_values(array_unique(array_filter(array_map('trim', array_map('strval', $value)), 'strlen')));
+                        }
+                        if (empty($value)) {
+                            continue;
+                        }
                     }
                 }
-                // The value should be scalar in all other cases (int or string).
-                elseif (is_array($value)) {
+                // The value should be scalar in all other cases (integer or string).
+                elseif (is_array($value) || $value === '') {
                     continue;
                 } else {
                     $value = trim((string) $value);
@@ -852,14 +872,29 @@ class SolariumQuerier extends AbstractQuerier
                         continue;
                     }
                     if (in_array($queryType, SearchResources::FIELD_QUERY['value_integer'])) {
-                        if (!is_numeric($value)) {
+                        if (!is_numeric($value) || $value != (int) $value) {
                             continue;
                         }
                         $value = (int) $value;
+                    } elseif (in_array($queryType, ['<', '≤', '≥', '>'])) {
+                        // The types "integer" and "string" are automatically
+                        // infered from the php type.
+                        // Warning: "float" is managed like string in mysql via pdo.
+                        if (is_numeric($value) && $value == (int) $value) {
+                            $value = (int) $value;
+                        }
+                    }
+                    // Convert single values into array except if array isn't supported.
+                    if (!in_array($queryType, SearchResources::FIELD_QUERY['value_single_array_or_string'], true)
+                        && !in_array($queryType, SearchResources::FIELD_QUERY['value_single'], true)
+                    ) {
+                        $value = [$value];
                     }
                 }
 
+                // The three joiners are "and" (default), "or" and "not".
                 // Check joiner and invert the query type for joiner "not".
+
                 $joiner = $queryFilter['join'] ?? '';
                 if ($first) {
                     $joiner = '';
@@ -878,7 +913,7 @@ class SolariumQuerier extends AbstractQuerier
                 }
 
                 // "AND/NOT" cannot be used as first.
-                // TODO Will be simplified in version 3.5.38.3.
+                // TODO Will be simplified in a future version.
                 $isNegative = isset(SearchResources::FIELD_QUERY['negative'])
                     ? (in_array($queryType, SearchResources::FIELD_QUERY['negative']) || $queryType === 'nma')
                     : substr($queryType, 0, 1) === 'n';
@@ -889,6 +924,7 @@ class SolariumQuerier extends AbstractQuerier
                     $bool = '(';
                     $endBool = ')';
                 }
+
                 switch ($queryType) {
                     /**
                      * Regex requires string (_s), not text or anything else.
