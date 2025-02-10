@@ -1079,7 +1079,7 @@ class SolariumQuerier extends AbstractQuerier
                     case 'nres':
                     case 'res':
                         // Like equal, but the field must be an integer.
-                        if (substr($name, -2) === '_i' || substr($name, -3) === '_is') {
+                        if ($this->fieldIsInteger($name)) {
                             $value = (int) $value;
                             $fq .= " $joiner ($name:$bool$value$endBool)";
                         }
@@ -1152,10 +1152,16 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function fieldIsTokenized($name): bool
     {
+
         return substr($name, -2) === '_t'
             || substr($name, -4) === '_txt'
             || substr($name, -3) === '_ws'
-            || strpos($name, '_txt_') !== false;
+            || strpos($name, '_txt_') !== false
+            // For drupal.
+            || substr($name, 0, 2) === 't_'
+            || substr($name, 0, 4) === 'txt_'
+            || substr($name, 0, 3) === 'ws_'
+        ;
     }
 
     /**
@@ -1166,7 +1172,11 @@ class SolariumQuerier extends AbstractQuerier
         return substr($name, -2) === '_s'
             || substr($name, -3) === '_ss'
             || substr($name, -8) === '_s_lower'
-            || substr($name, -9) === '_ss_lower';
+            || substr($name, -9) === '_ss_lower'
+            // For drupal.
+            || substr($name, 0, 3) === 'sm_'
+            || substr($name, 0, 3) === 'ss_'
+        ;
     }
 
     /**
@@ -1174,7 +1184,20 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function fieldIsLower($name): bool
     {
-        return substr($name, -6) === '_lower';
+        return strpos($name, '_lower') !==false;
+    }
+
+    /**
+     * @todo Use schema.
+     */
+    protected function fieldIsInteger($name): bool
+    {
+        return substr($name, -2) === '_i'
+            || substr($name, -3) === '_is'
+            // For drupal.
+            || substr($name, 0, 3) === 'is_'
+            || substr($name, 0, 3) === 'im_'
+        ;
     }
 
     /**
