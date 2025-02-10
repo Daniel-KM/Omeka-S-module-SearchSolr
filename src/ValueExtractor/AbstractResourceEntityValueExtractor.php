@@ -721,18 +721,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         // TODO Use query builder.
         $sql = <<<SQL
-SELECT
-    item_sets_tree_edge.item_set_id,
-    item_sets_tree_edge.item_set_id AS "id",
-    item_sets_tree_edge.parent_item_set_id AS "parent",
-    item_sets_tree_edge.rank AS "rank",
-    resource.title as "title"
-FROM item_sets_tree_edge
-JOIN resource ON resource.id = item_sets_tree_edge.item_set_id
-WHERE item_sets_tree_edge.item_set_id IN (:ids)
-GROUP BY resource.id
-ORDER BY $sortingMethodSql ASC;
-SQL;
+            SELECT
+                item_sets_tree_edge.item_set_id,
+                item_sets_tree_edge.item_set_id AS "id",
+                item_sets_tree_edge.parent_item_set_id AS "parent",
+                item_sets_tree_edge.rank AS "rank",
+                resource.title as "title"
+            FROM item_sets_tree_edge
+            JOIN resource ON resource.id = item_sets_tree_edge.item_set_id
+            WHERE item_sets_tree_edge.item_set_id IN (:ids)
+            GROUP BY resource.id
+            ORDER BY $sortingMethodSql ASC;
+            SQL;
         $flatTree = $connection->executeQuery($sql, ['ids' => array_keys($itemSetTitles)], ['ids' => $connection::PARAM_INT_ARRAY])->fetchAllAssociativeIndexed();
 
         // Use integers or string to simplify comparaisons.
