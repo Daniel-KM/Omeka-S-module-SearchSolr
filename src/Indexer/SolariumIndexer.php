@@ -157,7 +157,7 @@ class SolariumIndexer extends AbstractIndexer
         if ($isQuery) {
             $query = $solariumQuery->getQuery() ?: '*:*';
             $isDefaultQuery = $query === '*:*';
-            $filterQueries = $solariumQuery->getFiltersQuery();
+            $filterQueries = $solariumQuery->getFilterQueries();
             if (count($filterQueries)) {
                 foreach ($filterQueries as $filterQuery) {
                     $query .= ' AND ' . $filterQuery->getQuery();
