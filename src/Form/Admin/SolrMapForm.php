@@ -76,6 +76,21 @@ class SolrMapForm extends Form
                     'required' => true,
                 ],
             ])
+
+            // Temp fix for empty value options in DataTypeSelect in fieldset.
+            ->add([
+                'name' => 'data_types',
+                'type' => CommonElement\DataTypeSelect::class,
+                'options' => [
+                    'label' => 'Only these data types', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'data_types',
+                    'data-placeholder' => 'Select data types…', // @translate
+                    'multiple' => true,
+                    'required' => false,
+                ],
+            ])
         ;
 
         $poolFieldset = new Fieldset('o:pool');
@@ -129,6 +144,8 @@ class SolrMapForm extends Form
                 'type' => CommonElement\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Only these data types', // @translate
+                    // Fix use of DataTypeSelect in a fieldset.
+                    'disable_inarray_validator' => true,
                 ],
                 'attributes' => [
                     'id' => 'data_types',
@@ -142,6 +159,8 @@ class SolrMapForm extends Form
                 'type' => CommonElement\DataTypeSelect::class,
                 'options' => [
                     'label' => 'Exclude data types', // @translate
+                    // Fix use of DataTypeSelect in a fieldset.
+                    'disable_inarray_validator' => true,
                 ],
                 'attributes' => [
                     'id' => 'data_types_exclude',

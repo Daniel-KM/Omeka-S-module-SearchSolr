@@ -16,6 +16,13 @@ var sourceLabels = ' . json_encode($sourceLabels, JSON_UNESCAPED_SLASHES | JSON_
 $this->headScript()->appendFile($this->assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
 $form->prepare();
+
+/** @see \Common\Form\Element\DataTypeSelect */
+// Temp fix for DataTypeSelect inside a fieldset.
+$dataTypeManager = $this->api()->read('vocabularies', 1)->getContent()->getServiceLocator()->get('Omeka\DataTypeManager');
+$form->remove('data_types');
+$form->get('o:pool')->get('data_types')->setDataTypeManager($dataTypeManager);
+$form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeManager);
 ?>
 
 <?= $this->form()->openTag($form) ?>
