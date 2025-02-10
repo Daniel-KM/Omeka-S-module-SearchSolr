@@ -563,7 +563,7 @@ class SolariumQuerier extends AbstractQuerier
                         $q = $this->latinize($q);
                     }
                 }
-                $q = $this->escapePhrase($q);
+                $q = $this->escapeTerm($q);
                 $this->solariumQuery->setQuery($q);
             }
         }
@@ -600,7 +600,7 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
-        $q = $this->escapePhrase($q);
+        $q = $this->escapeTerm($q);
 
         $qq = [];
         foreach ($usedFields as $field) {
