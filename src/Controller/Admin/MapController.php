@@ -248,6 +248,7 @@ class MapController extends AbstractActionController
             $form->setData($data);
             if ($form->isValid()) {
                 $data = $form->getData();
+                $data = $this->removeEmptyData($data);
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
@@ -306,6 +307,7 @@ class MapController extends AbstractActionController
             $form->setData($data);
             if ($form->isValid()) {
                 $data = $form->getData();
+                $data = $this->removeEmptyData($data);
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
@@ -387,6 +389,22 @@ class MapController extends AbstractActionController
             'coreId' => $map->solrCore()->id(),
             'resourceName' => $map->resourceName(),
         ]);
+    }
+
+    protected function removeEmptyData(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if ($value === null || $value === '' || $value === []) {
+                unset($data[$key]);
+            } elseif ($key === 'o:pool' || $key === 'o:settings') {
+                foreach ($value as $k => $v) {
+                    if ($v === null || $v === '' || $v === []) {
+                        unset($data[$key][$k]);
+                    }
+                }
+            }
+        }
+        return $data;
     }
 
     protected function getSolrSchema($solrCoreId)
