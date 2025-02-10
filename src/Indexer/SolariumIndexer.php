@@ -388,6 +388,8 @@ class SolariumIndexer extends AbstractIndexer
             }
 
             // Check if the value is a single valued field already filled.
+            // Is a single field value the first one or the last one? Most of
+            // the time, the first one.
             if (!empty($isSingleFieldFilled[$solrField])) {
                 continue;
             }

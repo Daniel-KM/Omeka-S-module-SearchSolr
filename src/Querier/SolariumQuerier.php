@@ -248,11 +248,49 @@ class SolariumQuerier extends AbstractQuerier
 
     public function querySuggestions(): Response
     {
+        // TODO Implement querySuggestions(). See queryValues().
         $this->response = new Response;
         $this->response->setApi($this->services->get('Omeka\ApiManager'));
         $this->query ? $this->response->setQuery($this->query) : null;
         return $this->response
             ->setMessage('Suggestions are not implemented here. Use direct url.'); // @translate
+    }
+
+    public function queryValues(string $field): array
+    {
+        // Init solarium.
+        $this->getClient();
+
+        // Check if the field is a special or a multifield.
+        $aliases = $this->query->getAliases();
+        $fields = $aliases[$field]['fields'] ?? [$field];
+        if (!is_array($fields)) {
+            $fields = [$fields];
+        }
+
+        // TODO Limit output by site when set in query (or index by site).
+
+        // In Sort, a query value is a terms query.
+        $query = $this->solariumClient->createTerms();
+        $query
+            ->setFields($fields)
+            ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
+            ->setLimit(-1)
+            // Only used values. Anyway, by default there is no predefined list.
+            ->setMinCount(1);
+        $resultSet = $this->solariumClient->terms($query);
+
+        // Results are structured by field and term/count.
+        $result = array_map(fn ($v) => array_keys($v), $resultSet->getResults());
+        // Merge fields.
+        $list = array_merge(...array_values($result));
+        natcasesort($list);
+
+        // Fix false empty duplicate or values without title.
+        $list = array_keys(array_flip($list));
+        unset($list['']);
+
+        return array_combine($list, $list);
     }
 
     /**
