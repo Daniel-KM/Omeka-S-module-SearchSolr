@@ -40,8 +40,8 @@ use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Update\Query\Document as SolariumInputDocument;
 
 /**
- * @link https://solarium.readthedocs.io/en/stable/getting-started/
- * @link https://solarium.readthedocs.io/en/stable/documents/
+ * @see https://solarium.readthedocs.io/en/stable/getting-started/
+ * @see https://solarium.readthedocs.io/en/stable/documents/
  */
 class SolariumIndexer extends AbstractIndexer
 {

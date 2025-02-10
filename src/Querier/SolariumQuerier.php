@@ -43,6 +43,8 @@ use Solarium\QueryType\Select\Query\Query as SolariumQuery;
  * @todo Rewrite the querier to simplify it and to use all solarium features directly.
  * @todo Use Solarium helpers (geo, escape, xml, etc.).
  * @see \Solarium\Core\Query\Helper
+ * @see https://solarium.readthedocs.io/en/stable/getting-started/
+ * @see https://solarium.readthedocs.io/en/stable/queries/select-query/building-a-select-query/building-a-select-query/
  */
 class SolariumQuerier extends AbstractQuerier
 {
@@ -96,7 +98,8 @@ class SolariumQuerier extends AbstractQuerier
         $this->solariumQuery = $this->getPreparedQuery();
 
         // When no query or resource types are set.
-        if (is_null($this->solariumQuery)) {
+        // The solr query cannot be an empty string.
+        if ($this->solariumQuery === null) {
             return $this->response
                 ->setMessage('An issue occurred.'); // @translate
         }
@@ -110,39 +113,7 @@ class SolariumQuerier extends AbstractQuerier
             // To get the query sent by solarium to solr, check the url in
             // vendor/solarium/solarium/src/Core/Client/Adapter/Http.php
             /** @see \Solarium\Core\Client\Adapter\Http::getData() */
-            // The solr query cannot be an empty string.
-            $q = $this->query->getQuery();
-            if (!$q) {
-                throw new QuerierException($e->getMessage(), $e->getCode(), $e);
-            }
-            // TODO Is it still needed? Not with DisMax.
-            // The query may be badly formatted, so try to escape all reserved
-            // characters instead of returning an exception.
-            // @link https://lucene.apache.org/core/8_5_1/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
-            // TODO Check before the query.
-            $escapedQ = $this->escapePhrase($q);
-            if ($this->query->getOption('remove_diacritics', false)) {
-                if (extension_loaded('intl')) {
-                    $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                    $escapedQ = $transliterator->transliterate($escapedQ);
-                } elseif (extension_loaded('iconv')) {
-                    $escapedQ = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $escapedQ);
-                } else {
-                    $escapedQ = $this->latinize($escapedQ);
-                }
-            }
-            $this->solariumQuery->setQuery($escapedQ);
-            try {
-                $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
-                /*
-                } catch (\Solarium\Exception\HttpException $e) {
-                    // Http Exception has getStatusMessage() and getBody(), but useless.
-                    // TODO Get the error with the same url, but direct query. Or find where Solarium store the error message.
-                    throw new QuerierException($e->getMessage(), $e->getCode(), $e);
-                */
-            } catch (\Exception $e) {
-                throw new QuerierException($e->getMessage(), $e->getCode(), $e);
-            }
+            throw new QuerierException($e->getMessage(), $e->getCode(), $e);
         }
 
         // Fill the response according to settings.
@@ -162,18 +133,14 @@ class SolariumQuerier extends AbstractQuerier
             foreach ($fieldGroup as $valueGroup) {
                 // The group name is the resource type.
                 $resourceType = $valueGroup->getValue();
-                // TODO To be removed for next version 3.5.50 for Advanced Search 3.4.34.
-                $this->response->setResourceTotalResults($resourceType, $valueGroup->getNumFound());
                 $resourceTotalResults[$resourceType] = $valueGroup->getNumFound();
                 foreach ($valueGroup as $document) {
                     $resourceId = basename($document['id']);
                     $this->response->addResult($resourceType, ['id' => is_numeric($resourceId) ? (int) $resourceId : $resourceId]);
                 }
             }
-            if (method_exists($this->response, 'setAllResourceTotalResults')) {
-                $this->response->setAllResourceTotalResults($resourceTotalResults);
-                $this->response->setResults(array_replace(array_fill_keys($this->resourceTypes, []), $this->response->getResults()));
-            }
+            $this->response->setAllResourceTotalResults($resourceTotalResults);
+            $this->response->setResults(array_replace(array_fill_keys($this->resourceTypes, []), $this->response->getResults()));
         }
 
         // TODO If less than pagination, get it directly.
@@ -283,6 +250,7 @@ class SolariumQuerier extends AbstractQuerier
     {
         $this->response = new Response;
         $this->response->setApi($this->services->get('Omeka\ApiManager'));
+        $this->query ? $this->response->setQuery($this->query) : null;
         return $this->response
             ->setMessage('Suggestions are not implemented here. Use direct url.'); // @translate
     }
@@ -299,7 +267,8 @@ class SolariumQuerier extends AbstractQuerier
      */
     public function getPreparedQuery()
     {
-        $this->init();
+        // Init the solr core here when called directly.
+        $this->getSolrCore();
 
         if (empty($this->query)) {
             $this->solariumQuery = null;
@@ -476,6 +445,7 @@ class SolariumQuerier extends AbstractQuerier
                     if (is_string($facetValues)) {
                         $facetValues = $explode($facetValues);
                     }
+                    // Escape all strings as regex.
                     $facet
                         ->setMatches('~^' . implode('|', array_map(fn ($v) => preg_quote($v, '~'), $facetValues)) . '$~');
                 }
@@ -593,6 +563,7 @@ class SolariumQuerier extends AbstractQuerier
                         $q = $this->latinize($q);
                     }
                 }
+                $q = $this->escapePhrase($q);
                 $this->solariumQuery->setQuery($q);
             }
         }
@@ -628,6 +599,8 @@ class SolariumQuerier extends AbstractQuerier
                 $q = $this->latinize($q);
             }
         }
+
+        $q = $this->escapePhrase($q);
 
         $qq = [];
         foreach ($usedFields as $field) {
@@ -1229,15 +1202,6 @@ class SolariumQuerier extends AbstractQuerier
         $values = array_map($regexVal, is_array($value) ? $value : [$value]);
 
         return implode(' OR ', $values);
-    }
-
-    /**
-     * @return self
-     */
-    protected function init(): self
-    {
-        $this->getSolrCore();
-        return $this;
     }
 
     protected function getSolrCore(): \SearchSolr\Api\Representation\SolrCoreRepresentation
