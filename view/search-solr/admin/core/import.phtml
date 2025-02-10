@@ -21,7 +21,7 @@ $form->prepare();
         'action' => 'export',
     ]); ?>
     <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export mapping') ?></a>
-    <button type="submit" form="<?= $form->getAttribute('id') ?>"><?= $translate('Submit') ?></button>
+    <button type="submit" class="button" form="<?= $form->getAttribute('id') ?>"><?= $translate('Submit') ?></button>
 </div>
 
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
