@@ -632,10 +632,23 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function filterQueryValues(array $filters): void
     {
-        // TODO Manage field query args with $this->query->getFieldQueryArgs().
+        // TODO Convert all simple filters to full filters (or do it early via form adapter).
 
-        foreach ($filters as $field => $values) {
-            $name = $this->fieldToIndex($field) ?? $field;
+        foreach ($filters as $fieldName => $values) {
+            $fieldQueryArgs = $this->query->getFieldQueryArgs($fieldName);
+            if ($fieldQueryArgs) {
+                $filter = [
+                    'join' => $fieldQueryArgs['join'] ?? 'and',
+                    'field' => $fieldName,
+                    'except' => $fieldQueryArgs['except'] ?? null,
+                    'type' => $fieldQueryArgs['type'] ?? 'eq',
+                    'val' => $values,
+                    'datatype' => $fieldQueryArgs['datatype'] ?? null,
+                ];
+                $this->filterQueryFilters([$fieldName => [$filter]]);
+                continue;
+            }
+            $name = $this->fieldToIndex($fieldName) ?? $fieldName;
             if ($name === 'id') {
                 $value = [];
                 array_walk_recursive($values, function ($v) use (&$value): void {
@@ -751,6 +764,11 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function filterQueryFilters(array $filters): void
     {
+        /**
+         * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
+         * @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyFilters()
+         */
+
         $unsupportedQueryTypes = array_merge(
             SearchResources::FIELD_QUERY['value_linked_resource'],
             SearchResources::FIELD_QUERY['value_data_type'],
@@ -767,22 +785,18 @@ class SolariumQuerier extends AbstractQuerier
             ]
         );
 
-        foreach ($filters as $field => $queryFilters) {
+        foreach ($filters as $field => $filter) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
-            if (!is_array($queryFilters)) {
+            if (!is_array($filter)) {
                 continue;
             }
-
-            /**
-             * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
-             * @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyFilters()
-             */
 
             $name = $this->fieldToIndex($field) ?? $field;
 
             $fq = '';
             $first = true;
-            foreach ($queryFilters as $queryFilter) {
+
+            foreach ($filter as $queryFilter) {
                 // There is no default in Omeka.
                 // Skip simple filters (for hidden queries).
                 if (!$queryFilter
