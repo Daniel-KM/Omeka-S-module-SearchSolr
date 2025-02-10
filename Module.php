@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2016-2017
- * Copyright Daniel Berthereau, 2017-2024
+ * Copyright Daniel Berthereau, 2017-2025
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -124,10 +124,10 @@ class Module extends AbstractModule
             throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
         }
 
-        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.38')) {
+        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.41')) {
             $message = new PsrMessage(
                 $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-                ['module' => 'Advanced Search', 'version' => '3.4.38']
+                ['module' => 'Advanced Search', 'version' => '3.4.41']
             );
             throw new ModuleCannotInstallException((string) $message);
         }
