@@ -127,6 +127,8 @@ class SolariumQuerier extends AbstractQuerier
                     $escapedQ = $transliterator->transliterate($escapedQ);
                 } elseif (extension_loaded('iconv')) {
                     $escapedQ = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $escapedQ);
+                } else {
+                    $escapedQ = $this->latinize($escapedQ);
                 }
             }
             $this->solariumQuery->setQuery($escapedQ);
@@ -587,6 +589,8 @@ class SolariumQuerier extends AbstractQuerier
                         $q = $transliterator->transliterate($q);
                     } elseif (extension_loaded('iconv')) {
                         $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
+                    } else {
+                        $q = $this->latinize($q);
                     }
                 }
                 $this->solariumQuery->setQuery($q);
@@ -620,6 +624,8 @@ class SolariumQuerier extends AbstractQuerier
                 $q = $transliterator->transliterate($q);
             } elseif (extension_loaded('iconv')) {
                 $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
+            } else {
+                $q = $this->latinize($q);
             }
         }
 
