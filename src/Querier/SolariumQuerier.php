@@ -334,6 +334,14 @@ class SolariumQuerier extends AbstractQuerier
 
         $this->solariumQuery = $this->solariumClient->createSelect();
 
+        // Assign the default query field if it is defined in the given AdvancedSearch\Query.
+        if (!empty($this->query->getQueryDefaultField())) {
+            // $this->solariumQuery->setQueryDefaultField('public_property_values_txt');
+            $this->solariumQuery->setQueryDefaultField(
+                $this->query->getQueryDefaultField()
+            );
+        }
+
         $isDefaultQuery = $this->defaultQuery();
         if (!$isDefaultQuery) {
             $this->mainQuery();
