@@ -632,7 +632,10 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function filterQueryValues(array $filters): void
     {
-        foreach ($filters as $name => $values) {
+        // TODO Manage field query args with $this->query->getFieldQueryArgs().
+
+        foreach ($filters as $field => $values) {
+            $name = $this->fieldToIndex($field) ?? $field;
             if ($name === 'id') {
                 $value = [];
                 array_walk_recursive($values, function ($v) use (&$value): void {
@@ -695,11 +698,12 @@ class SolariumQuerier extends AbstractQuerier
             return '*';
         };
 
-        foreach ($dateRangeFilters as $name => $filterValues) {
+        foreach ($dateRangeFilters as $field => $filterValues) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
             if (!is_array($filterValues)) {
                 continue;
             }
+            $name = $this->fieldToIndex($field) ?? $field;
             // Normalize dates if needed.
             $normalize = substr_compare($name, '_dt', -3) === 0
                 || substr_compare($name, '_dts', -4) === 0
@@ -763,7 +767,7 @@ class SolariumQuerier extends AbstractQuerier
             ]
         );
 
-        foreach ($filters as $name => $queryFilters) {
+        foreach ($filters as $field => $queryFilters) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
             if (!is_array($queryFilters)) {
                 continue;
@@ -773,6 +777,8 @@ class SolariumQuerier extends AbstractQuerier
              * @see \Omeka\Api\Adapter\AbstractResourceEntityAdapter::buildPropertyQuery()
              * @see \AdvancedSearch\Stdlib\SearchResources::buildPropertyFilters()
              */
+
+            $name = $this->fieldToIndex($field) ?? $field;
 
             $fq = '';
             $first = true;
@@ -789,7 +795,7 @@ class SolariumQuerier extends AbstractQuerier
                 }
 
                 $joiner = $queryFilter['join'] ?? '';
-                $field = $queryFilter['field'] ?? null;
+                // $field = $queryFilter['field'] ?? null;
                 $except = $queryFilter['except'] ?? null;
                 $queryType = $queryFilter['type'];
                 $value = $queryFilter['val'] ?? '';
@@ -1107,6 +1113,36 @@ class SolariumQuerier extends AbstractQuerier
                 ->createFilterQuery($name . '_fq' . '_' . ++$this->appendToKey)
                 ->setQuery(ltrim($fq));
         }
+    }
+
+    /**
+     * Convert a field argument into one or more indexes.
+     *
+     * The indexes are the properties in internal sql.
+     * This process allows to support same indexes in Solr.
+     *
+     * @todo For now, only one field is supported, since an index with multiple properties can be created.
+     *
+     * @return array|string|null
+     */
+    protected function fieldToIndex(string $field)
+    {
+        // TODO Allow to use property terms and dynamic fields (but should be indexed).
+        $result = $this->query->getAliases()[$field]['fields']
+            ?? null;
+        if (!$result) {
+            return null;
+        }
+        if (is_array($result)) {
+            if (count($result) > 1) {
+                $this->logger->warn(
+                    'Solr does not support alias with more than one field for now: {url}', // @translate
+                    ['url' => $_SERVER['REQUEST_URI']]
+                );
+            }
+            return reset($result);
+        }
+        return $result;
     }
 
     /**
