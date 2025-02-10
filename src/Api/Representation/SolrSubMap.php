@@ -20,6 +20,30 @@ class SolrSubMap extends SolrMapRepresentation
         return $this->subSource;
     }
 
+    /**
+     * @todo Manage a sub pool something like dcterms:creator/skos:altLabel[xxx].
+     *
+     * {@inheritDoc}
+     * @see \SearchSolr\Api\Representation\SolrMapRepresentation::pool()
+     */
+    public function pool(?string $name = null, $default = null)
+    {
+        $subPool = [
+            'filter_resources' => null,
+            'filter_values' => null,
+            'filter_uris' => null,
+            'filter_value_resources' => null,
+            'data_types' => null,
+            'data_types_exclude' => null,
+            'filter_languages' => null,
+            'filter_visibility' => null,
+        ];
+
+        return is_null($name)
+            ? $subPool
+            : ($subPool[$name] ?? $default);
+    }
+
     public function setSubSource(string $subSource)
     {
         $this->subSource = $subSource;

@@ -176,6 +176,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             [, $subField] = explode('/', $source, 2);
         }
         $subMap = new SolrSubMap($this->resource, $this->adapter);
+        // TODO Manage a sub pool something like dcterms:creator/skos:altLabel[xxx].
         return $subMap
             ->setSubSource($subField);
     }
