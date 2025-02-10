@@ -742,24 +742,26 @@ class SolariumQuerier extends AbstractQuerier
      * The property keys are not supported: "joiner", "property", "type", "text".
      *
      * "except" and "datatype" are currently not supported in Query, neither here.
-     *
-     * Solr supports two more query types:
-     *   - ma: matches a simple regex
-     *   - nma: does not match a simple regex
-     *
      * Solr does not support query on omeka datatypes.
+     * For ma/nma, only simple regex are supported.
      */
     protected function filterQueryFilters(array $filters): void
     {
-        $moreSupportedQueryTypes = [
-            'ma' => 'nma',
-            'nma' => 'ma',
-        ];
-
-        $allReciprocalTypes = SearchResources::FIELD_QUERY['reciprocal']
-            + $moreSupportedQueryTypes;
-
-        $unsupportedQueryTypes = SearchResources::FIELD_QUERY['value_data_type'];
+        $unsupportedQueryTypes = array_merge(
+            SearchResources::FIELD_QUERY['value_linked_resource'],
+            SearchResources::FIELD_QUERY['value_data_type'],
+            SearchResources::FIELD_QUERY['value_duplicate'],
+            [
+                'near',
+                'nnear',
+                'resq',
+                'nresq',
+                'exs',
+                'nex',
+                'exm',
+                'nexm',
+            ]
+        );
 
         foreach ($filters as $name => $queryFilters) {
             // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
@@ -780,7 +782,7 @@ class SolariumQuerier extends AbstractQuerier
                 if (!$queryFilter
                     || !is_array($queryFilter)
                     || empty($queryFilter['type'])
-                    || !isset($allReciprocalTypes[$queryFilter['type']])
+                    || !isset(SearchResources::FIELD_QUERY['reciprocal'][$queryFilter['type']])
                     || in_array($queryFilter['type'], $unsupportedQueryTypes)
                 ) {
                     continue;
@@ -877,7 +879,7 @@ class SolariumQuerier extends AbstractQuerier
                         $joiner = 'OR';
                     } elseif ($joiner === 'not') {
                         $joiner = 'AND';
-                        $queryType = $allReciprocalTypes[$queryType];
+                        $queryType = SearchResources::FIELD_QUERY['reciprocal'][$queryType];
                     } else {
                         $joiner = 'AND';
                     }
@@ -888,7 +890,8 @@ class SolariumQuerier extends AbstractQuerier
                 // "AND/NOT" cannot be used as first.
                 // TODO Will be simplified in a future version.
                 $isNegative = isset(SearchResources::FIELD_QUERY['negative'])
-                    ? (in_array($queryType, SearchResources::FIELD_QUERY['negative']) || $queryType === 'nma')
+                    ? (in_array($queryType, SearchResources::FIELD_QUERY['negative']))
+                    // TODO Find a cleaner way to determine if unknown type is negative.
                     : substr($queryType, 0, 1) === 'n';
                 if ($isNegative) {
                     $bool = '(NOT ';
@@ -922,6 +925,7 @@ class SolariumQuerier extends AbstractQuerier
                     case 'nlist':
                     case 'list':
                         if ($this->fieldIsString($name)) {
+                            // $value = $this->solariumQuery->getHelper()->escapeTerm((string) $value);
                             $value = $this->regexDiacriticsValue($value, '', '');
                         } else {
                             $value = $this->escapePhraseValue($value, 'OR');
@@ -974,6 +978,103 @@ class SolariumQuerier extends AbstractQuerier
                         $fq .= " $joiner ($name:$bool$value$endBool)";
                         break;
 
+                    case 'lt':
+                    case 'lte':
+                    case 'gte':
+                    case 'gt':
+                        // With a list of lt/lte/gte/gt, get the right value first in order
+                        // to avoid multiple sql conditions.
+                        // But the language cannot be determined: language of the site? of
+                        // the data? of the user who does query?
+                        // Practically, mysql/mariadb sort with generic unicode rules by
+                        // default, so use a generic sort.
+                        /** @see https://www.unicode.org/reports/tr10/ */
+                        if (count($value) > 1) {
+                            if (extension_loaded('intl')) {
+                                $col = new \Collator('root');
+                                $col->sort($value);
+                            } else {
+                                natcasesort($value);
+                            }
+                        }
+                        // TODO Manage uri and resources with lt, lte, gte, gt (it has a meaning at least for resource ids, but separate).
+                        if ($queryType === 'lt') {
+                            $value = reset($value);
+                            $value = $this->escapePhrase(--$value);
+                            $fq .= " $joiner ($name:[* TO $value])";
+                        } elseif ($queryType === 'lte') {
+                            $value = reset($value);
+                            $value = $this->escapePhrase($value);
+                            $fq .= " $joiner ($name:[* TO $value])";
+                        } elseif ($queryType === 'gte') {
+                            $value = array_pop($value);
+                            $value = $this->escapePhrase($value);
+                            $fq .= " $joiner ($name:[$value TO *])";
+                        } elseif ($queryType === 'gt') {
+                            $value = array_pop($value);
+                            $value = $this->escapePhrase(++$value);
+                            $fq .= " $joiner ($name:[$value TO *])";
+                        }
+                        break;
+
+                        case '<':
+                        case '≤':
+                            // The values are already cleaned.
+                            $first = reset($value);
+                            if (count($value) > 1) {
+                                if (is_int($first)) {
+                                    $value = min($value);
+                                } else {
+                                    extension_loaded('intl') ? (new \Collator('root'))->sort($value, \Collator::SORT_NUMERIC) : sort($value);
+                                    $value = reset($value);
+                                }
+                            } else {
+                                $value = $first;
+                            }
+                            $value = $queryType === '<' ? --$value : $value;
+                            $fq .= " $joiner ($name:[* TO $value])";
+                            break;
+                        case '≥':
+                        case '>':
+                            $first = reset($value);
+                            if (count($value) > 1) {
+                                if (is_int($first)) {
+                                    $value = max($value);
+                                } else {
+                                    extension_loaded('intl') ? (new \Collator('root'))->sort($value, \Collator::SORT_NUMERIC) : sort($value);
+                                    $value = array_pop($value);
+                                }
+                            } else {
+                                $value = $first;
+                            }
+                            $value = $queryType === '>' ? ++$value : $value;
+                            $fq .= " $joiner ($name:[$value TO *])";
+                            break;
+
+                        case 'nyreq':
+                        case 'yreq':
+                            // The casting to integer is the simplest way to get the year:
+                            // it avoids multiple substring_index, replace, etc. and it
+                            // works fine in most of the real cases, except when the date
+                            // does not look like a standard date, but normally it is
+                            // checked earlier.
+                            // Values are already casted to int.
+                            $value = $this->escapePhraseValue($value, 'OR');
+                            $fq .= " $joiner ($name:$bool$value$endBool)";
+                            break;
+                        case 'yrlt':
+                        case 'yrlte':
+                            $value = min($value);
+                            $value = $queryType === 'yrlt' ? --$value : $value;
+                            $fq .= " $joiner ($name:[* TO $value])";
+                            break;
+                        case 'yrgte':
+                        case 'yrgt':
+                            $value = max($value);
+                            $value = $queryType === 'yrgt' ? ++$value : $value;
+                            $fq .= " $joiner ($name:[$value TO *])";
+                            break;
+
                     // Resource with id.
                     case 'nres':
                     case 'res':
@@ -993,45 +1094,6 @@ class SolariumQuerier extends AbstractQuerier
                         $value = $this->escapePhraseValue($value, 'OR');
                         $fq .= " $joiner (+$name:$value)";
                         break;
-
-                    /*
-                    case 'nexs':
-                    case 'exs':
-                        break;
-
-                    case 'nexm':
-                    case 'exm':
-                        break;
-
-                    case 'ntp':
-                    case 'tp':
-                    case 'ntpl':
-                    case 'tpl':
-                    case 'ntpr':
-                    case 'tpr':
-                    case 'ntpu':
-                    case 'tpu':
-                    case 'ndtp':
-                    case 'dtp':
-                        break;
-
-                    // The linked resources (subject values) use the same sub-query.
-                    case 'nlex':
-                    case 'nlres':
-                    case 'lex':
-                    case 'lres':
-                        break;
-
-                    // TODO Manage uri and resources with gt, gte, lte, lt (it has a meaning at least for resource ids, but separate).
-                    case 'gt':
-                        break;
-                    case 'gte':
-                        break;
-                    case 'lte':
-                        break;
-                    case 'lt':
-                        break;
-                    */
 
                     default:
                         throw new \AdvancedSearch\Querier\Exception\QuerierException(sprintf(
@@ -1113,6 +1175,18 @@ class SolariumQuerier extends AbstractQuerier
     protected function fieldIsLower($name): bool
     {
         return substr($name, -6) === '_lower';
+    }
+
+    /**
+     * Escape a string to query keeping meaning of solr special characters.
+     *
+     * @see https://solr.apache.org/guide/solr/latest/query-guide/standard-query-parser.html#escaping-special-characters
+     * @see https://lucene.apache.org/core/10_1_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
+     * @uses \Solarium\Core\Query\Helper::escapeTerm()
+     */
+    protected function escapeTerm($string): string
+    {
+        return $this->solariumQuery->getHelper()->escapeTerm((string) $string);
     }
 
     /**
