@@ -55,7 +55,8 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores create edit');
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
-    <span aria-current="page"><?= $translate('Edit core') ?></span>
+    <?= $hyperlink($solrCore->name(), $solrCore->adminUrl()) ?>
+    <span aria-current="page"><?= $translate('Edit') ?></span>
 </nav>
 
 <?= $this->form()->openTag($form) ?>

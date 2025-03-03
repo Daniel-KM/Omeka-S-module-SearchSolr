@@ -62,6 +62,18 @@ $escape = $plugins->get('escapeHtml');
                             ) ?>
                         </li>
                         <li>
+                            <?= $status
+                                ? $this->hyperlink('', $solrCore->adminUrl(), [
+                                    'class' => 'o-icon- far fa-sun',
+                                    'title' => $translate('Get info about the Solr core'), // @translate
+                                ])
+                                : $this->hyperlink('', '#', [
+                                    'class' => 'o-icon- far fa-sun',
+                                    'title' => $translate('Get info about the Solr core'), // @translate
+                                ])
+                            ?>
+                        </li>
+                        <li>
                             <?= $solrCore->link('', 'edit', [
                                 'class' => 'o-icon-edit',
                                 'title' => $translate('Edit'),

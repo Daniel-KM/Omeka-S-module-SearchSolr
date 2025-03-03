@@ -61,7 +61,8 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
 <nav class="breadcrumbs">
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
-    <span><?= $translate('Indices') ?></span>
+    <?= $hyperlink($solrCore->name(), $solrCore->adminUrl()) ?>
+    <span><?= $translate('Resource types') ?></span>
 </nav>
 
 <div class="by-resource-type">
@@ -92,81 +93,4 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
         </tbody>
     </table>
 <?php endif; ?>
-</div>
-
-<h3><?= $translate('By index') ?></h3>
-
-<div class="by-solr-index">
-<?php $maps = $solrCore->mapsByFieldName(); ?>
-<?php if (count($maps)): ?>
-    <table class="tablesaw" data-tablesaw-mode="stack">
-        <thead>
-            <tr>
-                <th><?= $translate('Name') ?></th>
-                <th><?= $translate('Sources Omeka (with formatter)') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $fieldMaps */ ?>
-            <?php foreach ($maps as $fieldName => $fieldMaps): ?>
-                <tr>
-                    <td>
-                        <span><?= $escape($fieldName) ?></span>
-                        <ul class="actions">
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-selector' => '#sidebar',
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index asc'),
-                                    'class' => 'o-icon- fas fa-sort-alpha-down sidebar-content',
-                                    'title' => $translate('List indexed values alphabetically'),
-                                ]) ?>
-                            </li>
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-selector' => '#sidebar',
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index desc'),
-                                    'class' => 'o-icon- fas fa-sort-alpha-down-alt sidebar-content',
-                                    'title' => $translate('List indexed values alphabetically (reverse)'),
-                                ]) ?>
-                            </li>
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-selector' => '#sidebar',
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count asc'),
-                                    'class' => 'o-icon- fas fa-sort-numeric-down sidebar-content',
-                                    'title' => $translate('List indexed values by count'),
-                                ]) ?>
-                            </li>
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-selector' => '#sidebar',
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count desc'),
-                                    'class' => 'o-icon- fas fa-sort-numeric-down-alt sidebar-content',
-                                    'title' => $translate('List indexed values by count (reverse)'),
-                                ]) ?>
-                            </li>
-                        </ul>
-                    </td>
-                    <td>
-                        <ul class="sources">
-                            <?php foreach ($fieldMaps as $map):
-                                $formatter = $map->setting('formatter');
-                                ?>
-                            <li><?= $formatter
-                                ? $escape(sprintf($translate('%1$s [%2$s] (%3$s)'), $map->source(), $map->resourceName(), $map->setting('formatter') ?: $translate('[none]')))
-                                : $escape(sprintf($translate('%1$s [%2$s]'), $map->source(), $map->resourceName()))
-                            ?></li>
-                        <?php endforeach; ?>
-                        </ul>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-<?php endif; ?>
-</div>
-
-<div id="sidebar" class="sidebar">
-    <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
-    <div class="sidebar-content"></div>
 </div>

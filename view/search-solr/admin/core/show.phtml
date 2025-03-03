@@ -1,0 +1,113 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$assetUrl = $plugins->get('assetUrl');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
+
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+$this->headScript()
+        ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
+
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores show browse');
+?>
+
+<?= $this->pageTitle($solrCore->name(), 1, $translate('Solr core')) ?>
+
+<div id="page-actions">
+    <?php // $this->trigger('view.show.page_actions', ['resource' => $solrCore]); ?>
+    <?php if ($solrCore->userIsAllowed('update')): ?>
+    <?= $hyperlink($translate('Maps'), $solrCore->mapUrl(), ['class' => 'button']) ?>
+    <?= $hyperlink($translate('Import mapping'), $solrCore->adminUrl('import'), [
+        'class' => 'button',
+        'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
+    <?php endif; ?>
+    <?= $hyperlink($translate('Export mapping'), $solrCore->adminUrl('export'), [
+        'class' => 'button',
+        'title' => $translate('Export maps for easier spreadsheet mapping.')]) ?>
+</div>
+
+<nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
+    <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
+    <?= $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')) ?>
+    <span aria-current="page"><?= sprintf($translate('Core "%s"'), $solrCore->name()) ?></span>
+</nav>
+
+<h3><?= $translate('By index') ?></h3>
+
+<div class="by-solr-index">
+<?php $maps = $solrCore->mapsByFieldName(); ?>
+<?php if (count($maps)): ?>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $translate('Name') ?></th>
+                <th><?= $translate('Sources Omeka (with formatter)') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $fieldMaps */ ?>
+            <?php foreach ($maps as $fieldName => $fieldMaps): ?>
+                <tr>
+                    <td>
+                        <span><?= $escape($fieldName) ?></span>
+                        <ul class="actions">
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index asc'),
+                                    'class' => 'o-icon- fas fa-sort-alpha-down sidebar-content',
+                                    'title' => $translate('List indexed values alphabetically'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index desc'),
+                                    'class' => 'o-icon- fas fa-sort-alpha-down-alt sidebar-content',
+                                    'title' => $translate('List indexed values alphabetically (reverse)'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count asc'),
+                                    'class' => 'o-icon- fas fa-sort-numeric-down sidebar-content',
+                                    'title' => $translate('List indexed values by count'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count desc'),
+                                    'class' => 'o-icon- fas fa-sort-numeric-down-alt sidebar-content',
+                                    'title' => $translate('List indexed values by count (reverse)'),
+                                ]) ?>
+                            </li>
+                        </ul>
+                    </td>
+                    <td>
+                        <ul class="sources">
+                            <?php foreach ($fieldMaps as $map):
+                                $formatter = $map->setting('formatter');
+                                ?>
+                            <li><?= $formatter
+                                ? $escape(sprintf($translate('%1$s [%2$s] (%3$s)'), $map->source(), $map->resourceName(), $map->setting('formatter') ?: $translate('[none]')))
+                                : $escape(sprintf($translate('%1$s [%2$s]'), $map->source(), $map->resourceName()))
+                            ?></li>
+                        <?php endforeach; ?>
+                        </ul>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php endif; ?>
+</div>
+
+<div class="sidebar">
+    <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
+    <div class="sidebar-content"></div>
+</div>

@@ -183,6 +183,17 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
+    public function showAction()
+    {
+        $solrCoreId = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        return new ViewModel([
+            'solrCore' => $solrCore,
+            'resource' => $solrCore,
+        ]);
+    }
+
     public function deleteConfirmAction()
     {
         $id = $this->params('id');

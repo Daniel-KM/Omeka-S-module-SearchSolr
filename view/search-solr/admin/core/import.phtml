@@ -29,7 +29,8 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores import');
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
-    <span aria-current="page"><?= sprintf($translate('Import mapping for core "%s"'), $solrCore->name()) ?></span>
+    <?= $hyperlink($solrCore->name(), $solrCore->adminUrl()) ?>
+    <span aria-current="page"><?= $translate('Import mapping') ?></span>
 </nav>
 
 <p>
