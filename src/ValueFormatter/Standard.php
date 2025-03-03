@@ -28,6 +28,8 @@ class Standard extends AbstractValueFormatter
                     $value->assetUrl(),
                     trim((string) $value->altText()),
                 ], 'strlen');
+            } elseif (method_exists('__toString', $value)) {
+                $value = (string) $value;
             } else {
                 return [];
             }

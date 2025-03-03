@@ -19,6 +19,8 @@ class Text extends AbstractValueFormatter
                 $value = (string) $value->value();
             } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
                 $value = (string) $value->altText();
+            } elseif (method_exists('__toString', $value)) {
+                $value = (string) $value;
             } else {
                 return [];
             }
