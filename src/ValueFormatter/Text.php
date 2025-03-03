@@ -7,10 +7,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class Text extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'Text'; // @translate
-    }
+    protected $label = 'Text'; // @translate
 
     public function format($value): array
     {

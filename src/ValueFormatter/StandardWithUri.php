@@ -10,10 +10,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class StandardWithUri extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'Standard with uri'; // @translate
-    }
+    protected $label = 'Standard with uri'; // @translate
 
     public function format($value): array
     {

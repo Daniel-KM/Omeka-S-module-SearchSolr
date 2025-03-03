@@ -9,10 +9,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class HtmlEscapedText extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'HTML escaped text'; // @translate
-    }
+    protected $label = 'HTML escaped text'; // @translate
 
     public function format($value): array
     {

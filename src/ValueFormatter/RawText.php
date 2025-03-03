@@ -9,10 +9,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class RawText extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'Raw text'; // @translate
-    }
+    protected $label = 'Raw text'; // @translate
 
     public function format($value): array
     {

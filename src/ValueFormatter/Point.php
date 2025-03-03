@@ -6,10 +6,7 @@ use Omeka\Api\Representation\ValueRepresentation;
 
 class Point extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'Point'; // @translate
-    }
+    protected $label = 'Point'; // @translate
 
     public function format($value): array
     {

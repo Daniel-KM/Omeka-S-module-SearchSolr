@@ -7,6 +7,11 @@ use Laminas\ServiceManager\ServiceLocatorInterface;
 abstract class AbstractValueFormatter implements ValueFormatterInterface
 {
     /**
+     * @var string
+     */
+    protected $label;
+
+    /**
      * @var \Laminas\ServiceManager\ServiceLocatorInterface
      */
     protected $services;
@@ -15,6 +20,11 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
      * @var array
      */
     protected $settings = [];
+
+    public function getLabel(): string
+    {
+        return $this->label;
+    }
 
     /**
      * Set the service locator.

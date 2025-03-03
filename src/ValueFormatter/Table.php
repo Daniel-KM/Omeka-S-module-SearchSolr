@@ -7,10 +7,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class Table extends PlainText
 {
-    public function getLabel(): string
-    {
-        return 'Table'; // @translate
-    }
+    protected $label = 'Table'; // @translate
 
     public function format($value): array
     {

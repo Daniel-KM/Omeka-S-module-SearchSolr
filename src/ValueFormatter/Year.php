@@ -4,10 +4,7 @@ namespace SearchSolr\ValueFormatter;
 
 class Year extends \SearchSolr\ValueFormatter\Date
 {
-    public function getLabel(): string
-    {
-        return 'Year'; // @translate
-    }
+    protected $label = 'Year'; // @translate
 
     public function format($value): array
     {

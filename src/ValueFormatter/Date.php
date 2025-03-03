@@ -8,10 +8,7 @@ use Omeka\Api\Representation\ValueRepresentation;
 
 class Date extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'Date'; // @translate
-    }
+    protected $label = 'Date'; // @translate
 
     public function format($value): array
     {

@@ -9,10 +9,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class UcFirstText extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'First character uppercase'; // @translate
-    }
+    protected $label = 'First character uppercase'; // @translate
 
     public function format($value): array
     {

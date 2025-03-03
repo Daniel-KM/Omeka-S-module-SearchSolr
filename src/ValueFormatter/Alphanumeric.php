@@ -15,10 +15,7 @@ namespace SearchSolr\ValueFormatter;
  */
 class Alphanumeric extends Standard
 {
-    public function getLabel(): string
-    {
-        return 'Alphanumeric'; // @translate
-    }
+    protected $label = 'Alphanumeric'; // @translate
 
     public function format($value): array
     {

@@ -9,10 +9,7 @@ use Omeka\Api\Representation\ValueRepresentation;
  */
 class Place extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'Place'; // @translate
-    }
+    protected $label = 'Place'; // @translate
 
     public function format($value): array
     {

@@ -32,10 +32,7 @@ namespace SearchSolr\ValueFormatter;
 
 class DateRange extends AbstractValueFormatter
 {
-    public function getLabel(): string
-    {
-        return 'Date range'; // @translate
-    }
+    protected $label = 'Date range'; // @translate
 
     public function format($value): array
     {
