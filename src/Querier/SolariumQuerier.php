@@ -169,6 +169,9 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
+        $this->response->setCurrentPage($this->query->getPage());
+        $this->response->setPerPage($this->query->getPerPage());
+
         // Remove specific results when settings are not by resource type.
         // TODO Check option "by resource type" earlier.
         // Facets are always grouped.
@@ -497,6 +500,7 @@ class SolariumQuerier extends AbstractQuerier
             $this->solariumQuery->addSort($sortField, $sortOrder);
         }
 
+        // Limit is per page and offset is page x limit.
         $limit = $this->query->getLimit();
         if ($limit) {
             $this->solariumQuery->getGrouping()->setLimit($limit);
