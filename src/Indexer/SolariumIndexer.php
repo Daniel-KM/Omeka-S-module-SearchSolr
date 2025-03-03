@@ -76,6 +76,11 @@ class SolariumIndexer extends AbstractIndexer
     protected $valueFormatterManager;
 
     /**
+     * @var \Solarium\Plugin\BufferedAdd\BufferedAdd
+     */
+    protected $buffer;
+
+    /**
      * @var array
      */
     protected $formatters = [];
@@ -124,11 +129,6 @@ class SolariumIndexer extends AbstractIndexer
      * @var array
      */
     protected $vars = [];
-
-    /**
-     * @var \Solarium\QueryType\Update\Query\Document[]
-     */
-    protected $solariumDocuments = [];
 
     public function canIndex(string $resourceName): bool
     {
@@ -223,20 +223,22 @@ class SolariumIndexer extends AbstractIndexer
             ['solr_core' => $this->solrCore->name(), 'ids' => implode(', ', $resourcesIds)]
         );
 
+        $this->buffer = $this->getClient()->getPlugin('bufferedadd');
+        $this->buffer->setBufferSize(count($resourcesIds));
+
         foreach ($resources as $resource) {
-            $this->addResource($resource);
+            $document = $this->prepareDocument($resource);
+            if ($document) {
+                $this->buffer->addDocument($document);
+            }
         }
 
-        $this->commit();
-
-        // Reduce memory overflow.
-        foreach ($this->solariumDocuments as $documentId => $document) {
-            $this->solariumDocuments[$documentId] = null;
-            $document->clear();
-            unset($document);
+        try {
+            $this->buffer->commit();
+        } catch (\Exception $e) {
+            $this->commitError($e);
+            $this->buffer->clear();
         }
-
-        $this->solariumDocuments = [];
 
         return $this;
     }
@@ -311,7 +313,7 @@ class SolariumIndexer extends AbstractIndexer
             : sprintf('%s-%s-%s/%07s', $this->serverId, $this->indexName, $resourceName, $resourceId);
     }
 
-    protected function addResource(Resource $resource): void
+    protected function prepareDocument(Resource $resource): ?SolariumInputDocument
     {
         $resourceName = $resource->getResourceName();
         $resourceId = $resource->getId();
@@ -336,7 +338,7 @@ class SolariumIndexer extends AbstractIndexer
                 'The {resource_type} #{resource_id} is no more available and cannot be indexed.', // @translate
                 ['resource_type' => $resourceName, 'resource_id' => $resourceId]
             );
-            return;
+            return null;
         }
 
         $isSingleFieldFilled = [];
@@ -460,7 +462,7 @@ class SolariumIndexer extends AbstractIndexer
         // Useless and need some seconds.
         // gc_collect_cycles();
 
-        $this->solariumDocuments[$documentId] = $document;
+        return $document;
     }
 
     protected function formatValues(array $values, SolrMapRepresentation $solrMap)
@@ -520,118 +522,48 @@ class SolariumIndexer extends AbstractIndexer
     }
 
     /**
-     * Commit the prepared documents.
-     */
-    protected function commit(): void
-    {
-        if (!count($this->solariumDocuments)) {
-            $this->getLogger()->notice('No document to commit in Solr.'); // @translate
-            return;
-        }
-
-        // TODO use BufferedAdd plugin?
-        $client = $this->getClient();
-        try {
-            $update = $client
-                ->createUpdate()
-                ->addDocuments($this->solariumDocuments)
-                ->addCommit();
-            $client->update($update);
-        } catch (\Exception $e) {
-            // Index documents by one to avoid to skip well formatted documents.
-            $isMultiple = count($this->solariumDocuments) > 1;
-            if ($isMultiple) {
-                // To improve speed when error and avoid 100 requests, try
-                // indexing by ten first, then individually, so usually 11 to 20
-                // requests.
-                foreach (array_chunk($this->solariumDocuments, 10, true) as $solariumDocs) {
-                    try {
-                        $update = $client
-                            ->createUpdate()
-                            ->addDocuments($solariumDocs)
-                            ->addCommit();
-                        $client->update($update);
-                    } catch (\Exception $e) {
-                        if (count($solariumDocs) > 1) {
-                            foreach ($solariumDocs as $documentId => $document) {
-                                if (!$document) {
-                                    $dId = explode('-', $documentId);
-                                    $dId = array_pop($dId);
-                                    $this->commitError($document, $dId, $e);
-                                    continue;
-                                }
-                                try {
-                                    $update = $client
-                                        ->createUpdate()
-                                        ->addDocument($document)
-                                        ->addCommit();
-                                    $client->update($update);
-                                } catch (\Exception $e) {
-                                    $dId = explode('-', $documentId);
-                                    $dId = array_pop($dId);
-                                    $this->commitError($document, $dId, $e);
-                                }
-                            }
-                        } else {
-                            $dId = explode('-', key($solariumDocs));
-                            $dId = array_pop($dId);
-                            $this->commitError(reset($solariumDocs), $dId, $e);
-                        }
-                    }
-                }
-            } else {
-                $dId = explode('-', key($this->solariumDocuments));
-                $dId = array_pop($dId);
-                $this->commitError(reset($this->solariumDocuments), $dId, $e);
-            }
-        }
-    }
-
-    /**
      * Prepare the commit message error for log.
      *
      * To get a better message: get the data ($request->getRawData()) and post it
      * in Solr admin board.
      * @see \Solarium\Core\Client\Adapter\Http::createContext()
      */
-    protected function commitError(?SolariumInputDocument $document, string $dId, \Exception $exception): self
+    protected function commitError(\Exception $exception, bool $isRecall = false): self
     {
-        if (!$document) {
-            if ($dId) {
-                $this->getLogger()->err(
-                    'Indexing of resource failed: empty or invalid document {document_id}: {exception}', // @translate
-                    ['document_id' => $dId, 'exception' => $exception]
-                );
-            } else {
-                $this->getLogger()->err(
-                    'Indexing of resource failed: empty or invalid document: {exception}', // @translate
-                    ['exception' => $exception]
-                );
-            }
-            return $this;
-        }
-
         $error = method_exists($exception, 'getBody') ? json_decode((string) $exception->getBody(), true) : null;
+
         $message = is_array($error) && isset($error['error']['msg'])
             ? $error['error']['msg']
             : $exception->getMessage();
+
         if ($message === 'Solr HTTP error: Bad Request (400)') {
             // TODO Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
             /** @see \Solarium\Core\Client\Adapter\Http::createContext() */
             $this->getLogger()->err(
-                'Indexing of resource {document_id} failed: Invalid document (wrong field type or missing required field).', // @translate
-                ['document_id' => $dId]
+                'Indexing of resource failed: Invalid document (wrong field type or missing required field).' // @translate
             );
         } elseif ($message === 'Solr HTTP error: HTTP request failed') {
-            $this->getLogger()->err(
-                'Solr HTTP error: HTTP request failed due to network or certificate issue.' // @translate
-            );
+            // The exception can occur before or after buffer->clear().
+            if (!$isRecall && $this->buffer->getBuffer()) {
+                // Most of the time, the issue is a config issue with a limit.
+                sleep(10);
+                try {
+                    $this->buffer->commit();
+                } catch (\Exception $e) {
+                    $this->commitError($exception, true);
+                }
+            } else {
+                $this->getLogger()->err(
+                    'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue.' // @translate
+                );
+            }
         } else {
             $this->getLogger()->err(
-                'Indexing of resource {document_id} failed: {message}', // @translate
-                ['document_id' => $dId, 'message' => $message]
+                'Indexing of resource failed: {message}', // @translate
+                ['message' => $message]
             );
         }
+
         return $this;
     }
 
@@ -925,6 +857,8 @@ class SolariumIndexer extends AbstractIndexer
     {
         if (!isset($this->solariumClient)) {
             $this->solariumClient = $this->getSolrCore()->solariumClient();
+            // Use BufferedAdd plugin to reduce memory issue.
+            $this->solariumClient->getPlugin('bufferedadd');
         }
         return $this->solariumClient;
     }
