@@ -546,6 +546,15 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return array_keys($terms);
     }
 
+    /**
+     * Warning: unlike queryValues, the field isn't an alias but a real index.
+     *
+     * @todo Merge queryValuesCount() of SolariumQuerier with SolrRepresentation.
+     *
+     * Adapted:
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValuesCount()
+     * @see \SearchSolr\Querier\SolariumQuerier::queryValuesCount()
+     */
     public function queryValuesCount(?string $field, ?string $sort = 'index asc'): array
     {
         if (!$field) {

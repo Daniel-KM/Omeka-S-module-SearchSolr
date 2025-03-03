@@ -200,7 +200,7 @@ class SolariumQuerier extends AbstractQuerier
         if ($facetSet) {
             $facetCounts = [];
             $explode = fn ($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
-            $queryFacets = $this->query->getfacets();
+            $queryFacets = $this->query->getFacets();
             $facetListAll = $this->query->getOption('facet_list') === 'all';
             /** @var \Solarium\Component/Result/Facet/FacetResultInterface $facetResult */
             // foreach $facetSet = foreach $facetSet->getFacets().
@@ -211,9 +211,10 @@ class SolariumQuerier extends AbstractQuerier
                     // and getBetween(), that are not used for now.
                     $facetCount = [];
                     /** @var \Solarium\Component\Result\Facet\Bucket $bucket */
-                    // foreach $facetResult = foreach $facetResult->getBuckets().
                     foreach ($facetResult->getBuckets() as $bucket) {
                         $count = $bucket->getCount();
+                        // Warning: for a range, all values are returned from
+                        // min to max. See config of facets below.
                         if ($facetListAll || $count) {
                             // $this->response->addFacetCount($name, $value, $count);
                             $value = $bucket->getValue();
@@ -305,6 +306,74 @@ class SolariumQuerier extends AbstractQuerier
         unset($list['']);
 
         return array_combine($list, $list);
+    }
+
+    /**
+     * Warning: unlike queryValues, the field isn't an alias but a real index.
+     *
+     * @todo Merge queryValuesCount() of SolariumQuerier with SolrRepresentation.
+     *
+     * Adapted:
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValuesCount()
+     * @see \SearchSolr\Querier\SolariumQuerier::queryValuesCount()
+     */
+    public function queryValuesCount($fields, ?string $sort = 'index asc'): array
+    {
+        if (!$fields) {
+            return [];
+        }
+
+        // Init solarium.
+        $this->getClient();
+
+        if (!is_array($fields)) {
+            $fields = [$fields];
+        }
+
+        // TODO Limit output by site when set in query (or index by site).
+
+        $sorts = [
+            \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC,
+            \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
+            \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
+            \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC,
+        ];
+        $sort = in_array($sort, $sorts) ? $sort : \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC;
+
+        // In Sort, a query value is a terms query.
+        $query = $this->solariumClient->createTerms();
+        $query
+            ->setFields($fields)
+            ->setSort($sort)
+            ->setLimit(-1)
+            // Only used values. Anyway, by default there is no predefined list.
+            ->setMinCount(1);
+        $resultSet = $this->solariumClient->terms($query);
+
+        // TODO The sort does not seem to work, so for now resort locally.
+        $result = [];
+        foreach ($fields as $field) {
+            $terms = $resultSet->getTerms($field);
+            switch ($sort) {
+                default:
+                case \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC:
+                    uksort($terms, 'strnatcasecmp');
+                    break;
+                case \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC:
+                    uksort($terms, 'strnatcasecmp');
+                    $terms = array_reverse($terms, true);
+                    break;
+                case \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC:
+                    asort($terms);
+                    break;
+                case \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC:
+                    arsort($terms);
+                    break;
+            }
+            $result[$field] = $terms;
+        }
+
+        return $result;
     }
 
     /**
@@ -462,12 +531,39 @@ class SolariumQuerier extends AbstractQuerier
         $facetOrderDefault = \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC;
 
         $facets = $this->query->getFacets();
+
         if (count($facets)) {
             // Explode with separator "|" if present, else ",".
             // For complex cases, an array should be used.
             $explode = fn ($string): array => explode(strpos((string) $string, '|') === false ? ',' : '|', (string) $string);
+
             // Use "json facets" output, that is recommended by Solr.
-            /* @see https://solr.apache.org/guide/solr/latest/query-guide/json-facet-api.html */
+            /** @see https://solr.apache.org/guide/solr/latest/query-guide/json-facet-api.html */
+
+            // Early prepare min/max for all ranges.
+            $fieldRanges = [];
+            foreach ($facets as $facetName => $facetData) {
+                if (in_array($facetData['type'], ['Range', 'RangeDouble', 'SelectRange'])) {
+                    /*
+                    if (!isset($facetData['min']) || !isset($facetData['max'])) {
+                        $this->logger->info(
+                            'With a facet range ({field}), it is recommended to set min and max for performance.', // @ translate
+                            ['field' => $facetName]
+                        );
+                    }
+                    */
+                    $fieldRanges[$facetName] = [];
+                }
+            }
+            if ($fieldRanges) {
+                $all = $this->queryValuesCount(array_keys($fieldRanges));
+                foreach ($all as $facetName => $values) {
+                    $values = array_keys(array_filter($values));
+                    $fieldRanges[$facetName]['min'] = $values ? min($values) : 0;
+                    $fieldRanges[$facetName]['max'] = $values ? max($values) : 0;
+                }
+            }
+
             foreach ($facets as $facetName => $facetData) {
                 if (empty($facetData['field'])) {
                     continue;
@@ -479,9 +575,8 @@ class SolariumQuerier extends AbstractQuerier
                 $facetLimit = $facetData['limit'] ?? 0;
                 $facetValues = $facetData['values'] ?? [];
                 if (in_array($facetData['type'], ['Range', 'RangeDouble', 'SelectRange'])) {
-                    // For year by default.
-                    $min = isset($facetData['min']) ? (int) $facetData['min'] : 0;
-                    $max = isset($facetData['max']) ? (int) $facetData['max'] : 2100;
+                    $min = isset($facetData['min']) ? $facetData['min'] : $fieldRanges[$facetName]['min'];
+                    $max = isset($facetData['max']) ? $facetData['max'] : $fieldRanges[$facetName]['max'];;
                     $step = isset($facetData['step']) ? (int) $facetData['step'] : 1;
                     $facet = $solariumFacetSet
                         ->createJsonFacetRange($facetName)
