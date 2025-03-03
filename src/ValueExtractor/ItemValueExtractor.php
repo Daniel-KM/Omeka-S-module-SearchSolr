@@ -32,8 +32,5 @@ namespace SearchSolr\ValueExtractor;
 
 class ItemValueExtractor extends AbstractResourceEntityValueExtractor
 {
-    public function getLabel(): string
-    {
-        return 'Item'; // @translate
-    }
+    protected $label = 'Item'; // @translate
 }

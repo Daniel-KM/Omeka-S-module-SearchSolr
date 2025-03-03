@@ -4,8 +4,5 @@ namespace SearchSolr\ValueExtractor;
 
 class ResourceValueExtractor extends AbstractResourceEntityValueExtractor
 {
-    public function getLabel(): string
-    {
-        return 'Resource'; // @translate
-    }
+    protected $label = 'Resource'; // @translate
 }

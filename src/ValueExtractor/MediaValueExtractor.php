@@ -4,8 +4,5 @@ namespace SearchSolr\ValueExtractor;
 
 class MediaValueExtractor extends AbstractResourceEntityValueExtractor
 {
-    public function getLabel(): string
-    {
-        return 'Media'; // @translate
-    }
+    protected $label = 'Media'; // @translate
 }

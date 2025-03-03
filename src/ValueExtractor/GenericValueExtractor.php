@@ -7,8 +7,5 @@ namespace SearchSolr\ValueExtractor;
  */
 class GenericValueExtractor extends AbstractResourceEntityValueExtractor
 {
-    public function getLabel(): string
-    {
-        return 'Generic'; // @translate
-    }
+    protected $label = 'Generic'; // @translate
 }

@@ -59,6 +59,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
      */
     protected $baseFilepath;
 
+    protected $label;
+
     public function __construct(ApiManager $api, LoggerInterface $logger, $baseFilepath)
     {
         $this->api = $api;
@@ -66,7 +68,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $this->baseFilepath = $baseFilepath;
     }
 
-    abstract public function getLabel(): string;
+    public function getLabel(): string
+    {
+        return $this->label;
+    }
 
     public function getMapFields(): array
     {
