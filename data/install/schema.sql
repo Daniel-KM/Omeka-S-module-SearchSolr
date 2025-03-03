@@ -4,6 +4,7 @@ CREATE TABLE `solr_core` (
     `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
     PRIMARY KEY(`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
+
 CREATE TABLE `solr_map` (
     `id` INT AUTO_INCREMENT NOT NULL,
     `solr_core_id` INT NOT NULL,
@@ -18,4 +19,5 @@ CREATE TABLE `solr_map` (
     INDEX IDX_39A565C527B35A195F8A7F73 (`solr_core_id`, `source`),
     PRIMARY KEY(`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
+
 ALTER TABLE `solr_map` ADD CONSTRAINT FK_39A565C527B35A19 FOREIGN KEY (`solr_core_id`) REFERENCES `solr_core` (`id`) ON DELETE CASCADE;

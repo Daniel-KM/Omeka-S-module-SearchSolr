@@ -444,7 +444,7 @@ class SolrMapForm extends Form
 
     protected function getFormatterOptions(): array
     {
-        $noTableModule = !class_exists('Table\Form\Element\TablesSelect');
+        $noTableModule = !class_exists('Table\Module', false);
 
         $options = [];
         foreach ($this->valueFormatterManager->getRegisteredNames() as $name) {

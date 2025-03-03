@@ -32,6 +32,7 @@ namespace SearchSolr\EngineAdapter;
 use AdvancedSearch\EngineAdapter\AbstractEngineAdapter;
 use Laminas\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
+use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrConfigFieldset;
 
 class Solarium extends AbstractEngineAdapter
@@ -72,17 +73,10 @@ class Solarium extends AbstractEngineAdapter
 
     public function getAvailableFields(): array
     {
-        if (!$this->searchEngine) {
+        $solrCore = $this->getSolrCore();
+        if (!$solrCore) {
             return [];
         }
-
-        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-        if (!$solrCoreId) {
-            return [];
-        }
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
 
         // TODO Add support of input field for id (from o:id).
 
@@ -104,17 +98,11 @@ class Solarium extends AbstractEngineAdapter
 
     public function getAvailableSortFields(): array
     {
-        if (!$this->searchEngine) {
+        $solrCore = $this->getSolrCore();
+        if (!$solrCore) {
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-        if (!$solrCoreId) {
-            return [];
-        }
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
         $schema = $solrCore->schema();
 
         $sortFields = [
@@ -150,17 +138,11 @@ class Solarium extends AbstractEngineAdapter
 
     public function getAvailableFacetFields(): array
     {
-        if (!$this->searchEngine) {
+        $solrCore = $this->getSolrCore();
+        if (!$solrCore) {
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-        if (!$solrCoreId) {
-            return [];
-        }
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
         $schema = $solrCore->schema();
 
         $fields = [];
@@ -182,17 +164,10 @@ class Solarium extends AbstractEngineAdapter
 
     public function getAvailableFieldsForSelect(): array
     {
-        if (!$this->searchEngine) {
+        $solrCore = $this->getSolrCore();
+        if (!$solrCore) {
             return [];
         }
-
-        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-        if (!$solrCoreId) {
-            return [];
-        }
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
 
         // TODO Add support of input field for id (from o:id).
 
@@ -215,17 +190,11 @@ class Solarium extends AbstractEngineAdapter
 
     public function getAvailableSortFieldsForSelect(): array
     {
-        if (!$this->searchEngine) {
+        $solrCore = $this->getSolrCore();
+        if (!$solrCore) {
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-        if (!$solrCoreId) {
-            return [];
-        }
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
         $schema = $solrCore->schema();
 
         $sortFields = [
@@ -257,17 +226,11 @@ class Solarium extends AbstractEngineAdapter
 
     public function getAvailableFacetFieldsForSelect(): array
     {
-        if (!$this->searchEngine) {
+        $solrCore = $this->getSolrCore();
+        if (!$solrCore) {
             return [];
         }
 
-        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-        if (!$solrCoreId) {
-            return [];
-        }
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api->read('solr_cores', $solrCoreId)->getContent();
         $schema = $solrCore->schema();
 
         $fields = [];
@@ -282,5 +245,23 @@ class Solarium extends AbstractEngineAdapter
         }
 
         return $fields;
+    }
+
+    public function getSolrCore(): ?SolrCoreRepresentation
+    {
+        if (!$this->searchEngine) {
+            return [];
+        }
+
+        $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
+        if (!$solrCoreId) {
+            return [];
+        }
+
+        try {
+            return $this->api->read('solr_cores', $solrCoreId)->getContent();
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

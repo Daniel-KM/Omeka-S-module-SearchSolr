@@ -1,3 +1,5 @@
+'use strict';
+
 /*
  * Copyright BibLibre, 2016
  * Copyright Paul Sarrassat, 2018
@@ -36,17 +38,17 @@
     var fieldTypesByName = {};
     var fieldsByName = {};
 
-    for (i in schema.fieldTypes) {
+    for (let i in schema.fieldTypes) {
         var type = schema.fieldTypes[i];
         fieldTypesByName[type.name] = type;
     }
 
-    for (i in schema.fields) {
+    for (let i in schema.fields) {
         var field = schema.fields[i];
         fieldsByName[field.name] = field;
     }
 
-    for (i in schema.dynamicFields) {
+    for (let i in schema.dynamicFields) {
         var field = schema.dynamicFields[i];
         fieldsByName[field.name] = field;
     }
@@ -230,7 +232,7 @@
             var fieldsOptGroup = $('<optgroup>', {
                 label: Omeka.jsTranslate('Field'),
             });
-            for (i in fields) {
+            for (let i in fields) {
                 var field = fields[i];
                 if (field.name.startsWith('_') && field.name.endsWith('_'))
                 var option = $('<option>')
@@ -244,17 +246,14 @@
         var dynamicFields = schema.dynamicFields.filter(function(f) {
             var type = fieldTypesByName[f.type];
             var indexed = 'indexed' in f ? f.indexed : type.indexed;
-            if (!indexed){
-                return false;
-            }
-            return true;
+            return indexed ? true : false;
         });
 
         if (dynamicFields.length) {
             var dynamicFieldsOptGroup = $('<optgroup>', {
                 label: Omeka.jsTranslate('Dynamic field'),
             });
-            for (i in dynamicFields) {
+            for (let i in dynamicFields) {
                 var field = dynamicFields[i];
                 var option = $('<option>')
                     .val(field.name)
@@ -292,7 +291,7 @@
                 var value = $(this).val();
                 timeout = setTimeout(function() {
                     var matchedField = '';
-                    for (i in fields) {
+                    for (let i in fields) {
                         var field = fields[i];
                         if (field.name == value) {
                             matchedField = field.name;

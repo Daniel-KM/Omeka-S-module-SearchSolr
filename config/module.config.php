@@ -111,7 +111,7 @@ return [
                         'may_terminate' => true,
                         'child_routes' => [
                             'solr' => [
-                                'type' => \Laminas\Router\Http\Segment::class,
+                                'type' => \Laminas\Router\Http\Literal::class,
                                 'options' => [
                                     'route' => '/solr',
                                     'defaults' => [
@@ -126,6 +126,9 @@ return [
                                         'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
                                             'route' => '/core[/:action]',
+                                            'constraints' => [
+                                                'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                            ],
                                             'defaults' => [
                                                 'action' => 'browse',
                                             ],
@@ -137,6 +140,7 @@ return [
                                             'route' => '/core/:id[/:action]',
                                             'constraints' => [
                                                 'id' => '\d+',
+                                                'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
                                             ],
                                             'defaults' => [
                                                 'action' => 'show',
@@ -162,6 +166,7 @@ return [
                                             'route' => '/core/:coreId/map/:resourceName[/:action]',
                                             'constraints' => [
                                                 'coreId' => '\d+',
+                                                'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
                                             ],
                                             'defaults' => [
                                                 'controller' => Controller\Admin\MapController::class,
@@ -176,6 +181,7 @@ return [
                                             'constraints' => [
                                                 'coreId' => '\d+',
                                                 'id' => '\d+',
+                                                'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
                                             ],
                                             'defaults' => [
                                                 'controller' => Controller\Admin\MapController::class,

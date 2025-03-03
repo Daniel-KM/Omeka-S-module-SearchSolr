@@ -99,7 +99,14 @@ class Module extends AbstractModule
             return;
         }
 
-        $this->addAclRules();
+        /** @var \Omeka\Permissions\Acl $acl */
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+        $acl
+            ->allow(null, [
+                \SearchSolr\Api\Adapter\SolrCoreAdapter::class,
+                \SearchSolr\Api\Adapter\SolrMapAdapter::class,
+            ])
+            ->allow(null, [\SearchSolr\Entity\SolrCore::class], 'read');
     }
 
     protected function preInstall(): void
@@ -153,19 +160,6 @@ class Module extends AbstractModule
             $connection = $services->get('Omeka\Connection');
             $connection->executeStatement($sql);
         }
-    }
-
-    /**
-     * Add ACL rules for this module.
-     */
-    protected function addAclRules(): void
-    {
-        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(null, [
-            \SearchSolr\Api\Adapter\SolrCoreAdapter::class,
-            \SearchSolr\Api\Adapter\SolrMapAdapter::class,
-        ]);
-        $acl->allow(null, \SearchSolr\Entity\SolrCore::class, 'read');
     }
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void

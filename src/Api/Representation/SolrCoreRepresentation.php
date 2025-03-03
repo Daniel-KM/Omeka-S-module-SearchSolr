@@ -379,7 +379,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         static $maps;
 
-        if (is_null($maps)) {
+        if ($maps === null) {
             $maps = [];
             $mapAdapter = $this->getAdapter('solr_maps');
             /** @var \SearchSolr\Entity\SolrMap $mapEntity */
@@ -402,7 +402,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         static $maps;
 
-        if (is_null($maps)) {
+        if ($maps === null) {
             $maps = $this->mapsByResourceName();
             foreach ($maps as &$mapss) {
                 usort($mapss, fn ($a, $b) => $a->fieldName() <=> $b->fieldName());
@@ -425,7 +425,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         static $maps;
 
-        if (is_null($maps)) {
+        if ($maps === null) {
             $maps = [
                 'generic' => [],
                 'resources' => [],
