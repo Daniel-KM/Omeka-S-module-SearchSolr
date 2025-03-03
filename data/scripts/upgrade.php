@@ -551,3 +551,64 @@ if (version_compare($oldVersion, '3.5.53', '<')) {
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
 }
+
+if (version_compare($oldVersion, '3.5.54', '<')) {
+    // Add index "o_id_i" and "o_title_s".
+    // TODO Add index "is_o_id" and "ss_o_title" for drupal.
+    $newIndexes = [
+        'o_id_i' => 'o:id',
+        'o_title_s' => 'o:title',
+    ];
+
+    $qb = $connection->createQueryBuilder();
+    $qb
+        ->select('id', 'id')
+        ->from('solr_core', 'solr_core')
+        ->orderBy('id', 'asc');
+    $solrCoreIds = $connection->executeQuery($qb)->fetchAllKeyValue();
+    foreach ($solrCoreIds as $solrCoreId) {
+        foreach ($newIndexes as $fieldName => $sourceName) {
+            // Check if the map exists.
+            $qb = $connection->createQueryBuilder();
+            $qb
+                ->select('id', 'id')
+                ->from('solr_map', 'solr_map')
+                /*
+                ->where($qb->expr()->eq('solr_core_id', ':solr_core_id'))
+                ->andWhere($qb->expr()->eq('resource_name', ':resource_name'))
+                ->andWhere($qb->expr()->eq('field_name', ':field_name'))
+                ->setParameter('solr_core_id', $solrCoreId)
+                ->setParameter('resource_name', 'generic')
+                ->setParameter('field_name', $fieldName)
+                */
+                ->where("solr_core_id = $solrCoreId AND resource_name = 'generic' AND field_name = '$fieldName'")
+            ;
+            $solrCoreMaps = $connection->executeQuery($qb)->rowCount();
+            if (!is_numeric($solrCoreMaps) || $solrCoreMaps) {
+                continue;
+            }
+            // There is no unique fields.
+            $sql = <<<'SQL'
+                INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
+                VALUES (?, ?, ?, ?, ?, ?);
+                SQL;
+            $connection->executeStatement($sql, [
+                $solrCoreId,
+                'generic',
+                $fieldName,
+                $sourceName,
+                '[]',
+                '[]',
+            ]);
+        }
+    }
+
+    $message = new PsrMessage(
+        'It is now possible to list {link}all resources and values indexed by a core{link_end}.', // @translate
+        ['link' => '<a href="/admin/search-manager/solr/core/1">' , 'link_end' => '</a>']
+    );
+    $message->setEscapeHtml(false);
+    $messenger->addSuccess($message);
+
+    $messenger->addWarning('You should reindex your Solr cores.'); // @translate
+}
