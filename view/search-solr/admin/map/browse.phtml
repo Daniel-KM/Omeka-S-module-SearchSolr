@@ -36,14 +36,24 @@
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
 $escape = $plugins->get('escapeHtml');
+$assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 
+$this->headScript()->appendScript(
+    'const schema = ' . json_encode($solrCore->schema()->getSchema(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
+const sourceLabels = ' . json_encode([], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';'
+);
+
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+$this->headScript()
+    ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
+
 $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
-$pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
 ?>
 
-<?= $this->pageTitle($pageTitle) ?>
+<?= $this->pageTitle(sprintf($translate('Solr core "%s"'), $solrCore->name())) ?>
 
 <div id="page-actions">
     <?php $exportUrl = $url('admin/search/solr/core-id', [
@@ -116,6 +126,16 @@ $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
                 <tr>
                     <td>
                         <span><?= $escape($fieldName) ?></span>
+                        <ul class="actions">
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName),
+                                    'class' => 'o-icon- fas fa-sort-alpha-down sidebar-content',
+                                    'title' => $translate('List indexed values'),
+                                ]) ?>
+                            </li>
+                        </ul>
                     </td>
                     <td>
                         <ul class="sources">
@@ -134,4 +154,9 @@ $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
         </tbody>
     </table>
 <?php endif; ?>
+</div>
+
+<div id="sidebar" class="sidebar">
+    <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
+    <div class="sidebar-content"></div>
 </div>

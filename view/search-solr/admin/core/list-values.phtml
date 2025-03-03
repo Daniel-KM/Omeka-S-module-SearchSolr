@@ -1,0 +1,24 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var string $fieldName
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+
+$listValues = $solrCore->queryValues($fieldName);
+?>
+
+<h3><?= $escape($fieldName) ?></h3>
+
+<div class="meta-group meta-group-list">
+	<h4><?= sprintf($translate('Total indexed values: %d'), count($listValues)) ?></h4>
+    <ul>
+        <?php foreach ($listValues as $value => $count): ?>
+        <li><?= $escape(sprintf($row, $value, $count)) ?></li>
+        <?php endforeach; ?>
+    </ul>
+</div>

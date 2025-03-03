@@ -256,8 +256,22 @@ class SolariumQuerier extends AbstractQuerier
             ->setMessage('Suggestions are not implemented here. Use direct url.'); // @translate
     }
 
+    /**
+     * @todo Merge queryValues() of SolariumQuerier with SolrRepresentation.
+     *
+     * Adapted:
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValues()
+     * @see \SearchSolr\Querier\SolariumQuerier::queryValues()
+     *
+     * {@inheritDoc}
+     * @see \AdvancedSearch\Querier\AbstractQuerier::queryValues()
+     */
     public function queryValues(string $field): array
     {
+        if (!$field) {
+            return [];
+        }
+
         // Init solarium.
         $this->getClient();
 

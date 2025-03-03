@@ -315,6 +315,20 @@ class CoreController extends AbstractActionController
         return $response;
     }
 
+    public function listValuesAction()
+    {
+        $solrCoreId = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+
+        $fieldName = $this->params()->fromQuery('fieldname');
+
+        return (new ViewModel([
+            'solrCore' => $solrCore,
+            'fieldName' => $fieldName,
+        ]))->setTerminal(true);
+    }
+
     protected function checkPostAndValidForm(\Laminas\Form\Form $form)
     {
         if (!$this->getRequest()->isPost()) {
