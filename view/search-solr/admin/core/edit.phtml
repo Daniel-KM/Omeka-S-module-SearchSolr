@@ -29,34 +29,42 @@
 
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
  * @var \SearchSolr\Form\Admin\SolrCoreForm $form
  */
 
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
+$assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 
 $form->prepare();
+
+$this->headLink()->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores create edit');
 ?>
 
-<?= $this->pageTitle($translate('Edit Solr core')) ?>
+<?= $this->pageTitle($translate('Edit Solr core'), 1, $translate('Solr core')) ?>
 
-<?= $this->form()->openTag($form) ?>
 <div id="page-actions">
-    <button type="submit" class="button"><?= $translate('Save') ?></button>
+    <button type="submit" class="button" form="<?= $form->getAttribute('id') ?>"><?= $translate('Save') ?></button>
 </div>
+
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
     <span aria-current="page"><?= $translate('Edit core') ?></span>
 </nav>
+
+<?= $this->form()->openTag($form) ?>
 <?= $this->formCollection($form, false) ?>
 <?php $this->trigger('view.edit.form.after'); ?>
 <?= $this->form()->closeTag() ?>
 
 <p>
-<?= $translate('WARNING: Changing the required values will require a complete reindexation.') ?>
+    <?= $translate('WARNING: Changing the required values will require a complete reindexation.') ?>
 </p>
 
 <?php $this->trigger('view.edit.after'); ?>

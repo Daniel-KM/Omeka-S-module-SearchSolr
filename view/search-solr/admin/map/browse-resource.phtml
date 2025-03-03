@@ -36,17 +36,19 @@
 
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
+$assetUrl = $plugins->get('assetUrl');
 $escape = $plugins->get('escapeHtml');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 $escapeAttr = $plugins->get('escapeHtmlAttr');
 
-$this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 
-$this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse');
 ?>
 
-<?= $this->pageTitle(sprintf($translate('Solr maps for "%s"'), $resourceName)) ?>
+<?= $this->pageTitle($translate('Solr indices'), 1, $translate('Solr core')) ?>
 
 <div id="page-actions">
     <?php $addUrl = $url('admin/search/solr/core-id-map-resource', [
@@ -72,8 +74,8 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
 <nav class="breadcrumbs">
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
-    <?= $hyperlink(sprintf($translate('Resources list for core "%s"'), $solrCore->name()), $url('admin/search/solr/core-id-map', [], true)) ?>
-    <span><?= sprintf($translate('Maps for "%s"'), $resourceName) ?></span>
+    <?= $hyperlink($translate('Resource types'), $solrCore->mapUrl()) ?>
+    <span><?= sprintf($translate('Indices for "%s"'), $resourceName) ?></span>
 </nav>
 
 <?php if (count($maps)): ?>

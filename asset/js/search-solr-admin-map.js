@@ -30,9 +30,8 @@
 (function() {
 
     // Schema and sourceLabels are set in the form.
-
-    // const schema;
-    // const sourceLabels;
+    // var schema = schema || {};
+    // var sourceLabels = sourceLabels || {};
 
     var fieldTypesByName = {};
     var fieldsByName = {};

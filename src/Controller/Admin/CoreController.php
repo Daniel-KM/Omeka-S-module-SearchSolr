@@ -64,9 +64,9 @@ class CoreController extends AbstractActionController
     public function browseAction()
     {
         $response = $this->api()->search('solr_cores');
-        $cores = $response->getContent();
+        $solrCores = $response->getContent();
         return new ViewModel([
-            'cores' => $cores,
+            'solrCores' => $solrCores,
         ]);
     }
 
@@ -95,26 +95,26 @@ class CoreController extends AbstractActionController
             ],
             'server_id' => '',
         ];
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
-        $core = $this->api()->create('solr_cores', $data)->getContent();
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->create('solr_cores', $data)->getContent();
         $this->messenger()->addSuccess(new PsrMessage(
             'Solr core "{solr_core_name}" created.', // @translate
-            ['solr_core_name' => $core->name()]
+            ['solr_core_name' => $solrCore->name()]
         ));
-        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $core->id(), 'action' => 'edit']);
+        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCore->id(), 'action' => 'edit']);
     }
 
     public function editAction()
     {
         $id = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
-        $core = $this->api()->read('solr_cores', $id)->getContent();
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
         $form = $this->getForm(SolrCoreForm::class, [
             'server_id' => $this->settings()->get('searchsolr_server_id'),
         ]);
-        $data = $core->jsonSerialize();
+        $data = $solrCore->jsonSerialize();
 
         // The setting "filter_resources" should be a string.
         $data['o:settings']['filter_resources'] = empty($data['o:settings']['filter_resources'])
@@ -125,6 +125,7 @@ class CoreController extends AbstractActionController
 
         if (!$this->checkPostAndValidForm($form)) {
             return new ViewModel([
+                'solrCore' => $solrCore,
                 'form' => $form,
             ]);
         }
@@ -146,10 +147,10 @@ class CoreController extends AbstractActionController
 
         $this->messenger()->addSuccess(new PsrMessage(
             'Solr core "{solr_core_name}" updated.', // @translate
-            ['solr_core_name' => $core->name()]
+            ['solr_core_name' => $solrCore->name()]
         ));
 
-        $missingMaps = $core->missingRequiredMaps();
+        $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
             $this->messenger()->addError(new PsrMessage(
                 'Some required fields are missing or not available in the core: {list}. Update the generic or the resource mappings.', // @translate
@@ -158,7 +159,7 @@ class CoreController extends AbstractActionController
         }
 
         if (!empty($data['o:settings']['support'])) {
-            $supportFields = $core->schemaSupport($data['o:settings']['support']);
+            $supportFields = $solrCore->schemaSupport($data['o:settings']['support']);
             $unsupportedFields = array_filter($supportFields, fn ($v) => empty($v));
             if (count($unsupportedFields)) {
                 $this->messenger()->addError(new PsrMessage(
@@ -172,10 +173,10 @@ class CoreController extends AbstractActionController
         }
 
         if ($clearFullIndex) {
-            $this->clearFullIndex($core);
+            $this->clearFullIndex($solrCore);
             $this->messenger()->addWarning(new PsrMessage(
                 'All indexes of core "{solr_core_name}" were deleted.', // @translate
-                ['solr_core_name' => $core->name()]
+                ['solr_core_name' => $solrCore->name()]
             ));
         }
 
@@ -185,16 +186,16 @@ class CoreController extends AbstractActionController
     public function deleteConfirmAction()
     {
         $id = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $core */
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $response = $this->api()->read('solr_cores', $id);
-        $core = $response->getContent();
+        $solrCore = $response->getContent();
 
-        $searchEngines = $core->searchEngines();
-        $searchConfigs = $core->searchConfigs();
-        $solrMaps = $core->maps();
+        $searchEngines = $solrCore->searchEngines();
+        $searchConfigs = $solrCore->searchConfigs();
+        $solrMaps = $solrCore->maps();
 
         $view = new ViewModel([
-            'resource' => $core,
+            'resource' => $solrCore,
             'resourceLabel' => 'Solr core', // @translate
             'partialPath' => 'common/solr-core-delete-confirm-details',
             'totalSearchEngines' => count($searchEngines),

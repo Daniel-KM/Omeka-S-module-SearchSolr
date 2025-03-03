@@ -208,9 +208,9 @@ class Module extends AbstractModule
         $view = $event->getTarget();
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $response = $api->search('solr_cores');
-        $cores = $response->getContent();
+        $solrCores = $response->getContent();
         echo $view->partial('search-solr/admin/core/browse-table', [
-            'cores' => $cores,
+            'solrCores' => $solrCores,
         ]);
     }
 

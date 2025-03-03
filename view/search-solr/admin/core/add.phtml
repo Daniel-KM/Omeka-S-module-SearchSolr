@@ -34,23 +34,31 @@
 
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
+$assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 
 $form->prepare();
+
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores create add');
 ?>
 
-<?= $this->pageTitle($translate('Add Solr core')) ?>
+<?= $this->pageTitle($translate('Add Solr core'), 1, $translate('Solr core')) ?>
 
-<?= $this->form()->openTag($form) ?>
 <div id="page-actions">
-    <button type="submit" class="button"><?= $translate('Add') ?></button>
+    <button type="submit" class="button" form="<?= $form->getAttribute('id') ?>"><?= $translate('Add') ?></button>
 </div>
+
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
     <span aria-current="page"><?= $translate('Add core') ?></span>
 </nav>
+
+<?= $this->form()->openTag($form) ?>
 <?= $this->formCollection($form, false) ?>
 <?php $this->trigger('view.add.form.after'); ?>
 <?= $this->form()->closeTag() ?>

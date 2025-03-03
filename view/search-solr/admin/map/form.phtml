@@ -6,14 +6,18 @@
  * @var array $sourceLabels
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$assetUrl = $plugins->get('assetUrl');
+$translate = $plugins->get('translate');
 
-$this->headLink()->appendStylesheet($this->assetUrl('css/search-solr-admin.css', 'SearchSolr'));
-$this->headScript()->appendScript(
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+$this->headScript()
+    ->appendScript(
     'const schema = ' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
 const sourceLabels = ' . json_encode($sourceLabels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';'
-);
-$this->headScript()->appendFile($this->assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
+)
+    ->appendFile($assetUrl('js/search-solr-admin-map.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
 $form->prepare();
 

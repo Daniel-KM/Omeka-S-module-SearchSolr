@@ -35,48 +35,34 @@
 
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
-$escape = $plugins->get('escapeHtml');
 $assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 
-$this->headScript()->appendScript(
-    'const schema = ' . json_encode($solrCore->schema()->getSchema(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
-const sourceLabels = ' . json_encode([], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';'
-);
-
 $this->headLink()
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
-$this->headScript()
-    ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
-$this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse');
 ?>
 
-<?= $this->pageTitle(sprintf($translate('Solr core "%s"'), $solrCore->name())) ?>
+<?= $this->pageTitle($translate('Solr indices'), 1, $translate('Solr core')) ?>
 
 <div id="page-actions">
-    <?php $exportUrl = $url('admin/search/solr/core-id', [
-        'id' => $solrCore->id(),
-        'action' => 'export',
-    ]); ?>
-    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export mapping') ?></a>
-    <?php $exportUrl = $url('admin/search/solr/core-id', [
-        'id' => $solrCore->id(),
-        'action' => 'import',
-    ]); ?>
-    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.') ?>"><?= $translate('Import mapping') ?></a>
+    <?php if ($solrCore->userIsAllowed('update')): ?>
+    <?= $hyperlink($translate('Import mapping'), $solrCore->adminUrl('import'), [
+        'class' => 'button',
+        'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
+    <?php endif; ?>
+    <?= $hyperlink($translate('Export mapping'), $solrCore->adminUrl('export'), [
+        'class' => 'button',
+        'title' => $translate('Export maps for easier spreadsheet mapping.')]) ?>
 </div>
 
 <nav class="breadcrumbs">
-    <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
-    <?= $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')) ?>
-    <span>
-    <?= sprintf($translate('Indices for core "%s"'), $solrCore->name()) ?>
-    </span>
+    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
+    <span><?= $translate('Indices') ?></span>
 </nav>
-
-<h3><?= $translate('By resource type') ?></h3>
 
 <div class="by-resource-type">
 <?php if (count($valueExtractors)): ?>

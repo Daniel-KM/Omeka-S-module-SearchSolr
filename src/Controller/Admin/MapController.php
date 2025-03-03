@@ -308,6 +308,7 @@ class MapController extends AbstractActionController
 
         return new ViewModel([
             'solrCore' => $solrCore,
+            'resourceName' => $resourceName,
             'form' => $form,
             'schema' => $this->getSolrSchema($solrCoreId),
             'sourceLabels' => $this->getSourceLabels(),
@@ -319,6 +320,8 @@ class MapController extends AbstractActionController
         $solrCoreId = $this->params('coreId');
         $resourceName = $this->params('resourceName');
         $id = $this->params('id');
+
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
         $map = $this->api()->read('solr_maps', $id)->getContent();
@@ -364,6 +367,8 @@ class MapController extends AbstractActionController
         }
 
         return new ViewModel([
+            'solrCore' => $solrCore,
+            'resourceName' => $resourceName,
             'map' => $map,
             'form' => $form,
             'schema' => $this->getSolrSchema($solrCoreId),

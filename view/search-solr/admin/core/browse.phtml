@@ -29,7 +29,7 @@
 
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $cores
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCores
  */
 
 $plugins = $this->getHelperPluginManager();
@@ -39,12 +39,13 @@ $assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 
-$this->headLink()->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores browse');
 ?>
 
-<?php $this->htmlElement('body')->appendAttribute('class', 'solr-core browse'); ?>
-
-<?= $this->pageTitle($translate('Solr configuration')) ?>
+<?= $this->pageTitle($translate('Solr cores')) ?>
 
 <div id="page-actions">
     <a class="button" href="<?= $url('admin/search/solr/core', ['action' => 'add']) ?>"><?= $translate('Add new core') ?></a>

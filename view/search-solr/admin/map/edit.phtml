@@ -29,23 +29,34 @@
 
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
  * @var \SearchSolr\Api\Representation\SolrMapRepresentation $map
+ * @var string $resourceName
  * @var \SearchSolr\Form\Admin\SolrMapForm $form
+ * @var array $schema
+ * @var array $sourceLabels
  */
 
-$translate = $this->plugin('translate');
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$assetUrl = $plugins->get('assetUrl');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
 
-$this->htmlElement('body')->appendAttribute('class', 'solr-map create');
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map create edit');
 ?>
 
-<?= $this->pageTitle($translate('Edit Solr map')) ?>
+<?= $this->pageTitle($translate('Edit index'), 1, $translate('Solr core')) ?>
+
 <nav class="breadcrumbs">
-    <?php
-    echo $this->hyperlink($translate('Search'), $this->url('admin/search'));
-    echo $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr'));
-    echo $this->hyperlink(sprintf($translate('Resources list for core "%s"'), $map->solrCore()->name()), $this->url('admin/search/solr/core-id-map', ['coreId' => $map->solrCore()->id()], true));
-    echo $this->hyperlink(sprintf($translate('Maps for "%s"'), $form->getOption('resource_name')), $this->url('admin/search/solr/core-id-map-resource', ['coreId' => $map->solrCore()->id(), 'resourceName' => $form->getOption('resource_name'), 'action' => 'browseResource'], true));
-    ?>
+    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
+    <?= $hyperlink($translate('Resources list'), $solrCore->mapUrl()) ?>
+    <?= $hyperlink($translate('Indices'), $url('admin/search/solr/core-id-map-resource', ['resourceName' => $resourceName, 'coreId' => $solrCore->id()])) ?>
     <span><?= $translate('Edit') ?></span>
 </nav>
+
 <?= $this->partial('search-solr/admin/map/form') ?>

@@ -7,20 +7,22 @@
 
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
+$assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 
 $form->prepare();
+
+$this->headLink()
+    ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
+
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores import');
 ?>
 
-<?= $this->pageTitle($translate('Import Solr core mapping')) ?>
+<?= $this->pageTitle($translate('Import mapping'), 1, $translate('Solr core')) ?>
 
 <div id="page-actions">
-    <?php $exportUrl = $url('admin/search/solr/core-id', [
-        'id' => $solrCore->id(),
-        'action' => 'export',
-    ]); ?>
-    <a class="button" href="<?= $exportUrl ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export mapping') ?></a>
+    <a class="button" href="<?= $solrCore->adminUrl('export') ?>" title="<?= $translate('Export maps for easier spreadsheet mapping.') ?>"><?= $translate('Export mapping') ?></a>
     <button type="submit" class="button" form="<?= $form->getAttribute('id') ?>"><?= $translate('Submit') ?></button>
 </div>
 

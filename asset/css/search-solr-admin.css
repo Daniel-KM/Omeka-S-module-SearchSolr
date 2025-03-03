@@ -1,7 +1,13 @@
 @media all {
-	.sidebar .meta-group-list {
-	   justify-content: initial;
-	}
+    header nav .solr-cores::before,
+    .solr-cores .subhead::before,
+    .solr-cores .no-resources:before {
+        content: "\f185";
+    }
+
+    .sidebar .meta-group-list {
+       justify-content: initial;
+    }
     .sidebar .meta-group-list ul {
         width: 100%;
     }

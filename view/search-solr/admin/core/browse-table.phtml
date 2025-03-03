@@ -29,7 +29,7 @@
 
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
- * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $cores
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCores
  */
 
 $plugins = $this->getHelperPluginManager();
@@ -37,8 +37,9 @@ $translate = $plugins->get('translate');
 $escape = $plugins->get('escapeHtml');
 ?>
 
-<h2 id="table-cores-caption"><?= $translate('Solr cores') ?></h2>
-<?php if (count($cores)): ?>
+<h3 id="table-cores-caption"><?= $translate('Solr cores') ?></h3>
+
+<?php if (count($solrCores)): ?>
 <table aria-labelledby="table-cores-caption" class="tablesaw" data-tablesaw-mode="stack">
     <thead>
         <tr>
@@ -48,27 +49,27 @@ $escape = $plugins->get('escapeHtml');
         </tr>
     </thead>
     <tbody>
-        <?php foreach ($cores as $core): ?>
-            <?php $status = $core->status(); ?>
+        <?php foreach ($solrCores as $solrCore): ?>
+            <?php $status = $solrCore->status(); ?>
             <tr>
                 <td>
-                    <span><?= $core->name() ?></span>
+                    <span><?= $solrCore->name() ?></span>
                     <ul class="actions">
                         <li>
                             <?= $this->hyperlink('',
-                                $core->clientUrlAdminBoard(),
+                                $solrCore->clientUrlAdminBoard(),
                                 ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable')]
                             ) ?>
                         </li>
                         <li>
-                            <?= $core->link('', 'edit', [
+                            <?= $solrCore->link('', 'edit', [
                                 'class' => 'o-icon-edit',
                                 'title' => $translate('Edit'),
                             ]) ?>
                         </li>
                         <li>
                             <?= $status
-                                ? $this->hyperlink('', $core->mapUrl(), [
+                                ? $this->hyperlink('', $solrCore->mapUrl(), [
                                     'class' => 'o-icon- fa fa-sliders fa-sliders-h',
                                     'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
                                 ])
@@ -80,15 +81,15 @@ $escape = $plugins->get('escapeHtml');
                         </li>
                         <li>
                             <a href="#"
-                            data-sidebar-content-url="<?= $escape($core->url('delete-confirm')) ?>"
+                            data-sidebar-content-url="<?= $escape($solrCore->url('delete-confirm')) ?>"
                             class="o-icon-delete sidebar-content"
                             aria-label="<?= $escape($translate('Delete')) ?>"
                             title="<?= $escape($translate('Delete')) ?>"></a>
                         </li>
                     </ul>
                 </td>
-                <td><?= $core->clientUrlAdmin() ?></td>
-                <td><?= $core->status(true) ?></td>
+                <td><?= $solrCore->clientUrlAdmin() ?></td>
+                <td><?= $solrCore->status(true) ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>
