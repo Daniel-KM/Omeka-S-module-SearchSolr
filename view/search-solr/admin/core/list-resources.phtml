@@ -1,0 +1,33 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var \AdvancedSearch\Api\Representation\SearchConfigRepresentation|null $searchConfig
+ * @var string $resourceName
+ * @var bool $missing
+ * @var array $resourceTitles
+ */
+
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$easyMeta = $plugins->get('easyMeta');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+
+$baseUrlEscaped = $escapeAttr($url('admin') . '/' . $easyMeta->resourceType($resourceName) . '/');
+?>
+
+<h3><?= $escape($translate('Resources')) ?></h3>
+
+<div class="meta-group meta-group-list">
+	<h4><?= sprintf($missing
+	    ? $translate('Total non-indexed %1$s (%2$s): %3$d')
+	    : $translate('Total indexed %1$s (%2$s): %3$d'),
+	        $translate($easyMeta->resourceLabelPlural($resourceName)), $resourceName, count($resourceTitles)) ?></h4>
+    <ul>
+        <?php foreach ($resourceTitles as $resourceId => $title): ?>
+        <li><?= sprintf('<a href="%s" class="value-text">%s</a>', $baseUrlEscaped . $resourceId, $escape($title)) ?></li>
+        <?php endforeach; ?>
+    </ul>
+</div>

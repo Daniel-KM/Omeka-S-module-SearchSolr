@@ -22,10 +22,24 @@ return [
     ],
     [
         'resource_name' => 'generic',
+        'field_name' => 'o_id_i',
+        'source' => 'o:id',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Internal id'],
+    ],
+    [
+        'resource_name' => 'generic',
         'field_name' => 'is_public_b',
         'source' => 'is_public',
         'pool' => [],
         'settings' => ['formatter' => '', 'label' => 'Public'],
+    ],
+    [
+        'resource_name' => 'generic',
+        'field_name' => 'o_title_s',
+        'source' => 'o:title',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Title'],
     ],
     [
         'resource_name' => 'generic',

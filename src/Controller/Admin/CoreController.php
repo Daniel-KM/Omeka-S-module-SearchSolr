@@ -188,9 +188,18 @@ class CoreController extends AbstractActionController
         $solrCoreId = $this->params('id');
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+
+        $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+
+        $counts = $resourceTypeField
+            ? $solrCore->queryValuesCount('resource_name_s')
+            : [];
+
         return new ViewModel([
             'solrCore' => $solrCore,
             'resource' => $solrCore,
+            'counts' => $counts,
         ]);
     }
 
@@ -326,6 +335,33 @@ class CoreController extends AbstractActionController
             ->addHeaderLine('Pragma: public');
 
         return $response;
+    }
+
+    public function listResourcesAction()
+    {
+        $solrCoreId = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+
+        // The search config is useless here.
+        $searchConfig = $this->getSearchConfigAdmin();
+        $resourceName = $this->params()->fromQuery('resource_name');
+        $missing = (bool) $this->params()->fromQuery('missing');
+
+        $resourceTitles = $solrCore->queryResourceTitles($resourceName);
+        if ($missing) {
+            // TODO Add a resource filter "not id".
+            $resourceTitlesExisting = $this->api()->search($resourceName, [], ['returnScalar' => 'title'])->getContent();
+            $resourceTitles = array_diff_key($resourceTitlesExisting, $resourceTitles);
+        }
+
+        return (new ViewModel([
+            'solrCore' => $solrCore,
+            'searchConfig' => $searchConfig,
+            'resourceName' => $resourceName,
+            'missing' => $missing,
+            'resourceTitles' => $resourceTitles,
+        ]))->setTerminal(true);
     }
 
     public function listValuesAction()

@@ -2,13 +2,17 @@
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var array $counts
  */
 
 $plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$api = $plugins->get('api');
 $escape = $plugins->get('escapeHtml');
 $assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
+$easyMeta = $plugins->get('easyMeta');
 
 $this->headLink()
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
@@ -31,13 +35,68 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show browse');
     <?= $hyperlink($translate('Export mapping'), $solrCore->adminUrl('export'), [
         'class' => 'button',
         'title' => $translate('Export maps for easier spreadsheet mapping.')]) ?>
+    <?php // TODO Add button to reindex. ?>
 </div>
 
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
-    <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
-    <?= $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')) ?>
-    <span aria-current="page"><?= sprintf($translate('Core "%s"'), $solrCore->name()) ?></span>
+    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
+    <span aria-current="page"><?= $escape($solrCore->name()) ?></span>
 </nav>
+
+<h3><?= $translate('By resource') ?></h3>
+
+<div class="by-solr-resource">
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $translate('Name') ?></th>
+                <th><?= $translate('Info') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($counts as $resourceName => $count): ?>
+                <tr>
+                    <td>
+                        <span><?= $escape(sprintf($translate('%1$s (%2$s)'), $translate($easyMeta->resourceLabel($resourceName)), $resourceName)) ?></span>
+                        <?php if ($resourceName !== 'resources'): ?>
+                        <ul class="actions">
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName,
+                                    'class' => 'o-icon- fas fa-spell-check sidebar-content',
+                                    'title' => $translate('List indexed resources'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName . '&missing=1',
+                                    'class' => 'o-icon- fas fa-times-circle sidebar-content',
+                                    'title' => $translate('List non-indexed resources'),
+                                ]) ?>
+                            </li>
+                        </ul>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php
+                            try {
+                                $total = $api->search($resourceName)->getTotalResults();
+                            } catch (Exception $e) {
+                                $total = 0;
+                            }
+                            echo $count > $total
+                                ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (too many or indexed multiple times)'), $resourceName, $count, $total, $total - $count)
+                                : ($count < $total
+                                    ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (missing)'), $resourceName, $count, $total, $total - $count)
+                                    : sprintf($translate('%1$s: %2$d indexed / %3$d (all)'), $resourceName, $count, $total))
+                        ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
 
 <h3><?= $translate('By index') ?></h3>
 

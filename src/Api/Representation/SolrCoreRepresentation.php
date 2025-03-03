@@ -36,6 +36,7 @@ use SearchSolr\Schema;
 use Solarium\Client as SolariumClient;
 use Solarium\Core\Client\Adapter\Http as SolariumAdapter;
 use Solarium\Exception\HttpException as SolariumException;
+use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 // TODO Use Laminas event manager when #12 will be merged.
 // @see https://github.com/laminas/laminas-eventmanager/pull/12
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -507,6 +508,44 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             }
         }
         return $result;
+    }
+
+    public function queryResourceTitles(?string $resourceName): array
+    {
+        if (!$resourceName) {
+            return [];
+        }
+
+        // Init solarium.
+        $this->solariumClient();
+
+        $resourceTypeField = $this->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+        if (!$resourceTypeField) {
+            return [];
+        }
+
+        /** @var \Solarium\QueryType\Select\Query\Query $query */
+        $query = $this->solariumClient->createSelect();
+        $query
+            ->addFilterQuery([
+                'key' => $resourceTypeField,
+                'query' => "$resourceTypeField:$resourceName",
+            ])
+            // When index is not ready, output is wrong.
+            ->addFilterQuery([
+                'key' => 'o_id_i',
+                'query' => 'o_id_i:*',
+            ])
+            ->setFields(['o_id_i', 'o_title_s'])
+            ->addSort('o_id_i', SolariumQuery::SORT_ASC)
+            // Rows is 10 by default and 0 or -1 are not working.
+            ->setRows(1000000000);
+        $resultSet = $this->solariumClient->select($query);
+        $data = $resultSet->getData();
+        return isset($data['response']['docs'])
+            ? array_column($data['response']['docs'], 'o_title_s', 'o_id_i')
+            : [];
     }
 
     /**
