@@ -50,6 +50,8 @@ class Schema
      *
      * There is no method in php-solr to get the schema, so do request via http/https.
      *
+     * @todo Use Solarium to get schema.
+     *
      * @throws \Solarium\Exception\HttpException
      * @return array
      */

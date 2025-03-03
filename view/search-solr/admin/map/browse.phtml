@@ -34,9 +34,10 @@
  */
 
 $plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$escape = $plugins->get('escapeHtml');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
-$url = $plugins->get('url');
 
 $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
 $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
@@ -61,10 +62,13 @@ $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
     <?= $this->hyperlink($translate('Search'), $this->url('admin/search')) ?>
     <?= $this->hyperlink($translate('Solr cores'), $this->url('admin/search/solr')) ?>
     <span>
-    <?= sprintf($translate('Resources list for core "%s"'), $solrCore->name()) ?>
+    <?= sprintf($translate('Indices for core "%s"'), $solrCore->name()) ?>
     </span>
 </nav>
 
+<h3><?= $translate('By resource type') ?></h3>
+
+<div class="by-resource-type">
 <?php if (count($valueExtractors)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
@@ -92,3 +96,42 @@ $pageTitle = sprintf($translate('Solr core "%s"'), $solrCore->name());
         </tbody>
     </table>
 <?php endif; ?>
+</div>
+
+<h3><?= $translate('By index') ?></h3>
+
+<div class="by-solr-index">
+<?php $maps = $solrCore->mapsByFieldName(); ?>
+<?php if (count($maps)): ?>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $translate('Name') ?></th>
+                <th><?= $translate('Sources Omeka (with formatter)') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $fieldMaps */ ?>
+            <?php foreach ($maps as $fieldName => $fieldMaps): ?>
+                <tr>
+                    <td>
+                        <span><?= $escape($fieldName) ?></span>
+                    </td>
+                    <td>
+                        <ul class="sources">
+                            <?php foreach ($fieldMaps as $map):
+                                $formatter = $map->setting('formatter');
+                                ?>
+                            <li><?= $formatter
+                                ? $escape(sprintf($translate('%1$s [%2$s] (%3$s)'), $map->source(), $map->resourceName(), $map->setting('formatter') ?: $translate('[none]')))
+                                : $escape(sprintf($translate('%1$s [%2$s]'), $map->source(), $map->resourceName()))
+                            ?></li>
+                        <?php endforeach; ?>
+                        </ul>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php endif; ?>
+</div>

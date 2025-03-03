@@ -464,17 +464,27 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      *
      * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
      */
-    public function mapsByFieldName(string $fieldName, $resourceName = null): array
+    public function mapsByFieldName(?string $fieldName = null, ?string $resourceName = null): array
     {
         $result = [];
+
         $maps = $resourceName
             ? $this->mapsByResourceName($resourceName)
             : $this->maps();
-        foreach ($maps as $map) {
-            if ($map->fieldName() === $fieldName) {
-                $result[] = $map;
+
+        if ($fieldName) {
+            foreach ($maps as $map) {
+                if ($map->fieldName() === $fieldName) {
+                    $result[] = $map;
+                }
             }
+            return $result;
         }
+
+        foreach ($maps as $map) {
+            $result[$map->fieldName()][] = $map;
+        }
+
         return $result;
     }
 
