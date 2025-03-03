@@ -12,11 +12,10 @@ class Year extends \SearchSolr\ValueFormatter\Date
     public function format($value): array
     {
         $value = parent::format($value);
-        if (count($value)) {
-            $year = reset($value);
-            return substr($year, 0, 1) === '-'
-                ? ['-' . strtok(substr($year, 1), '-')]
-                : [strtok($year, '-')];
+        foreach ($value as $k => $v) {
+            $value[$k] = substr($v, 0, 1) === '-'
+                ? '-' . strtok(substr($v, 1), '-')
+                : strtok($v, '-');
         }
         return $value;
     }
