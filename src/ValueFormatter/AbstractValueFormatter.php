@@ -12,6 +12,11 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
     protected $label;
 
     /**
+     * @var string|null
+     */
+    protected $comment = null;
+
+    /**
      * @var \Laminas\ServiceManager\ServiceLocatorInterface
      */
     protected $services;
@@ -24,6 +29,11 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
     public function getLabel(): string
     {
         return $this->label;
+    }
+
+    public function getComment(): ?string
+    {
+        return $this->comment;
     }
 
     /**

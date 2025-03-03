@@ -8,6 +8,8 @@ class Point extends AbstractValueFormatter
 {
     protected $label = 'Point'; // @translate
 
+    protected $comment = 'Create a geographic point from data types geometry, geography and place (modules Data Type Geometry and Data Type Place)'; // @translate
+
     public function format($value): array
     {
         if ($value instanceof ValueRepresentation) {

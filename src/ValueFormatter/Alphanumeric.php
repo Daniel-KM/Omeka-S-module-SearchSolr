@@ -17,6 +17,8 @@ class Alphanumeric extends Standard
 {
     protected $label = 'Alphanumeric'; // @translate
 
+    protected $comment = 'Keep only alphanumeric characters (deprecated: use Text and settings)'; // @translate
+
     public function format($value): array
     {
         $result = parent::format($value);

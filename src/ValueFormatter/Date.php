@@ -10,6 +10,8 @@ class Date extends AbstractValueFormatter
 {
     protected $label = 'Date'; // @translate
 
+    protected $comment = 'Check and get date and time'; // @translate
+
     public function format($value): array
     {
         if ($value instanceof ValueRepresentation && $value->type() === 'numeric:interval') {

@@ -40,6 +40,11 @@ interface ValueFormatterInterface
     public function getLabel(): string;
 
     /**
+     * Get the comment of the formatter.
+     */
+    public function getComment(): ?string;
+
+    /**
      * Set services to be used by the formatter.
      *
      * @deprecated Use factories.

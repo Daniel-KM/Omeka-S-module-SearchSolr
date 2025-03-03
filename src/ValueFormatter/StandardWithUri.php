@@ -12,6 +12,8 @@ class StandardWithUri extends AbstractValueFormatter
 {
     protected $label = 'Standard with uri'; // @translate
 
+    protected $comment = 'Get the value and the value uri as one value'; // @translate
+
     public function format($value): array
     {
         if (is_object($value)) {

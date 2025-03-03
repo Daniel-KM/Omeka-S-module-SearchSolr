@@ -98,7 +98,7 @@
     function showTypeInfo() {
         var objectToUL = function(obj) {
             var ul = $('<ul>');
-            for (key in obj) {
+            for (let key in obj) {
                 var value = obj[key];
                 var li = $('<li>');
                 li.append('<strong>' + key + ':</strong> ');
@@ -299,7 +299,7 @@
                         }
                     }
                     if (!matchedField) {
-                        for (i in dynamicFields) {
+                        for (let i in dynamicFields) {
                             var field = dynamicFields[i];
                             if (!(field.name in regexps)) {
                                 var pattern = '^' + field.name.replace('*', '.*') + '$';
@@ -316,6 +316,20 @@
             })
             .trigger('keyup');
 
+        // Display the info for each formatter.
+
+        function displayInfoFormatter(){
+            const field = $('fieldset[name="o:settings"] .field .inputs')[0];
+            const selectedRadio = $(field).find('input[type=radio]:checked');
+            const msg = selectedRadio.length ? selectedRadio.attr('title') : '';
+            const info = $(field).find('.input-info');
+            info.text(msg);
+        }
+
+        $('input[name="o:settings[formatter]"]').on('click', displayInfoFormatter);
+
+        // Display the specific settings of each formatter.
+
         function toggleSettingsFormatter() {
             const val = $('input[type=radio][name="o:settings[formatter]"]:checked').val();
             $('[data-formatter]:not([data-formatter="' + val +'"])').closest('.field').hide();
@@ -324,6 +338,10 @@
 
         $('input[type=radio][name="o:settings[formatter]"]')
             .on('change', toggleSettingsFormatter);
+
+        // On load
+        $('fieldset[name="o:settings"] .field .inputs').append('<div class="input-info"></div>');
+        displayInfoFormatter();
 
         toggleSettingsFormatter();
 

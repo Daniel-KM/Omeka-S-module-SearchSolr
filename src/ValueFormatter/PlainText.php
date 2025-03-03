@@ -9,6 +9,8 @@ class PlainText extends AbstractValueFormatter
 {
     protected $label = 'Plain text'; // @translate
 
+    protected $comment = 'Remove tags from a value (deprecated: use Text and settings)'; // @translate
+
     public function format($value): array
     {
         $value = strip_tags((string) $value);

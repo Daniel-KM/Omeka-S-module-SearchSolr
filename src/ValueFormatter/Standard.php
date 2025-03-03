@@ -12,6 +12,8 @@ class Standard extends AbstractValueFormatter
 {
     protected $label = 'Standard'; // @translate
 
+    protected $comment = 'Get the value and the value uri, if any'; // @translate
+
     public function format($value): array
     {
         if (is_object($value)) {

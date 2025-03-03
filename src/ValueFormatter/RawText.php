@@ -11,6 +11,8 @@ class RawText extends AbstractValueFormatter
 {
     protected $label = 'Raw text'; // @translate
 
+    protected $comment = 'Store any value as text (deprecated: use Text without settings)'; // @translate
+
     public function format($value): array
     {
         $value = trim((string) $value);

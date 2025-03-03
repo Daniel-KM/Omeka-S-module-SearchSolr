@@ -9,6 +9,8 @@ class Uri extends AbstractValueFormatter
 {
     protected $label = 'Uri'; // @translate
 
+    protected $comment = 'Index uri stored in a value'; // @translate
+
     public function format($value): array
     {
         if (is_object($value)) {

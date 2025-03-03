@@ -11,6 +11,8 @@ class HtmlEscapedText extends AbstractValueFormatter
 {
     protected $label = 'HTML escaped text'; // @translate
 
+    protected $comment = 'Escape as html (deprecated: use Text and settings)'; // @translate
+
     public function format($value): array
     {
         // New default for php 8.1.

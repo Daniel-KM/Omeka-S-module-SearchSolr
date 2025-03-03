@@ -6,6 +6,8 @@ class Year extends \SearchSolr\ValueFormatter\Date
 {
     protected $label = 'Year'; // @translate
 
+    protected $comment = 'Index only year from a date, in particular for filters an facets'; // @translate
+
     public function format($value): array
     {
         $value = parent::format($value);

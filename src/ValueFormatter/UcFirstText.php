@@ -11,6 +11,8 @@ class UcFirstText extends AbstractValueFormatter
 {
     protected $label = 'First character uppercase'; // @translate
 
+    protected $comment = 'Set a string to lowercase, but the first character (deprecated: use Text and settings)'; // @translate
+
     public function format($value): array
     {
         $value = ucfirst(mb_strtolower((string) $value));

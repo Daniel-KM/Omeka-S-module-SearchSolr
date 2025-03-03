@@ -9,6 +9,8 @@ class Text extends AbstractValueFormatter
 {
     protected $label = 'Text'; // @translate
 
+    protected $comment = 'Get the value and apply optional transformations'; // @translate
+
     public function format($value): array
     {
         if (is_object($value)) {

@@ -9,6 +9,8 @@ class Table extends PlainText
 {
     protected $label = 'Table'; // @translate
 
+    protected $comment = 'Convert a code to a label or a label to a code or both (module Table)'; // @translate
+
     public function format($value): array
     {
         /** @var \Table\Api\Representation\TableRepresentation[] $tables */

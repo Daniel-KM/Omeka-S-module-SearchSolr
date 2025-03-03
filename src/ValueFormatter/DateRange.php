@@ -34,6 +34,8 @@ class DateRange extends AbstractValueFormatter
 {
     protected $label = 'Date range'; // @translate
 
+    protected $comment = 'Date range from two dates separated with a "/".'; // @translate
+
     public function format($value): array
     {
         $value = (string) $value;

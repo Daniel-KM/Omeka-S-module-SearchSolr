@@ -42,4 +42,9 @@
     .solr-map.browse td:first-child, .browse th:first-child {
         width: 30%;
     }
+
+    .input-info {
+        margin-top: 12px;
+        font-style: italic;
+    }
 }

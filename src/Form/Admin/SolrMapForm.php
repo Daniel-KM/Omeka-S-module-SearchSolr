@@ -222,7 +222,7 @@ class SolrMapForm extends Form
                 'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Formatter', // @translate
-                    'value_options' => $this->getFormatterOptions(),
+                    'value_options' => $this->getFormatterLabelsAndComments(),
                     'empty_option' => 'None', // @translate
                 ],
                 'attributes' => [
@@ -454,6 +454,28 @@ class SolrMapForm extends Form
                 continue;
             }
             $options[$name] = $valueFormatter->getLabel();
+        }
+
+        return $options;
+    }
+
+    protected function getFormatterLabelsAndComments(): array
+    {
+        $noTableModule = !class_exists('Table\Module', false);
+
+        $options = [];
+        foreach ($this->valueFormatterManager->getRegisteredNames() as $name) {
+            $valueFormatter = $this->valueFormatterManager->get($name);
+            if ($noTableModule && $name === 'table') {
+                continue;
+            }
+            $options[] = [
+                'value' => $name,
+                'label' => $valueFormatter->getLabel(),
+                'attributes' => [
+                    'title' => $valueFormatter->getComment(),
+                ],
+            ];
         }
         return $options;
     }

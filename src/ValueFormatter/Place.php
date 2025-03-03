@@ -11,6 +11,8 @@ class Place extends AbstractValueFormatter
 {
     protected $label = 'Place'; // @translate
 
+    protected $comment = 'Store toponym and country from a value of type place (module Data Type Place)'; // @translate
+
     public function format($value): array
     {
         if (!$value instanceof ValueRepresentation) {
