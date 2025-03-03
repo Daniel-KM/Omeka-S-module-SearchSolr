@@ -125,6 +125,8 @@ class MapController extends AbstractActionController
         // Keep only the source.
         $maps = array_map(fn ($v) => $v->source(), $maps);
 
+        $skipTermTexts = include dirname(__DIR__, 3) . '/config/metadata_text.php';
+
         // Add all missing maps with a generic multivalued text field.
         // Don't add a map if it exists at a upper level.
         $result = [];
@@ -142,6 +144,7 @@ class MapController extends AbstractActionController
                 continue;
             }
 
+            // For full text search (_t = single value, _txt = multivalued).
             $data = [];
             $data['o:solr_core']['o:id'] = $solrCoreId;
             $data['o:resource_name'] = $resourceName;
@@ -152,6 +155,32 @@ class MapController extends AbstractActionController
             $api->create('solr_maps', $data);
 
             $result[] = $term;
+
+            if (!in_array($term, $skipTermTexts)) {
+                // For filters and facets.
+                $data = [];
+                $data['o:solr_core']['o:id'] = $solrCoreId;
+                $data['o:resource_name'] = $resourceName;
+                $data['o:field_name'] = str_replace(':', '_', $term) . '_ss';
+                $data['o:source'] = $term;
+                $data['o:pool'] = [];
+                $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
+                $api->create('solr_maps', $data);
+
+                $result[] = $term;
+
+                // For sort.
+                $data = [];
+                $data['o:solr_core']['o:id'] = $solrCoreId;
+                $data['o:resource_name'] = $resourceName;
+                $data['o:field_name'] = str_replace(':', '_', $term) . '_s';
+                $data['o:source'] = $term;
+                $data['o:pool'] = [];
+                $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
+                $api->create('solr_maps', $data);
+
+                $result[] = $term;
+            }
         }
 
         if ($result) {

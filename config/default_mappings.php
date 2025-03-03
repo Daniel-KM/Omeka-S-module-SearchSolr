@@ -215,7 +215,7 @@ return [
         'settings' => ['formatter' => 'date_range', 'label' => 'Temporal coverage'],
     ],
 
-    // Fields for facets.
+    // Fields for filters and facets.
     [
         'resource_name' => 'resources',
         'field_name' => 'dcterms_type_ss',
