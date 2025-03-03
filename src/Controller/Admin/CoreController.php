@@ -30,6 +30,7 @@
 
 namespace SearchSolr\Controller\Admin;
 
+use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
 use Common\Stdlib\PsrMessage;
 use finfo;
 use Laminas\Mvc\Controller\AbstractActionController;
@@ -321,11 +322,13 @@ class CoreController extends AbstractActionController
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
+        $searchConfig = $this->getSearchConfigAdmin();
         $fieldName = $this->params()->fromQuery('fieldname');
         $sort = $this->params()->fromQuery('sort');
 
         return (new ViewModel([
             'solrCore' => $solrCore,
+            'searchConfig' => $searchConfig,
             'fieldName' => $fieldName,
             'sort' => $sort,
         ]))->setTerminal(true);
@@ -600,5 +603,19 @@ class CoreController extends AbstractActionController
         }
 
         return $fileData;
+    }
+
+    protected function getSearchConfigAdmin(): ?SearchConfigRepresentation
+    {
+        $searchConfig = $this->settings()->get('advancedsearch_main_config');
+        if (!$searchConfig) {
+            return null;
+        }
+
+        try {
+            return $this->api()->read('search_configs', [is_numeric($searchConfig) ? 'id' : 'slug' => $searchConfig])->getContent();
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }
