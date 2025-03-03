@@ -510,11 +510,15 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * Warning: unlike in querier, the field isn't an alias but a real index.
+     *
      * @todo Merge queryValues() of SolariumQuerier with SolrRepresentation.
      *
      * Adapted:
      * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValues()
      * @see \SearchSolr\Querier\SolariumQuerier::queryValues()
+     *
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValuesCount()
      *
      * {@inheritDoc}
      * @see \AdvancedSearch\Querier\AbstractQuerier::queryValues()
@@ -530,18 +534,6 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         $fields = [$field];
 
-        /*
-        // Check if the field is a special or a multifield.
-        $aliases = $this->query->getAliases();
-        $fields = $aliases[$field]['fields'] ?? [$field];
-        if (!is_array($fields)) {
-            $fields = [$fields];
-        }
-        */
-
-        // TODO Limit output by site when set in query (or index by site).
-
-        // In Sort, a query value is a terms query.
         $query = $this->solariumClient->createTerms();
         $query
             ->setFields($fields)
@@ -550,18 +542,61 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             // Only used values. Anyway, by default there is no predefined list.
             ->setMinCount(1);
         $resultSet = $this->solariumClient->terms($query);
+        $terms = $resultSet->getTerms($field);
+        return array_keys($terms);
+    }
 
-        // Results are structured by field and term/count.
-        $result = array_map(fn ($v) => array_keys($v), $resultSet->getResults());
-        // Merge fields.
-        $list = array_merge(...array_values($result));
-        natcasesort($list);
+    public function queryValuesCount(?string $field, ?string $sort = 'index asc'): array
+    {
+        if (!$field) {
+            return [];
+        }
 
-        // Fix false empty duplicate or values without title.
-        $list = array_keys(array_flip($list));
-        unset($list['']);
+        // Init solarium.
+        $this->solariumClient();
 
-        return array_combine($list, $list);
+        $fields = [$field];
+
+        // TODO Limit output by site when set in query (or index by site).
+
+        $sorts = [
+            \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC,
+            \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
+            \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
+            \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC,
+        ];
+        $sort = in_array($sort, $sorts) ? $sort : \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC;
+
+        // In Sort, a query value is a terms query.
+        $query = $this->solariumClient->createTerms();
+        $query
+            ->setFields($fields)
+            ->setSort($sort)
+            ->setLimit(-1)
+            // Only used values. Anyway, by default there is no predefined list.
+            ->setMinCount(1);
+        $resultSet = $this->solariumClient->terms($query);
+        $terms = $resultSet->getTerms($field);
+
+        // TODO The sort does not seem to work, so for now resort locally.
+        switch ($sort) {
+            default:
+            case \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC:
+                uksort($terms, 'strnatcasecmp');
+                break;
+            case \Solarium\Component\Facet\JsonTerms::SORT_INDEX_DESC:
+                uksort($terms, 'strnatcasecmp');
+                $terms = array_reverse($terms, true);
+                break;
+            case \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC:
+                asort($terms);
+                break;
+            case \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC:
+                arsort($terms);
+                break;
+        }
+
+        return $terms;
     }
 
     /**

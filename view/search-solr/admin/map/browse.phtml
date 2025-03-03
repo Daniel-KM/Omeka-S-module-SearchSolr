@@ -130,9 +130,33 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-map browse');
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-selector' => '#sidebar',
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName),
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index asc'),
                                     'class' => 'o-icon- fas fa-sort-alpha-down sidebar-content',
-                                    'title' => $translate('List indexed values'),
+                                    'title' => $translate('List indexed values alphabetically'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index desc'),
+                                    'class' => 'o-icon- fas fa-sort-alpha-down-alt sidebar-content',
+                                    'title' => $translate('List indexed values alphabetically (reverse)'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count asc'),
+                                    'class' => 'o-icon- fas fa-sort-numeric-down sidebar-content',
+                                    'title' => $translate('List indexed values by count'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count desc'),
+                                    'class' => 'o-icon- fas fa-sort-numeric-down-alt sidebar-content',
+                                    'title' => $translate('List indexed values by count (reverse)'),
                                 ]) ?>
                             </li>
                         </ul>

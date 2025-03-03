@@ -3,13 +3,16 @@
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
  * @var string $fieldName
+ * @var string $sort
  */
 
 $plugins = $this->getHelperPluginManager();
 $escape = $plugins->get('escapeHtml');
 $translate = $plugins->get('translate');
 
-$listValues = $solrCore->queryValues($fieldName);
+$listValues = $solrCore->queryValuesCount($fieldName, $sort);
+
+$row = $translate('%1$s %2$s');
 ?>
 
 <h3><?= $escape($fieldName) ?></h3>
@@ -18,7 +21,7 @@ $listValues = $solrCore->queryValues($fieldName);
 	<h4><?= sprintf($translate('Total indexed values: %d'), count($listValues)) ?></h4>
     <ul>
         <?php foreach ($listValues as $value => $count): ?>
-        <li><?= $escape(sprintf($row, $value, $count)) ?></li>
+        <li><?= sprintf($row, '<span class="value-text">' . $escape($value) . '</span>', '<span class="value-count">' . $count . '</span>') ?></li>
         <?php endforeach; ?>
     </ul>
 </div>

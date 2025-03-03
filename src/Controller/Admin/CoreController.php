@@ -322,10 +322,12 @@ class CoreController extends AbstractActionController
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         $fieldName = $this->params()->fromQuery('fieldname');
+        $sort = $this->params()->fromQuery('sort');
 
         return (new ViewModel([
             'solrCore' => $solrCore,
             'fieldName' => $fieldName,
+            'sort' => $sort,
         ]))->setTerminal(true);
     }
 

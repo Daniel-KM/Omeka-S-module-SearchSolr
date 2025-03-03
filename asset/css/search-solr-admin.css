@@ -2,6 +2,13 @@
 	.sidebar .meta-group-list {
 	   justify-content: initial;
 	}
+    .sidebar .meta-group-list ul {
+        width: 100%;
+    }
+    .sidebar .meta-group-list .value-count {
+       font-size: small;
+       float: right;
+    }
 
     #field-info {
         line-height: initial;
@@ -43,8 +50,13 @@
         font-style: italic;
         font-size: 0.8em;
     }
-    .solr-map.browse td:first-child, .browse th:first-child {
+    .solr-map.browse td:first-child,
+    .solr-map.browse th:first-child {
         width: 30%;
+    }
+    .solr-map.browse .by-solr-index td:first-child,
+    .solr-map.browse .by-solr-index th:first-child {
+        width: 50%;
     }
 
     .input-info {
