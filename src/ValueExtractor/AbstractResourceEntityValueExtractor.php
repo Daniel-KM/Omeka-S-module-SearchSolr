@@ -613,6 +613,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         SolrMapRepresentation $solrMap,
         array $values
     ): array {
+        if (!count($values)) {
+            return [];
+        }
+
         $extractedValues = [];
 
         // Filter values and uris are full regex automatically checked.

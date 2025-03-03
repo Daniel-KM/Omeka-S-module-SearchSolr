@@ -226,7 +226,17 @@ class SolariumIndexer extends AbstractIndexer
         foreach ($resources as $resource) {
             $this->addResource($resource);
         }
+
         $this->commit();
+
+        // Reduce memory overflow.
+        foreach ($this->solariumDocuments as $documentId => $document) {
+            $this->solariumDocuments[$documentId] = null;
+            $document->clear();
+            unset($document);
+        }
+
+        $this->solariumDocuments = [];
 
         return $this;
     }
@@ -445,6 +455,11 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
+        // TODO Remove any part of the representation, in particular the values (25%).
+        unset($representation);
+        // Useless and need some seconds.
+        // gc_collect_cycles();
+
         $this->solariumDocuments[$documentId] = $document;
     }
 
@@ -570,8 +585,6 @@ class SolariumIndexer extends AbstractIndexer
                 $this->commitError(reset($this->solariumDocuments), $dId, $e);
             }
         }
-
-        $this->solariumDocuments = [];
     }
 
     /**
