@@ -722,7 +722,7 @@ class SolariumQuerier extends AbstractQuerier
                         $q = $this->latinize($q);
                     }
                 }
-                $q = $this->escapeTerm($q);
+                $q = $this->escapeTermOrPhrase($q);
                 $this->solariumQuery->setQuery($q);
             }
         }
@@ -759,7 +759,7 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
-        $q = $this->escapeTerm($q);
+        $q = $this->escapeTermOrPhrase($q);
 
         $qq = [];
         foreach ($usedFields as $field) {
@@ -1105,7 +1105,7 @@ class SolariumQuerier extends AbstractQuerier
                     case 'nlist':
                     case 'list':
                         if ($this->fieldIsString($name)) {
-                            // $value = $this->solariumQuery->getHelper()->escapeTerm((string) $value);
+                            // $value = $this->->escapeTermOrPhrase($value);
                             $value = $this->regexDiacriticsValue($value, '', '');
                         } else {
                             $value = $this->escapePhraseValue($value, 'OR');
@@ -1408,6 +1408,42 @@ class SolariumQuerier extends AbstractQuerier
             || substr($name, 0, 3) === 'is_'
             || substr($name, 0, 3) === 'im_'
         ;
+    }
+
+    /**
+     * Escape a string to query keeping meaning of solr special characters.
+     *
+     * @see https://solr.apache.org/guide/solr/latest/query-guide/standard-query-parser.html#escaping-special-characters
+     * @see https://lucene.apache.org/core/10_1_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#Escaping_Special_Characters
+     * @uses \Solarium\Core\Query\Helper::escapeTerm()
+     * @uses \Solarium\Core\Query\Helper::escapePhrase()
+     */
+    protected function escapeTermOrPhrase($string): string
+    {
+        $string = trim((string) $string);
+
+        // substr_count() is unicode-safe.
+        $countQuotes = substr_count($string, '"');
+
+        // TODO Manage the escaping of query with an odd number of quotes. Check for escaped quote \".
+        if ($countQuotes < 2 || ($countQuotes % 2) === 1) {
+            return $this->solariumQuery->getHelper()->escapeTerm((string) $string);
+        }
+
+        $output = [];
+        $startWithQuote = (int) (mb_substr($string, 0, 1) === '"');
+        foreach (explode('"', $string) as $key => $part) {
+            $part = trim($part);
+            if ($part !== '') {
+                if ($key % 2 === $startWithQuote) {
+                    $output[] = $this->solariumQuery->getHelper()->escapePhrase($part);
+                } else {
+                    $output[] = $this->solariumQuery->getHelper()->escapeTerm($part);
+                }
+            }
+        }
+
+        return implode(' AND ', $output);
     }
 
     /**
