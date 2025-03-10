@@ -270,7 +270,6 @@ return [
             'text' => ValueFormatter\Text::class,
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
-            'year' => ValueFormatter\Year::class,
             'place' => ValueFormatter\Place::class,
             'point' => ValueFormatter\Point::class,
             'thesaurus' => ValueFormatter\Thesaurus::class,

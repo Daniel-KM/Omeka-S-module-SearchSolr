@@ -170,6 +170,10 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
             }
         }
 
+        if (in_array('year', $normalizations)) {
+            $value = (int) $value ?: null;
+        }
+
         if (in_array('table', $normalizations)) {
             $value = $this->formatTable($value);
         }

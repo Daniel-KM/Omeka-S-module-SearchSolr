@@ -265,6 +265,7 @@ class SolrMapForm extends Form
                         'remove_diacritics' => 'Remove diacritics', // @translate
                         'alphanumeric' => 'Alphanumeric only', // @translate
                         'max_length' => 'Max length', // @translate
+                        'year' => 'Year', // @translate
                         'table' => 'Map value to a code or code to a value (module Table)', // @translate
                         // Table may be first post normalization or finalization too.
                         // TODO Allow to specify order of normalizations.
