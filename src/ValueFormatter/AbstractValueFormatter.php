@@ -133,32 +133,32 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         }
 
         if (in_array('strip_tags', $normalizations)) {
-            $value = strip_tags($value);
+            $value = strip_tags((string) $value);
         }
 
         if (in_array('lowercase', $normalizations)) {
-            $value = mb_strtolower($value);
+            $value = mb_strtolower((string) $value);
         }
 
         if (in_array('uppercase', $normalizations)) {
-            $value = mb_strtoupper($value);
+            $value = mb_strtoupper((string) $value);
         }
 
         if (in_array('ucfirst', $normalizations)) {
-            $value = mb_ucfirst($value);
+            $value = mb_ucfirst((string) $value);
         }
 
         if (in_array('remove_diacritics', $normalizations)) {
             if (extension_loaded('intl')) {
                 $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                $value = $transliterator->transliterate($value);
+                $value = $transliterator->transliterate((string) $value);
             } elseif (extension_loaded('iconv')) {
-                $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+                $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', (string) $value);
             }
         }
 
         if (in_array('alphanumeric', $normalizations)) {
-            $value = str_replace('  ', ' ', preg_replace('~[^\p{L}\p{N}-]++~u', ' ', $value));
+            $value = str_replace('  ', ' ', preg_replace('~[^\p{L}\p{N}-]++~u', ' ', (string) $value));
         }
 
         if (in_array('max_length', $normalizations)) {
@@ -166,7 +166,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                 ? (int) $this->settings['max_length']
                 : 0;
             if ($maxLength) {
-                $value = mb_substr($value, 0, $maxLength);
+                $value = mb_substr((string) $value, 0, $maxLength);
             }
         }
 

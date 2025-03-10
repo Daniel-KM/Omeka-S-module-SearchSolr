@@ -268,6 +268,7 @@ return [
     'searchsolr_value_formatters' => [
         'invokables' => [
             'text' => ValueFormatter\Text::class,
+            'integer' => ValueFormatter\Integer::class,
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
             'place' => ValueFormatter\Place::class,
