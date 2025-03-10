@@ -44,23 +44,23 @@ use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 class MapController extends AbstractActionController
 {
     /**
-     * @var ValueExtractorManager
-     */
-    protected $valueExtractorManager;
-
-    /**
      * @var Connection
      */
     protected $connection;
 
-    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager): void
-    {
-        $this->valueExtractorManager = $valueExtractorManager;
-    }
+    /**
+     * @var ValueExtractorManager
+     */
+    protected $valueExtractorManager;
 
     public function setConnection(Connection $connection): void
     {
         $this->connection = $connection;
+    }
+
+    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager): void
+    {
+        $this->valueExtractorManager = $valueExtractorManager;
     }
 
     public function browseAction()

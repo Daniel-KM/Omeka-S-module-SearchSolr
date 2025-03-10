@@ -94,6 +94,109 @@
         margin-top: 12px;
         font-style: italic;
     }
+
+    #page-action-menu {
+        display: inline-block;
+        position: relative;
+
+        .with-sub-menu {
+            display: inline-block;
+        }
+
+        ul {
+            display: none;
+            list-style: none;
+            border: 1px solid #dfdfdf;
+            background-color: #fff;
+            border-radius: 3px;
+            text-align: left;
+            padding: 0;
+            position: relative;
+            box-shadow: 0 0 5px #dfdfdf;
+            position: absolute;
+            width: auto;
+            white-space: nowrap;
+            margin: 12px 0;
+        }
+
+        ul::before {
+            content: "";
+            position: absolute;
+            bottom: calc(100% - 1px);
+            right: 12px;
+            width: 0;
+            height: 0;
+            border-bottom: 12px solid #fff;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+        }
+
+        ul::after {
+            content: "";
+            position: absolute;
+            bottom: calc(100% - 1px);
+            right: 11px;
+            width: 0;
+            height: 0;
+            border-bottom: 14px solid #dfdfdf;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            z-index: -1;
+        }
+
+        ul a,
+        ul .inactive {
+            padding: 6px 12px 5px;
+            display: block;
+            position: relative;
+        }
+
+        ul .inactive {
+            color: #dfdfdf;
+        }
+
+        ul li {
+          position: relative;
+        }
+
+        ul li:hover::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background-color: #dfdfdf;
+        }
+
+        ul li:not(:last-child) a,
+        ul li:not(:last-child) span,
+        ul li:not(:last-child) [type="submit"] {
+            border-bottom: 1px solid #dfdfdf;
+        }
+
+        [type="submit"] {
+            background: none;
+            box-shadow: none;
+            width: 100%;
+            margin-bottom: 0;
+            text-align: left;
+        }
+
+        .expand::after {
+            content: "\f0d7";
+        }
+
+        .expand::after,
+        .collapse::after {
+            margin-left: 6px;
+        }
+
+        .collapse + .collapsible {
+            overflow: visible;
+            display: block;
+        }
+    }
 }
 
 @media screen and (max-width: 640px) {

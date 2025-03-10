@@ -2,6 +2,7 @@
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var \SearchSolr\ValueExtractor\ValueExtractorInterface[] $valueExtractors
  * @var array $counts
  */
 
@@ -27,16 +28,28 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 
 <div id="page-actions">
     <?php // $this->trigger('view.show.page_actions', ['resource' => $solrCore]); ?>
-    <?php if ($solrCore->userIsAllowed('update')): ?>
-    <?= $hyperlink($translate('Maps'), $solrCore->mapUrl(), ['class' => 'button']) ?>
-    <?= $hyperlink($translate('Import mapping'), $solrCore->adminUrl('import'), [
-        'class' => 'button',
-        'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
-    <?php endif; ?>
-    <?= $hyperlink($translate('Export mapping'), $solrCore->adminUrl('export'), [
-        'class' => 'button',
-        'title' => $translate('Export maps for easier spreadsheet mapping.')]) ?>
-    <?php // TODO Add button to reindex. ?>
+    <div id="page-action-menu">
+        <?php if ($solrCore->userIsAllowed('update')): ?>
+        <div class="with-sub-menu">
+            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
+                <?= $translate('Maps') ?>
+            </a>
+            <ul class="collapsible">
+                <li><?= $hyperlink($translate('Maps'), $solrCore->mapUrl(), ['class' => 'link']) ?></li>
+                <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
+                <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name), ['class' => 'link']) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?= $hyperlink($translate('Import'), $solrCore->adminUrl('import'), [
+            'class' => 'button',
+            'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
+        <?php endif; ?>
+        <?= $hyperlink($translate('Export'), $solrCore->adminUrl('export'), [
+            'class' => 'button',
+            'title' => $translate('Export maps for easier spreadsheet mapping.')]) ?>
+        <?php // TODO Add button to reindex. ?>
+    </div>
 </div>
 
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
@@ -44,60 +57,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
     <span aria-current="page"><?= $escape($solrCore->name()) ?></span>
 </nav>
-
-<h3><?= $translate('By resource') ?></h3>
-
-<div class="by-solr-resource">
-    <table class="tablesaw" data-tablesaw-mode="stack">
-        <thead>
-            <tr>
-                <th><?= $translate('Name') ?></th>
-                <th><?= $translate('Info') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($counts as $resourceName => $count): ?>
-                <tr>
-                    <td>
-                        <span><?= $escape(sprintf($translate('%1$s (%2$s)'), $translate($easyMeta->resourceLabel($resourceName)), $resourceName)) ?></span>
-                        <?php if ($resourceName !== 'resources'): ?>
-                        <ul class="actions">
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName,
-                                    'class' => 'o-icon- fas fa-spell-check sidebar-content',
-                                    'title' => $translate('List indexed resources'),
-                                ]) ?>
-                            </li>
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName . '&missing=1',
-                                    'class' => 'o-icon- fas fa-times-circle sidebar-content',
-                                    'title' => $translate('List non-indexed resources'),
-                                ]) ?>
-                            </li>
-                        </ul>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <?php
-                            try {
-                                $total = $api->search($resourceName)->getTotalResults();
-                            } catch (Exception $e) {
-                                $total = 0;
-                            }
-                            echo $count > $total
-                                ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (too many or indexed multiple times)'), $resourceName, $count, $total, $total - $count)
-                                : ($count < $total
-                                    ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (missing)'), $resourceName, $count, $total, $total - $count)
-                                    : sprintf($translate('%1$s: %2$d indexed / %3$d (all)'), $resourceName, $count, $total))
-                        ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
 
 <h3><?= $translate('By index') ?></h3>
 
@@ -257,7 +216,63 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 <?php endif; ?>
 </div>
 
+
+<h3><?= $translate('By resource') ?></h3>
+
+<div class="by-solr-resource">
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $translate('Name') ?></th>
+                <th><?= $translate('Info') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($counts as $resourceName => $count): ?>
+                <tr>
+                    <td>
+                        <span><?= $escape(sprintf($translate('%1$s (%2$s)'), $translate($easyMeta->resourceLabel($resourceName)), $resourceName)) ?></span>
+                        <?php if ($resourceName !== 'resources'): ?>
+                        <ul class="actions">
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName,
+                                    'class' => 'o-icon- fas fa-spell-check sidebar-content',
+                                    'title' => $translate('List indexed resources'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName . '&missing=1',
+                                    'class' => 'o-icon- fas fa-times-circle sidebar-content',
+                                    'title' => $translate('List non-indexed resources'),
+                                ]) ?>
+                            </li>
+                        </ul>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php
+                            try {
+                                $total = $api->search($resourceName)->getTotalResults();
+                            } catch (Exception $e) {
+                                $total = 0;
+                            }
+                            echo $count > $total
+                                ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (too many or indexed multiple times)'), $resourceName, $count, $total, $total - $count)
+                                : ($count < $total
+                                    ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (missing)'), $resourceName, $count, $total, $total - $count)
+                                    : sprintf($translate('%1$s: %2$d indexed / %3$d (all)'), $resourceName, $count, $total))
+                        ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+
 <div class="sidebar">
     <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
     <div class="sidebar-content"></div>
 </div>
+

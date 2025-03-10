@@ -34,10 +34,8 @@ return [
         ],
     ],
     'controllers' => [
-        'invokables' => [
-            Controller\Admin\CoreController::class => Controller\Admin\CoreController::class,
-        ],
         'factories' => [
+            Controller\Admin\CoreController::class => Service\Controller\CoreControllerFactory::class,
             Controller\Admin\MapController::class => Service\Controller\MapControllerFactory::class,
             Controller\ApiController::class => Service\Controller\ApiControllerFactory::class,
             Controller\ApiLocalController::class => Service\Controller\ApiLocalControllerFactory::class,

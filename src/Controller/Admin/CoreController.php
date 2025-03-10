@@ -40,6 +40,7 @@ use Omeka\Form\ConfirmForm;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
+use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 
 class CoreController extends AbstractActionController
 {
@@ -61,6 +62,16 @@ class CoreController extends AbstractActionController
         'settings:label',
         'settings:formatter',
     ];
+
+    /**
+     * @var \SearchSolr\ValueExtractor\Manager
+     */
+    protected $valueExtractorManager;
+
+    public function __construct(ValueExtractorManager $valueExtractorManager)
+    {
+        $this->valueExtractorManager = $valueExtractorManager;
+    }
 
     public function browseAction()
     {
@@ -190,6 +201,11 @@ class CoreController extends AbstractActionController
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
+        $valueExtractors = [];
+        foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
+            $valueExtractors[$name] = $this->valueExtractorManager->get($name);
+        }
+
         $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
         $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
 
@@ -200,6 +216,7 @@ class CoreController extends AbstractActionController
         return new ViewModel([
             'solrCore' => $solrCore,
             'resource' => $solrCore,
+            'valueExtractors' => $valueExtractors,
             'counts' => $counts,
         ]);
     }
