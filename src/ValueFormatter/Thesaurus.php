@@ -27,6 +27,7 @@ class Thesaurus extends AbstractValueFormatter
             'siblings',
             'ascendants',
             'descendants',
+            'branch',
         ];
 
         $resourcesToExtract = $this->settings['thesaurus_resources'] ?? null;
@@ -71,9 +72,14 @@ class Thesaurus extends AbstractValueFormatter
             'ascendants_or_self' => 'ascendantsOrSelf' ,
             'descendants' => 'descendants',
             'descendants_or_self' => 'descendantsOrSelf',
+            'branch' => 'flatBranch',
         ];
 
         // Use a direct method when possible.
+        $alreadyWithSelf = [
+            'self',
+            'branch',
+        ];
         $withSelf = [
             'broader',
             'narrowers',
@@ -82,7 +88,8 @@ class Thesaurus extends AbstractValueFormatter
             'ascendants',
             'descendants',
         ];
-        $includeSelf = !empty($this->settings['thesaurus_self']);
+        $includeSelf = !empty($this->settings['thesaurus_self'])
+            && !in_array($resourcesToExtract, $alreadyWithSelf);
         if ($includeSelf && in_array($resourcesToExtract, $withSelf)) {
             $resourcesToExtract .= '_or_self';
             $includeSelf = false;
@@ -102,7 +109,6 @@ class Thesaurus extends AbstractValueFormatter
             // "self" is not a single with method selfItem().
             'broader',
         ];
-
         if (in_array($resourcesToExtract, $singles)) {
             if ($resources) {
                 $resources = [$resources];

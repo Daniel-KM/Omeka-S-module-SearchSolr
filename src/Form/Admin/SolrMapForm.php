@@ -371,6 +371,7 @@ class SolrMapForm extends Form
                             'siblings' => 'Siblings', // @translate
                             'ascendants' => 'Ascendants', // @translate
                             'descendants' => 'Descendants', // @translate
+                            'branch' => 'Branch (top to descendants)', // @translate
                         ],
                     ],
                     'attributes' => [
