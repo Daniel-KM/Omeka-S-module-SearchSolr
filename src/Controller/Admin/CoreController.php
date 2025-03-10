@@ -34,6 +34,7 @@ use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
 use Common\Stdlib\PsrMessage;
 use finfo;
 use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
@@ -335,6 +336,27 @@ class CoreController extends AbstractActionController
             ->addHeaderLine('Pragma: public');
 
         return $response;
+    }
+
+    public function listDocumentsAction()
+    {
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        $resourceName = $this->params()->fromQuery('resource_name') ?: '';
+
+        $ids = $this->params()->fromQuery('id') ?: [];
+        if (!is_array($ids)) {
+            $ids = explode(',', $ids);
+        }
+
+        $documents = $solrCore->queryDocuments($resourceName, $ids);
+
+        return (new JsonModel($documents))
+            ->setOption('prettyPrint', true);
     }
 
     public function listResourcesAction()

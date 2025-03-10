@@ -195,6 +195,19 @@ class Module extends AbstractModule
             'api.delete.post',
             [$this, 'deletePostSolrMap']
         );
+
+        $controllers = [
+            'Omeka\Controller\Admin\Item',
+            'Omeka\Controller\Admin\ItemSet',
+            'Omeka\Controller\Admin\Media',
+        ];
+        foreach ($controllers as $controller) {
+            $sharedEventManager->attach(
+                $controller,
+                'view.browse.after',
+                [$this, 'handleViewBrowseAfterAdmin']
+            );
+        }
     }
 
     public function appendBrowseCores(Event $event): void
@@ -312,6 +325,87 @@ class Module extends AbstractModule
                 ['isPartial' => true]
             );
         }
+    }
+
+    public function handleViewBrowseAfterAdmin(Event $event): void
+    {
+        /**
+         * @var \Omeka\Api\Manager $api
+         * @var \Omeka\Permissions\Acl $acl
+         */
+        $services = $this->getServiceLocator();
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+
+        // TODO Check rights? Useless: the ids are a list of allowed ids.
+        $user = $services->get('Omeka\AuthenticationService')->getIdentity();
+        if (!$user || !$acl->isAdminRole($user->getRole())) {
+            return;
+        }
+
+        $view = $event->getTarget();
+        $vars = $view->vars();
+
+        /** @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation[] $resources */
+        $resources = $vars->offsetGet('resources');
+        if (!$resources) {
+            return;
+        }
+
+        // Get the solr core configured for admin.
+        $solrCore = $this->getSolrCoreAdmin();
+        if (!$solrCore) {
+            return;
+        }
+
+        $ids = [];
+        foreach ($resources as $resource) {
+            $ids[] = $resource->id();
+        }
+
+        $vars->offsetSet('resourceName', $resource->resourceName());
+        $vars->offsetSet('ids', $ids);
+        $vars->offsetSet('solrCore', $solrCore);
+        echo $view->partial('common/solr-documents-link');
+    }
+
+    /**
+     * Adapted:
+     * @see \SearchSolr\Module::getSearchConfigAdmin()
+     * @see \SearchSolr\Controller\Admin\CoreController::getSearchConfigAdmin()
+     */
+    protected function getSearchConfigAdmin(): ?SearchConfigRepresentation
+    {
+        /**
+         * @var \Omeka\Api\Manager $api
+         * @var \Common\Stdlib\EasyMeta $easyMeta
+         */
+        $services = $this->getServiceLocator();
+        $settings = $services->get('Omeka\Settings');
+
+        $searchConfig = $settings->get('advancedsearch_main_config');
+        if (!$searchConfig) {
+            return null;
+        }
+
+        $api = $services->get('Omeka\ApiManager');
+        try {
+            return $api->read('search_configs', [is_numeric($searchConfig) ? 'id' : 'slug' => $searchConfig])->getContent();
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    protected function getSolrCoreAdmin(): ?\SearchSolr\Api\Representation\SolrCoreRepresentation
+    {
+        $searchConfig = $this->getSearchConfigAdmin();
+        if (!$searchConfig) {
+            return null;
+        }
+
+        $engineAdapter = $searchConfig->engineAdapter();
+        return $engineAdapter instanceof \SearchSolr\EngineAdapter\Solarium
+            ? $engineAdapter->getSolrCore()
+            : null;
     }
 
     /**

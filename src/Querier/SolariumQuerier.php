@@ -261,6 +261,45 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
+     * Get indexed Solr documents.
+     *
+     * Resource types are required to differentiate resources.
+     *
+     * @todo Merge queryDocuments() of SolariumQuerier with SolrRepresentation.
+     *
+     * Adapted:
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryDocuments()
+     * @see \SearchSolr\Querier\SolariumQuerier::queryDocuments()
+     */
+    public function queryDocuments(string $resourceType, array $ids): array
+    {
+        $ids = array_map('intval', $ids);
+        if (!$resourceType || !$ids) {
+            return [];
+        }
+
+        // Init solr client.
+        $this->getClient();
+
+        $resourceTypeField = $this->solrCore->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+
+        $this->solariumQuery
+            ->createSelect()
+            ->createFilterQuery($resourceTypeField)
+            ->setQuery($resourceTypeField . ':' . $resourceType)
+            ->createFilterQuery('is_id_i')
+            ->setQuery('is_id_i:' . implode(' OR ', $ids));
+
+        $resultSet = $this->solariumClient->select($this->solariumQuery);
+        $data = $resultSet->getData();
+
+        // TODO Reorder by ids? Check for duplicate resources first.
+
+        return $data['response']['docs'] ?? [];
+    }
+
+    /**
      * @todo Merge queryValues() of SolariumQuerier with SolrRepresentation.
      *
      * Adapted:
@@ -276,7 +315,7 @@ class SolariumQuerier extends AbstractQuerier
             return [];
         }
 
-        // Init solarium.
+        // Init solr client.
         $this->getClient();
 
         // Check if the field is a special or a multifield.
@@ -326,7 +365,7 @@ class SolariumQuerier extends AbstractQuerier
             return [];
         }
 
-        // Init solarium.
+        // Init solr client.
         $this->getClient();
 
         if (!is_array($fields)) {

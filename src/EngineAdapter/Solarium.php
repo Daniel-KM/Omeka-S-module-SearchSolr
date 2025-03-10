@@ -250,12 +250,12 @@ class Solarium extends AbstractEngineAdapter
     public function getSolrCore(): ?SolrCoreRepresentation
     {
         if (!$this->searchEngine) {
-            return [];
+            return null;
         }
 
         $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
         if (!$solrCoreId) {
-            return [];
+            return null;
         }
 
         try {

@@ -510,6 +510,61 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $result;
     }
 
+    public function queryDocuments(string $resourceName, array $ids): array
+    {
+        $ids = array_map('intval', $ids);
+        if (!$resourceName || !$ids) {
+            return [];
+        }
+
+        // Init solarium.
+        $this->solariumClient();
+
+        $resourceTypeField = $this->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+        if (!$resourceTypeField) {
+            return [];
+        }
+
+        /** @var \Solarium\QueryType\Select\Query\Query $query */
+        $query = $this->solariumClient->createSelect();
+        $query
+            ->addFilterQuery([
+                'key' => $resourceTypeField,
+                'query' => "$resourceTypeField:$resourceName",
+            ])
+            // When index is not ready, output is wrong.
+            ->addFilterQuery([
+                'key' => 'is_id_i',
+                'query' => 'is_id_i:' . implode(' OR ', $ids),
+            ])
+            ->addSort('is_id_i', SolariumQuery::SORT_ASC)
+            // Rows is 10 by default and 0 or -1 are not working.
+            ->setRows(1000000000);
+        $resultSet = $this->solariumClient->select($query);
+        $data = $resultSet->getData();
+        $docs = $data['response']['docs'] ?? [];
+
+        return $docs;
+
+        /*
+        // TODO Reorder by ids? Check for duplicate resources first.
+        // Order by the original ids, but there may be multiple documents with
+        // the same id, in particular with a bad indexation or when documents
+        // are not cleaned.
+        if (count($docs) <= 1) {
+            return $docs;
+        }
+
+        $result = [];
+        foreach ($docs as $doc) {
+            $result[$doc['is_id_i']] = $doc;
+        }
+
+        return array_values(array_replace(array_fill_keys($ids, []), $result));
+        */
+    }
+
     public function queryResourceTitles(?string $resourceName): array
     {
         if (!$resourceName) {

@@ -1,0 +1,21 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation[] $resources
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var string $resourceName
+ * @var array $ids
+ */
+
+$plugins = $this->getHelperPluginManager();
+$translate = $plugins->get('translate');
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+?>
+
+<div class="solr-documents">
+    <div class="value">
+        <a class="link solr-documents download" href="<?= $escapeAttr($solrCore->adminUrl('list-documents') . '?resource_name=' . $resourceName . '& id=' . implode(',', $ids)) ?>" download="solr-document.json" target="_self"><?= $escape($translate('Solr indexed documents')) ?></a>
+    </div>
+</div>
