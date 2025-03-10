@@ -170,6 +170,10 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
             }
         }
 
+        if (in_array('integer', $normalizations)) {
+            $value = (int) $value;
+        }
+
         if (in_array('year', $normalizations)) {
             $value = (int) $value ?: null;
         }
