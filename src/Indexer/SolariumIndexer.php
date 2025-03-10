@@ -88,11 +88,6 @@ class SolariumIndexer extends AbstractIndexer
     /**
      * @var array
      */
-    protected $formatters = [];
-
-    /**
-     * @var array
-     */
     protected $isSingleValuedFields = [];
 
     /**
@@ -280,7 +275,6 @@ class SolariumIndexer extends AbstractIndexer
         $this->prepareIndexFieldAndName();
         $this->prepareSingleValuedFields();
         $this->getSupportFields();
-        $this->prepareFomatters();
 
         // Force indexation of required fields, in particular resource type,
         // visibility and sites, because they are the base of Omeka.
@@ -453,9 +447,9 @@ class SolariumIndexer extends AbstractIndexer
     {
         /** @var \SearchSolr\ValueFormatter\ValueFormatterInterface $valueFormatter */
         $formatter = $solrMap->setting('formatter', '');
-        $valueFormatter = !empty($this->formatters[$formatter])
-            ? $this->formatters[$formatter]
-            : $this->formatters['text'];
+        $formatter = $formatter && $this->valueFormatterManager->has($formatter) ? $formatter : 'text';
+        $valueFormatter = $this->valueFormatterManager->get($formatter)->setServiceLocator($this->services);
+
         $solrMapSettings = $solrMap->settings();
         $valueFormatter->setSettings($solrMapSettings);
 
@@ -650,17 +644,6 @@ class SolariumIndexer extends AbstractIndexer
             $schemaField = $schema->getField($solrField);
             $this->isSingleValuedFields[$solrField] = $schemaField && !$schemaField->isMultivalued();
         }
-    }
-
-    protected function prepareFomatters(): void
-    {
-        $this->formatters = ['' => null];
-        foreach ($this->valueFormatterManager->getRegisteredNames() as $formatter) {
-            $valueFormatter = $this->valueFormatterManager->get($formatter);
-            $valueFormatter->setServiceLocator($this->services);
-            $this->formatters[$formatter] = $valueFormatter;
-        }
-        $this->formatters[''] = $this->formatters['text'];
     }
 
     /**
