@@ -33,8 +33,9 @@
  */
 
 $plugins = $this->getHelperPluginManager();
-$translate = $plugins->get('translate');
 $escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$hyperlink = $plugins->get('hyperlink');
 ?>
 
 <h3 id="table-cores-caption"><?= $translate('Solr cores') ?></h3>
@@ -50,13 +51,12 @@ $escape = $plugins->get('escapeHtml');
     </thead>
     <tbody>
         <?php foreach ($solrCores as $solrCore): ?>
-            <?php $status = $solrCore->status(); ?>
             <tr>
                 <td>
                     <span><?= $solrCore->name() ?></span>
                     <ul class="actions">
                         <li>
-                            <?= $this->hyperlink('',
+                            <?= $hyperlink('',
                                 $solrCore->clientUrlAdminBoard(),
                                 ['target' => '_blank', 'class' => 'o-icon-external', 'title' => $translate('Solr admin interface, if reachable')]
                             ) ?>
@@ -68,17 +68,10 @@ $escape = $plugins->get('escapeHtml');
                             ]) ?>
                         </li>
                         <li>
-                        	<?php if ($status): ?>
-                                <?= $this->hyperlink('', $solrCore->adminUrl(), [
-                                    'class' => 'o-icon- far fa-sun',
-                                    'title' => $translate('Get info about the Solr core and map Omeka metadata and Solr indices'), // @translate
-                                ]) ?>
-                            <?php else: ?>
-	                            <span
-                                    class="o-icon- far fa-sun disabled"
-                                    aria-label="<?= $escape($translate('Get info about the Solr core and map Omeka metadata and Solr indices')) ?>"
-                                    title="<?= $escape($translate('Get info about the Solr core and map Omeka metadata and Solr indices')) ?>"></span>
-                            <?php endif; ?>
+                            <?= $hyperlink('', $solrCore->adminUrl(), [
+                                'class' => 'o-icon- far fa-sun',
+                                'title' => $translate('Get info about the Solr core and map Omeka metadata and Solr indices'), // @translate
+                            ]) ?>
                         </li>
                         <li>
                             <a href="#"

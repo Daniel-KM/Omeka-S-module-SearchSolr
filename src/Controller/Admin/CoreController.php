@@ -209,9 +209,17 @@ class CoreController extends AbstractActionController
         $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
         $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
 
-        $counts = $resourceTypeField
-            ? $solrCore->queryValuesCount('resource_name_s')
-            : [];
+        try {
+            $counts = $resourceTypeField
+                ? $solrCore->queryValuesCount('resource_name_s')
+                : [];
+        } catch (\Exception $e) {
+            $counts = [];
+            $this->messenger()->addError(new PsrMessage(
+                'Solr issue: {msg}', // @translate
+                ['msg' => $e->getMessage()]
+            ));
+        }
 
         $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
