@@ -610,3 +610,45 @@ if (version_compare($oldVersion, '3.5.54', '<')) {
 
     $messenger->addWarning('You should reindex your Solr cores.'); // @translate
 }
+
+if (version_compare($oldVersion, '3.5.55', '<')) {
+    // Replace deprecated formatters with Text.
+    $replacedToTransformations = [
+        'alphanumeric' => 'alphanumeric',
+        'plain_text' => 'strip_tags',
+        'raw_text' => null,
+        'html_escaped_text' => 'html_escaped',
+        'uc_first_text' => 'ucfirst',
+    ];
+    $sql = <<<'SQL'
+        UPDATE `solr_map`
+        SET
+            `settings` = ?
+        WHERE
+            `id` = ?
+        SQL;
+    $qb = $connection->createQueryBuilder();
+    $qb
+        ->select('id', 'settings')
+        ->from('solr_map', 'solr_map')
+        ->orderBy('id', 'asc');
+    $solrMapIds = $connection->executeQuery($qb)->fetchAllKeyValue();
+    foreach ($solrMapIds as $solrMapId => $settings) {
+        $settings = json_decode($settings, true);
+        $formatter = $settings['formatter'] ?? '';
+        $label = $settings['label'] ?? '';
+        if (!$formatter) {
+            $settings = $label ? ['label' => $label] : [];
+        } else {
+            if (array_key_exists($formatter, $replacedToTransformations)) {
+                $settings = array_filter([
+                    'formatter' => 'text',
+                    'label' => $label,
+                    'transformations' => array_filter([$replacedToTransformations[$formatter]]),
+                ], 'strlen');
+            }
+        }
+        $sql = 'UPDATE `solr_map` SET `settings` = ? WHERE `id` = ?;';
+        $connection->executeStatement($sql, [json_encode($settings, 320), $solrMapId]);
+    }
+}
