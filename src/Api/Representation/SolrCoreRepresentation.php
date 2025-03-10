@@ -746,7 +746,21 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         $unavailableFields = [];
         foreach (array_keys($fields) as $source) {
-            $maps = $this->mapsBySource($source, 'resources');
+            /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
+            $maps = $this->mapsBySource($source);
+            if (!count($maps)) {
+                $unavailableFields[] = $source;
+            }
+        }
+
+        // TODO Warning: use the source name, not a static index name.
+        $fields = [
+            'is_id_i' => true,
+            'ss_name_s' => true,
+        ];
+        foreach (array_keys($fields) as $source) {
+            /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
+            $maps = $this->mapsByFieldName($source);
             if (!count($maps)) {
                 $unavailableFields[] = $source;
             }
