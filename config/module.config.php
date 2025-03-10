@@ -75,10 +75,6 @@ return [
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/search/solr/core-id-map',
-                                'visible' => false,
-                            ],
-                            [
                                 'route' => 'admin/search/solr/core-id-map-resource',
                                 'visible' => false,
                             ],
@@ -142,19 +138,6 @@ return [
                                             ],
                                             'defaults' => [
                                                 'action' => 'show',
-                                            ],
-                                        ],
-                                    ],
-                                    'core-id-map' => [
-                                        'type' => \Laminas\Router\Http\Segment::class,
-                                        'options' => [
-                                            'route' => '/core/:core-id/map',
-                                            'constraints' => [
-                                                'core-id' => '\d+',
-                                            ],
-                                            'defaults' => [
-                                                'controller' => Controller\Admin\MapController::class,
-                                                'action' => 'browse',
                                             ],
                                         ],
                                     ],

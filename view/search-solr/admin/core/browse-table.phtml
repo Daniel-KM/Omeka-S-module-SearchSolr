@@ -62,34 +62,23 @@ $escape = $plugins->get('escapeHtml');
                             ) ?>
                         </li>
                         <li>
-                            <?= $status
-                                ? $this->hyperlink('', $solrCore->adminUrl(), [
-                                    'class' => 'o-icon- far fa-sun',
-                                    'title' => $translate('Get info about the Solr core'), // @translate
-                                ])
-                                : $this->hyperlink('', '#', [
-                                    'class' => 'o-icon- far fa-sun',
-                                    'title' => $translate('Get info about the Solr core'), // @translate
-                                ])
-                            ?>
-                        </li>
-                        <li>
                             <?= $solrCore->link('', 'edit', [
                                 'class' => 'o-icon-edit',
                                 'title' => $translate('Edit'),
                             ]) ?>
                         </li>
                         <li>
-                            <?= $status
-                                ? $this->hyperlink('', $solrCore->mapUrl(), [
-                                    'class' => 'o-icon- fa fa-sliders fa-sliders-h',
-                                    'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
-                                ])
-                                : $this->hyperlink('', '#', [
-                                    'class' => 'o-icon- fa fa-sliders fa-sliders-h disabled',
-                                    'title' => $translate('Map Omeka metadata and Solr fields'), // @translate
-                                ])
-                            ?>
+                        	<?php if ($status): ?>
+                                <?= $this->hyperlink('', $solrCore->adminUrl(), [
+                                    'class' => 'o-icon- far fa-sun',
+                                    'title' => $translate('Get info about the Solr core and map Omeka metadata and Solr indices'), // @translate
+                                ]) ?>
+                            <?php else: ?>
+	                            <span
+                                    class="o-icon- far fa-sun disabled"
+                                    aria-label="<?= $escape($translate('Get info about the Solr core and map Omeka metadata and Solr indices')) ?>"
+                                    title="<?= $escape($translate('Get info about the Solr core and map Omeka metadata and Solr indices')) ?>"></span>
+                            <?php endif; ?>
                         </li>
                         <li>
                             <a href="#"

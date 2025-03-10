@@ -297,19 +297,6 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $returnMessage ? $message->setTranslator($translator) : true;
     }
 
-    public function mapUrl(?string $action = null, $canonical = false): string
-    {
-        $url = $this->getViewHelper('Url');
-        $params = [
-            'action' => $action,
-            'core-id' => $this->id(),
-        ];
-        $options = [
-            'force_canonical' => $canonical,
-        ];
-        return $url('admin/search/solr/core-id-map', $params, $options);
-    }
-
     public function resourceMapUrl(?string $resourceName, ?string $action = null, $canonical = false): string
     {
         $url = $this->getViewHelper('Url');

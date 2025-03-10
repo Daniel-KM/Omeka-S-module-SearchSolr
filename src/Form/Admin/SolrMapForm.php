@@ -41,23 +41,44 @@ use SearchSolr\ValueFormatter\Manager as ValueFormatterManager;
 class SolrMapForm extends Form
 {
     /**
-     * @var ValueExtractorManager
+     * @var \Omeka\Api\Manager
+     */
+    protected $apiManager;
+
+    /**
+     * @var \SearchSolr\ValueExtractor\Manager
      */
     protected $valueExtractorManager;
 
     /**
-     * @var ValueFormatterManager
+     * @var \SearchSolr\ValueFormatter\Manager
      */
     protected $valueFormatterManager;
 
     /**
-     * @var ApiManager
+     * @todo Set main index and label first then all other values a collection. In controller, manage them as individual map. The aim is to create an index from multiple sources, like in show view.
+     *
+     * {@inheritDoc}
+     * @see \Laminas\Form\Element::init()
      */
-    protected $apiManager;
-
     public function init(): void
     {
         $this
+            ->setAttribute('id', 'form-solr-map')
+            ->add([
+                'name' => 'o:resource_name',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Scope', // @translate
+                    'value_options' => $this->getValueExtractorOptions(),
+                ],
+                'attributes' => [
+                    'id' => 'o:resource_name',
+                    'value' => 'items',
+                    'required' => true,
+                ],
+            ])
+
             ->add([
                 'name' => 'o:source',
                 'type' => Element\Collection::class,
@@ -66,17 +87,50 @@ class SolrMapForm extends Form
                     'should_create_template' => true,
                     'allow_add' => true,
                     'label' => 'Source', // @translate
+                    'label_attributes' => [
+                        'class' => 'hidden',
+                    ],
                     'info' => 'To select a sub-property allows to store a linked metadata when the property is filled with a resource. Thereby, an item can be found from the specified value of a linked item. For example an issue of a journal can be linked with the journal, so the issue can be found from the title of the journal.', // @translate
                     'target_element' => new SourceFieldset(null, [
                         'options' => $this->getSourceOptions(),
                     ]),
                 ],
                 'attributes' => [
-                    'id' => 'o:source',
+                    'id' => 'o-source',
                     'required' => true,
+                    'class' => 'source-resource',
                 ],
             ])
+        ;
 
+        foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
+            $this
+                ->add([
+                    'name' => 'o:source/' . $name,
+                    'type' => Element\Collection::class,
+                    'options' => [
+                        'count' => 1,
+                        'should_create_template' => true,
+                        'allow_add' => true,
+                        'label' => 'Source', // @translate
+                        'label_attributes' => [
+                            'class' => 'hidden',
+                        ],
+                        'info' => 'To select a sub-property allows to store a linked metadata when the property is filled with a resource. Thereby, an item can be found from the specified value of a linked item. For example an issue of a journal can be linked with the journal, so the issue can be found from the title of the journal.', // @translate
+                        'target_element' => new SourceFieldset(null, [
+                            'options' => $this->getSourceOptions($name),
+                        ]),
+                    ],
+                    'attributes' => [
+                        'id' => 'o-source-' . $name,
+                        'required' => true,
+                        'data-value-extractor' => $name,
+                        'class' => 'source-resource',
+                    ],
+                ]);
+        }
+
+        $this
             // Temp fix for empty value options in DataTypeSelect in fieldset.
             ->add([
                 'name' => 'data_types',
@@ -514,9 +568,18 @@ class SolrMapForm extends Form
     }
 
     /**
+     * @param ApiManager $apiManager
+     */
+    public function setApiManager(ApiManager $apiManager): self
+    {
+        $this->apiManager = $apiManager;
+        return $this;
+    }
+
+    /**
      * @param ValueExtractorManager $valueExtractorManager
      */
-    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager)
+    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager): self
     {
         $this->valueExtractorManager = $valueExtractorManager;
         return $this;
@@ -525,27 +588,24 @@ class SolrMapForm extends Form
     /**
      * @param ValueFormatterManager $valueFormatterManager
      */
-    public function setValueFormatterManager(ValueFormatterManager $valueFormatterManager)
+    public function setValueFormatterManager(ValueFormatterManager $valueFormatterManager): self
     {
         $this->valueFormatterManager = $valueFormatterManager;
         return $this;
     }
 
-    /**
-     * @param ApiManager $apiManager
-     */
-    public function setApiManager(ApiManager $apiManager)
+    public function getValueExtractorOptions(): array
     {
-        $this->apiManager = $apiManager;
-        return $this;
+        $result = [];
+        foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
+            $result[$name] = $this->valueExtractorManager->get($name)->getLabel() ?: $name;
+        }
+        return $result;
     }
 
-    /**
-     * @return array|null
-     */
-    protected function getSourceOptions()
+    protected function getSourceOptions(?string $resourceName = null): ?array
     {
-        $resourceName = $this->getOption('resource_name');
+        $resourceName ??= $this->getOption('resource_name');
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
         if (!isset($valueExtractor)) {

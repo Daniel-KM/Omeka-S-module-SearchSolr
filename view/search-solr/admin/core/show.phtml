@@ -35,7 +35,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <?= $translate('Maps') ?>
             </a>
             <ul class="collapsible">
-                <li><?= $hyperlink($translate('Maps'), $solrCore->mapUrl(), ['class' => 'link']) ?></li>
                 <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
                 <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name), ['class' => 'link']) ?></li>
                 <?php endforeach; ?>
@@ -82,7 +81,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
-                <th><?= $translate('Name') ?></th>
+                <th><?= $translate('Index') ?></th>
                 <th>
                     <?php // Adapted in map/browse-resource. ?>
                     <table aria-label="<?= $escapeAttr($translate('Maps')) ?>" class="solr-maps-table solr-maps-table-head tablesaw" data-tablesaw-mode="stack">

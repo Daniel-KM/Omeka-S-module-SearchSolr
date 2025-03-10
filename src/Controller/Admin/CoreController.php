@@ -213,6 +213,14 @@ class CoreController extends AbstractActionController
             ? $solrCore->queryValuesCount('resource_name_s')
             : [];
 
+        $missingMaps = $solrCore->missingRequiredMaps();
+        if ($missingMaps) {
+            $this->messenger()->addError(new PsrMessage(
+                'Some required fields are missing or not available in the core: {fields}. Update the generic or the resource mappings.', // @translate
+                ['fields' => implode(', ', array_unique($missingMaps))]
+            ));
+        }
+
         return new ViewModel([
             'solrCore' => $solrCore,
             'resource' => $solrCore,
@@ -318,7 +326,7 @@ class CoreController extends AbstractActionController
             ]);
             // Messages are already appended.
             if ($result) {
-                return $this->redirect()->toRoute('admin/search/solr/core-id-map', ['core-id' => $solrCoreId]);
+                return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCoreId]);
             }
         }
 

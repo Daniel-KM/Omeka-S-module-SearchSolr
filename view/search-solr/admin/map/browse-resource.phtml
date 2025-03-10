@@ -75,7 +75,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
     <?= $hyperlink($solrCore->name(), $solrCore->adminUrl()) ?>
-    <?= $hyperlink($translate('Resource types'), $solrCore->mapUrl()) ?>
     <span><?= sprintf($translate('Indices for "%s"'), $resourceName) ?></span>
 </nav>
 

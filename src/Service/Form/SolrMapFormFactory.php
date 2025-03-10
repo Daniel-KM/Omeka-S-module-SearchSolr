@@ -15,8 +15,9 @@ class SolrMapFormFactory implements FactoryInterface
         $api = $services->get('Omeka\ApiManager');
         $form = new SolrMapForm(null, $options ?? []);
         return $form
+            ->setApiManager($api)
             ->setValueExtractorManager($valueExtractorManager)
             ->setValueFormatterManager($valueFormatterManager)
-            ->setApiManager($api);
+        ;
     }
 }

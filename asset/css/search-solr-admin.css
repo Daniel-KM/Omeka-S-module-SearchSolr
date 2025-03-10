@@ -1,5 +1,10 @@
 @media all {
-    header nav .solr-cores::before,
+    .hidden,
+    [hidden] {
+        display: none;
+    }
+
+	header nav .solr-cores::before,
     .solr-cores .subhead::before,
     .solr-cores .no-resources:before {
         content: "\f185";
@@ -14,6 +19,10 @@
     .sidebar .meta-group-list .value-count {
        font-size: small;
        float: right;
+    }
+
+    #form-solr-map fieldset.source-resource legend {
+        display: none;
     }
 
     #field-info {

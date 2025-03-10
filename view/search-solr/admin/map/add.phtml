@@ -54,8 +54,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map create
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
     <?= $hyperlink($translate('Solr cores'), $url('admin/search/solr')) ?>
     <?= $hyperlink($solrCore->name(), $solrCore->adminUrl()) ?>
-    <?= $hyperlink($translate('Resource types'), $solrCore->mapUrl()) ?>
-    <?= $hyperlink($translate('Indices'), $url('admin/search/solr/core-id-map-resource', ['resource-name' => $resourceName, 'core-id' => $solrCore->id()])) ?>
+    <?= $hyperlink($translate('Indices'), $solrCore->resourceMapUrl($resourceName)) ?>
     <span><?= $translate('Add') ?></span>
 </nav>
 

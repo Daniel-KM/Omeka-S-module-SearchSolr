@@ -63,31 +63,6 @@ class MapController extends AbstractActionController
         $this->valueExtractorManager = $valueExtractorManager;
     }
 
-    public function browseAction()
-    {
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCoreId = $this->params('core-id');
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
-
-        $missingMaps = $solrCore->missingRequiredMaps();
-        if ($missingMaps) {
-            $this->messenger()->addError(new PsrMessage(
-                'Some required fields are missing or not available in the core: {fields}. Update the generic or the resource mappings.', // @translate
-                ['fields' => implode(', ', array_unique($missingMaps))]
-            ));
-        }
-
-        $valueExtractors = [];
-        foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
-            $valueExtractors[$name] = $this->valueExtractorManager->get($name);
-        }
-
-        return new ViewModel([
-            'solrCore' => $solrCore,
-            'valueExtractors' => $valueExtractors,
-        ]);
-    }
-
     public function browseResourceAction()
     {
         $solrCoreId = $this->params('core-id');
@@ -194,10 +169,7 @@ class MapController extends AbstractActionController
             $this->messenger()->addWarning('No new maps added.'); // @translate
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-            'core-id' => $solrCoreId,
-            'resource-name' => $resourceName,
-        ]);
+        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCoreId]);
     }
 
     public function cleanAction()
@@ -254,10 +226,7 @@ class MapController extends AbstractActionController
             $this->messenger()->addWarning('No maps deleted.'); // @translate
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-            'core-id' => $solrCoreId,
-            'resource-name' => $resourceName,
-        ]);
+        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCoreId]);
     }
 
     public function addAction()
@@ -404,6 +373,7 @@ class MapController extends AbstractActionController
 
     public function deleteAction()
     {
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
         $id = $this->params('id');
         $map = $this->api()->read('solr_maps', $id)->getContent();
 
@@ -419,10 +389,7 @@ class MapController extends AbstractActionController
             }
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-            'core-id' => $map->solrCore()->id(),
-            'resource-name' => $map->resourceName(),
-        ]);
+        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $map->solrCore()->id()]);
     }
 
     protected function removeEmptyData(array $data): array

@@ -14,12 +14,6 @@ class MapControllerTest extends SolrControllerTestCase
         $schema->setSchema([]);
     }
 
-    public function testBrowseAction(): void
-    {
-        $this->dispatch($this->solrCore->mapUrl('browse'));
-        $this->assertResponseStatusCode(200);
-    }
-
     public function testResourceBrowseAction(): void
     {
         $this->dispatch($this->solrCore->resourceMapUrl('items', 'browse'));

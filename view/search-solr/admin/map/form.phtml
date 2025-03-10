@@ -36,6 +36,10 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
     <button type="submit" class="button"><?= $translate('Save') ?></button>
 </div>
 
+<h4><?= $translate('Resource type') ?></h4>
+<p><?= $translate('Fill index with metadata from a type of resource') ?></p>
+<?= $this->formRow($form->get('o:resource_name')) ?>
+
 <h4><?= $translate('Source') ?></h4>
 <p><?= $translate('Metadata to extract from Omeka') ?></p>
 <?= $this->formRow($form->get('o:source')) ?>
@@ -53,5 +57,12 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
 
 <?php $this->trigger('view.add.form.after'); ?>
 <?= $this->form()->closeTag() ?>
+
+<?php // Outside of the form to skip them. ?>
+<div class="source-by-resource hidden" style="display: none">
+    <?php foreach (array_keys($form->getValueExtractorOptions()) as $name): ?>
+    <?= $this->formRow($form->get('o:source/' . $name)) ?>
+    <?php endforeach; ?>
+</div>
 
 <?php $this->trigger('view.add.after'); ?>

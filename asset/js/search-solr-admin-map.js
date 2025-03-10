@@ -31,6 +31,14 @@
 
 (function() {
 
+    const chosenOptions = {
+        allow_single_deselect: true,
+        disable_search_threshold: 10,
+        width: '100%',
+        search_contains: true,
+        include_group_label_in_selected: true,
+    };
+
     // Schema and sourceLabels are set in the form.
     // var schema = schema || {};
     // var sourceLabels = sourceLabels || {};
@@ -51,6 +59,18 @@
     for (let i in schema.dynamicFields) {
         var field = schema.dynamicFields[i];
         fieldsByName[field.name] = field;
+    }
+
+    function updateSourceData() {
+        const resourceName = $('input[name="o:resource_name"]').val();
+        if (resourceName) {
+            const source = $('fieldset#o-source').closest('.field');
+            const newSource = $('fieldset#o-source-' + resourceName).closest('.field');
+            if (source.length) {
+                $(source).html($(newSource[0]).html().replace('o:source/' + resourceName, '').replace('o-source-' + resourceName, ''));
+                $('fieldset#o-source').closest('.field').find('select.chosen-select').chosen(chosenOptions);
+            }
+        }
     }
 
     function generateFieldName() {
@@ -180,6 +200,10 @@
 
     $(document).ready(function() {
 
+        $('input[name="o:resource_name"]').on('change', function() {
+            updateSourceData();
+        });
+
         $('select[name="o:source[0][source]"]')
             .attr('id', 'source-selector');
 
@@ -275,13 +299,7 @@
 
         input.before(select);
 
-        select.chosen({
-            allow_single_deselect: true,
-            disable_search_threshold: 10,
-            width: '100%',
-            search_contains: true,
-            include_group_label_in_selected: true,
-        });
+        select.chosen(chosenOptions);
 
         var timeout = 0;
         var regexps = {};
@@ -339,7 +357,7 @@
         $('input[type=radio][name="o:settings[formatter]"]')
             .on('change', toggleSettingsFormatter);
 
-        // On load
+        // On load.
         $('fieldset[name="o:settings"] .field .inputs').append('<div class="input-info"></div>');
         displayInfoFormatter();
 
@@ -356,6 +374,10 @@
         $('input[type=checkbox][name="o:settings[normalization]"]')
             .on('change',toggleSettingsNormalization);
 
-    });
+        // On submit.
+        $('#form-solr-map').on('submit', function() {
+            $('input[name^="o:source/"]').remove();
+        });
 
+    });
 })();
