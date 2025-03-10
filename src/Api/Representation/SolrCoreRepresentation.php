@@ -534,17 +534,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             ])
             // When index is not ready, output is wrong.
             ->addFilterQuery([
-                'key' => 'o_id_i',
-                'query' => 'o_id_i:*',
+                'key' => 'is_id_i',
+                'query' => 'is_id_i:*',
             ])
-            ->setFields(['o_id_i', 'o_title_s'])
-            ->addSort('o_id_i', SolariumQuery::SORT_ASC)
+            ->setFields(['is_id_i', 'ss_name_s'])
+            ->addSort('is_id_i', SolariumQuery::SORT_ASC)
             // Rows is 10 by default and 0 or -1 are not working.
             ->setRows(1000000000);
         $resultSet = $this->solariumClient->select($query);
         $data = $resultSet->getData();
         return isset($data['response']['docs'])
-            ? array_column($data['response']['docs'], 'o_title_s', 'o_id_i')
+            ? array_column($data['response']['docs'], 'ss_name_s', 'is_id_i')
             : [];
     }
 

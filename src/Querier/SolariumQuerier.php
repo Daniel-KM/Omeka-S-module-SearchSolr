@@ -817,7 +817,7 @@ class SolariumQuerier extends AbstractQuerier
                 $values = array_unique(array_map('intval', $value));
                 if (count($values)) {
                     // Manage any special indexers for third party.
-                    // TODO Add a second (hidden?) field "o_id_i".
+                    // TODO Add a second (hidden?) field "is_id_i".
                     // TODO Or reindex in the other way #id/items-index-serverId.
                     $value = '*\/' . implode(' OR *\/', $values);
                     $this->solariumQuery

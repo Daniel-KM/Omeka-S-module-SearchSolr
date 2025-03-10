@@ -22,7 +22,7 @@ return [
     ],
     [
         'resource_name' => 'generic',
-        'field_name' => 'o_id_i',
+        'field_name' => 'is_id_i',
         'source' => 'o:id',
         'pool' => [],
         'settings' => ['formatter' => '', 'label' => 'Internal id'],
@@ -36,7 +36,7 @@ return [
     ],
     [
         'resource_name' => 'generic',
-        'field_name' => 'o_title_s',
+        'field_name' => 'ss_name_s',
         'source' => 'o:title',
         'pool' => [],
         'settings' => ['formatter' => '', 'label' => 'Title'],

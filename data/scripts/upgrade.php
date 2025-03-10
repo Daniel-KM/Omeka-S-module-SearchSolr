@@ -530,11 +530,11 @@ if (version_compare($oldVersion, '3.5.47', '<')) {
     $connection->executeStatement($sql);
 }
 
-if (version_compare($oldVersion, '3.5.53', '<')) {
+if (version_compare($oldVersion, '3.5.54', '<')) {
     if (!$this->isModuleActive('AdvancedSearch')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.41']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.43']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
@@ -543,21 +543,19 @@ if (version_compare($oldVersion, '3.5.53', '<')) {
     $moduleManager = $services->get('Omeka\ModuleManager');
     $module = $moduleManager->getModule('AdvancedSearch');
     $moduleVersion = $module->getIni('version');
-    if (version_compare($moduleVersion, '3.4.41', '<')) {
+    if (version_compare($moduleVersion, '3.4.43', '<')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
-            ['module' => 'AdvancedSearch', 'version' => '3.4.41']
+            ['module' => 'AdvancedSearch', 'version' => '3.4.43']
         );
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
-}
 
-if (version_compare($oldVersion, '3.5.54', '<')) {
-    // Add index "o_id_i" and "o_title_s".
-    // TODO Add index "is_o_id" and "ss_o_title" for drupal.
+    // Add index "is_id_s" and "ss_name_s" for generic management.
+    // The manes are compatible with drupal.
     $newIndexes = [
-        'o_id_i' => 'o:id',
-        'o_title_s' => 'o:title',
+        'is_id_i' => 'o:id',
+        'ss_name_s' => 'o:title',
     ];
 
     $qb = $connection->createQueryBuilder();
