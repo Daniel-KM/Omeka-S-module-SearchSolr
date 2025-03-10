@@ -37,6 +37,8 @@ use Omeka\Stdlib\ErrorStore;
 
 class SolrCoreAdapter extends AbstractEntityAdapter
 {
+    use TraitArrayFilterRecursiveEmptyValue;
+
     protected $sortFields = [
         'id' => 'id',
         'name' => 'name',
@@ -63,14 +65,15 @@ class SolrCoreAdapter extends AbstractEntityAdapter
         return \SearchSolr\Entity\SolrCore::class;
     }
 
-    public function hydrate(Request $request, EntityInterface $entity,
-        ErrorStore $errorStore
-    ): void {
+    public function hydrate(Request $request, EntityInterface $entity, ErrorStore $errorStore): void
+    {
+        /** @var \SearchSolr\Entity\SolrCore $entity */
         if ($this->shouldHydrate($request, 'o:name')) {
             $entity->setName(trim($request->getValue('o:name') ?? ''));
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
-            $entity->setSettings($request->getValue('o:settings') ?: []);
+            $array = $this->arrayFilterRecursiveEmptyValue($request->getValue('o:settings') ?: []);
+            $entity->setSettings($array);
         }
     }
 

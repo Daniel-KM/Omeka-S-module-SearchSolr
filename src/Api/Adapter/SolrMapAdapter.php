@@ -38,6 +38,8 @@ use Omeka\Stdlib\ErrorStore;
 
 class SolrMapAdapter extends AbstractEntityAdapter
 {
+    use TraitArrayFilterRecursiveEmptyValue;
+
     protected $sortFields = [
         'id' => 'id',
         'core' => 'solrCore',
@@ -71,9 +73,10 @@ class SolrMapAdapter extends AbstractEntityAdapter
         return \SearchSolr\Entity\SolrMap::class;
     }
 
-    public function hydrate(Request $request, EntityInterface $entity,
-        ErrorStore $errorStore
-    ): void {
+    public function hydrate(Request $request, EntityInterface $entity, ErrorStore $errorStore): void
+    {
+        /** @var \SearchSolr\Entity\SolrMap $entity */
+
         if ($this->shouldHydrate($request, 'o:resource_name')) {
             $entity->setResourceName(trim($request->getValue('o:resource_name')));
         }
@@ -84,10 +87,12 @@ class SolrMapAdapter extends AbstractEntityAdapter
             $entity->setSource(trim($request->getValue('o:source')));
         }
         if ($this->shouldHydrate($request, 'o:pool')) {
-            $entity->setPool($request->getValue('o:pool') ?: []);
+            $array = $this->arrayFilterRecursiveEmptyValue($request->getValue('o:pool') ?: []);
+            $entity->setPool($array);
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
-            $entity->setSettings($request->getValue('o:settings') ?: []);
+            $array = $this->arrayFilterRecursiveEmptyValue($request->getValue('o:settings') ?: []);
+            $entity->setSettings($array);
         }
 
         $this->hydrateSolrCore($request, $entity);
