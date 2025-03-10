@@ -196,6 +196,7 @@ class Module extends AbstractModule
             [$this, 'deletePostSolrMap']
         );
 
+        // Append solr documents in admin.
         $controllers = [
             'Omeka\Controller\Admin\Item',
             'Omeka\Controller\Admin\ItemSet',
@@ -218,6 +219,11 @@ class Module extends AbstractModule
                 [$this, 'handleViewBrowseAfterAdmin']
             );
         }
+        $sharedEventManager->attach(
+            \AdvancedSearch\Controller\SearchController::class,
+            'view.browse.after',
+            [$this, 'appendBrowseAfterAdmin']
+        );
     }
 
     public function appendBrowseCores(Event $event): void
@@ -413,6 +419,24 @@ class Module extends AbstractModule
         $vars->offsetSet('ids', $ids);
         $vars->offsetSet('solrCore', $solrCore);
         echo $view->partial('common/solr-documents-link');
+    }
+
+    public function appendBrowseAfterAdmin(Event $event): void
+    {
+        /**
+         * @var \Omeka\Mvc\Status $status
+         */
+        $services = $this->getServiceLocator();
+        $status = $services->get('Omeka\Status');
+        if (!$status->isAdminRequest()) {
+            return;
+        }
+
+        /** @var \AdvancedSearch\Response $respoonse */
+        $view = $event->getTarget();
+        $response = $view->response;
+        $view->resources = $response->getResources();
+        $this->handleViewBrowseAfterAdmin($event);
     }
 
     /**
