@@ -57,11 +57,32 @@ interface ValueFormatterInterface
     public function setSettings(array $settings): self;
 
     /**
-     * Convert a value (Omeka Value, string…) into a list of values to index.
+     * Pre-format a value, so extract the requested parts.
      *
-     * Most of the time, a value is formatted into one string or integer.
+     * @param mixed $value
+     */
+    public function preFormat($value): array;
+
+    /**
+     * Convert a value (Omeka Value, string…) into indexable values.
+     *
+     * Most of the times, a value is output as it is as string, integer or date.
      *
      * @param mixed $value
      */
     public function format($value): array;
+
+    /**
+     * Post-format a list of scalar values.
+     *
+     * @param mixed $value Should be a scalar value.
+     */
+    public function postFormat($value): array;
+
+    /**
+     * Finalize formatting.
+     *
+     * @param mixed $value Should be an array of scalar values.
+     */
+    public function finalizeFormat(array $values): array;
 }

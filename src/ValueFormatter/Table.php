@@ -93,6 +93,6 @@ class Table extends AbstractValueFormatter
 
         $values = array_values(array_unique(array_filter($values, 'strlen')));
 
-        return $this->postFormatter($values);
+        return $values;
     }
 }

@@ -54,7 +54,6 @@ class DateRange extends AbstractValueFormatter
             return [];
         }
 
-        // Post formatter only manage path for now, that is impossible with date.
         return ["[$start TO $end]"];
     }
 }

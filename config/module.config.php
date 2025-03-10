@@ -267,11 +267,7 @@ return [
     ],
     'searchsolr_value_formatters' => [
         'invokables' => [
-            'standard' => ValueFormatter\Standard::class,
-            'standard_with_uri' => ValueFormatter\StandardWithUri::class,
-            'standard_without_uri' => ValueFormatter\StandardWithoutUri::class,
             'text' => ValueFormatter\Text::class,
-            'uri' => ValueFormatter\Uri::class,
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
             'year' => ValueFormatter\Year::class,

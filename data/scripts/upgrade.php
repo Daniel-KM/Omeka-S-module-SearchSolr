@@ -613,12 +613,18 @@ if (version_compare($oldVersion, '3.5.54', '<')) {
 
 if (version_compare($oldVersion, '3.5.55', '<')) {
     // Replace deprecated formatters with Text.
-    $replacedToTransformations = [
+    $replacedToNormalizations = [
         'alphanumeric' => 'alphanumeric',
         'plain_text' => 'strip_tags',
         'raw_text' => null,
         'html_escaped_text' => 'html_escaped',
         'uc_first_text' => 'ucfirst',
+    ];
+    $removedStandards = [
+        'standard',
+        'standard_with_uri',
+        'standard_without_uri',
+        'uri',
     ];
     $sql = <<<'SQL'
         UPDATE `solr_map`
@@ -637,17 +643,44 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
         $settings = json_decode($settings, true);
         $formatter = $settings['formatter'] ?? '';
         $label = $settings['label'] ?? '';
+
         if (!$formatter) {
-            $settings = $label ? ['label' => $label] : [];
+            $settings = $label ? ['formatter' => 'standard', 'label' => $label] : ['formatter' => 'standard'];
+            $formatter = 'standard';
         } else {
-            if (array_key_exists($formatter, $replacedToTransformations)) {
+            if (array_key_exists($formatter, $replacedToNormalizations)) {
                 $settings = array_filter([
                     'formatter' => 'text',
                     'label' => $label,
-                    'transformations' => array_filter([$replacedToTransformations[$formatter]]),
+                    'normalization' => array_filter([$replacedToNormalizations[$formatter]]),
                 ], 'strlen');
+                $formatter = 'text';
+            } else {
+                $settings['normalization'] = $settings['transformations'] ?? [];
+                unset($settings['transformations']);
             }
         }
+
+        if (in_array($formatter, $removedStandards)) {
+            switch ($formatter) {
+                case 'standard_with_uri':
+                    $settings['part'] = ['value', 'uri'];
+                    break;
+                case 'standard_without_uri':
+                    $settings['part'] = ['value'];
+                    break;
+                case 'uri':
+                    $settings['part'] = ['uri'];
+                    break;
+                case 'standard':
+                default:
+                    $settings['part'] = ['auto'];
+                    break;
+            }
+            $formatter = 'text';
+            $settings['formatter'] = $formatter;
+        }
+
         $sql = 'UPDATE `solr_map` SET `settings` = ? WHERE `id` = ?;';
         $connection->executeStatement($sql, [json_encode($settings, 320), $solrMapId]);
     }

@@ -218,6 +218,26 @@ class SolrMapForm extends Form
         $settingsFieldset = new Fieldset('o:settings');
         $settingsFieldset
             ->add([
+                'name' => 'part',
+                'type' => Element\MultiCheckbox::class,
+                'options' => [
+                    'label' => 'Values to extract', // @translate
+                    'value_options' => [
+                        'auto' => 'Auto (extracted values as it is)', // @translate
+                        'string' => 'Extracted values as string', // @translate
+                        'value' => 'Values only (as stored in database)', // @translate
+                        'uri' => 'Uri (for values with an uri)', // @translate
+                        'html' => 'Html (as seen)', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'part',
+                    'value' => [
+                        'auto',
+                    ],
+                ],
+            ])
+            ->add([
                 'name' => 'formatter',
                 'type' => Element\Radio::class,
                 'options' => [
@@ -230,12 +250,11 @@ class SolrMapForm extends Form
                     'value' => '',
                 ],
             ])
-
             ->add([
-                'name' => 'transformations',
-                'type' => Element\MultiCheckbox::class,
+                'name' => 'normalization',
+                'type' => CommonElement\OptionalMultiCheckbox::class,
                 'options' => [
-                    'label' => 'Text transformations', // @translate
+                    'label' => 'Cleaning and normalization', // @translate
                     'value_options' => [
                         'html_escaped' => 'Escape html', // @translate
                         'strip_tags' => 'Strip tags', // @translate
@@ -244,25 +263,26 @@ class SolrMapForm extends Form
                         'ucfirst' => 'Upper case first character', // @translate
                         'remove_diacritics' => 'Remove diacritics', // @translate
                         'alphanumeric' => 'Alphanumeric only', // @translate
+                        'max_length' => 'Max length', // @translate
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'transformations',
+                    'id' => 'normalization',
                     'value' => [
                         'strip_tags',
                     ],
-                    'data-formatter' => 'text',
+                    // Is used with all values.
+                    // 'data-formatter' => 'text',
                 ],
             ])
             ->add([
                 'name' => 'max_length',
                 'type' => Element\Number::class,
                 'options' => [
-                    'label' => 'Text max length', // @translate
+                    'label' => 'Max length', // @translate
                 ],
                 'attributes' => [
                     'id' => 'max_length',
-                    'data-formatter' => 'text',
                 ],
             ])
 
@@ -272,10 +292,17 @@ class SolrMapForm extends Form
                 'options' => [
                     'label' => 'Place', // @translate
                     'value_options' => [
-                        'country_and_toponym' => 'Country and toponym', // @translate
-                        'toponym_and_country' => 'Toponym and country', // @translate
+                        'country_and_toponym' => 'Country and toponym separately', // @translate
+                        'toponym_and_country' => 'Toponym and country separately', // @translate
+                        'country_toponym' => 'Country and toponym together', // @translate
+                        'toponym_country' => 'Toponym and country together', // @translate
                         'toponym' => 'Toponym', // @translate
                         'country' => 'Country', // @translate
+                        'coordinates' => 'Coordinates', // @translate
+                        'latitude' => 'Latitude', // @translate
+                        'longitude' => 'Longitude', // @translate
+                        'html' => 'String with all data', // @translate
+                        'array' => 'All data separately', // @translate
                     ],
                 ],
                 'attributes' => [
@@ -424,17 +451,20 @@ class SolrMapForm extends Form
 
         $settingsFieldset
             ->add([
-                'name' => 'path',
-                'type' => Element\Checkbox::class,
+                'name' => 'finalization',
+                'type' => CommonElement\OptionalMultiCheckbox::class,
                 'options' => [
-                    'label' => 'Merge values as a path with parts separated with a "/"', // @translate
-                    'info' => 'This option allows to search ascendants or descendants inside a partial of full path automatically.', // @translate
+                    'label' => 'Finalization', // @translate
+                    'info' => 'The option "path" allows to search ascendants or descendants inside a partial of full path automatically.', // @translate
+                    'value_options' => [
+                        'path' => 'Merge values as a path with parts separated with a "/"', // @translate
+                    ],
                 ],
                 'attributes' => [
-                    'id' => 'path',
-                    'required' => false,
+                    'id' => 'finalization',
                 ],
             ])
+
             ->add([
                 'name' => 'label',
                 'type' => Element\Text::class,
@@ -463,10 +493,6 @@ class SolrMapForm extends Form
             ->get('o:settings')
             ->add([
                 'name' => 'formatter',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'transformations',
                 'required' => false,
             ])
             ->add([

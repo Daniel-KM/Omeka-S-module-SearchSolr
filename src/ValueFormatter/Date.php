@@ -14,9 +14,12 @@ class Date extends AbstractValueFormatter
 
     public function format($value): array
     {
+        // Ideally, value should be an interval or a timestamp. Else, check the string early.
+
         if ($value instanceof ValueRepresentation && $value->type() === 'numeric:interval') {
             $value = strtok((string) $value, '/');
         } elseif (!($value instanceof ValueRepresentation && $value->type() === 'numeric:timestamp')) {
+            // A value that is not managed as timestamp.
             $value = trim((string) $value);
             // Manage the common case where the date is uncertain and wrapped
             // with "[]" or "()" or "{}". Wrap may be on part of the date only.
@@ -48,11 +51,12 @@ class Date extends AbstractValueFormatter
                 // This is an old exif date.
                 $value = $matches[1] . str_replace(':', '-', $matches[2]) . 'T' . $matches[3];
             }
+        } elseif (!(is_scalar($value) || (is_object($value) && method_exists($value, '__toString')))) {
+            return [];
         }
 
         $value = (string) $this->getDateTimeFromValue((string) $value);
 
-        // Post formatter only manage path for now, that is useless with date.
         return strlen($value)
             ? [$value]
             : [];

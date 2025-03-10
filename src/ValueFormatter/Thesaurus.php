@@ -144,7 +144,7 @@ class Thesaurus extends AbstractValueFormatter
             }
         }
 
-        $this->returnPostFormatter($results);
+        return $results;
     }
 
     protected function getThesaurus(ItemRepresentation $item): ?TThesaurus

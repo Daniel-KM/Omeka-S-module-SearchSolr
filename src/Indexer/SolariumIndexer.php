@@ -406,12 +406,12 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            $values = $valueExtractor->extractValue($representation, $solrMap);
-            if (!count($values)) {
+            $extractedValues = $valueExtractor->extractValue($representation, $solrMap);
+            if (!count($extractedValues)) {
                 continue;
             }
 
-            $formattedValues = $this->formatValues($values, $solrMap);
+            $formattedValues = $this->formatValues($extractedValues, $solrMap);
             if (!count($formattedValues)) {
                 continue;
             }
@@ -428,7 +428,7 @@ class SolariumIndexer extends AbstractIndexer
 
             if ($this->support === 'drupal') {
                 // Only one value is filled for special values of Drupal.
-                $value = reset($values);
+                $value = reset($extractedValues);
                 // Generally, the value is a ValueRepresentation.
                 $locale = is_object($value) && method_exists($value, 'lang')
                     ? $value->lang()
@@ -468,17 +468,32 @@ class SolariumIndexer extends AbstractIndexer
     protected function formatValues(array $values, SolrMapRepresentation $solrMap)
     {
         /** @var \SearchSolr\ValueFormatter\ValueFormatterInterface $valueFormatter */
-        $valueFormatter = $this->formatters[$solrMap->setting('formatter', '')] ?: $this->formatters['standard'];
-        $valueFormatter->setSettings($solrMap->settings());
-        $result = [];
+        $formatter = $solrMap->setting('formatter', '');
+        $valueFormatter = !empty($this->formatters[$formatter])
+            ? $this->formatters[$formatter]
+            : $this->formatters['text'];
+        $solrMapSettings = $solrMap->settings();
+        $valueFormatter->setSettings($solrMapSettings);
+
+        $resultPreformatted = [];
         foreach ($values as $value) {
-            $formattedResult = $valueFormatter->format($value);
-            // FIXME Indexation of "0" breaks Solr, so currently replaced by "00".
-            $formattedResult = array_map(fn ($v) => $v === '0' ? '00' : $v, $formattedResult);
-            $result = array_merge($result, $formattedResult);
+            $preFormattedValues = $valueFormatter->preFormat($value);
+            $resultPreformatted = array_merge($resultPreformatted, $preFormattedValues);
         }
-        // Don't use array_unique before, because objects may not be stringable.
-        return array_unique($result);
+
+        $resultFormatted = [];
+        foreach ($resultPreformatted as $value) {
+            $formattedValues = $valueFormatter->format($value);
+            $resultFormatted = array_merge($resultFormatted, $formattedValues);
+        }
+
+        $resultPostFormatted = [];
+        foreach ($resultFormatted as $value) {
+            $postFormattedValues = $valueFormatter->postFormat($value);
+            $resultPostFormatted = array_merge($resultPostFormatted, $postFormattedValues);
+        }
+
+        return $valueFormatter->finalizeFormat($resultPostFormatted);
     }
 
     protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document): void
@@ -654,7 +669,7 @@ class SolariumIndexer extends AbstractIndexer
             $valueFormatter->setServiceLocator($this->services);
             $this->formatters[$formatter] = $valueFormatter;
         }
-        $this->formatters[''] = $this->formatters['standard'];
+        $this->formatters[''] = $this->formatters['text'];
     }
 
     /**
