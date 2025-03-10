@@ -81,13 +81,16 @@ class Thesaurus extends AbstractValueFormatter
             'branch',
         ];
         $withSelf = [
-            'broader',
+            // 'broader',
             'narrowers',
             'relateds',
             'siblings',
             'ascendants',
             'descendants',
         ];
+        if (method_exists($thesaurus, 'broaderOrSelf')) {
+            $withSelf[] = 'broader';
+        }
         $includeSelf = !empty($this->settings['thesaurus_self'])
             && !in_array($resourcesToExtract, $alreadyWithSelf);
         if ($includeSelf && in_array($resourcesToExtract, $withSelf)) {
@@ -124,24 +127,41 @@ class Thesaurus extends AbstractValueFormatter
             $resources[$self['id'] ?? $self['self']['id']] = $self;
         }
 
-        $result = [];
+        $results = [];
         foreach ($resources as $itemData) foreach ($thesaurusMetadata as $metadata) {
             if ($metadata === 'o:id') {
                 $id = $itemData['id'] ?? $itemData['self']['id'] ?? null;
                 if ($id) {
-                    $result[] = $id;
+                    $results[] = $id;
                 }
             } else {
                 $resource = $thesaurus->itemFromData($itemData);
                 if ($resource) {
                     foreach ($resource->value($metadata, ['all' => true]) as $value) {
-                        $result[] = $value->value();
+                        $results[] = $value->value();
                     }
                 }
             }
         }
 
-        return $result;
+        $usePath = !empty($this->settings['thesaurus_path']);
+        if (!$usePath) {
+            return $results;
+        }
+
+        // Check for the default separator
+        $logger = $this->services->get('Omeka\Logger');
+        foreach ($results as $key => $result) {
+            if (mb_strpos($result, '/') !== false) {
+                $logger->warn(
+                    'The value "{value}" cannot be included in a path. The "/" is replaced by " - ".', // @translate
+                    ['value' => $result]
+                );
+                $results[$key] = str_replace('/', ' - ', $result);
+            }
+        }
+
+        return [implode('/', $results)];
     }
 
     protected function getThesaurus(ItemRepresentation $item): ?TThesaurus

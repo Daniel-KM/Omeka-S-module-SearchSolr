@@ -417,6 +417,19 @@ class SolrMapForm extends Form
                         'data-formatter' => 'thesaurus',
                     ],
                 ])
+                ->add([
+                    'name' => 'thesaurus_path',
+                    'type' => Element\Checkbox::class,
+                    'options' => [
+                        'label' => 'Merge values as a path with parts separated with a "/"', // @translate
+                        'info' => 'This option allows to search ascendants or descendants inside a whole or partial branch automatically.', // @translate
+                    ],
+                    'attributes' => [
+                        'id' => 'thesaurus_path',
+                        'required' => false,
+                        'data-formatter' => 'thesaurus',
+                    ],
+                ])
             ;
         }
 
