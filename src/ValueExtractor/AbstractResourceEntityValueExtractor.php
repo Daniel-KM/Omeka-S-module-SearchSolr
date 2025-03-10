@@ -40,6 +40,7 @@ use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
 use Omeka\Api\Representation\ItemSetRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
+use Omeka\Api\Representation\ValueRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 
 abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInterface
@@ -98,6 +99,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'media' => 'Item: Media', // @translate
                     'content' => 'Media: Content (html or extracted text)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
+                    'value' => 'Value itself (in particular for module Thesaurus)', // @translate
                     'access_level' => 'Access level (module Access)', // @translate
                     // Urls.
                     'url_api' => 'Api url', // @translate
@@ -271,6 +273,14 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         if ($field === 'is_open') {
             return $resource instanceof ItemSetRepresentation
                 ? [$resource->isOpen()]
+                : [];
+        }
+
+        // See below when extracting value resource.
+        if ($field === 'value') {
+            // Here, the resource is never a value.
+            return $resource instanceof ValueRepresentation
+                ? [$resource]
                 : [];
         }
 
@@ -659,8 +669,13 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             $vr = $value->valueResource();
             if ($vr) {
                 if (!$this->excludeResourceViaQueryFilter($vr, $solrMap, 'filter_value_resources')) {
-                    $resourceExtractedValues = $this->extractValue($vr, $solrMap->subMap());
-                    $extractedValues = array_merge($extractedValues, $resourceExtractedValues);
+                    $solrSubMap = $solrMap->subMap();
+                    if ($solrSubMap->firstSource() === 'value') {
+                        $extractedValues[] = $value;
+                    } else {
+                        $resourceExtractedValues = $this->extractValue($vr, $solrSubMap);
+                        $extractedValues = array_merge($extractedValues, $resourceExtractedValues);
+                    }
                 }
             } else {
                 $extractedValues[] = $value;
