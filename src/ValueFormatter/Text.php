@@ -72,6 +72,8 @@ class Text extends AbstractValueFormatter
         }
 
         $value = trim($value);
-        return strlen($value) ? [$value] : [];
+        return strlen($value)
+            ? $this->postFormatter([$value])
+            : [];
     }
 }

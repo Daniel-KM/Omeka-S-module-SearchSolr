@@ -144,24 +144,7 @@ class Thesaurus extends AbstractValueFormatter
             }
         }
 
-        $usePath = !empty($this->settings['thesaurus_path']);
-        if (!$usePath) {
-            return $results;
-        }
-
-        // Check for the default separator
-        $logger = $this->services->get('Omeka\Logger');
-        foreach ($results as $key => $result) {
-            if (mb_strpos($result, '/') !== false) {
-                $logger->warn(
-                    'The value "{value}" cannot be included in a path. The "/" is replaced by " - ".', // @translate
-                    ['value' => $result]
-                );
-                $results[$key] = str_replace('/', ' - ', $result);
-            }
-        }
-
-        return [implode('/', $results)];
+        $this->returnPostFormatter($results);
     }
 
     protected function getThesaurus(ItemRepresentation $item): ?TThesaurus

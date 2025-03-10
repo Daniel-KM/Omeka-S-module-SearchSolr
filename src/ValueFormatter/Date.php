@@ -50,8 +50,12 @@ class Date extends AbstractValueFormatter
             }
         }
 
-        $result = (string) $this->getDateTimeFromValue((string) $value);
-        return strlen($result) ? [$result] : [];
+        $value = (string) $this->getDateTimeFromValue((string) $value);
+
+        // Post formatter only manage path for now, that is useless with date.
+        return strlen($value)
+            ? [$value]
+            : [];
     }
 
     /**

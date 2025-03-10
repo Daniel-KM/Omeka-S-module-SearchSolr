@@ -32,6 +32,8 @@ class StandardWithUri extends AbstractValueFormatter
         } else {
             $value = trim((string) $value);
         }
-        return strlen($value) ? [$value] : [];
+        return strlen($value)
+            ? $this->postFormatter([$value])
+            : [];
     }
 }

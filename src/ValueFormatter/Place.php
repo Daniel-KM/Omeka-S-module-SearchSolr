@@ -11,7 +11,7 @@ class Place extends AbstractValueFormatter
 {
     protected $label = 'Place'; // @translate
 
-    protected $comment = 'Store toponym and country from a value of type place (module Data Type Place)'; // @translate
+    protected $comment = 'Store country and toponym from a value of type place (module Data Type Place)'; // @translate
 
     public function format($value): array
     {
@@ -32,15 +32,26 @@ class Place extends AbstractValueFormatter
         $mode = $this->settings['place_mode'] ?? null;
         switch ($mode) {
             case 'toponym':
-                return [$val['toponym']];
+                $result = [$val['toponym']];
+                break;
             case 'country':
-                return [$val['country']];
+                $result = [$val['country']];
+                break;
             case 'toponym_and_country':
-            default:
-                return [
+                $result = [
                     $val['toponym'],
                     $val['country'],
                 ];
+                break;
+            case 'country_and_toponym':
+            default:
+                $result = [
+                    $val['country'],
+                    $val['toponym'],
+                ];
+                break;
         }
+
+        return $this->postFormatter($result);
     }
 }

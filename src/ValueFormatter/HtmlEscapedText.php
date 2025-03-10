@@ -17,6 +17,8 @@ class HtmlEscapedText extends AbstractValueFormatter
     {
         // New default for php 8.1.
         $value = htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401);
-        return strlen($value) ? [$value] : [];
+        return strlen($value)
+            ? $this->postFormatter([$value])
+            : [];
     }
 }

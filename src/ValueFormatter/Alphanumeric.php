@@ -21,7 +21,9 @@ class Alphanumeric extends Standard
 
     public function format($value): array
     {
+        // TODO Normally, the post formatter should be set later.
         $result = parent::format($value);
+
         foreach ($result as $key => $val) {
             $v = trim(str_replace('  ', ' ', preg_replace('~[^\p{L}\p{N}-]++~u', ' ', $val)));
             if (strlen($v)) {
@@ -30,6 +32,7 @@ class Alphanumeric extends Standard
                 unset($result[$key]);
             }
         }
-        return $result;
+
+        return $this->postFormatter($result);
     }
 }

@@ -272,6 +272,7 @@ class SolrMapForm extends Form
                 'options' => [
                     'label' => 'Place', // @translate
                     'value_options' => [
+                        'country_and_toponym' => 'Country and toponym', // @translate
                         'toponym_and_country' => 'Toponym and country', // @translate
                         'toponym' => 'Toponym', // @translate
                         'country' => 'Country', // @translate
@@ -279,10 +280,11 @@ class SolrMapForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'place_mode',
-                    'value' => 'toponym_and_country',
+                    'value' => 'country_and_toponym',
                     'data-formatter' => 'place',
                 ],
-            ]);
+            ])
+        ;
 
         if (class_exists('Table\Module', false)) {
             $settingsFieldset
@@ -417,23 +419,22 @@ class SolrMapForm extends Form
                         'data-formatter' => 'thesaurus',
                     ],
                 ])
-                ->add([
-                    'name' => 'thesaurus_path',
-                    'type' => Element\Checkbox::class,
-                    'options' => [
-                        'label' => 'Merge values as a path with parts separated with a "/"', // @translate
-                        'info' => 'This option allows to search ascendants or descendants inside a whole or partial branch automatically.', // @translate
-                    ],
-                    'attributes' => [
-                        'id' => 'thesaurus_path',
-                        'required' => false,
-                        'data-formatter' => 'thesaurus',
-                    ],
-                ])
             ;
         }
 
         $settingsFieldset
+            ->add([
+                'name' => 'path',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Merge values as a path with parts separated with a "/"', // @translate
+                    'info' => 'This option allows to search ascendants or descendants inside a partial of full path automatically.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'path',
+                    'required' => false,
+                ],
+            ])
             ->add([
                 'name' => 'label',
                 'type' => Element\Text::class,

@@ -14,6 +14,8 @@ class PlainText extends AbstractValueFormatter
     public function format($value): array
     {
         $value = strip_tags((string) $value);
-        return strlen($value) ? [$value] : [];
+        return strlen($value)
+            ? $this->postFormatter([$value])
+            : [];
     }
 }

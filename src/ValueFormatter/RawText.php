@@ -16,6 +16,8 @@ class RawText extends AbstractValueFormatter
     public function format($value): array
     {
         $value = trim((string) $value);
-        return strlen($value) ? [$value] : [];
+        return strlen($value)
+            ? $this->postFormatter([$value])
+            : [];
     }
 }

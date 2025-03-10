@@ -16,6 +16,7 @@ class Year extends \SearchSolr\ValueFormatter\Date
                 ? '-' . strtok(substr($v, 1), '-')
                 : strtok($v, '-');
         }
+        // Post formatter only manage path for now, that is useless with date.
         return $value;
     }
 }

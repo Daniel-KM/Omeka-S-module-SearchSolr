@@ -5,7 +5,7 @@ namespace SearchSolr\ValueFormatter;
 /**
  * ValueFormatter to replace a value by another one(s).
  */
-class Table extends PlainText
+class Table extends AbstractValueFormatter
 {
     protected $label = 'Table'; // @translate
 
@@ -16,13 +16,18 @@ class Table extends PlainText
         /** @var \Table\Api\Representation\TableRepresentation[] $tables */
         static $tables = [];
 
-        $values = parent::format($value);
+        // TODO Add an option to force output when there is no table.
+
+        $values = strip_tags((string) $value);
         if (!count($values)) {
             return $values;
         }
 
         $tableId = $this->settings['table'] ?? null;
         if (!$tableId) {
+            $this->services->get('Omeka\Logger')->err(
+                'For formatter "Table", the table is not set.' // @translate
+            );
             return $values;
         }
 
@@ -38,11 +43,11 @@ class Table extends PlainText
                     'For formatter "Table", the table #{table_id} does not exist and values are not normalized.', // @translate
                     ['table_id' => $tableId]
                 );
-                return $values;
+                return $this->postFormatter($values);
             }
         }
         if (!$tables[$tableId]) {
-            return $values;
+            return $this->postFormatter($values);
         }
 
         $table = $tables[$tableId];
@@ -88,6 +93,6 @@ class Table extends PlainText
 
         $values = array_values(array_unique(array_filter($values, 'strlen')));
 
-        return $values;
+        return $this->postFormatter($values);
     }
 }

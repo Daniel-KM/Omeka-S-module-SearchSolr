@@ -40,6 +40,7 @@ class Point extends AbstractValueFormatter
             }
         }
 
+        // Post formatter only manage path for now, that is useless with point.
         $val = array_filter(explode(' ', preg_replace('~[^\d.]~', ' ', $value)));
         return count($val) === 2
             && is_numeric($val[0])

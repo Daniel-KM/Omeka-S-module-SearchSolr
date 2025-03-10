@@ -25,7 +25,7 @@ class Uri extends AbstractValueFormatter
             $value = trim((string) $value);
         }
         return filter_var($value, FILTER_VALIDATE_URL)
-            ? [$value]
+            ? $this->postFormatter([$value])
             : [];
     }
 }

@@ -16,6 +16,8 @@ class UcFirstText extends AbstractValueFormatter
     public function format($value): array
     {
         $value = ucfirst(mb_strtolower((string) $value));
-        return strlen($value) ? [$value] : [];
+        return strlen($value)
+            ? $this->postFormatter([$value])
+            : [];
     }
 }

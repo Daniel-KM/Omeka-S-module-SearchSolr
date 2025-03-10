@@ -50,4 +50,29 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         $this->settings = $settings;
         return $this;
     }
+
+    protected function postFormatter(array $values): array
+    {
+        if (!count($values)) {
+            return $values;
+        }
+
+        $usePath = !empty($this->settings['path']);
+        if ($usePath) {
+            // Check for the default separator
+            $logger = $this->services->get('Omeka\Logger');
+            foreach ($values as $key => $value) {
+                if (mb_strpos($value, '/') !== false) {
+                    $logger->warn(
+                        'The value "{value}" cannot be included in a path. The "/" is replaced by " - ".', // @translate
+                        ['value' => $value]
+                    );
+                    $values[$key] = trim(str_replace('/', ' - ', $value));
+                }
+            }
+            $values = [implode('/', $values)];
+        }
+
+        return $values;
+    }
 }
