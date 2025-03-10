@@ -1,0 +1,25 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation[] $resources
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var string $resourceName
+ * @var array $ids
+ * @var string $heading
+ */
+
+$plugins = $this->getHelperPluginManager();
+$translate = $plugins->get('translate');
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+?>
+
+<div class="meta-group solr-documents">
+    <?php if (!empty($heading)): ?>
+    <h4><?= $escape($heading) ?></h4>
+    <?php endif; ?>
+    <div class="value">
+        <a class="link solr-documents download" href="<?= $escapeAttr($solrCore->adminUrl('list-documents') . '?resource_name=' . $resourceName . '& id=' . implode(',', $ids)) ?>" download="solr-documents.json" target="_self"><?= $escape($translate('Solr indexed document')) ?></a>
+    </div>
+</div>

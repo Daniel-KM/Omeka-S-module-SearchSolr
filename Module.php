@@ -204,6 +204,16 @@ class Module extends AbstractModule
         foreach ($controllers as $controller) {
             $sharedEventManager->attach(
                 $controller,
+                'view.show.sidebar',
+                [$this, 'handleViewShowAfterAdmin']
+            );
+            $sharedEventManager->attach(
+                $controller,
+                'view.details',
+                [$this, 'handleViewShowAfterAdmin']
+            );
+            $sharedEventManager->attach(
+                $controller,
                 'view.browse.after',
                 [$this, 'handleViewBrowseAfterAdmin']
             );
@@ -325,6 +335,43 @@ class Module extends AbstractModule
                 ['isPartial' => true]
             );
         }
+    }
+
+    public function handleViewShowAfterAdmin(Event $event): void
+    {
+        /**
+         * @var \Omeka\Api\Manager $api
+         * @var \Omeka\Permissions\Acl $acl
+         */
+        $services = $this->getServiceLocator();
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+
+        // TODO Check rights? Useless: the ids are a list of allowed ids.
+        $user = $services->get('Omeka\AuthenticationService')->getIdentity();
+        if (!$user || !$acl->isAdminRole($user->getRole())) {
+            return;
+        }
+
+        $view = $event->getTarget();
+        $vars = $view->vars();
+
+        /** @var \Omeka\Api\Representation\AbstractResourceEntityRepresentation $resource */
+        $resource = $vars->offsetGet('resource');
+        if (!$resource) {
+            return;
+        }
+
+        // Get the solr core configured for admin.
+        $solrCore = $this->getSolrCoreAdmin();
+        if (!$solrCore) {
+            return;
+        }
+
+        $vars->offsetSet('heading', $view->translate('Solr')); // @translate
+        $vars->offsetSet('resourceName', $resource->resourceName());
+        $vars->offsetSet('ids', [$resource->id()]);
+        $vars->offsetSet('solrCore', $solrCore);
+        echo $view->partial('common/solr-documents-sidebar');
     }
 
     public function handleViewBrowseAfterAdmin(Event $event): void
