@@ -9,6 +9,7 @@
 $plugins = $this->getHelperPluginManager();
 $url = $plugins->get('url');
 $api = $plugins->get('api');
+$partial = $plugins->get('partial');
 $escape = $plugins->get('escapeHtml');
 $assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
@@ -74,6 +75,8 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 </nav>
 
 <h3><?= $translate('By index') ?></h3>
+
+<?= $partial('search-solr/admin/core/help-index-names') ?>
 
 <div class="by-solr-index">
 <?php $maps = $solrCore->mapsByFieldName(); ?>

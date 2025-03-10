@@ -7,6 +7,7 @@
  */
 
 $plugins = $this->getHelperPluginManager();
+$partial = $plugins->get('partial');
 $assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 
@@ -46,7 +47,7 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
 <?= $this->formCollection($form->get('o:pool')) ?>
 
 <h4><?= $translate('Destination') ?></h4>
-<p><?= $translate('Index of metadata in Solr') ?></p>
+<?= $partial('search-solr/admin/core/help-index-names') ?>
 <?= $this->formRow($form->get('o:field_name')) ?>
 
 <h4><?= $translate('Format') ?></h4>

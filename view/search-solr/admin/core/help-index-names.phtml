@@ -1,0 +1,31 @@
+<?php
+/**
+* @var \Laminas\View\Renderer\PhpRenderer $this
+*/
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+?>
+
+<details class="info quick-help">
+    <summary><?= $escape($translate('About index names'))?></summary>
+    <p>
+        <?= $escape($translate('The indices of the default Solr configuration work with names and suffixes matching type:')) ?>
+        <ul>
+            <li><?= $escape($translate('"_t" and "_txt" are used to store words individually.')) ?></li>
+            <li><?= $escape($translate('"_s" and "_ss" are used to store whole string.')) ?></li>
+            <li><?= $escape($translate('"_i" and "_is" are used to store integers.')) ?></li>
+            <li><?= $escape($translate('"_dt" and "_dts" are used to store dates.')) ?></li>
+            <li><?= $escape($translate('"_ancestor_path" and "_descendent_path" are used to store structures.')) ?></li>
+        </ul>
+        <?= $escape($translate('The choice of type depends on what you need for a metadata:')) ?>
+        <ul>
+	        <li><?= $escape($translate('For global searches, indices should be "_t" and "_txt".')) ?></li>
+	        <li><?= $escape($translate('For simple filters and facets, indices should be a multiple whole values ("_ss", "_is" and "_dts").')) ?></li>
+	        <li><?= $escape($translate('For sort, it should be a single value ("_s", "_i" and "_dt").')) ?></li>
+	        <li><?= $escape($translate('"_ancestor_path" and "_descendent_path" are generally used for search and facets, generally with a thesaurus, a classification scheme, or geographic names.')) ?></li>
+        </ul>
+        <?= $escape($translate('Other indices are available for complex cases. Solr should be configured first if more types are needed.')) ?>
+    </p>
+</details>
