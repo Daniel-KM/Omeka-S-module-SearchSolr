@@ -284,7 +284,7 @@ class SolrMapForm extends Form
                 ],
             ]);
 
-        if (class_exists('Table\Form\Element\TablesSelect')) {
+        if (class_exists('Table\Module', false)) {
             $settingsFieldset
                 ->add([
                     'name' => 'table',
@@ -351,6 +351,65 @@ class SolrMapForm extends Form
             // TODO Why the fieldset does not use form manager to load and init form element?
             $settingsFieldset->get('table')
                 ->setApiManager($this->apiManager);
+        }
+
+        if (class_exists('Thesaurus\Module', false)) {
+            $settingsFieldset
+                ->add([
+                    'name' => 'thesaurus_resources',
+                    'type' => CommonElement\OptionalRadio::class,
+                    'options' => [
+                        'label' => 'Thesaurus resources', // @translate
+                        'value_options' => [
+                            'scheme' => 'Scheme', // @translate
+                            'tops' => 'Tops', // @translate
+                            'top' => 'Top', // @translate
+                            'self' => 'Self', // @translate
+                            'broader' => 'Broader', // @translate
+                            'narrowers' => 'Narrowers', // @translate
+                            'narrowers_or_self' => 'Narrowers or self', // @translate
+                            'relateds' => 'Relateds', // @translate
+                            'relateds_or_self' => 'Relateds or self', // @translate
+                            'siblings' => 'Siblings', // @translate
+                            'siblings_or_self' => 'Siblings or self', // @translate
+                            'ascendants' => 'Ascendants', // @translate
+                            'ascendants_or_self' => 'Ascendants or self', // @translate
+                            'descendants' => 'Descendants', // @translate
+                            'descendants_or_self' => 'Descendants or self', // @translate
+                        ],
+                    ],
+                    'attributes' => [
+                        'id' => 'thesaurus_resources',
+                        'class' => 'chosen-select',
+                        'required' => false,
+                        'data-placeholder' => 'Select a type of resources', // @translate
+                        'value' => '',
+                        // Setting for formatter "table" only.
+                        'data-formatter' => 'thesaurus',
+                    ],
+                ])
+                ->add([
+                    'name' => 'thesaurus_metadata',
+                    'type' => CommonElement\OptionalMultiCheckbox::class,
+                    'options' => [
+                        'label' => 'Values indexed', // @translate
+                        'value_options' => [
+                            'o:id' => 'Resource id', // @translate
+                            'skos:prefLabel' => 'Prefered label', // @translate
+                            'skos:altLabel' => 'Alternative labels', // @translate
+                            'skos:hiddenLabel' => 'Hidden labels', // @translate
+                            'skos:notation' => 'Notation', // @translate
+                            // TODO Other data? Useless for now.
+                        ],
+                    ],
+                    'attributes' => [
+                        'id' => 'thesaurus_metadata',
+                        'required' => false,
+                        'value' => 'skos:prefLabel',
+                        'data-formatter' => 'thesaurus',
+                    ],
+                ])
+            ;
         }
 
         $settingsFieldset
@@ -445,15 +504,18 @@ class SolrMapForm extends Form
     protected function getFormatterOptions(): array
     {
         $noTableModule = !class_exists('Table\Module', false);
+        $noThesaurusModule = !class_exists('Thesaurus\Module', false);
 
         $options = [];
         foreach ($this->valueFormatterManager->getRegisteredNames() as $name) {
             $valueFormatter = $this->valueFormatterManager->get($name);
             if ($noTableModule && $name === 'table') {
                 $options[$name] = sprintf('%s (require module Table)', $valueFormatter->getLabel());
-                continue;
+            } elseif ($noThesaurusModule && $name === 'thesaurus') {
+                $options[$name] = sprintf('%s (require module Thesaurus)', $valueFormatter->getLabel());
+            } else {
+                $options[$name] = $valueFormatter->getLabel();
             }
-            $options[$name] = $valueFormatter->getLabel();
         }
 
         return $options;
@@ -462,21 +524,26 @@ class SolrMapForm extends Form
     protected function getFormatterLabelsAndComments(): array
     {
         $noTableModule = !class_exists('Table\Module', false);
+        $noThesaurusModule = !class_exists('Thesaurus\Module', false);
 
         $options = [];
         foreach ($this->valueFormatterManager->getRegisteredNames() as $name) {
             $valueFormatter = $this->valueFormatterManager->get($name);
-            if ($noTableModule && $name === 'table') {
-                continue;
-            }
-            $options[] = [
+            $optionsData = [
                 'value' => $name,
                 'label' => $valueFormatter->getLabel(),
                 'attributes' => [
                     'title' => $valueFormatter->getComment(),
                 ],
             ];
+            if ($noTableModule && $name === 'table') {
+                $optionsData['attributes']['disabled'] = 'disabled';
+            } elseif ($noThesaurusModule && $name === 'thesaurus') {
+                $optionsData['attributes']['disabled'] = 'disabled';
+            }
+            $options[] = $optionsData;
         }
+
         return $options;
     }
 }
