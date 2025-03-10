@@ -345,6 +345,17 @@
 
         toggleSettingsFormatter();
 
+        // Display the specific settings of each normalization.
+
+        function toggleSettingsNormalization() {
+            // Hide all settings unchecked, then display the ones checked.
+            $('input[type=checkbox][name="o:settings[normalization]"]:not(checked)').closest('.field').hide();
+            const checkeds = $('input[type=checkbox][name="o:settings[normalization]"]:checked').closest('.field').show();
+        }
+
+        $('input[type=checkbox][name="o:settings[normalization]"]')
+            .on('change',toggleSettingsNormalization);
+
     });
 
 })();

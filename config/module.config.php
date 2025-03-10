@@ -273,7 +273,6 @@ return [
             'year' => ValueFormatter\Year::class,
             'place' => ValueFormatter\Place::class,
             'point' => ValueFormatter\Point::class,
-            'table' => ValueFormatter\Table::class,
             'thesaurus' => ValueFormatter\Thesaurus::class,
         ],
     ],

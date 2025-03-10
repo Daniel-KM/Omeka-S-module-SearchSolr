@@ -681,6 +681,13 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
             $settings['formatter'] = $formatter;
         }
 
+        if ($formatter === 'table') {
+            $formatter = 'text';
+            $settings['formatter'] = $formatter;
+            $settings['parts'] = ['auto'];
+            $settings['normalization'] = ['table'];
+        }
+
         $sql = 'UPDATE `solr_map` SET `settings` = ? WHERE `id` = ?;';
         $connection->executeStatement($sql, [json_encode($settings, 320), $solrMapId]);
     }

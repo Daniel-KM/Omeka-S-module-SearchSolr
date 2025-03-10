@@ -170,6 +170,10 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
             }
         }
 
+        if (in_array('table', $normalizations)) {
+            $value = $this->formatTable($value);
+        }
+
         if ($value === '' || $value === [] || $value === null) {
             return [];
         }
@@ -210,5 +214,81 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
 
         // Don't use array_unique early, because objects may not be stringable.
         return array_values(array_unique($values));
+    }
+
+    public function formatTable($value): array
+    {
+        /** @var \Table\Api\Representation\TableRepresentation[] $tables */
+        static $tables = [];
+
+        // TODO Add an option to force output when there is no table.
+
+        $value = trim(strip_tags((string) $value));
+        if (!strlen($value)) {
+            return [];
+        }
+
+        $tableId = $this->settings['table'] ?? null;
+        if (!$tableId) {
+            $this->services->get('Omeka\Logger')->err(
+                'For formatter "Table", the table is not set.' // @translate
+            );
+            return [$value];
+        }
+
+        // Check if table is available one time only.
+        if (!array_key_exists($tableId, $tables)) {
+            /** @var \Omeka\Api\Manager $api */
+            $api = $this->services->get('Omeka\ApiManager');
+            try {
+                $tables[$tableId] = $api->read('tables', is_numeric($tableId) ? ['id' => $tableId] : ['slug' => $tableId])->getContent();
+            } catch (\Exception $e) {
+                $tables[$tableId] = null;
+                $this->services->get('Omeka\Logger')->err(
+                    'For formatter "Table", the table #{table_id} does not exist and values are not normalized.', // @translate
+                    ['table_id' => $tableId]
+                );
+                return [$value];
+            }
+        }
+        if (!$tables[$tableId]) {
+            return [$value];
+        }
+
+        $table = $tables[$tableId];
+
+        // Keep original order of values.
+
+        $mode = $this->settings['table_mode'] ?? 'label';
+        $indexOriginal = !empty($this->settings['table_index_original']);
+        $checkStrict = !empty($this->settings['table_check_strict']);
+
+        $result = [];
+        switch ($mode) {
+            default:
+            case 'label':
+                if ($indexOriginal) {
+                    $result[] = $value;
+                }
+                $result[] = $table->labelFromCode($value, $checkStrict) ?? '';
+                break;
+
+            case 'code':
+                if ($indexOriginal) {
+                    $result[] = $value;
+                }
+                $result[] = $table->codeFromLabel($value, $checkStrict) ?? '';
+                break;
+
+            case 'both':
+                if ($indexOriginal) {
+                    $result[] = $value;
+                }
+                $result[] = $table->labelFromCode($value, $checkStrict) ?? '';
+                $result[] = $table->codeFromLabel($value, $checkStrict) ?? '';
+                break;
+        }
+
+        return array_values(array_unique(array_filter($result, 'strlen')));
     }
 }

@@ -255,6 +255,7 @@ class SolrMapForm extends Form
                 'type' => CommonElement\OptionalMultiCheckbox::class,
                 'options' => [
                     'label' => 'Cleaning and normalization', // @translate
+                    'info' => 'The cleaning is processed in the following order.', // @translate'
                     'value_options' => [
                         'html_escaped' => 'Escape html', // @translate
                         'strip_tags' => 'Strip tags', // @translate
@@ -264,6 +265,9 @@ class SolrMapForm extends Form
                         'remove_diacritics' => 'Remove diacritics', // @translate
                         'alphanumeric' => 'Alphanumeric only', // @translate
                         'max_length' => 'Max length', // @translate
+                        'table' => 'Map value to a code or code to a value (module Table)', // @translate
+                        // Table may be first post normalization or finalization too.
+                        // TODO Allow to specify order of normalizations.
                     ],
                 ],
                 'attributes' => [
@@ -283,6 +287,8 @@ class SolrMapForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'max_length',
+                    // Setting for normalization "max_length" only.
+                    'data-normalization' => 'max_length',
                 ],
             ])
 
@@ -319,7 +325,7 @@ class SolrMapForm extends Form
                     'name' => 'table',
                     'type' => \Table\Form\Element\TablesSelect::class,
                     'options' => [
-                        'label' => 'Table for formatter "Table"', // @translate
+                        'label' => 'Table for normalization "Table"', // @translate
                         'disable_group_by_owner' => true,
                         'empty_option' => '',
                     ],
@@ -329,8 +335,8 @@ class SolrMapForm extends Form
                         'required' => false,
                         'data-placeholder' => 'Select a table…', // @translate
                         'value' => '',
-                        // Setting for formatter "table" only.
-                        'data-formatter' => 'table',
+                        // Setting for normalization "table" only.
+                        'data-normalization' => 'table',
                     ],
                 ])
                 ->add([
@@ -349,7 +355,7 @@ class SolrMapForm extends Form
                         'id' => 'table_mode',
                         'required' => false,
                         'value' => 'label',
-                        'data-formatter' => 'table',
+                        'data-normalization' => 'table',
                     ],
                 ])
                 ->add([
@@ -361,7 +367,7 @@ class SolrMapForm extends Form
                     'attributes' => [
                         'id' => 'table_index_original',
                         'required' => false,
-                        'data-formatter' => 'table',
+                        'data-normalization' => 'table',
                     ],
                 ])
                 ->add([
@@ -373,7 +379,7 @@ class SolrMapForm extends Form
                     'attributes' => [
                         'id' => 'table_check_strict',
                         'required' => false,
-                        'data-formatter' => 'table',
+                        'data-normalization' => 'table',
                     ],
                 ]);
 
