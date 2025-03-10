@@ -44,6 +44,11 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 class SolrCoreRepresentation extends AbstractEntityRepresentation
 {
     /**
+     * @var \SearchSolr\Entity\SolrCore
+     */
+    protected $resource;
+
+    /**
      * @var SolariumClient
      */
     protected $solariumClient;

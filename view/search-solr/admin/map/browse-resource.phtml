@@ -51,24 +51,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
 <?= $this->pageTitle($translate('Solr indices'), 1, $translate('Solr core')) ?>
 
 <div id="page-actions">
-    <?php $addUrl = $url('admin/search/solr/core-id-map-resource', [
-        'core-id' => $solrCore->id(),
-        'resource-name' => $resourceName,
-        'action' => 'add',
-    ]); ?>
-    <a class="button" href="<?= $addUrl ?>"><?= $translate('Add new map') ?></a>
-    <?php $completeUrl = $url('admin/search/solr/core-id-map-resource', [
-        'core-id' => $solrCore->id(),
-        'resource-name' => $resourceName,
-        'action' => 'complete',
-    ]); ?>
-    <a class="button" href="<?= $completeUrl ?>" title="<?= $translate('Add a text index to all missing and used properties.') ?>"><?= $translate('Map all used properties') ?></a>
-    <?php $cleanUrl = $url('admin/search/solr/core-id-map-resource', [
-        'core-id' => $solrCore->id(),
-        'resource-name' => $resourceName,
-        'action' => 'clean',
-    ]); ?>
-    <a class="button" href="<?= $cleanUrl ?>" title="<?= $translate('Remove maps of properties that are not used.') ?>"><?= $translate('Remove unused properties') ?></a>
+    <a class="button" href="<?= $solrCore->resourceMapUrl($resourceName, 'add') ?>"><?= $translate('Add new map') ?></a>
+    <a class="button" href="<?= $solrCore->resourceMapUrl($resourceName, 'complete') ?>" title="<?= $translate('Add a text index to all missing and used properties.') ?>"><?= $translate('Map all used properties') ?></a>
+    <a class="button" href="<?= $solrCore->resourceMapUrl($resourceName, 'clean') ?>" title="<?= $translate('Remove maps of properties that are not used.') ?>"><?= $translate('Remove unused properties') ?></a>
 </div>
 
 <nav class="breadcrumbs">
@@ -173,7 +158,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
 <?php else: ?>
     <p>
         <?= $translate('There is no maps defined yet.') ?>
-        <a href="<?= $escape($addUrl) ?>"><?= $translate('Add a new map') ?></a>
+        <a href="<?= $escapeAttr($solrCore->resourceMapUrl($resourceName, 'add')) ?>"><?= $translate('Add a new map') ?></a>
     </p>
 <?php endif; ?>
 

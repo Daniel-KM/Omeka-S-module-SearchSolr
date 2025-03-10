@@ -290,6 +290,10 @@ class MapController extends AbstractActionController
         $resourceName = $this->params('resource-name');
         $id = $this->params('id');
 
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Api\Representation\SolrMapRepresentation $map
+         */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
@@ -347,6 +351,9 @@ class MapController extends AbstractActionController
 
     public function deleteConfirmAction()
     {
+        /**
+         * @var \SearchSolr\Api\Representation\SolrMapRepresentation $map
+         */
         $id = $this->params('id');
         $response = $this->api()->read('solr_maps', $id);
         $map = $response->getContent();
@@ -373,7 +380,9 @@ class MapController extends AbstractActionController
 
     public function deleteAction()
     {
-        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
+        /**
+         * @var \SearchSolr\Api\Representation\SolrMapRepresentation $map
+         */
         $id = $this->params('id');
         $map = $this->api()->read('solr_maps', $id)->getContent();
 
@@ -469,7 +478,9 @@ class MapController extends AbstractActionController
     }
 
     /**
-     * Get all used properties.
+     * Get all used properties for a resource.
+     *
+     * @todo Use EasyMeta (but filtered by resource).
      *
      * @param string $resourceName
      * @return \Omeka\Api\Representation\PropertyRepresentation[]

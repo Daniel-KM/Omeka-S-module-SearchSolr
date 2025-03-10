@@ -79,6 +79,7 @@ class SolrMapForm extends Form
                 ],
             ])
 
+            // TODO Allow to set multiple sources in the same map (store as dcterms:creator|dcterms:contributor).
             ->add([
                 'name' => 'o:source',
                 'type' => Element\Collection::class,

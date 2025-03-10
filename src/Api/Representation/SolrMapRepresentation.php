@@ -35,6 +35,11 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 class SolrMapRepresentation extends AbstractEntityRepresentation
 {
     /**
+     * @var \SearchSolr\Entity\SolrMap
+     */
+    protected $resource;
+
+    /**
      * @var array
      */
     protected $pool;

@@ -51,10 +51,10 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <?php endforeach; ?>
             </ul>
         </div>
-        <?= $hyperlink($translate('Map all'), $url('admin/search/solr/core-id-map-resource', ['core-id' => $solrCore->id(), 'resource-name' => $name, 'action' => 'complete',]), [
+        <?= $hyperlink($translate('Map all'), $solrCore->resourceMapUrl($name, 'complete'), [
             'class' => 'button',
             'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?>
-        <?= $hyperlink($translate('Remove unused'), $url('admin/search/solr/core-id-map-resource', ['core-id' => $solrCore->id(), 'resource-name' => $name, 'action' => 'clean',]), [
+        <?= $hyperlink($translate('Remove unused'), $solrCore->resourceMapUrl($name, 'clean'), [
             'class' => 'button',
             'title' => $translate('Remove maps of properties that are not used.')]) ?>
         <?= $hyperlink($translate('Import'), $solrCore->adminUrl('import'), [

@@ -118,8 +118,10 @@ class CoreController extends AbstractActionController
 
     public function editAction()
     {
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
         $id = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
@@ -197,9 +199,11 @@ class CoreController extends AbstractActionController
 
     public function showAction()
     {
-        $solrCoreId = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         $valueExtractors = [];
         foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
@@ -239,10 +243,11 @@ class CoreController extends AbstractActionController
 
     public function deleteConfirmAction()
     {
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
         $id = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $response = $this->api()->read('solr_cores', $id);
-        $solrCore = $response->getContent();
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         $searchEngines = $solrCore->searchEngines();
         $searchConfigs = $solrCore->searchConfigs();
@@ -278,9 +283,11 @@ class CoreController extends AbstractActionController
 
     public function importAction()
     {
-        $solrCoreId = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         /** @var \SearchSolr\Form\Admin\SolrCoreMappingImportForm $form */
         $form = $this->getForm(SolrCoreMappingImportForm::class);
@@ -334,7 +341,7 @@ class CoreController extends AbstractActionController
             ]);
             // Messages are already appended.
             if ($result) {
-                return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCoreId]);
+                return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
             }
         }
 
@@ -343,9 +350,11 @@ class CoreController extends AbstractActionController
 
     public function exportAction()
     {
-        $solrCoreId = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         // Export all maps even empty, so the user will have the headers.
         $filename = $this->exportFilename($solrCore);
@@ -394,9 +403,11 @@ class CoreController extends AbstractActionController
 
     public function listResourcesAction()
     {
-        $solrCoreId = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         // The search config is useless here.
         $searchConfig = $this->getSearchConfigAdmin();
@@ -421,9 +432,11 @@ class CoreController extends AbstractActionController
 
     public function listValuesAction()
     {
-        $solrCoreId = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         $searchConfig = $this->getSearchConfigAdmin();
         $fieldName = $this->params()->fromQuery('fieldname');
