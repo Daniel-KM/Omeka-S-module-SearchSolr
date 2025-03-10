@@ -300,7 +300,7 @@ class CoreController extends AbstractActionController
             ]);
             // Messages are already appended.
             if ($result) {
-                return $this->redirect()->toRoute('admin/search/solr/core-id-map', ['coreId' => $solrCoreId]);
+                return $this->redirect()->toRoute('admin/search/solr/core-id-map', ['core-id' => $solrCoreId]);
             }
         }
 

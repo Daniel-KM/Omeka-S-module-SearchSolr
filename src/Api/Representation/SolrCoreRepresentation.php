@@ -302,7 +302,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $url = $this->getViewHelper('Url');
         $params = [
             'action' => $action,
-            'coreId' => $this->id(),
+            'core-id' => $this->id(),
         ];
         $options = [
             'force_canonical' => $canonical,
@@ -315,8 +315,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $url = $this->getViewHelper('Url');
         $params = [
             'action' => $action,
-            'coreId' => $this->id(),
-            'resourceName' => $resourceName,
+            'core-id' => $this->id(),
+            'resource-name' => $resourceName,
         ];
         $options = [
             'force_canonical' => $canonical,

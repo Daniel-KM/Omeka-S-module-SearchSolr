@@ -62,8 +62,8 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         $params = [
             'action' => $action,
             'id' => $this->id(),
-            'resourceName' => $this->resourceName(),
-            'coreId' => $this->solrCore()->id(),
+            'core-id' => $this->solrCore()->id(),
+            'resource-name' => $this->resourceName(),
         ];
         $options = [
             'force_canonical' => $canonical,

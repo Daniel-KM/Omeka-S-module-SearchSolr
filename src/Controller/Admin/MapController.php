@@ -66,7 +66,7 @@ class MapController extends AbstractActionController
     public function browseAction()
     {
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCoreId = $this->params('coreId');
+        $solrCoreId = $this->params('core-id');
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         $missingMaps = $solrCore->missingRequiredMaps();
@@ -90,8 +90,8 @@ class MapController extends AbstractActionController
 
     public function browseResourceAction()
     {
-        $solrCoreId = $this->params('coreId');
-        $resourceName = $this->params('resourceName');
+        $solrCoreId = $this->params('core-id');
+        $resourceName = $this->params('resource-name');
 
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
@@ -112,8 +112,8 @@ class MapController extends AbstractActionController
 
     public function completeAction()
     {
-        $solrCoreId = $this->params('coreId');
-        $resourceName = $this->params('resourceName');
+        $solrCoreId = $this->params('core-id');
+        $resourceName = $this->params('resource-name');
 
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
@@ -195,15 +195,15 @@ class MapController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-            'coreId' => $solrCoreId,
-            'resourceName' => $resourceName,
+            'core-id' => $solrCoreId,
+            'resource-name' => $resourceName,
         ]);
     }
 
     public function cleanAction()
     {
-        $solrCoreId = $this->params('coreId');
-        $resourceName = $this->params('resourceName');
+        $solrCoreId = $this->params('core-id');
+        $resourceName = $this->params('resource-name');
         $api = $this->api();
 
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
@@ -255,15 +255,15 @@ class MapController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-            'coreId' => $solrCoreId,
-            'resourceName' => $resourceName,
+            'core-id' => $solrCoreId,
+            'resource-name' => $resourceName,
         ]);
     }
 
     public function addAction()
     {
-        $solrCoreId = $this->params('coreId');
-        $resourceName = $this->params('resourceName');
+        $solrCoreId = $this->params('core-id');
+        $resourceName = $this->params('resource-name');
 
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
@@ -289,8 +289,8 @@ class MapController extends AbstractActionController
                 ));
 
                 return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-                    'coreId' => $solrCoreId,
-                    'resourceName' => $resourceName,
+                    'core-id' => $solrCoreId,
+                    'resource-name' => $resourceName,
                 ]);
             } else {
                 $messages = $form->getMessages();
@@ -317,8 +317,8 @@ class MapController extends AbstractActionController
 
     public function editAction()
     {
-        $solrCoreId = $this->params('coreId');
-        $resourceName = $this->params('resourceName');
+        $solrCoreId = $this->params('core-id');
+        $resourceName = $this->params('resource-name');
         $id = $this->params('id');
 
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
@@ -353,8 +353,8 @@ class MapController extends AbstractActionController
                 $this->messenger()->addWarning('Don’t forget to check search pages that use this map.'); // @translate
 
                 return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-                    'coreId' => $solrCoreId,
-                    'resourceName' => $resourceName,
+                    'core-id' => $solrCoreId,
+                    'resource-name' => $resourceName,
                 ]);
             } else {
                 $messages = $form->getMessages();
@@ -420,8 +420,8 @@ class MapController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute('admin/search/solr/core-id-map-resource', [
-            'coreId' => $map->solrCore()->id(),
-            'resourceName' => $map->resourceName(),
+            'core-id' => $map->solrCore()->id(),
+            'resource-name' => $map->resourceName(),
         ]);
     }
 

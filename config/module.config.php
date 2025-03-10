@@ -150,9 +150,9 @@ return [
                                     'core-id-map' => [
                                         'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
-                                            'route' => '/core/:coreId/map',
+                                            'route' => '/core/:core-id/map',
                                             'constraints' => [
-                                                'coreId' => '\d+',
+                                                'core-id' => '\d+',
                                             ],
                                             'defaults' => [
                                                 'controller' => Controller\Admin\MapController::class,
@@ -163,9 +163,9 @@ return [
                                     'core-id-map-resource' => [
                                         'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
-                                            'route' => '/core/:coreId/map/:resourceName[/:action]',
+                                            'route' => '/core/:core-id/map/:resource-name[/:action]',
                                             'constraints' => [
-                                                'coreId' => '\d+',
+                                                'core-id' => '\d+',
                                                 'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
                                             ],
                                             'defaults' => [
@@ -177,11 +177,12 @@ return [
                                     'core-id-map-resource-id' => [
                                         'type' => \Laminas\Router\Http\Segment::class,
                                         'options' => [
-                                            'route' => '/core/:coreId/map/:resourceName/:id[/:action]',
+                                            'route' => '/core/:core-id/map/:resource-name/:id[/:action]',
                                             'constraints' => [
-                                                'coreId' => '\d+',
+                                                'core-id' => '\d+',
                                                 'id' => '\d+',
                                                 'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                                'resource-name' => '[a-zA-Z][a-zA-Z0-9_-]*',
                                             ],
                                             'defaults' => [
                                                 'controller' => Controller\Admin\MapController::class,
