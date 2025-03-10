@@ -16,26 +16,21 @@ class Thesaurus extends AbstractValueFormatter
 
     public function format($value): array
     {
-        $thesaurusResources = [
-            'scheme' => 'scheme',
-            'tops' => 'tops',
-            'top' => 'top',
-            'self' => 'selfItem',
-            'broader' => 'broader',
-            'narrowers' => 'narrowers',
-            'narrowers_or_self' => 'narrowersOrSelf',
-            'relateds' => 'relateds',
-            'relateds_or_self' => 'relatedsOrSelf',
-            'siblings' => 'siblings',
-            'siblings_or_self' => 'siblingsOrSelf',
-            'ascendants' => 'ascendants',
-            'ascendants_or_self' => 'ascendantsOrSelf' ,
-            'descendants' => 'descendants',
-            'descendants_or_self' => 'descendantsOrSelf',
+        $thesaurusRelations = [
+            'scheme',
+            'tops',
+            'top',
+            'self',
+            'broader',
+            'narrowers',
+            'relateds',
+            'siblings',
+            'ascendants',
+            'descendants',
         ];
 
         $resourcesToExtract = $this->settings['thesaurus_resources'] ?? null;
-        if (!isset($thesaurusResources[$resourcesToExtract])) {
+        if (!in_array($resourcesToExtract, $thesaurusRelations)) {
             return [];
         }
 
@@ -58,21 +53,69 @@ class Thesaurus extends AbstractValueFormatter
             return [];
         }
 
-        $method = $thesaurusResources[$resourcesToExtract];
+        $thesaurusMethods = [
+            'scheme' => 'scheme',
+            'tops' => 'tops',
+            'top' => 'top',
+            'self' => 'selfItem',
+            'broader' => 'broader',
+            'broader_or_self' => 'broaderOrSelf',
+            'narrowers' => 'narrowers',
+            'narrowers_or_self' => 'narrowersOrSelf',
+            'relateds' => 'relateds',
+            'relateds_or_self' => 'relatedsOrSelf',
+            'siblings' => 'siblings',
+            'siblings_or_self' => 'siblingsOrSelf',
+            // From self.
+            'ascendants' => 'ascendants',
+            'ascendants_or_self' => 'ascendantsOrSelf' ,
+            'descendants' => 'descendants',
+            'descendants_or_self' => 'descendantsOrSelf',
+        ];
+
+        // Use a direct method when possible.
+        $withSelf = [
+            'broader',
+            'narrowers',
+            'relateds',
+            'siblings',
+            'ascendants',
+            'descendants',
+        ];
+        $includeSelf = !empty($this->settings['thesaurus_self']);
+        if ($includeSelf && in_array($resourcesToExtract, $withSelf)) {
+            $resourcesToExtract .= '_or_self';
+            $includeSelf = false;
+        }
+
+        $method = $thesaurusMethods[$resourcesToExtract];
         $resources = $thesaurus->$method();
+
+        // Scheme is always a resource, so get data for it.
+        if ($resourcesToExtract === 'scheme') {
+            $resources = $thesaurus->itemToData($resources);
+        }
 
         $singles = [
             'scheme',
             'top',
-            'self',
+            // "self" is not a single with method selfItem().
+            'broader',
         ];
+
         if (in_array($resourcesToExtract, $singles)) {
-            if (!$resources) {
-                return [];
+            if ($resources) {
+                $resources = [$resources];
             }
-            $resources = [$resources];
-        } elseif (!count($resources)) {
+        }
+
+        if (!count($resources) && !$includeSelf) {
             return [];
+        }
+
+        if ($includeSelf) {
+            $self = $thesaurus->selfItem();
+            $resources[$self['id'] ?? $self['self']['id']] = $self;
         }
 
         $result = [];

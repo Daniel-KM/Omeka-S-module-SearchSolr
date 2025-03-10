@@ -367,15 +367,10 @@ class SolrMapForm extends Form
                             'self' => 'Self', // @translate
                             'broader' => 'Broader', // @translate
                             'narrowers' => 'Narrowers', // @translate
-                            'narrowers_or_self' => 'Narrowers or self', // @translate
                             'relateds' => 'Relateds', // @translate
-                            'relateds_or_self' => 'Relateds or self', // @translate
                             'siblings' => 'Siblings', // @translate
-                            'siblings_or_self' => 'Siblings or self', // @translate
                             'ascendants' => 'Ascendants', // @translate
-                            'ascendants_or_self' => 'Ascendants or self', // @translate
                             'descendants' => 'Descendants', // @translate
-                            'descendants_or_self' => 'Descendants or self', // @translate
                         ],
                     ],
                     'attributes' => [
@@ -385,6 +380,18 @@ class SolrMapForm extends Form
                         'data-placeholder' => 'Select a type of resources', // @translate
                         'value' => '',
                         // Setting for formatter "table" only.
+                        'data-formatter' => 'thesaurus',
+                    ],
+                ])
+                ->add([
+                    'name' => 'thesaurus_self',
+                    'type' => Element\Checkbox::class,
+                    'options' => [
+                        'label' => 'Include self', // @translate
+                    ],
+                    'attributes' => [
+                        'id' => 'thesaurus_self',
+                        'required' => false,
                         'data-formatter' => 'thesaurus',
                     ],
                 ])
