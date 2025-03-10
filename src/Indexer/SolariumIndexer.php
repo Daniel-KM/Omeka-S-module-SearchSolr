@@ -33,7 +33,7 @@ namespace SearchSolr\Indexer;
 use AdvancedSearch\Indexer\AbstractIndexer;
 use AdvancedSearch\Indexer\IndexerInterface;
 use AdvancedSearch\Query;
-use Omeka\Entity\Resource;
+use Omeka\Api\Representation\AbstractResourceRepresentation;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use Solarium\Client as SolariumClient;
@@ -64,6 +64,11 @@ class SolariumIndexer extends AbstractIndexer
      * @var \Omeka\Api\Adapter\Manager
      */
     protected $apiAdapters;
+
+    /**
+     * @var \Common\Stdlib\EasyMeta
+     */
+    protected $easyMeta;
 
     /**
      * @var \SearchSolr\ValueExtractor\Manager
@@ -181,13 +186,13 @@ class SolariumIndexer extends AbstractIndexer
         return $this;
     }
 
-    public function indexResource(Resource $resource): IndexerInterface
+    public function indexResource(AbstractResourceRepresentation $resource): IndexerInterface
     {
         return $this->indexResources([$resource]);
     }
 
     /**
-     * @param \Omeka\Entity\AbstractEntity[] $resources
+     * @param \Omeka\Api\Representation\AbstractResourceRepresentation[] $resources
      */
     public function indexResources(array $resources): IndexerInterface
     {
@@ -207,15 +212,10 @@ class SolariumIndexer extends AbstractIndexer
             return $this;
         }
 
-        $resourceNames = [
-            'items' => 'item',
-            'item_sets' => 'item set',
-            'media' => 'media',
-        ];
-
+        // For quick log.
         $resourcesIds = [];
         foreach ($resources as $resource) {
-            $resourcesIds[] = $resourceNames[$resource->getResourceName()] . ' #' . $resource->getId();
+            $resourcesIds[] = $this->easyMeta->resourceType(get_class($resource)) . ' #' . $resource->id();
         }
 
         $this->getLogger()->info(
@@ -224,7 +224,9 @@ class SolariumIndexer extends AbstractIndexer
         );
 
         $this->buffer = $this->getClient()->getPlugin('bufferedadd');
-        $this->buffer->setBufferSize(count($resourcesIds));
+        $this->buffer
+            ->setOverwrite(true)
+            ->setBufferSize(count($resourcesIds));
 
         foreach ($resources as $resource) {
             $document = $this->prepareDocument($resource);
@@ -269,9 +271,9 @@ class SolariumIndexer extends AbstractIndexer
         $services = $this->getServiceLocator();
         $this->api = $services->get('Omeka\ApiManager');
         $this->apiAdapters = $services->get('Omeka\ApiAdapterManager');
+        $this->easyMeta = $services->get('Common\EasyMeta');
         $this->valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $this->valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');
-        $this->siteIds = $this->api->search('sites', [], ['returnScalar' => 'id'])->getContent();
 
         // Some values should be init to get the document id.
         $this->getServerId();
@@ -313,10 +315,10 @@ class SolariumIndexer extends AbstractIndexer
             : sprintf('%s-%s-%s/%07s', $this->serverId, $this->indexName, $resourceName, $resourceId);
     }
 
-    protected function prepareDocument(Resource $resource): ?SolariumInputDocument
+    protected function prepareDocument(AbstractResourceRepresentation $resource): ?SolariumInputDocument
     {
-        $resourceName = $resource->getResourceName();
-        $resourceId = $resource->getId();
+        $resourceName = $this->easyMeta->resourceName(get_class($resource));
+        $resourceId = $resource->id();
 
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->valueExtractorManager->get($resourceName);
@@ -325,25 +327,12 @@ class SolariumIndexer extends AbstractIndexer
         // not fully loaded, so when getting resource values ($representation->values()),
         // an error occurs when getting the property term: the vocabulary is not
         // loaded and the prefix cannot be get.
+        // TODO Is it still true with representation not created via adapter but api in AdvancedSearch?
         /** @see \Omeka\Api\Representation\AbstractResourceEntityRepresentation::values() */
-
-        /** @var \Omeka\Api\Representation\AbstractResourceRepresentation $representation */
-        // $adapter = $this->apiAdapters->get($resourceName);
-        // $representation = $adapter->getRepresentation($resource);
-
-        try {
-            $representation = $this->api->read($resourceName, $resourceId)->getContent();
-        } catch (\Exception $e) {
-            $this->getLogger()->notice(
-                'The {resource_type} #{resource_id} is no more available and cannot be indexed.', // @translate
-                ['resource_type' => $resourceName, 'resource_id' => $resourceId]
-            );
-            return null;
-        }
 
         $isSingleFieldFilled = [];
 
-        $document = new SolariumInputDocument;
+        $document = new SolariumInputDocument();
 
         $documentId = $this->getDocumentId($resourceName, $resourceId);
         $document->addField('id', $documentId);
@@ -368,24 +357,21 @@ class SolariumIndexer extends AbstractIndexer
             if ($source === 'site/o:id') {
                 switch ($resourceName) {
                     case 'items':
-                        $sites = $resource->getSites()->toArray();
+                        $sites = $resource->sites();
                         if ($sites) {
-                            $sites = array_map(fn (\Omeka\Entity\Site $v) => $v->getId(), $sites);
-                            $document->addField($solrField, array_values($sites));
+                            $document->addField($solrField, array_keys($sites));
                         }
                         break;
                     case 'item_sets':
-                        $sites = $resource->getSiteItemSets()->toArray();
+                        $sites = $resource->sites();
                         if ($sites) {
-                            $sites = array_map(fn (\Omeka\Entity\SiteItemSet $v) => $v->getSite()->getId(), $sites);
-                            $document->addField($solrField, array_values($sites));
+                            $document->addField($solrField, array_keys($sites));
                         }
                         break;
                     case 'media':
-                        $sites = $resource->getItem()->getSites()->toArray();
+                        $sites = $resource->item()->sites();
                         if ($sites) {
-                            $sites = array_map(fn (\Omeka\Entity\Site $v) => $v->getId(), $sites);
-                            $document->addField($solrField, array_values($sites));
+                            $document->addField($solrField, array_keys($sites));
                         }
                         break;
                     default:
@@ -406,7 +392,7 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            $extractedValues = $valueExtractor->extractValue($representation, $solrMap);
+            $extractedValues = $valueExtractor->extractValue($resource, $solrMap);
             if (!count($extractedValues)) {
                 continue;
             }
@@ -457,10 +443,8 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
-        // TODO Remove any part of the representation, in particular the values (25%).
-        unset($representation);
-        // Useless and need some seconds.
-        // gc_collect_cycles();
+        // It is useless to clean memory here when representation is used,
+        // because the resource is loaded in job.
 
         return $document;
     }
@@ -496,7 +480,7 @@ class SolariumIndexer extends AbstractIndexer
         return $valueFormatter->finalizeFormat($resultPostFormatted);
     }
 
-    protected function appendSupportedFields(Resource $resource, SolariumInputDocument $document): void
+    protected function appendSupportedFields(AbstractResourceRepresentation $resource, SolariumInputDocument $document): void
     {
         foreach ($this->supportFields as $solrField => $value) switch ($solrField) {
             // Drupal.
@@ -513,10 +497,16 @@ class SolariumIndexer extends AbstractIndexer
                 $document->addField($solrField, $value);
                 break;
             case 'ss_search_api_datasource':
-                $document->addField($solrField, $resource->getResourceName());
+                $document->addField(
+                    $solrField,
+                    $this->easyMeta->resourceName(get_class($resource))
+                );
                 break;
             case 'ss_search_api_id':
-                $document->addField($solrField, $resource->getResourceName() . '/' . $resource->getId());
+                $document->addField(
+                    $solrField,
+                    $this->easyMeta->resourceName(get_class($resource)) . '/' . $resource->id()
+                );
                 break;
             default:
                 // Nothing to do.
@@ -566,6 +556,7 @@ class SolariumIndexer extends AbstractIndexer
                     $this->buffer->commit();
                 } catch (\Exception $e) {
                     $this->commitError($exception, true);
+                    $this->buffer->clear();
                 }
             } else {
                 $this->getLogger()->err(
@@ -760,15 +751,16 @@ class SolariumIndexer extends AbstractIndexer
     /**
      * Specific fields for Drupal.
      *
+     * @param AbstractResourceRepresentation $resource
      * @param SolariumInputDocument $document
      * @param string $solrField
      * @param mixed $value
      * @param string $locale
      * @return self
      */
-    protected function appendDrupalValues(Resource $resource, SolariumInputDocument $document, $solrField, $value, ?string $valueLocale = null)
+    protected function appendDrupalValues(AbstractResourceRepresentation $resource, SolariumInputDocument $document, $solrField, $value, ?string $valueLocale = null)
     {
-        $resourceName = $resource->getResourceName();
+        $resourceName = $this->easyMeta->resourceName(get_class($resource));
         if (!isset($this->vars['solr_maps'][$resourceName][$solrField])) {
             return $this;
         }
@@ -825,7 +817,9 @@ class SolariumIndexer extends AbstractIndexer
     }
 
     /**
-     * @param array \Omeka\Entity\Resource[]
+     * The solr core can be configured to index only a part of resources.
+     *
+     * @param \Omeka\Api\Representation\AbstractResourceRepresentation[] $resources
      */
     protected function filterResources(array $resources): array
     {
@@ -836,7 +830,7 @@ class SolariumIndexer extends AbstractIndexer
 
         $resourceIds = [];
         foreach ($resources as $resource) {
-            $resourceIds[] = $resource->getId();
+            $resourceIds[] = $resource->id();
         }
 
         $query['id'] = array_unique(array_merge($query['id'] ?? [], $resourceIds));
@@ -844,8 +838,8 @@ class SolariumIndexer extends AbstractIndexer
         // TODO Search api is currently unavailable for resources (wait v4.1)
         // For now, use the first resource.
         $first = reset($resources);
-        $resourceName = $first->getResourceName();
-        return $this->api->search($resourceName, $query, ['responseContent' => 'resource'])->getContent();
+        $resourceName = $first->resourceName();
+        return $this->api->search($resourceName, $query)->getContent();
     }
 
     protected function getSolrCore(): SolrCoreRepresentation
