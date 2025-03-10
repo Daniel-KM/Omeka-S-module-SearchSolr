@@ -41,6 +41,22 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <?php endforeach; ?>
             </ul>
         </div>
+        <div class="with-sub-menu">
+            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
+                <?= $translate('Add a map') ?>
+            </a>
+            <ul class="collapsible">
+                <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
+                <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name, 'add'), ['class' => 'link']) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?= $hyperlink($translate('Map all'), $url('admin/search/solr/core-id-map-resource', ['core-id' => $solrCore->id(), 'resource-name' => $name, 'action' => 'complete',]), [
+            'class' => 'button',
+            'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?>
+        <?= $hyperlink($translate('Remove unused'), $url('admin/search/solr/core-id-map-resource', ['core-id' => $solrCore->id(), 'resource-name' => $name, 'action' => 'clean',]), [
+            'class' => 'button',
+            'title' => $translate('Remove maps of properties that are not used.')]) ?>
         <?= $hyperlink($translate('Import'), $solrCore->adminUrl('import'), [
             'class' => 'button',
             'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
