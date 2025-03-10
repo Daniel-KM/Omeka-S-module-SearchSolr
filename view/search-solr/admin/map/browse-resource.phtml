@@ -80,6 +80,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
 </nav>
 
 <?php if (count($maps)): ?>
+    <?php // Adapted in core/show. ?>
     <table aria-label="<?= $escapeAttr($translate('Maps')) ?>" class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>
@@ -92,8 +93,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($maps as $map): ?>
-                <?php $mapSettings = $map->settings(); ?>
+            <?php foreach ($maps as $map):
+                $mapSettings = $map->settings();
+                ?>
                 <tr>
                     <td>
                         <span><?= $map->source() ?></span>

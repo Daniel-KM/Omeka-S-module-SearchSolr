@@ -13,13 +13,14 @@ $assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
 $easyMeta = $plugins->get('easyMeta');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
 
 $this->headLink()
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()
         ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
-$this->htmlElement('body')->appendAttribute('class', 'solr-cores show browse');
+$this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-map-browse browse');
 ?>
 
 <?= $this->pageTitle($solrCore->name(), 1, $translate('Solr core')) ?>
@@ -107,7 +108,21 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show browse');
         <thead>
             <tr>
                 <th><?= $translate('Name') ?></th>
-                <th><?= $translate('Sources Omeka (with formatter)') ?></th>
+                <th>
+                    <?php // Adapted in map/browse-resource. ?>
+                    <table aria-label="<?= $escapeAttr($translate('Maps')) ?>" class="solr-maps-table solr-maps-table-head tablesaw" data-tablesaw-mode="stack">
+                        <thead>
+                            <tr>
+                                <th><?= $translate('Source Omeka') ?></th>
+                                <th><?= $translate('Pool / Filter') ?></th>
+                                <th><?= $translate('Format') ?></th>
+                                <?php // This is the default translated label. ?>
+                                <th><?= $translate('Label') ?></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -147,17 +162,93 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show browse');
                             </li>
                         </ul>
                     </td>
-                    <td>
-                        <ul class="sources">
-                            <?php foreach ($fieldMaps as $map):
-                                $formatter = $map->setting('formatter');
-                                ?>
-                            <li><?= $formatter
-                                ? $escape(sprintf($translate('%1$s [%2$s] (%3$s)'), $map->source(), $map->resourceName(), $map->setting('formatter') ?: $translate('[none]')))
-                                : $escape(sprintf($translate('%1$s [%2$s]'), $map->source(), $map->resourceName()))
-                            ?></li>
-                        <?php endforeach; ?>
-                        </ul>
+                    <td class="solr-maps">
+                        <table aria-label="<?= $escapeAttr($translate('Maps')) ?>" class="solr-maps-table solr-maps-table-body tablesaw" data-tablesaw-mode="stack">
+                            <thead>
+                                <tr>
+                                    <th><?= $translate('Source Omeka') ?></th>
+                                    <th><?= $translate('Pool / Filter') ?></th>
+                                    <th><?= $translate('Format') ?></th>
+                                    <?php // This is the default translated label. ?>
+                                    <th><?= $translate('Label') ?></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($fieldMaps as $map):
+                                    $mapSettings = $map->settings();
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <span><?= $map->source() ?></span>
+                                            <div></div>
+                                            <ul class="actions">
+                                                <li>
+                                                    <span class="field-generic"><?= $map->resourceName() ?></span>
+                                                </li>
+                                                <li>
+                                                    <?= $hyperlink('', $map->adminUrl('edit'), [
+                                                        'class' => 'o-icon-edit',
+                                                        'title' => $translate('Edit'),
+                                                    ]) ?>
+                                                </li>
+                                                <li>
+                                                    <a href="#"
+                                                    data-sidebar-content-url="<?= $escape($map->url('delete-confirm')) ?>"
+                                                    class="o-icon-delete sidebar-content"
+                                                    aria-label="<?= $escape($translate('Delete')) ?>"
+                                                    title="<?= $escape($translate('Delete')) ?>"></a>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td><?php
+                                            $filterValues = $map->pool('filter_values');
+                                            $filterUris = $map->pool('filter_uris');
+                                            $filterResources = $map->pool('filter_resources');
+                                            $filterValueResources = $map->pool('filter_value_resources');
+                                            $dataTypes = $map->pool('data_types');
+                                            $dataTypesExclude = $map->pool('data_types_exclude');
+                                            $filterLanguages = $map->pool('filter_languages');
+                                            $filterVisibility = $map->pool('filter_visibility');
+                                            ?>
+                                            <?php if ($filterValues): ?>
+                                            <div><?= $translate('Filtered by values') ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($filterUris): ?>
+                                            <div><?= $translate('Filtered by uris') ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($filterResources): ?>
+                                            <div><?= $translate('Filtered by resources') ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($filterValueResources): ?>
+                                            <div><?= $translate('Filtered by value resources') ?></div>
+                                            <?php endif; ?>
+                                            <?php if ($dataTypes || $dataTypesExclude): ?>
+                                            <dl>
+                                                <?= $dataTypes ? '<dt>' . $translate('Data types') . '</dt><dd>' . implode('</dd><dd>', $dataTypes) . '</dd>' : '' ?>
+                                                <?= $dataTypesExclude ? '<dt>' . $translate('Excluded data types') . '</dt><dd>' . implode('</dd><dd>', $dataTypesExclude) . '</dd>' : '' ?>
+                                            </dl>
+                                            <?php endif; ?>
+                                            <?php if ($filterLanguages): ?>
+                                            <dl>
+                                                <dt><?= $translate('Only languages') ?></dt>
+                                                <dd><?= implode('</dd><dd>', $filterLanguages) ?></dd>
+                                            </dl>
+                                            <?php endif; ?>
+                                            <?php if ($filterVisibility === 'public'): ?>
+                                            <div><?= $translate('Filtered by visibility Public') ?></div>
+                                            <?php elseif ($filterVisibility === 'private'): ?>
+                                            <div><?= $translate('Filtered by visibility Private') ?></div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?= $formatter = $mapSettings['formatter'] ?? '' ?>
+                                            <?= $formatter === 'table' ? $mapSettings['table'] ?? '' : '' ?>
+                                        </td>
+                                        <td><?= !empty($mapSettings['label']) ? $translate($mapSettings['label']) : '' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </td>
                 </tr>
             <?php endforeach; ?>
