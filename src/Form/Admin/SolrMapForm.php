@@ -58,6 +58,9 @@ class SolrMapForm extends Form
     public function init(): void
     {
         $this
+            ->setAttribute('id', 'solr-map-form');
+
+        $this
             ->add([
                 'name' => 'o:source',
                 'type' => Element\Collection::class,
