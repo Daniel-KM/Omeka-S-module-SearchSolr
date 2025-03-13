@@ -97,6 +97,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'item_set' => 'Item: Item set', // @translate
                     'item_sets_tree' => 'Item: Item sets tree', // @translate
                     'media' => 'Item: Media', // @translate
+                    'has_media' => 'Item: Has media', // @translate
                     'content' => 'Media: Content (html or extracted text)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
                     'value' => 'Value itself (in particular for module Thesaurus)', // @translate
@@ -250,6 +251,12 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return $resource instanceof ItemRepresentation
                 ? $this->extractItemMediasValue($resource, $solrMap)
                 : [];
+        }
+
+        if ($field === 'has_media') {
+            return $resource instanceof ItemRepresentation
+                ? [count($resource->media()) > 0]
+                : [false];
         }
 
         if ($field === 'content') {
