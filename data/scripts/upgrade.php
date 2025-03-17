@@ -530,7 +530,7 @@ if (version_compare($oldVersion, '3.5.47', '<')) {
     $connection->executeStatement($sql);
 }
 
-if (version_compare($oldVersion, '3.5.54', '<')) {
+if (version_compare($oldVersion, '3.5.55', '<')) {
     if (!$this->isModuleActive('AdvancedSearch')) {
         $message = new PsrMessage(
             'This module requires the module "{module}", version {version} or above.', // @translate
@@ -601,6 +601,10 @@ if (version_compare($oldVersion, '3.5.54', '<')) {
         }
     }
 
+    // Remove indices from version 3.5.54.
+    $sql = 'DELETE FROM `solr_map` WHERE `field_name` IN ("o_id_i", "o_title_s")';
+    $connection->executeStatement($sql);
+
     $message = new PsrMessage(
         'It is now possible to list {link}all resources and values indexed by a core{link_end}.', // @translate
         ['link' => '<a href="/admin/search-manager/solr/core/1">' , 'link_end' => '</a>']
@@ -609,9 +613,7 @@ if (version_compare($oldVersion, '3.5.54', '<')) {
     $messenger->addSuccess($message);
 
     $messenger->addWarning('You should reindex your Solr cores.'); // @translate
-}
 
-if (version_compare($oldVersion, '3.5.55', '<')) {
     // Replace deprecated formatters with Text.
     $replacedToNormalizations = [
         'alphanumeric' => 'alphanumeric',
@@ -653,7 +655,7 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
                     'formatter' => 'text',
                     'label' => $label,
                     'normalization' => array_filter([$replacedToNormalizations[$formatter]]),
-                ], 'strlen');
+                ], fn ($v) => $v !== '' && $v !== [] && $v !== null);
                 $formatter = 'text';
             } else {
                 $settings['normalization'] = $settings['transformations'] ?? [];
@@ -698,4 +700,21 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
         $sql = 'UPDATE `solr_map` SET `settings` = ? WHERE `id` = ?;';
         $connection->executeStatement($sql, [json_encode($settings, 320), $solrMapId]);
     }
+
+    $message = new PsrMessage(
+        'The list of formats was simplified.' // @translate
+    );
+    $messenger->addSuccess($message);
+
+    $message = new PsrMessage(
+        'It is now possible to do exact search with query wrapped with double quotes.' // @translate
+    );
+    $messenger->addSuccess($message);
+
+    $message = new PsrMessage(
+        'The management of indices has been merged in a {link}single page{link_end}.', // @translate
+        ['link' => '<a href="/admin/search-manager/solr/core/1">' , 'link_end' => '</a>']
+    );
+    $message->setEscapeHtml(false);
+    $messenger->addSuccess($message);
 }
