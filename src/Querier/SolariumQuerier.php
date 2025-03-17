@@ -651,7 +651,7 @@ class SolariumQuerier extends AbstractQuerier
                 $facetValues = $facetData['values'] ?? [];
                 if (in_array($facetData['type'], ['Range', 'RangeDouble', 'SelectRange'])) {
                     $min = isset($facetData['min']) ? $facetData['min'] : $fieldRanges[$facetName]['min'];
-                    $max = isset($facetData['max']) ? $facetData['max'] : $fieldRanges[$facetName]['max'];;
+                    $max = isset($facetData['max']) ? $facetData['max'] : $fieldRanges[$facetName]['max'];
                     $step = isset($facetData['step']) ? (int) $facetData['step'] : 1;
                     $facet = $solariumFacetSet
                         ->createJsonFacetRange($facetName)
@@ -666,12 +666,12 @@ class SolariumQuerier extends AbstractQuerier
                     // The domain option is used to exclude the tagged search filter related to the facet
                     // see: https://yonik.com/multi-select-faceting/
                     /** @var \Solarium\Component\Facet\FieldValueParametersInterface $facet */
-                    $excludeTag=strtoupper($facetName.'-facet');                    
+                    $excludeTag = strtoupper($facetName . '-facet');
                     $facet = $solariumFacetSet
                         ->createJsonFacetTerms($facetName)
                         ->setField($facetField)
                         ->setLimit($facetLimit)
-                        ->setSort($facetOrder)                        
+                        ->setSort($facetOrder)
                         ->setOptions(['domain' => ['excludeTags' => [$excludeTag]]])
                     ;
                 }
@@ -727,8 +727,8 @@ class SolariumQuerier extends AbstractQuerier
                 } else {
                     // we need to add a tag to the facet filter query to be able to exclude it in the facet query
                     // 'tag' option is ignored when using 'query', add the tag in the query statement
-                    $key=$name . '-facet'; 
-                    $tag=strtoupper($key); 
+                    $key = $name . '-facet';
+                    $tag = strtoupper($key);
                     $enclosedValues = $this->escapePhraseValue($values, 'OR');
                     $this->solariumQuery->addFilterQuery([
                         'key' => $key,
@@ -1478,7 +1478,6 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function fieldIsTokenized($name): bool
     {
-
         return substr($name, -2) === '_t'
             || substr($name, -4) === '_txt'
             || substr($name, -3) === '_ws'
@@ -1510,7 +1509,7 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function fieldIsLower($name): bool
     {
-        return strpos($name, '_lower') !==false;
+        return strpos($name, '_lower') !== false;
     }
 
     /**

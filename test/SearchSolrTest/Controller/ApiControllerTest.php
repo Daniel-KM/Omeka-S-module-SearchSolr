@@ -7,27 +7,27 @@ use SearchSolrTest\Controller\SearchSolrControllerTestCase;
 
 class ApiControllerTest extends SearchSolrControllerTestCase
 {
-    public function testApiSolrCoreIsDeniedToAnonymousUsers()
+    public function testApiSolrCoreIsDeniedToAnonymousUsers(): void
     {
         $this->logout();
         $this->expectException(PermissionDeniedException::class);
         $this->dispatch('/api/solr_cores');
     }
 
-    public function testApiSolrMapsIsDeniedToAnonymousUsers()
+    public function testApiSolrMapsIsDeniedToAnonymousUsers(): void
     {
         $this->logout();
         $this->expectException(PermissionDeniedException::class);
         $this->dispatch('/api/solr_maps');
     }
 
-    public function testApiSolrCoresIsAllowedToAdmin()
+    public function testApiSolrCoresIsAllowedToAdmin(): void
     {
         $this->dispatch('/api/solr_cores');
         $this->assertResponseStatusCode(200);
     }
 
-    public function testApiSolrMapsIsAllowedToAdmin()
+    public function testApiSolrMapsIsAllowedToAdmin(): void
     {
         $this->dispatch('/api/solr_maps');
         $this->assertResponseStatusCode(200);

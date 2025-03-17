@@ -101,14 +101,14 @@ abstract class SearchSolrControllerTestCase extends TestCase
         return $auth->authenticate();
     }
 
-    protected function logout()
+    protected function logout(): void
     {
         $serviceLocator = $this->getServiceLocator();
         $auth = $serviceLocator->get('Omeka\AuthenticationService');
         $auth->clearIdentity();
     }
 
-    protected function loginAsAdmin()
+    protected function loginAsAdmin(): void
     {
         $this->login('admin@example.com', 'root');
     }

@@ -23,7 +23,7 @@ abstract class TestCase extends AbstractHttpControllerTestCase
         return $auth->authenticate();
     }
 
-    protected function loginAsAdmin()
+    protected function loginAsAdmin(): void
     {
         $this->login('admin@example.com', 'root');
     }
