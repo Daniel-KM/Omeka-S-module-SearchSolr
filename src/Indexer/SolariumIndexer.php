@@ -33,6 +33,7 @@ namespace SearchSolr\Indexer;
 use AdvancedSearch\Indexer\AbstractIndexer;
 use AdvancedSearch\Indexer\IndexerInterface;
 use AdvancedSearch\Query;
+use Exception;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
@@ -226,14 +227,19 @@ class SolariumIndexer extends AbstractIndexer
         foreach ($resources as $resource) {
             $document = $this->prepareDocument($resource);
             if ($document) {
-                $this->buffer->addDocument($document);
+                // With buffer, the check is done when the document is added.
+                try {
+                    $this->buffer->addDocument($document);
+                } catch (Exception $e) {
+                    $this->solrError($e, $resource, $document);
+                }
             }
         }
 
         try {
             $this->buffer->commit();
-        } catch (\Exception $e) {
-            $this->commitError($e);
+        } catch (Exception $e) {
+            $this->solrError($e);
             $this->buffer->clear();
         }
 
@@ -526,36 +532,59 @@ class SolariumIndexer extends AbstractIndexer
      * in Solr admin board.
      * @see \Solarium\Core\Client\Adapter\Http::createContext()
      */
-    protected function commitError(\Exception $exception, bool $isRecall = false): self
-    {
+    protected function solrError(
+        Exception $exception,
+        ?AbstractResourceRepresentation $resource = null,
+        ?SolariumInputDocument $document = null,
+        bool $isRecall = false
+    ): self {
         $error = method_exists($exception, 'getBody') ? json_decode((string) $exception->getBody(), true) : null;
 
         $message = is_array($error) && isset($error['error']['msg'])
             ? $error['error']['msg']
             : $exception->getMessage();
 
-        if ($message === 'Solr HTTP error: Bad Request (400)') {
-            // TODO Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
-            /** @see \Solarium\Core\Client\Adapter\Http::createContext() */
-            $this->getLogger()->err(
-                'Indexing of resource failed: Invalid document (wrong field type or missing required field).' // @translate
-            );
-        } elseif ($message === 'Solr HTTP error: HTTP request failed') {
+        if ($message === 'Solr HTTP error: HTTP request failed') {
             // The exception can occur before or after buffer->clear().
             if (!$isRecall && $this->buffer->getBuffer()) {
                 // Most of the time, the issue is a config issue with a limit.
                 sleep(30);
                 try {
                     $this->buffer->commit();
-                } catch (\Exception $e) {
-                    $this->commitError($exception, true);
+                } catch (Exception $e) {
+                    $this->solrError($exception, $resource, $document, true);
                     $this->buffer->clear();
                 }
             } else {
+                if ($resource) {
+                    $this->getLogger()->err(
+                        'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue. Last document in the buffer: {resource_name} #{id}.', // @translate
+                        ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id()]
+                    );
+                } else {
+                    $this->getLogger()->err(
+                        'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue.' // @translate
+                    );
+                }
+            }
+        } elseif ($message === 'Solr HTTP error: Bad Request (400)') {
+            // TODO Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
+            /** @see \Solarium\Core\Client\Adapter\Http::createContext() */
+            if ($resource) {
                 $this->getLogger()->err(
-                    'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue.' // @translate
+                    'Indexing of {resource_name} #{id} failed: Invalid document (wrong field type or missing required field).', // @translate
+                    ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id(), 'message' => $message]
+                );
+            } else {
+                $this->getLogger()->err(
+                    'Indexing of resource failed: Invalid document (wrong field type or missing required field).' // @translate
                 );
             }
+        } elseif ($resource) {
+            $this->getLogger()->err(
+                'Indexing of {resource_name} #{id} failed: {message}', // @translate
+                ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id(), 'message' => $message]
+            );
         } else {
             $this->getLogger()->err(
                 'Indexing of resource failed: {message}', // @translate
