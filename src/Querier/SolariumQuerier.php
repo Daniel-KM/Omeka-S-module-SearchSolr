@@ -1365,6 +1365,7 @@ class SolariumQuerier extends AbstractQuerier
      *
      * The indexes are the properties in internal sql.
      * This process allows to support same indexes in Solr.
+     * Any property can be used, but the index should exist.
      *
      * @todo For now, only one field is supported, since an index with multiple properties can be created.
      *
@@ -1376,7 +1377,44 @@ class SolariumQuerier extends AbstractQuerier
         $result = $this->query->getAliases()[$field]['fields']
             ?? null;
         if (!$result) {
-            return null;
+            // Try to convert terms into standard field.
+            $term = $this->easyMeta->propertyTerm($field);
+            if (!$term) {
+                return null;
+            }
+            // Check if a standard index exists.
+            $indices = $this->usedSolrFields([], [], [str_replace(':', '_', $term)]);
+            if (!count($indices)) {
+                return null;
+            } elseif (count($indices) > 1) {
+                // Try to use full multiple strings, not the tokenized ones.
+                usort($indices, function ($a, $b) {
+                    $isTokenA = $this->fieldIsTokenized($a);
+                    $isTokenB = $this->fieldIsTokenized($b);
+                    if ($isTokenA && $isTokenB) {
+                        return 0;
+                    } elseif ($isTokenA) {
+                        return 1;
+                    } elseif ($isTokenB) {
+                        return -1;
+                    }
+                    $isMultiStringA = substr($a, -3) === '_ss'
+                        || substr($a, -9) === '_ss_lower'
+                        || substr($a, 0, 3) === 'sm_';
+                    $isMultiStringB = substr($b, -3) === '_ss'
+                        || substr($b, -9) === '_ss_lower'
+                        || substr($b, 0, 3) === 'sm_';
+                    if ($isMultiStringA && $isMultiStringB) {
+                        return 0;
+                    } elseif ($isMultiStringA) {
+                        return -1;
+                    } elseif ($isMultiStringB) {
+                        return 1;
+                    }
+                    return strcmp($a, $b);
+                });
+            }
+            return reset($indices);
         }
         if (is_array($result)) {
             if (count($result) > 1) {
