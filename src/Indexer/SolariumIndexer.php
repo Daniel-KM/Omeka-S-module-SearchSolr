@@ -544,7 +544,7 @@ class SolariumIndexer extends AbstractIndexer
             // The exception can occur before or after buffer->clear().
             if (!$isRecall && $this->buffer->getBuffer()) {
                 // Most of the time, the issue is a config issue with a limit.
-                sleep(10);
+                sleep(30);
                 try {
                     $this->buffer->commit();
                 } catch (\Exception $e) {
