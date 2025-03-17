@@ -325,22 +325,52 @@ class SolariumQuerier extends AbstractQuerier
             $fields = [$fields];
         }
 
-        // TODO Limit output by site when set in query (or index by site).
+        // The terms query in solarium does not support filtering by field, so
+        // it is not possible to filter by site. So either index values by site,
+        // or use a standard query.
+        $siteId = $this->query->getSiteId();
+        $sitesField = $this->solrCore->mapsBySource('site/o:id', 'generic');
+        $sitesField = $sitesField ? (reset($sitesField))->fieldName() : null;
+        if ($siteId && $sitesField) {
+            $query = $this->solariumClient->createSelect();
+            $query
+                ->createFilterQuery($sitesField)
+                ->setQuery("$sitesField:$siteId");
+            $facetSet = $query->getFacetSet();
+            $index = 0;
+            foreach ($fields as $field) {
+                $facetSet
+                    ->createFacetField($field . '_' . ++$index)
+                    ->setField($field)
+                    ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
+                    ->setLimit(-1)
+                    // Only used values in the current site.
+                    ->setMinCount(1);
+            }
+            $resultSet = $this->solariumClient->select($query);
+            $index = 0;
+            $facets = $resultSet->getFacetSet()->getFacets();
+            $result = [];
+            foreach ($facets as $facet) {
+                $result[] = array_keys($facet->getValues());
+            }
+        } else {
+            // In Sort, a query value is a terms query.
+            $query = $this->solariumClient->createTerms();
+            $query
+                ->setFields($fields)
+                ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
+                ->setLimit(-1)
+                // Only used values. Anyway, by default there is no predefined list.
+                ->setMinCount(1);
+            $resultSet = $this->solariumClient->terms($query);
+            // Results are structured by field and term/count.
+            $result = array_map(fn ($v) => array_keys($v), $resultSet->getResults());
+        }
 
-        // In Sort, a query value is a terms query.
-        $query = $this->solariumClient->createTerms();
-        $query
-            ->setFields($fields)
-            ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
-            ->setLimit(-1)
-            // Only used values. Anyway, by default there is no predefined list.
-            ->setMinCount(1);
-        $resultSet = $this->solariumClient->terms($query);
-
-        // Results are structured by field and term/count.
-        $result = array_map(fn ($v) => array_keys($v), $resultSet->getResults());
         // Merge fields.
         $list = array_merge(...array_values($result));
+
         natcasesort($list);
 
         // Fix false empty duplicate or values without title.
@@ -352,6 +382,8 @@ class SolariumQuerier extends AbstractQuerier
 
     /**
      * Warning: unlike queryValues, the field isn't an alias but a real index.
+     *
+     * Currently only used in admin.
      *
      * @todo Merge queryValuesCount() of SolariumQuerier with SolrRepresentation.
      *
