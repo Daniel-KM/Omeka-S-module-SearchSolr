@@ -232,6 +232,13 @@ class SolariumIndexer extends AbstractIndexer
                     $this->buffer->addDocument($document);
                 } catch (Exception $e) {
                     $this->solrError($e, $resource, $document);
+                    // Remove the document with an issue from the buffer,
+                    // allowing to commit other ones.
+                    $documents = $this->buffer->getDocuments();
+                    array_pop($documents);
+                    $this->buffer->clear();
+                    $this->buffer->addDocuments(array_values($documents));
+                    unset($documents);
                 }
             }
         }
@@ -552,20 +559,22 @@ class SolariumIndexer extends AbstractIndexer
                 try {
                     $this->buffer->commit();
                 } catch (Exception $e) {
-                    $this->solrError($exception, $resource, $document, true);
-                    $this->buffer->clear();
+                    $this->solrError($exception, null, null, true);
                 }
             } else {
-                if ($resource) {
+                $firstDocument = $this->buffer->getBuffer();
+                $firstDocument = $firstDocument ? reset($firstDocument) : null;
+                if ($firstDocument) {
                     $this->getLogger()->err(
-                        'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue. Last document in the buffer: {resource_name} #{id}.', // @translate
-                        ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id()]
+                        'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue. First document in the buffer: {document_id}.', // @translate
+                        ['document_id' => $firstDocument->offsetGet('id')]
                     );
                 } else {
                     $this->getLogger()->err(
                         'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue.' // @translate
                     );
                 }
+                $this->buffer->clear();
             }
         } elseif ($message === 'Solr HTTP error: Bad Request (400)') {
             // TODO Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
