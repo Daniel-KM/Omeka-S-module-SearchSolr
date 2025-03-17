@@ -20,6 +20,6 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
     <h4><?= $escape($heading) ?></h4>
     <?php endif; ?>
     <div class="value">
-        <a class="link solr-documents download" href="<?= $escapeAttr($solrCore->adminUrl('list-documents') . '?resource_name=' . $resourceName . '& id=' . implode(',', $ids)) ?>" download="solr-documents.json" target="_self"><?= $escape($translate('Solr indexed document')) ?></a>
+        <a class="link solr-documents download" href="<?= $escapeAttr($solrCore->adminUrl('list-documents') . '?resource_name=' . $resourceName . '&id=' . implode(',', $ids)) ?>" download="solr-documents.json" target="_self"><?= $escape($translate('Solr indexed document')) ?></a>
     </div>
 </div>
