@@ -239,8 +239,9 @@ return [
             'searchsolr_server_id' => null,
         ],
         'solarium' => [
-            'adapter' => 'curl', 
-            'timeout' => 60,
+            'adapter' => 'http', /* Valid values: - 'http' (default, no dependencies),
+                                                  - 'curl' (requires the php curl extension) */
+            'timeout' => 5,     /* Integer seconds */
         ]
     ],
     'searchsolr_value_extractors' => [
