@@ -238,6 +238,10 @@ return [
         'config' => [
             'searchsolr_server_id' => null,
         ],
+        'solarium' => [
+            'adapter' => 'curl', 
+            'timeout' => 60,
+        ]
     ],
     'searchsolr_value_extractors' => [
         'factories' => [

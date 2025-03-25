@@ -39,11 +39,28 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class SolariumClientFactory implements FactoryInterface
 {
-    protected $schemas = [];
-
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $adapter = new Http();
+        /** @var \Laminas\Log\LoggerInterface $logger */
+        $logger = $services->get('Omeka\Logger');
+
+        $config = $services->get('Config');
+
+        $adapterParam = $config['searchsolr']['solarium']['adapter'] ?? null;
+        $timeoutParam = $config['searchsolr']['solarium']['timeout'] ?? null;
+
+        $adapter = match($adapterParam) {
+            'http' => new Http(),
+            'curl' => new Curl(),
+            default => new Http(),
+        };
+
+        if (!is_null($timeoutParam) && is_int($timeoutParam)) {
+            $adapter->setTimeout($timeoutParam);
+        }
+
+        $logger->debug('SolariumClientFactory. $adapter : ' . var_export($adapter, true));
+
         return new SolariumClient(
             $adapter,
             new EventDispatcher()
