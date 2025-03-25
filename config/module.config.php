@@ -45,7 +45,8 @@ return [
         'factories' => [
             'SearchSolr\ValueExtractorManager' => Service\ValueExtractorManagerFactory::class,
             'SearchSolr\ValueFormatterManager' => Service\ValueFormatterManagerFactory::class,
-            'SearchSolr\Schema' => Service\SchemaFactory::class,
+            'SearchSolr\Schema\Schema' => Service\SchemaFactory::class,
+            'SearchSolr\Solarium\Client' => Service\SolariumClientFactory::class,
         ],
     ],
     'navigation' => [

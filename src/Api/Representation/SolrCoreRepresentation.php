@@ -34,12 +34,10 @@ use Common\Stdlib\PsrMessage;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 use SearchSolr\Schema\Schema;
 use Solarium\Client as SolariumClient;
-use Solarium\Core\Client\Adapter\Http as SolariumAdapter;
 use Solarium\Exception\HttpException as SolariumException;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 // TODO Use Laminas event manager when #12 will be merged.
 // @see https://github.com/laminas/laminas-eventmanager/pull/12
-use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class SolrCoreRepresentation extends AbstractEntityRepresentation
 {
@@ -163,15 +161,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             try {
 
                 $services = $this->getServiceLocator();
-                $solariumClient = $services->get('Solarium\Core\Client\Client');
+                $solariumClient = $services->get('SearchSolr\Solarium\Client');
                 $this->solariumClient = $solariumClient;
-
-                /*
-                $this->solariumClient = new SolariumClient(
-                    new SolariumAdapter(),
-                    new EventDispatcher()
-                );
-                */
 
                 $this->solariumClient
                     // Set the endpoint as default.
