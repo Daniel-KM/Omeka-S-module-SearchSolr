@@ -30,7 +30,7 @@
 
 namespace SearchSolr\Service\EngineAdapter;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use SearchSolr\EngineAdapter\Solarium;
 

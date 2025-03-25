@@ -32,7 +32,7 @@ namespace SearchSolr\Api\Representation;
 
 use Common\Stdlib\PsrMessage;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use SearchSolr\Schema;
+use SearchSolr\Schema\Schema;
 use Solarium\Client as SolariumClient;
 use Solarium\Core\Client\Adapter\Http as SolariumAdapter;
 use Solarium\Exception\HttpException as SolariumException;
@@ -161,10 +161,18 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         if (!isset($this->solariumClient)) {
             try {
+
+                $services = $this->getServiceLocator();
+                $solariumClient = $services->get('Solarium\Core\Client\Client');
+                $this->solariumClient = $solariumClient;
+
+                /*
                 $this->solariumClient = new SolariumClient(
                     new SolariumAdapter(),
                     new EventDispatcher()
                 );
+                */
+
                 $this->solariumClient
                     // Set the endpoint as default.
                     ->createEndpoint($this->endpoint(), true);
@@ -319,7 +327,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Get the schema for the core.
      */
-    public function schema():\SearchSolr\Schema\Schema
+    public function schema():Schema
     {
         return $this->getServiceLocator()
             ->build(Schema::class, ['solr_core' => $this]);
