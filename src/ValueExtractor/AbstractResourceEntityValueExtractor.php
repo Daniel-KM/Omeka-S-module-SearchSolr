@@ -98,7 +98,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'item_sets_tree' => 'Item: Item sets tree', // @translate
                     'media' => 'Item: Media', // @translate
                     'has_media' => 'Item: Has media', // @translate
-                    'content' => 'Media: Content (html or extracted text)', // @translate
+                    'content' => 'Media: Content (from html or extractable text from file, included alto)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
                     'value' => 'Value itself (in particular for module Thesaurus)', // @translate
                     'access_level' => 'Access level (module Access)', // @translate
@@ -695,7 +695,13 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     protected function extractMediaContent(MediaRepresentation $media): array
     {
         if ($media->ingester() === 'html') {
-            return [$media->mediaData()['html']];
+            $output = $media->mediaData()['html'];
+            return $output ? [$output] : [];
+        }
+        $mediaType = $media->mediaType();
+        if ($mediaType === 'application/alto+xml') {
+            $output = $this->extractContentAlto($media);
+            return strlen($output) ? [$output] : [];
         }
         if (strtok((string) $media->mediaType(), '/') === 'text') {
             $filePath = $this->baseFilepath . '/original/' . $media->filename();
@@ -895,5 +901,56 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         return $structure;
+    }
+
+    /**
+     * Copy:
+     * @see \AdvancedSearch\Stdlib\FulltextSearchDelegator::extractText()
+     * @see \SearchSolr\ValueExtractor\AbstractResourceEntityValueExtractor::extractContentAlto()
+     * @see \IiifServer\View\Helper\IiifAnnotationPageLine2::__invoke()
+     */
+    protected function extractContentAlto(MediaRepresentation $media): string
+    {
+        if ($media->getMediaType() !== 'application/alto+xml') {
+            return '';
+        }
+
+        // TODO Manage external storage.
+        // Extract text from alto.
+        $filePath = $this->baseFilepath . '/original/' . $media->filename();
+        if (!file_exists($filePath) || !is_readable($filePath)) {
+            return '';
+        }
+
+        try {
+            $xmlContent = file_get_contents($filePath);
+            $xml = @simplexml_load_string($xmlContent);
+        } catch (\Exception $e) {
+            // No log.
+            return '';
+        }
+
+        if (!$xml) {
+            return '';
+        }
+
+        $namespaces = $xml->getDocNamespaces();
+        $altoNamespace = $namespaces['alto'] ?? $namespaces[''] ?? 'http://www.loc.gov/standards/alto/ns-v4#';
+        $xml->registerXPathNamespace('alto', $altoNamespace);
+
+        $text = '';
+
+        // TODO Use a single xpath or xsl to get the whole in one query.
+        foreach ($xml->xpath('/alto:alto/alto:Layout//alto:TextLine') as $xmlTextLine) {
+            /** @var \SimpleXMLElement $xmlString */
+            foreach ($xmlTextLine->children() as $xmlString) {
+                if ($xmlString->getName() === 'String') {
+                    $attributes = $xmlString->attributes();
+                    $text .= (string) @$attributes->CONTENT . ' ';
+                }
+            }
+        }
+
+        return trim($text);
     }
 }
