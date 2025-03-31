@@ -45,7 +45,8 @@ return [
         'factories' => [
             'SearchSolr\ValueExtractorManager' => Service\ValueExtractorManagerFactory::class,
             'SearchSolr\ValueFormatterManager' => Service\ValueFormatterManagerFactory::class,
-            'SearchSolr\Schema' => Service\SchemaFactory::class,
+            'SearchSolr\Schema\Schema' => Service\SchemaFactory::class,
+            'SearchSolr\Solarium\Client' => Service\SolariumClientFactory::class,
         ],
     ],
     'navigation' => [
@@ -237,6 +238,11 @@ return [
         'config' => [
             'searchsolr_server_id' => null,
         ],
+        'solarium' => [
+            'adapter' => 'http', /* Valid values: - 'http' (default, no dependencies),
+                                                  - 'curl' (requires the php curl extension) */
+            'timeout' => 5,     /* Integer seconds */
+        ]
     ],
     'searchsolr_value_extractors' => [
         'factories' => [

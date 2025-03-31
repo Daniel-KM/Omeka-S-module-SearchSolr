@@ -2,7 +2,7 @@
 
 /*
  * Copyright BibLibre, 2017
- * Copyright Daniel Berthereau, 2018-2025
+ * Copyright Daniel Berthereau, 2019-2025
  *
  * This software is governed by the CeCILL license under French law and abiding
  * by the rules of distribution of free software.  You can use, modify and/ or
@@ -28,19 +28,42 @@
  * knowledge of the CeCILL license and that you accept its terms.
  */
 
-namespace SearchSolr\Service\EngineAdapter;
+namespace SearchSolr\Service;
 
 use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
-use SearchSolr\EngineAdapter\Solarium;
+use Solarium\Client as SolariumClient;
+use Solarium\Core\Client\Adapter\Curl;
+use Solarium\Core\Client\Adapter\Http;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
-class SolariumFactory implements FactoryInterface
+class SolariumClientFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        return new Solarium(
-            $services->get('Omeka\ApiManager'),
-            $services->get('MvcTranslator')
+        /** @var \Laminas\Log\LoggerInterface $logger */
+        $logger = $services->get('Omeka\Logger');
+
+        $config = $services->get('Config');
+
+        $adapterParam = $config['searchsolr']['solarium']['adapter'] ?? null;
+        $timeoutParam = $config['searchsolr']['solarium']['timeout'] ?? null;
+
+        $adapter = match($adapterParam) {
+            'http' => new Http(),
+            'curl' => new Curl(),
+            default => new Http(),
+        };
+
+        if (!is_null($timeoutParam) && is_int($timeoutParam)) {
+            $adapter->setTimeout($timeoutParam);
+        }
+
+        $logger->debug('SolariumClientFactory. $adapter : ' . var_export($adapter, true));
+
+        return new SolariumClient(
+            $adapter,
+            new EventDispatcher()
         );
     }
 }

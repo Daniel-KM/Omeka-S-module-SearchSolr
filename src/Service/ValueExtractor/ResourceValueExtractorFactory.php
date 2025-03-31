@@ -30,7 +30,7 @@
 
 namespace SearchSolr\Service\ValueExtractor;
 
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ResourceValueExtractorFactory implements FactoryInterface
