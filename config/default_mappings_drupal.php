@@ -35,7 +35,7 @@ return [
     ],
     [
         'resource_name' => 'generic',
-        'field_name' => 'bs_public',
+        'field_name' => 'is_public',
         'alias' => 'is_public',
         'source' => 'is_public',
         'pool' => [],
