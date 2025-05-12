@@ -571,15 +571,17 @@ class Module extends AbstractModule
 
         // Install a default mapping.
         $sql = <<<'SQL'
-            INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `source`, `pool`, `settings`)
-            VALUES (?, ?, ?, ?, ?, ?);
+            INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `alias`, `source`, `pool`, `settings`)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
             SQL;
+        // $defaultMaps = require __DIR__ . '/config/default_mappings.php';
         $defaultMaps = require __DIR__ . '/config/default_mappings.php';
         foreach ($defaultMaps as $map) {
             $connection->executeStatement($sql, [
                 $solrCoreId,
                 $map['resource_name'],
                 $map['field_name'],
+                $map['alias'],
                 $map['source'],
                 json_encode($map['pool'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                 json_encode($map['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),

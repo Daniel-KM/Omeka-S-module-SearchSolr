@@ -1,17 +1,15 @@
 <?php declare(strict_types=1);
 
 /**
- * Generic mapping for Solr.
+ * Generic mapping for Solr adapted for use with Drupal..
  *
  * It should be adapted to specific data, in particular when they are normalized,
  * for example for dates.
  *
  * They can be updated in admin board.
  *
- * The aliases use the omeka names.
- * For properties, the alias is used dynamically with priority to "_ss".
- *
- * For compatibility with Drupal, use the file default_mappings_drupal.php.
+ * @see https://www.drupal.org/project/search_api_solr
+ * @see https://github.com/mkalkbrenner/search_api_solr/blob/4.x/solr-conf-templates/9.x/schema.xml#L174-L256
  */
 
 return [
@@ -21,7 +19,7 @@ return [
     [
         // Api name.
         'resource_name' => 'generic',
-        'field_name' => 'resource_name_s',
+        'field_name' => 'ss_resource_name',
         'alias' => 'resource_name',
         'source' => 'resource_name',
         'pool' => [],
@@ -29,7 +27,7 @@ return [
     ],
     [
         'resource_name' => 'generic',
-        'field_name' => 'id_i',
+        'field_name' => 'is_id',
         'alias' => 'id',
         'source' => 'o:id',
         'pool' => [],
@@ -37,7 +35,7 @@ return [
     ],
     [
         'resource_name' => 'generic',
-        'field_name' => 'is_public_b',
+        'field_name' => 'bs_public',
         'alias' => 'is_public',
         'source' => 'is_public',
         'pool' => [],
@@ -46,7 +44,7 @@ return [
     [
         // The generic name of the resource: may be main title, label or name.
         'resource_name' => 'generic',
-        'field_name' => 'name_s',
+        'field_name' => 'ss_name',
         'alias' => 'name',
         'source' => 'o:title',
         'pool' => [],
@@ -54,7 +52,7 @@ return [
     ],
     [
         'resource_name' => 'generic',
-        'field_name' => 'owner_id_i',
+        'field_name' => 'is_owner_id',
         'alias' => 'owner_id',
         'source' => 'owner/o:id',
         'pool' => [],
@@ -62,7 +60,7 @@ return [
     ],
     [
         'resource_name' => 'generic',
-        'field_name' => 'site_id_is',
+        'field_name' => 'im_site_id',
         'alias' => 'site_id',
         'source' => 'site/o:id',
         'pool' => [],
@@ -76,7 +74,7 @@ return [
     // Specific fields.
     [
         'resource_name' => 'resources',
-        'field_name' => 'resource_class_s',
+        'field_name' => 'ss_resource_class',
         'alias' => 'resource_class_term',
         'source' => 'resource_class/o:term',
         'pool' => [],
@@ -84,7 +82,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'resource_template_s',
+        'field_name' => 'ss_resource_template',
         'alias' => 'resource_template_label',
         'source' => 'resource_template/o:label',
         'pool' => [],
@@ -92,7 +90,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'title_s',
+        'field_name' => 'ss_title',
         'alias' => 'title',
         'source' => 'o:title',
         'pool' => [],
@@ -105,7 +103,7 @@ return [
     // TODO Remove default mapping for properties and build them automatically.
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_title_txt',
+        'field_name' => 'twm_dcterms_title',
         'alias' => '',
         'source' => 'dcterms:title',
         'pool' => [],
@@ -113,7 +111,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_creator_txt',
+        'field_name' => 'twm_dcterms_creator',
         'alias' => '',
         'source' => 'dcterms:creator',
         'pool' => [],
@@ -121,7 +119,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_subject_txt',
+        'field_name' => 'twm_dcterms_subject',
         'alias' => '',
         'source' => 'dcterms:subject',
         'pool' => [],
@@ -129,7 +127,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_description_txt',
+        'field_name' => 'twm_dcterms_description',
         'alias' => '',
         'source' => 'dcterms:description',
         'pool' => [],
@@ -137,7 +135,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_publisher_txt',
+        'field_name' => 'twm_dcterms_publisher',
         'alias' => '',
         'source' => 'dcterms:publisher',
         'pool' => [],
@@ -145,7 +143,7 @@ return [
     ],
     [
         'resource_name' => 'items',
-        'field_name' => 'dcterms_contributor_txt',
+        'field_name' => 'twm_dcterms_contributor',
         'alias' => '',
         'source' => 'dcterms:contributor',
         'pool' => [],
@@ -153,7 +151,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_date_txt',
+        'field_name' => 'twm_dcterms_date',
         'alias' => '',
         'source' => 'dcterms:date',
         'pool' => [],
@@ -161,7 +159,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_type_txt',
+        'field_name' => 'twm_dcterms_type',
         'alias' => '',
         'source' => 'dcterms:type',
         'pool' => [],
@@ -169,7 +167,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_format_txt',
+        'field_name' => 'twm_dcterms_format',
         'alias' => '',
         'source' => 'dcterms:format',
         'pool' => [],
@@ -177,7 +175,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_identifier_txt',
+        'field_name' => 'twm_dcterms_identifier',
         'alias' => '',
         'source' => 'dcterms:identifier',
         'pool' => [],
@@ -185,7 +183,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_source_txt',
+        'field_name' => 'twm_dcterms_source',
         'alias' => '',
         'source' => 'dcterms:source',
         'pool' => [],
@@ -193,7 +191,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_language_txt',
+        'field_name' => 'twm_dcterms_language',
         'alias' => '',
         'source' => 'dcterms:language',
         'pool' => [],
@@ -201,7 +199,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_relation_txt',
+        'field_name' => 'twm_dcterms_relation',
         'alias' => '',
         'source' => 'dcterms:relation',
         'pool' => [],
@@ -209,7 +207,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_coverage_txt',
+        'field_name' => 'twm_dcterms_coverage',
         'alias' => '',
         'source' => 'dcterms:coverage',
         'pool' => [],
@@ -217,7 +215,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_rights_txt',
+        'field_name' => 'twm_dcterms_rights',
         'alias' => '',
         'source' => 'dcterms:rights',
         'pool' => [],
@@ -225,7 +223,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_spatial_txt',
+        'field_name' => 'twm_dcterms_spatial',
         'alias' => '',
         'source' => 'dcterms:spatial',
         'pool' => [],
@@ -233,7 +231,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_temporal_txt',
+        'field_name' => 'twm_dcterms_temporal',
         'alias' => '',
         'source' => 'dcterms:temporal',
         'pool' => [],
@@ -242,7 +240,7 @@ return [
     // Dublin Core Terms.
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_spatial_ss',
+        'field_name' => 'sm_dcterms_spatial',
         'alias' => '',
         'source' => 'dcterms:spatial',
         'pool' => [],
@@ -250,7 +248,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_temporal_dr',
+        'field_name' => 'drs_dcterms_temporal',
         'alias' => '',
         'source' => 'dcterms:temporal',
         'pool' => [],
@@ -260,7 +258,7 @@ return [
     // Fields for filters and facets.
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_type_ss',
+        'field_name' => 'sm_dcterms_type',
         'alias' => '',
         'source' => 'dcterms:type',
         'pool' => [],
@@ -268,7 +266,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_subject_ss',
+        'field_name' => 'sm_dcterms_subject',
         'alias' => '',
         'source' => 'dcterms:subject',
         'pool' => [],
@@ -276,7 +274,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_creator_ss',
+        'field_name' => 'sm_dcterms_creator',
         'alias' => '',
         'source' => 'dcterms:creator',
         'pool' => [],
@@ -284,7 +282,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_publisher_ss',
+        'field_name' => 'sm_dcterms_publisher',
         'alias' => '',
         'source' => 'dcterms:publisher',
         'pool' => [],
@@ -292,7 +290,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_language_ss',
+        'field_name' => 'sm_dcterms_language',
         'alias' => '',
         'source' => 'dcterms:language',
         'pool' => [],
@@ -300,7 +298,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_rights_ss',
+        'field_name' => 'sm_dcterms_rights',
         'alias' => '',
         'source' => 'dcterms:rights',
         'pool' => [],
@@ -308,7 +306,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'item_set_title_ss',
+        'field_name' => 'sm_item_set_title',
         'alias' => 'item_set_title',
         'source' => 'item_set/o:title',
         'pool' => [],
@@ -316,7 +314,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'property_values_txt',
+        'field_name' => 'twm_property_values',
         'alias' => '',
         'source' => 'property_values',
         'pool' => [],
@@ -326,7 +324,7 @@ return [
     // Fields to sort.
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_title_s',
+        'field_name' => 'ss_dcterms_title',
         'alias' => '',
         'source' => 'dcterms:title',
         'pool' => [],
@@ -334,7 +332,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_date_s',
+        'field_name' => 'ss_dcterms_date',
         'alias' => '',
         'source' => 'dcterms:date',
         'pool' => [],
@@ -342,7 +340,7 @@ return [
     ],
     [
         'resource_name' => 'resources',
-        'field_name' => 'dcterms_creator_s',
+        'field_name' => 'ss_dcterms_creator',
         'alias' => '',
         'source' => 'dcterms:creator',
         'pool' => [],
@@ -354,7 +352,7 @@ return [
     // Required fields.
     [
         'resource_name' => 'items',
-        'field_name' => 'item_set_id_is',
+        'field_name' => 'im_item_set_id',
         'alias' => 'item_set_id',
         'source' => 'item_set/o:id',
         'pool' => [],
