@@ -735,8 +735,8 @@ It can be done via the user interface (in the menu Schema). Or you can use this
 command, as indicated in the [reference guide to copy a field]:
 
 ```sh
-# Without user/password.
-curl -X POST --data-binary '{"add-copy-field":{"source":"*","dest":"_text_" }}' 'http://localhost:8983/solr/omeka/schema'
+# Without user/password, with "omeka" as name of the core.
+curl -X POST --data-binary '{"add-copy-field":{"source":"*","dest":"_text_" }}' "http://localhost:8983/solr/omeka/schema"
 # Or with a user/password.
 curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-field":{"source":"*","dest":"_text_" }}' 'http://localhost:8983/solr/omeka/schema'
 ```
