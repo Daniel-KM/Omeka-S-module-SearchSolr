@@ -358,7 +358,10 @@ class SolariumIndexer extends AbstractIndexer
 
             // Resource name is not available through the representation.
             if ($source === 'resource_name') {
-                $document->addField($solrField, $resourceName);
+                if (empty($isSingleFieldFilled[$solrField])) {
+                    $isSingleFieldFilled[$solrField] = true;
+                    $document->addField($solrField, $resourceName);
+                }
             }
 
             if ($source === 'site/o:id') {
@@ -411,7 +414,7 @@ class SolariumIndexer extends AbstractIndexer
 
             if ($this->isSingleValuedFields[$solrField]) {
                 // Store single fields one time only (checked above).
-                if (!$isSingleFieldFilled) {
+                if (empty($isSingleFieldFilled[$solrField])) {
                     $isSingleFieldFilled[$solrField] = true;
                     $document->addField($solrField, reset($formattedValues));
                 }
