@@ -756,6 +756,8 @@ class SolariumQuerier extends AbstractQuerier
         // $this->solariumQuery->getDisMax()->setQueryAlternative($defaultQuery);
 
         $q = $this->query->getQuery();
+        $qr = $this->query->getQueryRefine();
+        $q = trim($q . ' ' . $qr);
         if (strlen($q)) {
             return false;
         }
