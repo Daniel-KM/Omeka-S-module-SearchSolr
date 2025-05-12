@@ -37,12 +37,15 @@ use Doctrine\DBAL\Connection;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
+use SearchSolr\Api\Adapter\TraitArrayFilterRecursiveEmptyValue;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use SearchSolr\Form\Admin\SolrMapForm;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 
 class MapController extends AbstractActionController
 {
+    use  TraitArrayFilterRecursiveEmptyValue;
+
     /**
      * @var Connection
      */
@@ -246,7 +249,7 @@ class MapController extends AbstractActionController
             $form->setData($data);
             if ($form->isValid()) {
                 $data = $form->getData();
-                $data = $this->removeEmptyData($data);
+                $data = $this->arrayFilterRecursiveEmptyValue($data);
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
@@ -313,7 +316,7 @@ class MapController extends AbstractActionController
             $form->setData($data);
             if ($form->isValid()) {
                 $data = $form->getData();
-                $data = $this->removeEmptyData($data);
+                $data = $this->arrayFilterRecursiveEmptyValue($data);
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
@@ -401,22 +404,6 @@ class MapController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $map->solrCore()->id()]);
-    }
-
-    protected function removeEmptyData(array $data): array
-    {
-        foreach ($data as $key => $value) {
-            if ($value === null || $value === '' || $value === []) {
-                unset($data[$key]);
-            } elseif ($key === 'o:pool' || $key === 'o:settings') {
-                foreach ($value as $k => $v) {
-                    if ($v === null || $v === '' || $v === []) {
-                        unset($data[$key][$k]);
-                    }
-                }
-            }
-        }
-        return $data;
     }
 
     protected function getSolrSchema($solrCoreId)

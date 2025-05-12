@@ -63,6 +63,9 @@ class SolrMapForm extends Form
      */
     public function init(): void
     {
+        // Warning: when the form is updated, the core controller should be
+        // updated for import.
+
         $this
             ->setAttribute('id', 'solr-map-form')
             ->add([
@@ -264,8 +267,10 @@ class SolrMapForm extends Form
                     'label' => 'Solr field', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'o:pool',
+                    'id' => 'o:field_name',
                     'required' => true,
+                    'pattern' => '[a-zA-Z0-9_:\-]+',
+                    'maxlength' => '190',
                 ],
             ])
         ;

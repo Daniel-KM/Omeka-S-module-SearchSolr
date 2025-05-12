@@ -37,6 +37,7 @@ use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
+use SearchSolr\Api\Adapter\TraitArrayFilterRecursiveEmptyValue;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
@@ -44,6 +45,8 @@ use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 
 class CoreController extends AbstractActionController
 {
+    use TraitArrayFilterRecursiveEmptyValue;
+
     /**
      * @var array
      */
@@ -215,6 +218,7 @@ class CoreController extends AbstractActionController
 
         try {
             $counts = $resourceTypeField
+                // TODO Manage compatibility with drupal.
                 ? $solrCore->queryValuesCount('resource_name_s')
                 : [];
         } catch (\Exception $e) {
@@ -521,21 +525,33 @@ class CoreController extends AbstractActionController
                     'o:resource_name' => $row['resource_name'],
                     'o:field_name' => $row['field_name'],
                     'o:source' => $row['source'],
-                    'o:pool' => [
+                    'o:pool' => $this->arrayFilterRecursiveEmptyValue([
                         'filter_values' => empty($row['pool:filter_values']) ? null : trim($row['pool:filter_values']),
                         'filter_uris' => empty($row['pool:filter_uris']) ? null : trim($row['pool:filter_uris']),
                         'filter_resources' => empty($row['pool:filter_resources']) ? null : trim($row['pool:filter_resources']),
                         'filter_value_resources' => empty($row['pool:filter_value_resources']) ? null : trim($row['pool:filter_value_resources']),
                         'data_types' => empty($row['pool:data_types']) ? [] : array_filter(array_map('trim', explode('|', $row['pool:data_types']))),
-                        'data_types_exclude' => empty($row['pool:data_types_exclude']) ? [] : array_filter(array_map('trim', explode('|', $row['pool:data_types_exclude']))),
+                        'data_types_exclude' => empty($row['pool:data_types_exclude']) ? [] : array_unique(array_filter(array_explode(' ', str_replace(['/', ',', '|'], ' ', $row['pool:data_types_exclude'])))),
                         // Don't filter array to keep values without language.
-                        'filter_languages' => empty($row['pool:filter_languages']) ? [] : array_unique(array_map('trim', explode('|', $row['pool:filter_languages']))),
+                        'filter_languages' => empty($row['pool:filter_languages']) ? [] : array_unique(array_filter(array_explode(' ', str_replace(['/', ',', '|'], ' ', $row['pool:filter_languages'])))),
                         'filter_visibility' => empty($row['pool:filter_visibility']) || !in_array($row['pool:filter_visibility'], ['public', 'private']) ? null : $row['pool:filter_visibility'],
-                    ],
-                    'o:settings' => [
+                    ]),
+                    'o:settings' => $this->arrayFilterRecursiveEmptyValue([
+                        'part' => $row['part'] ?? '',
                         'formatter' => $row['settings:formatter'],
+                        'normalization' => empty($row['normalization']) ? [] : array_unique(array_filter(array_explode(' ', str_replace(['/', ',', '|'], ' ', $row['normalization'])))),
+                        'max_length' => empty($row['max_length']) ? null : (int) $row['max_length'],
+                        'place_mode' => empty($row['place_mode']) ? null : trim($row['place_mode']),
+                        'table' => empty($row['table']) ? null : trim($row['table']),
+                        'table_mode' => empty($row['table_mode']) ? null : trim($row['table_mode']),
+                        'table_index_original' => !empty($row['table_index_original']) ?: null,
+                        'table_index_strict' => !empty($row['table_index_strict']) ?: null,
+                        'thesaurus_resources' => empty($row['thesaurus_resources']) ? null : $row['thesaurus_resources'],
+                        'thesaurus_self' => !empty($row['thesaurus_self']) ?: null,
+                        'thesaurus_metadata' => empty($row['thesaurus_metadata']) ? [] : array_unique(array_filter(array_explode(' ', str_replace(['/', ',', '|'], ' ', $row['thesaurus_metadata'])))),
+                        'finalization' => empty($row['finalization']) ? [] : array_unique(array_filter(array_explode(' ', str_replace(['/', ',', '|'], ' ', $row['finalization'])))),
                         'label' => $row['settings:label'],
-                    ],
+                    ]),
                 ];
             }
         }
@@ -602,16 +618,31 @@ class CoreController extends AbstractActionController
                     $resourceName,
                     $map->fieldName(),
                     $map->source(),
+                    // Pool.
                     (string) $map->pool('filter_values'),
                     (string) $map->pool('filter_uris'),
                     (string) $map->pool('filter_resources'),
                     (string) $map->pool('filter_value_resources'),
-                    implode(' | ', $map->pool('data_types')),
-                    implode(' | ', $map->pool('data_types_exclude')),
-                    implode(' | ', $map->pool('filter_languages')),
+                    implode(' | ', $map->pool('data_types', [])),
+                    implode(' | ', $map->pool('data_types_exclude', [])),
+                    implode(' | ', $map->pool('filter_languages', [])),
                     (string) $map->pool('filter_visibility'),
-                    $map->setting('label', ''),
-                    $map->setting('formatter', ''),
+                    // Settings.
+                    (string) $map->setting('part', ''),
+                    (string) $map->setting('formatter', ''),
+                    implode(' | ', $map->setting('normalization', [])),
+                    (string) $map->setting('max_length', ''),
+                    (string) $map->setting('place_mode', ''),
+                    (string) $map->setting('table', ''),
+                    (string) $map->setting('table_mode', ''),
+                    (string) $map->setting('table_index_original', ''),
+                    (string) $map->setting('table_index_strict', ''),
+                    (string) $map->setting('thesaurus_resources', ''),
+                    (string) $map->setting('thesaurus_resources', ''),
+                    (string) $map->setting('thesaurus_self', ''),
+                    implode(' | ', $map->setting('thesaurus_metadata', [])),
+                    implode(' | ', $map->setting('finalization', [])),
+                    (string) $map->setting('label', ''),
                 ];
                 $this->appendTsvRow($stream, $mapping);
             }

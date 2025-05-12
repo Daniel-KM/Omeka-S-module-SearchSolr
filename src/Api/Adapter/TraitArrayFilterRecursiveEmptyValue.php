@@ -14,10 +14,10 @@ trait TraitArrayFilterRecursiveEmptyValue
         $arrayFilterRecursiveEmpty = null;
         $arrayFilterRecursiveEmpty = function (array &$array) use (&$arrayFilterRecursiveEmpty): array {
             foreach ($array as $key => $value) {
-                if (is_array($value)) {
+                if (is_array($value) && $value) {
                     $array[$key] = $arrayFilterRecursiveEmpty($value);
                 }
-                if ($array[$key] === '' || $array[$key] === null || $array[$key] === []) {
+                if (in_array($array[$key], ['', null, []], true)) {
                     unset($array[$key]);
                 }
             }
