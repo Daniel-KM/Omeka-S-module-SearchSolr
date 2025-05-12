@@ -41,25 +41,24 @@ class SolariumClientFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        /** @var \Laminas\Log\LoggerInterface $logger */
+        /**
+         * @var \Laminas\Log\LoggerInterface $logger
+         * @var \Omeka\Settings\Settings $settings
+         *
+         * @see \Solarium\Core\Client\Adapter\TimeoutAwareInterface::DEFAULT_TIMEOUT
+         */
         $logger = $services->get('Omeka\Logger');
+        $settings = $services->get('Omeka\Settings');
 
-        $config = $services->get('Config');
+        $solariumAdapter = $settings->get('searchsolr_solarium_adapter');
+        $adapter = extension_loaded('curl') && $solariumAdapter !== 'http'
+            ? new Curl()
+            : new Http();
 
-        $adapterParam = $config['searchsolr']['solarium']['adapter'] ?? null;
-        $timeoutParam = $config['searchsolr']['solarium']['timeout'] ?? null;
+        $solariumTimeout = (int) $settings->get('searchsolr_solarium_timeout', 5);
+        $adapter->setTimeout($solariumTimeout ?: 5);
 
-        $adapter = match($adapterParam) {
-            'http' => new Http(),
-            'curl' => new Curl(),
-            default => new Http(),
-        };
-
-        if (!is_null($timeoutParam) && is_int($timeoutParam)) {
-            $adapter->setTimeout($timeoutParam);
-        }
-
-        $logger->debug('SolariumClientFactory. $adapter : ' . var_export($adapter, true));
+        // $logger->debug('SolariumClientFactory . $adapter : ' . var_export($adapter, true));
 
         return new SolariumClient(
             $adapter,

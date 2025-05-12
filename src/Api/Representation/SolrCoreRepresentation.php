@@ -159,11 +159,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     {
         if (!isset($this->solariumClient)) {
             try {
-
                 $services = $this->getServiceLocator();
-                $solariumClient = $services->get('SearchSolr\Solarium\Client');
-                $this->solariumClient = $solariumClient;
-
+                $this->solariumClient = $services->get('SearchSolr\Solarium\Client');
                 $this->solariumClient
                     // Set the endpoint as default.
                     ->createEndpoint($this->endpoint(), true);

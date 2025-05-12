@@ -267,8 +267,10 @@ class SolrCoreForm extends Form
                 'type' => Element\Text::class,
                 'options' => [
                     'label' => 'Minimum match (or/and)', // @translate
-                    'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible, like "3<80%".
-If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
+                    'info' => <<<'TXT'
+                        Integer "1" means "OR", "100%" means "AND". Complex expressions are possible, like "3<80%".
+                        If empty, the config of the solr core (solrconfig.xml) will be used.
+                        TXT, // @translate
                     'documentation' => 'https://solr.apache.org/guide/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
                 ],
                 'attributes' => [
@@ -282,8 +284,10 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
                 'type' => Element\Number::class,
                 'options' => [
                     'label' => 'Tie breaker', // @translate
-                    'info' => 'Increase score according to the number of matched fields.
-If empty, the config of the solr core (solrconfig.xml) will be used.', // @translate
+                    'info' => <<<'TXT'
+                        Increase score according to the number of matched fields.
+                        If empty, the config of the solr core (solrconfig.xml) will be used.
+                        TXT, // @translate
                     'documentation' => 'https://solr.apache.org/guide/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
                 ],
                 'attributes' => [
@@ -330,6 +334,7 @@ If empty, the config of the solr core (solrconfig.xml) will be used.', // @trans
             ->add([
                 'name' => 'http_request_type',
                 'required' => false,
-            ]);
+            ])
+        ;
     }
 }

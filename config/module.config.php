@@ -236,12 +236,16 @@ return [
     ],
     'searchsolr' => [
         'config' => [
+            // Valid values:
+            // - auto (use curl when available, else http)
+            // - curl (requires extension php curl)
+            // - http (no dependencies)
+            'searchsolr_solarium_adapter' => 'auto',
+            // Timeout for curl (Integer seconds). 5 is the default in Solarium.
+            /** @see \Solarium\Core\Client\Adapter\TimeoutAwareInterface::DEFAULT_TIMEOUT */
+            'searchsolr_solarium_timeout' => 5,
+            // Allow to share a server between multiple tools (drupal).
             'searchsolr_server_id' => null,
-        ],
-        'solarium' => [
-            'adapter' => 'http', /* Valid values: - 'http' (default, no dependencies),
-                                                  - 'curl' (requires the php curl extension) */
-            'timeout' => 5,     /* Integer seconds */
         ]
     ],
     'searchsolr_value_extractors' => [
