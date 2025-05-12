@@ -104,11 +104,20 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         </thead>
         <tbody>
             <?php /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $fieldMaps */ ?>
-            <?php foreach ($maps as $fieldName => $fieldMaps): ?>
+            <?php foreach ($maps as $fieldName => $fieldMaps):
+            $aliases = [];
+            foreach ($fieldMaps as $map) {
+                $aliases[] = $map->alias();
+            }
+            $aliases = array_filter(array_unique($aliases));
+            ?>
                 <tr>
                     <td>
                         <span><?= $escape($fieldName) ?></span>
                         <ul class="actions">
+                            <?php if ($aliases): ?>
+                            <li class="map-aliases"><span class="map-alias"><?= implode('</span>, <span class="map-alias">', $aliases) ?></span></li>
+                            <?php endif; ?>
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index asc'),

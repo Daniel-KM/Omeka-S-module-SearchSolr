@@ -145,7 +145,12 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores solr-map browse
                         <div><?= $translate('Filtered by visibility Private') ?></div>
                         <?php endif; ?>
                     </td>
-                    <td><?= $map->fieldName() ?></td>
+                    <td>
+                        <?= $map->fieldName() ?>
+                        <?php if ($map->alias()): ?>
+                        <span class="map-aliases"><span class="map-alias"><?= $escape($map->alias()) ?></span></span>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <?= $formatter = $mapSettings['formatter'] ?? '' ?>
                         <?= $formatter === 'table' ? $mapSettings['table'] ?? '' : '' ?>

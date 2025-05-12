@@ -273,6 +273,22 @@ class SolrMapForm extends Form
                     'maxlength' => '190',
                 ],
             ])
+            ->add([
+                'name' => 'o:alias',
+                'type' => Element\Text::class,
+                'options' => [
+                    // For now, only one alias is managed.
+                    // Other aliases may be managed in search config anyway.
+                    'label' => 'Default alias', // @translate
+                    'info' => 'The default alias is optional. Usualy, it is the Omeka search key. More aliases can be configured in the search config page.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'o:alias',
+                    'required' => false,
+                    'pattern' => '[a-zA-Z0-9_:\-]+',
+                    'maxlength' => '190',
+                ],
+            ])
         ;
 
         $settingsFieldset = new Fieldset('o:settings');

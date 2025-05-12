@@ -65,10 +65,15 @@
        flex-wrap: wrap;
     }
 
+    .solr-cores .map-aliases {
+        margin-left: auto;
+    }
+    .solr-cores .map-aliases .map-alias,
     .solr-cores.show.solr-core-map-browse .field-generic,
     .solr-map.browse .field-generic {
         font-style: italic;
         font-size: 0.8em;
+        margin-left: auto;
     }
     .solr-cores.show.solr-core-map-browse .by-solr-index td:first-child,
     .solr-cores.show.solr-core-map-browse .by-solr-index th:first-child,

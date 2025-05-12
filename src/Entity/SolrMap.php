@@ -43,6 +43,9 @@ use Omeka\Entity\AbstractEntity;
  *             columns={"solr_core_id","field_name"}
  *         ),
  *         @Index(
+ *             columns={"solr_core_id","alias"}
+ *         ),
+ *         @Index(
  *             columns={"solr_core_id","source"}
  *         )
  *     }
@@ -97,6 +100,17 @@ class SolrMap extends AbstractEntity
      * )
      */
     protected $source;
+
+    /**
+     * @var string
+     *
+     * @Column(
+     *     type="string",
+     *     length=190,
+     *     nullable=true
+     * )
+     */
+    protected $alias;
 
     /**
      * @var array
@@ -163,6 +177,17 @@ class SolrMap extends AbstractEntity
     public function getSource(): string
     {
         return $this->source;
+    }
+
+    public function setAlias(?string $alias): self
+    {
+        $this->alias = $alias;
+        return $this;
+    }
+
+    public function getAlias(): ?string
+    {
+        return $this->alias;
     }
 
     public function setPool(array $pool): self

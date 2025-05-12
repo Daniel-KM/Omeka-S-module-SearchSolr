@@ -11,11 +11,13 @@ CREATE TABLE `solr_map` (
     `resource_name` VARCHAR(190) NOT NULL,
     `field_name` VARCHAR(190) NOT NULL,
     `source` VARCHAR(190) NOT NULL,
+    `alias` VARCHAR(190) DEFAULT NULL,
     `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
     `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
     INDEX IDX_39A565C527B35A19 (`solr_core_id`),
     INDEX IDX_39A565C527B35A195103DEBC (`solr_core_id`, `resource_name`),
     INDEX IDX_39A565C527B35A194DEF17BC (`solr_core_id`, `field_name`),
+    INDEX IDX_39A565C527B35A19E16C6B94 (`solr_core_id`, `alias`),
     INDEX IDX_39A565C527B35A195F8A7F73 (`solr_core_id`, `source`),
     PRIMARY KEY(`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;

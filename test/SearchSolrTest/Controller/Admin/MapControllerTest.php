@@ -45,7 +45,8 @@ class MapControllerTest extends SolrControllerTestCase
                 'o:id' => $this->solrCore->id(),
             ],
             'o:resource_name' => 'items',
-            'o:field_name' => 'dcterms_description_t',
+            'o:field_name' => 'dcterms_description_txt',
+            'o:alias' => '',
             'o:source' => 'dcterms:description',
             'o:settings' => [
                 'formatter' => '',

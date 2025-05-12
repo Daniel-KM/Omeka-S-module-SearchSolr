@@ -524,6 +524,7 @@ class CoreController extends AbstractActionController
                     'o:solr_core' => ['o:id' => $solrCore->id()],
                     'o:resource_name' => $row['resource_name'],
                     'o:field_name' => $row['field_name'],
+                    'o:alias' => $row['alias'] ?? '',
                     'o:source' => $row['source'],
                     'o:pool' => $this->arrayFilterRecursiveEmptyValue([
                         'filter_values' => empty($row['pool:filter_values']) ? null : trim($row['pool:filter_values']),
@@ -617,6 +618,7 @@ class CoreController extends AbstractActionController
                 $mapping = [
                     $resourceName,
                     $map->fieldName(),
+                    (string) $map->alias(),
                     $map->source(),
                     // Pool.
                     (string) $map->pool('filter_values'),

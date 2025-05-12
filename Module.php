@@ -259,6 +259,7 @@ class Module extends AbstractModule
             'solr_core_id' => $solrMap->solrCore()->id(),
             'resource_name' => $solrMap->resourceName(),
             'field_name' => $solrMap->fieldName(),
+            'alias' => $solrMap->alias(),
             'source' => $solrMap->source(),
             'settings' => $solrMap->settings(),
         ];

@@ -55,6 +55,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             'o:solr_core' => $this->solrCore()->getReference(),
             'o:resource_name' => $this->resource->getResourceName(),
             'o:field_name' => $this->resource->getFieldName(),
+            'o:alias' => $this->resource->getAlias(),
             'o:source' => $this->resource->getSource(),
             'o:pool' => $this->resource->getPool(),
             'o:settings' => $this->resource->getSettings(),
@@ -90,6 +91,11 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     public function fieldName(): string
     {
         return $this->resource->getFieldName();
+    }
+
+    public function alias(): ?string
+    {
+        return $this->resource->getAlias();
     }
 
     public function source(): string

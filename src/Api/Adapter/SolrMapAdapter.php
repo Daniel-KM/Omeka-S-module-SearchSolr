@@ -45,6 +45,7 @@ class SolrMapAdapter extends AbstractEntityAdapter
         'core' => 'solrCore',
         'resource_name' => 'resourceName',
         'field_name' => 'fieldName',
+        'alias' => 'alias',
         'source' => 'source',
     ];
 
@@ -53,6 +54,7 @@ class SolrMapAdapter extends AbstractEntityAdapter
         'core' => 'solrCore',
         'resource_name' => 'resourceName',
         'field_name' => 'fieldName',
+        'alias' => 'alias',
         'source' => 'source',
         'pool' => 'pool',
         'settings' => 'settings',
@@ -82,6 +84,9 @@ class SolrMapAdapter extends AbstractEntityAdapter
         }
         if ($this->shouldHydrate($request, 'o:field_name')) {
             $entity->setFieldName(trim($request->getValue('o:field_name')));
+        }
+        if ($this->shouldHydrate($request, 'o:alias')) {
+            $entity->setAlias(trim($request->getValue('o:alias') ?? '') ?: null);
         }
         if ($this->shouldHydrate($request, 'o:source')) {
             $entity->setSource(trim($request->getValue('o:source')));
@@ -118,6 +123,12 @@ class SolrMapAdapter extends AbstractEntityAdapter
             $qb->andWhere($expr->eq(
                 'omeka_root.resourceName',
                 $this->createNamedParameter($qb, $query['resource_name'])
+            ));
+        }
+        if (isset($query['alias']) && $query['alias']) {
+            $qb->andWhere($expr->eq(
+                'omeka_root.alias',
+                $this->createNamedParameter($qb, $query['alias'])
             ));
         }
     }

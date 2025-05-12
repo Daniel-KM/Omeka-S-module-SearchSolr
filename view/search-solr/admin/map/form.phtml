@@ -50,6 +50,9 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
 <?= $partial('search-solr/admin/core/help-index-names') ?>
 <?= $this->formRow($form->get('o:field_name')) ?>
 
+<h4><?= $translate('Alias') ?></h4>
+<?= $this->formRow($form->get('o:alias')) ?>
+
 <h4><?= $translate('Format') ?></h4>
 <p><?= $translate('Adapt the metadata') ?></p>
 <?= $this->formCollection($form->get('o:settings')) ?>
