@@ -75,6 +75,50 @@ class SolrMapAdapter extends AbstractEntityAdapter
         return \SearchSolr\Entity\SolrMap::class;
     }
 
+    public function buildQuery(QueryBuilder $qb, array $query): void
+    {
+        $expr = $qb->expr();
+
+        // Id is managed via entity adapter.
+
+        if (isset($query['solr_core_id']) && $query['solr_core_id']) {
+            $coreAlias = $this->createAlias();
+            $qb
+                ->innerJoin(
+                    'omeka_root.solrCore',
+                    $coreAlias
+                )
+                ->andWhere($expr->eq(
+                    $coreAlias . '.id',
+                    $this->createNamedParameter($qb, $query['solr_core_id']))
+                );
+        }
+        if (isset($query['resource_name']) && $query['resource_name']) {
+            $qb->andWhere($expr->eq(
+                'omeka_root.resourceName',
+                $this->createNamedParameter($qb, $query['resource_name'])
+            ));
+        }
+        if (isset($query['field_name']) && $query['field_name']) {
+            $qb->andWhere($expr->eq(
+                'omeka_root.fieldName',
+                $this->createNamedParameter($qb, $query['field_name'])
+            ));
+        }
+        if (isset($query['alias']) && $query['alias']) {
+            $qb->andWhere($expr->eq(
+                'omeka_root.alias',
+                $this->createNamedParameter($qb, $query['alias'])
+            ));
+        }
+        if (isset($query['source']) && $query['source']) {
+            $qb->andWhere($expr->eq(
+                'omeka_root.source',
+                $this->createNamedParameter($qb, $query['source'])
+            ));
+        }
+    }
+
     public function hydrate(Request $request, EntityInterface $entity, ErrorStore $errorStore): void
     {
         /** @var \SearchSolr\Entity\SolrMap $entity */
@@ -101,36 +145,6 @@ class SolrMapAdapter extends AbstractEntityAdapter
         }
 
         $this->hydrateSolrCore($request, $entity);
-    }
-
-    public function buildQuery(QueryBuilder $qb, array $query): void
-    {
-        $expr = $qb->expr();
-
-        if (isset($query['solr_core_id'])) {
-            $coreAlias = $this->createAlias();
-            $qb
-                ->innerJoin(
-                    'omeka_root.solrCore',
-                    $coreAlias
-                )
-                ->andWhere($expr->eq(
-                    $coreAlias . '.id',
-                    $this->createNamedParameter($qb, $query['solr_core_id']))
-                );
-        }
-        if (isset($query['resource_name'])) {
-            $qb->andWhere($expr->eq(
-                'omeka_root.resourceName',
-                $this->createNamedParameter($qb, $query['resource_name'])
-            ));
-        }
-        if (isset($query['alias']) && $query['alias']) {
-            $qb->andWhere($expr->eq(
-                'omeka_root.alias',
-                $this->createNamedParameter($qb, $query['alias'])
-            ));
-        }
     }
 
     protected function hydrateSolrCore(Request $request, EntityInterface $entity): void

@@ -30,6 +30,7 @@
 
 namespace SearchSolr\Api\Adapter;
 
+use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
@@ -63,6 +64,20 @@ class SolrCoreAdapter extends AbstractEntityAdapter
     public function getEntityClass()
     {
         return \SearchSolr\Entity\SolrCore::class;
+    }
+
+    public function buildQuery(QueryBuilder $qb, array $query): void
+    {
+        $expr = $qb->expr();
+
+        // Id is managed via entity adapter.
+
+        if (isset($query['name']) && $query['name']) {
+            $qb->andWhere($expr->eq(
+                'omeka_root.name',
+                $this->createNamedParameter($qb, $query['name'])
+            ));
+        }
     }
 
     public function hydrate(Request $request, EntityInterface $entity, ErrorStore $errorStore): void
