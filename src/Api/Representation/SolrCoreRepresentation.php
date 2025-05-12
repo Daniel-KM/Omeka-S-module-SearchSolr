@@ -514,6 +514,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             return [];
         }
 
+        $resourceIdField = $this->mapsBySource('o:id', 'generic');
+        $resourceIdField = $resourceIdField ? (reset($resourceIdField))->fieldName() : null;
+        if (!$resourceIdField) {
+            return [];
+        }
+
         /** @var \Solarium\QueryType\Select\Query\Query $query */
         $query = $this->solariumClient->createSelect();
         $query
@@ -523,10 +529,10 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             ])
             // When index is not ready, output is wrong.
             ->addFilterQuery([
-                'key' => 'is_id_i',
-                'query' => 'is_id_i:' . implode(' OR ', $ids),
+                'key' => $resourceIdField,
+                'query' => $resourceIdField . ':' . implode(' OR ', $ids),
             ])
-            ->addSort('is_id_i', SolariumQuery::SORT_ASC)
+            ->addSort($resourceIdField, SolariumQuery::SORT_ASC)
             // Rows is 10 by default and 0 or -1 are not working.
             ->setRows(1000000000);
         $resultSet = $this->solariumClient->select($query);
@@ -546,7 +552,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         $result = [];
         foreach ($docs as $doc) {
-            $result[$doc['is_id_i']] = $doc;
+            $result[$doc[$resourceIdField]] = $doc;
         }
 
         return array_values(array_replace(array_fill_keys($ids, []), $result));
@@ -568,6 +574,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             return [];
         }
 
+        $resourceIdField = $this->mapsBySource('o:id', 'generic');
+        $resourceIdField = $resourceIdField ? (reset($resourceIdField))->fieldName() : null;
+        if (!$resourceIdField) {
+            return [];
+        }
+
         /** @var \Solarium\QueryType\Select\Query\Query $query */
         $query = $this->solariumClient->createSelect();
         $query
@@ -577,17 +589,17 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             ])
             // When index is not ready, output is wrong.
             ->addFilterQuery([
-                'key' => 'is_id_i',
-                'query' => 'is_id_i:*',
+                'key' => $resourceIdField,
+                'query' => "$resourceIdField:*",
             ])
-            ->setFields(['is_id_i', 'ss_name_s'])
-            ->addSort('is_id_i', SolariumQuery::SORT_ASC)
+            ->setFields([$resourceIdField, $resourceTypeField])
+            ->addSort($resourceIdField, SolariumQuery::SORT_ASC)
             // Rows is 10 by default and 0 or -1 are not working.
             ->setRows(1000000000);
         $resultSet = $this->solariumClient->select($query);
         $data = $resultSet->getData();
         return isset($data['response']['docs'])
-            ? array_column($data['response']['docs'], 'ss_name_s', 'is_id_i')
+            ? array_column($data['response']['docs'], $resourceTypeField, $resourceIdField)
             : [];
     }
 
@@ -738,7 +750,10 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         // Check if the specified fields are available.
         // Value is "is required", but not used for now.
         $fields = [
+            // In fact, only resource name and id are really required.
             'resource_name' => true,
+            'o:id' => true,
+            // Public, owner and site are used in many cases.
             'is_public' => true,
             'owner/o:id' => true,
             'site/o:id' => true,
@@ -755,17 +770,25 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         }
 
         // TODO Warning: use the source name, not a static index name.
+        // Name is not really required, but simplify investigation.
         $fields = [
-            'is_id_i' => true,
-            'ss_name_s' => true,
+            'name_s' => true,
+            'ss_name' => true,
         ];
-        foreach (array_keys($fields) as $source) {
+        $checks = [];
+        foreach (array_keys($fields) as $fieldName) {
             /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
-            $maps = $this->mapsByFieldName($source);
+            $maps = $this->mapsByFieldName($fieldName);
             if (!count($maps)) {
-                $unavailableFields[] = $source;
+                $checks[] = $fieldName;
             }
         }
+        if (count($checks) > 1) {
+            // TODO Drupal info for ss_name.
+            $unavailableFields[] = 'name_s';
+        }
+
+        // TODO Required map or alias for item_set_id (in particular for page item set redirected to search).
 
         return $unavailableFields ?: null;
     }

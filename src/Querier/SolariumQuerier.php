@@ -284,12 +284,15 @@ class SolariumQuerier extends AbstractQuerier
         $resourceTypeField = $this->solrCore->mapsBySource('resource_name', 'generic');
         $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
 
+        $resourceIdField = $this->mapsBySource('o:id', 'generic');
+        $resourceIdField = $resourceIdField ? (reset($resourceIdField))->fieldName() : null;
+
         $this->solariumQuery
             ->createSelect()
             ->createFilterQuery($resourceTypeField)
             ->setQuery($resourceTypeField . ':' . $resourceType)
-            ->createFilterQuery('is_id_i')
-            ->setQuery('is_id_i:' . implode(' OR ', $ids));
+            ->createFilterQuery($resourceIdField)
+            ->setQuery($resourceIdField . ':' . implode(' OR ', $ids));
 
         $resultSet = $this->solariumClient->select($this->solariumQuery);
         $data = $resultSet->getData();
@@ -486,6 +489,8 @@ class SolariumQuerier extends AbstractQuerier
 
         $resourceTypeField = $this->solrCore->mapsBySource('resource_name', 'generic');
         $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+        // $resourceIdField = $this->solrCore->mapsBySource('o:id', 'generic');
+        // $resourceIdField = $resourceIdField ? (reset($resourceIdField))->fieldName() : null;
         $isPublicField = $this->solrCore->mapsBySource('is_public', 'generic');
         $isPublicField = $isPublicField ? (reset($isPublicField))->fieldName() : null;
         $sitesField = $this->solrCore->mapsBySource('site/o:id', 'generic');
@@ -930,7 +935,7 @@ class SolariumQuerier extends AbstractQuerier
                 $values = array_unique(array_map('intval', $value));
                 if (count($values)) {
                     // Manage any special indexers for third party.
-                    // TODO Add a second (hidden?) field "is_id_i".
+                    // TODO Add a second (hidden?) field from source "o:id".
                     // TODO Or reindex in the other way #id/items-index-serverId.
                     $value = '*\/' . implode(' OR *\/', $values);
                     $this->solariumQuery

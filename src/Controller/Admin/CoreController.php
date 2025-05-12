@@ -213,13 +213,13 @@ class CoreController extends AbstractActionController
             $valueExtractors[$name] = $this->valueExtractorManager->get($name);
         }
 
+        // For compatibility with drupal, allow to use the alias.
         $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
         $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
 
         try {
             $counts = $resourceTypeField
-                // TODO Manage compatibility with drupal.
-                ? $solrCore->queryValuesCount('resource_name_s')
+                ? $solrCore->queryValuesCount($resourceTypeField)
                 : [];
         } catch (\Exception $e) {
             $counts = [];
