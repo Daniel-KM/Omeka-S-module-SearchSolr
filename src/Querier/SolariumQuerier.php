@@ -767,8 +767,22 @@ class SolariumQuerier extends AbstractQuerier
         $q = $this->query->getQuery();
         $qr = $this->query->getQueryRefine();
         $q = trim($q . ' ' . $qr);
-        $excludedFiles = $this->query->getExcludedFields();
 
+        if (!strlen($q)) {
+            return;
+        }
+
+        if ($q !== '*:*' && $q !== '*%3A*' && $q !== '*') {
+            $excludedFields = $this->query->getExcludedFields();
+            $fullTextFields = $this->getFullTextFieldsForSearchInRecord();
+            $excludedFields = array_unique(array_merge(array_values($excludedFields), array_values($fullTextFields)));
+            if ($excludedFields) {
+                $this->mainQueryWithExcludedFields($q);
+                return;
+            }
+        }
+
+        // Set settings used for main search.
         $solrCoreSettings = $this->solrCore->settings();
         $queryConfig = array_filter($solrCoreSettings['query'] ?? []);
         if ($queryConfig) {
@@ -782,26 +796,18 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
-        if (strlen($q)) {
-            if ($excludedFiles
-                && $q !== '*:*' && $q !== '*%3A*' && $q !== '*'
-            ) {
-                $this->mainQueryWithExcludedFields($q);
+        if ($this->query->getOption('remove_diacritics', false)) {
+            if (extension_loaded('intl')) {
+                $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+                $q = $transliterator->transliterate($q);
+            } elseif (extension_loaded('iconv')) {
+                $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
             } else {
-                if ($this->query->getOption('remove_diacritics', false)) {
-                    if (extension_loaded('intl')) {
-                        $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
-                        $q = $transliterator->transliterate($q);
-                    } elseif (extension_loaded('iconv')) {
-                        $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
-                    } else {
-                        $q = $this->latinize($q);
-                    }
-                }
-                $q = $this->escapeTermOrPhrase($q);
-                $this->solariumQuery->setQuery($q);
+                $q = $this->latinize($q);
             }
         }
+        $q = $this->escapeTermOrPhrase($q);
+        $this->solariumQuery->setQuery($q);
     }
 
     /**
@@ -809,16 +815,22 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function mainQueryWithExcludedFields($q): void
     {
-        // Currently, the only way to exclude fields is to search in all other
-        // fields.
         // TODO Manage multinlingual.
+
+        // Currently, the only way to exclude fields is to search in all other
+        // fields. Solr does not support it natively.
+
         $usedFields = $this->usedSolrFields(
             // Manage Drupal prefixes too.
-            ['t_', 'txt_', 'ss_', 'sm_'],
-            ['_t', '_txt', '_ss', '_s', '_ss_lower', '_s_lower'],
+            ['t_', 'txt_', 'ss_', 'sm_', 'ws_'],
+            ['_t', '_txt', '_ss', '_s', '_ss_lower', '_s_lower', '_ws'],
             ['_txt_']
         );
+
         $excludedFields = $this->query->getExcludedFields();
+        $fullTextFields = $this->getFullTextFieldsForSearchInRecord();
+        $excludedFields = array_unique(array_merge(array_values($excludedFields), array_values($fullTextFields)));
+
         $usedFields = array_diff($usedFields, $excludedFields);
         if (!count($usedFields)) {
             return;
@@ -841,7 +853,16 @@ class SolariumQuerier extends AbstractQuerier
         foreach ($usedFields as $field) {
             $qq[] = $field . ':' . $q;
         }
-        $this->solariumQuery->setQuery(implode(' ', $qq));
+        $this->solariumQuery->setQuery(implode(' OR ', $qq));
+    }
+
+    protected function getFullTextFieldsForSearchInRecord(): array
+    {
+        if ($this->query->getRecordOrFullText() !== 'record') {
+            return [];
+        }
+        $rft = $this->query->getAlias('full_text');
+        return $rft['fields'] ?? [];
     }
 
     protected function appendHiddenFilters(): void
