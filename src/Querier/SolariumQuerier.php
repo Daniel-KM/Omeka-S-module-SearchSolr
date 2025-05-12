@@ -32,6 +32,7 @@ namespace SearchSolr\Querier;
 
 use AdvancedSearch\Querier\AbstractQuerier;
 use AdvancedSearch\Querier\Exception\QuerierException;
+use AdvancedSearch\Query;
 use AdvancedSearch\Response;
 use AdvancedSearch\Stdlib\SearchResources;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
@@ -42,6 +43,7 @@ use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 /**
  * @todo Rewrite the querier to simplify it and to use all solarium features directly.
  * @todo Use Solarium helpers (geo, escape, xml, etc.).
+ *
  * @see \Solarium\Core\Query\Helper
  * @see https://solarium.readthedocs.io/en/stable/getting-started/
  * @see https://solarium.readthedocs.io/en/stable/queries/select-query/building-a-select-query/building-a-select-query/
@@ -86,6 +88,13 @@ class SolariumQuerier extends AbstractQuerier
      * @var int
      */
     protected $appendToKey = 0;
+
+    public function setQuery(Query $query): self
+    {
+        $this->query = $query;
+        $this->appendCoreAliasesToQuery();
+        return $this;
+    }
 
     public function query(): Response
     {
@@ -281,6 +290,9 @@ class SolariumQuerier extends AbstractQuerier
         // Init solr client.
         $this->getClient();
 
+        // No need to prepare core aliases here.
+        // $this->appendCoreAliasesToQuery();
+
         $resourceTypeField = $this->solrCore->mapsBySource('resource_name', 'generic');
         $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
 
@@ -320,6 +332,9 @@ class SolariumQuerier extends AbstractQuerier
 
         // Init solr client.
         $this->getClient();
+
+        // No need to append core aliases here, because a query should be set.
+        // $this->appendCoreAliasesToQuery();
 
         // Check if the field is a special or a multifield.
         $aliases = $this->query->getAliases();
@@ -416,6 +431,8 @@ class SolariumQuerier extends AbstractQuerier
 
         // Init solr client.
         $this->getClient();
+
+        $this->appendCoreAliasesToQuery();
 
         if (!is_array($fields)) {
             $fields = [$fields];
@@ -761,6 +778,39 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         return $this->solariumQuery;
+    }
+
+    /**
+     * Append core aliases to search Query.
+     *
+     * The configured search alias of the page are not overridden.
+     * When the same alias is used multiple times, the more specific is used,
+     * so specific resource > resource > generic.
+     */
+    protected function appendCoreAliasesToQuery(): self
+    {
+        // Search config aliases have priority.
+        $aliases = $this->query->getAliases();
+
+        // The same for specific resources in maps, so reverse maps
+        // Aliases are not merged for simplicity.
+        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
+        foreach (array_reverse($this->getSolrCore()->mapsOrderedByStructure()) as $map) {
+            $alias = $map->alias();
+            if ($alias && !isset($aliases[$alias])) {
+                $aliases[$alias] = [
+                    'name' => $alias,
+                    'label' => $map->setting('label') ?: $alias,
+                    'fields' => [
+                        $map->fieldName(),
+                    ],
+                ];
+            }
+        }
+
+        $this->query->setAliases($aliases);
+
+        return $this;
     }
 
     protected function defaultQuery()
@@ -1420,9 +1470,9 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function fieldToIndex(string $field)
     {
-        // TODO Allow to use property terms and dynamic fields (but should be indexed).
-        $result = $this->query->getAliases()[$field]['fields']
-            ?? null;
+        $result = $this->query->getAliases()[$field]['fields'] ?? null;
+
+        // Allow to use property terms and dynamic fields. Note: they should be indexed.
         if (!$result) {
             // Try to convert terms into standard field.
             $term = $this->easyMeta->propertyTerm($field);
@@ -1463,6 +1513,7 @@ class SolariumQuerier extends AbstractQuerier
             }
             return reset($indices);
         }
+
         if (is_array($result)) {
             if (count($result) > 1) {
                 $this->logger->warn(
@@ -1472,6 +1523,7 @@ class SolariumQuerier extends AbstractQuerier
             }
             return reset($result);
         }
+
         return $result;
     }
 
