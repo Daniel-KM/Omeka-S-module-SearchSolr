@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-10 00:00+0000\n"
+"POT-Creation-Date: 2025-05-12 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -565,11 +565,11 @@ msgid ""
 "The management of indices has been merged in a {link}single page{link_end}."
 msgstr ""
 
-#: Module.php:128 src/Api/Representation/SolrCoreRepresentation.php:220
+#: Module.php:128 src/Api/Representation/SolrCoreRepresentation.php:216
 msgid "The composer library \"{library}\" is not installed. See readme."
 msgstr ""
 
-#: Module.php:376 config/module.config.php:63
+#: Module.php:376 config/module.config.php:64
 msgid "Solr"
 msgstr ""
 
@@ -670,96 +670,120 @@ msgid ""
 "key \"schema\"."
 msgstr ""
 
+#: src/Form/ConfigForm.php:17
+msgid "Solarium adapter"
+msgstr ""
+
+#: src/Form/ConfigForm.php:21
+msgid "Auto (curl when available)"
+msgstr ""
+
+#: src/Form/ConfigForm.php:26
+msgid "Curl (via extension php-curl)"
+msgstr ""
+
+#: src/Form/ConfigForm.php:27
+msgid "Curl (unavailable: require extension php-curl)"
+msgstr ""
+
+#: src/Form/ConfigForm.php:34
+msgid "Http"
+msgstr ""
+
+#: src/Form/ConfigForm.php:48
+msgid "Solarium timeout (seconds)"
+msgstr ""
+
 #: src/Form/Admin/SourceFieldset.php:25
 msgid "Select a metadata from the resource…"
 msgstr ""
 
-#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:227
+#: src/Form/Admin/SourceFieldset.php:31 config/module.config.php:228
 msgid "Set sub-property"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:68 src/Form/Admin/SolrMapForm.php:456
+#: src/Form/Admin/SolrCoreForm.php:71 src/Form/Admin/SolrMapForm.php:456
 msgid "Scheme"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:81
+#: src/Form/Admin/SolrCoreForm.php:84
 msgid "IP or hostname"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:93
+#: src/Form/Admin/SolrCoreForm.php:96
 msgid "Port"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:117
+#: src/Form/Admin/SolrCoreForm.php:120
 msgid "Is secure"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:127
+#: src/Form/Admin/SolrCoreForm.php:130
 msgid "Solr user"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:139
+#: src/Form/Admin/SolrCoreForm.php:142
 msgid "Solr password"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:140
+#: src/Form/Admin/SolrCoreForm.php:143
 msgid ""
 "Note: the password is saved clear in the database, so it is recommended to "
 "create a specific user."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:152
+#: src/Form/Admin/SolrCoreForm.php:155
 msgid "Bypass certificate check"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:153
+#: src/Form/Admin/SolrCoreForm.php:156
 msgid "Avoid issue when the certificate expires."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:163
+#: src/Form/Admin/SolrCoreForm.php:166
 msgid "Http request type"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:164
+#: src/Form/Admin/SolrCoreForm.php:167
 msgid "Choose if requests to Solr use \"get\" or \"post\"."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:167
+#: src/Form/Admin/SolrCoreForm.php:170
 msgid "Post (allow big queries and numerous facets)"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:168
+#: src/Form/Admin/SolrCoreForm.php:171
 msgid "Get (cacheable)"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:184
+#: src/Form/Admin/SolrCoreForm.php:187
 msgid "Filter resources to index with a specific query"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:185
+#: src/Form/Admin/SolrCoreForm.php:188
 msgid ""
 "Allow to store only an item set, a template, an owner, a visibility, etc."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:197
+#: src/Form/Admin/SolrCoreForm.php:200
 msgid "Index specific fields"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:200
+#: src/Form/Admin/SolrCoreForm.php:203
 msgid "Drupal"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:202
+#: src/Form/Admin/SolrCoreForm.php:205
 msgid ""
 "Allow to store specific data needed to share a core with a third party. All "
 "field names should be manually adapted."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:214
+#: src/Form/Admin/SolrCoreForm.php:217
 msgid "Server id for shared core"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:215
+#: src/Form/Admin/SolrCoreForm.php:218
 #, php-format
 msgid ""
 "May be empty, or may be or may not be the same unique id than the third "
@@ -767,49 +791,49 @@ msgid ""
 "install is \"%s\"."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:229
+#: src/Form/Admin/SolrCoreForm.php:232
 msgid "Resource languages 2-letters iso codes for shared core"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:230
+#: src/Form/Admin/SolrCoreForm.php:233
 msgid ""
 "A third party may need to know the languages of a resource, even if it has "
 "no meaning in Omeka. Use \"und\" for undetermined."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:243
+#: src/Form/Admin/SolrCoreForm.php:246
 msgid "Clear all indexes, included external ones"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:244
+#: src/Form/Admin/SolrCoreForm.php:247
 msgid ""
 "Warning: this button will clear all indexes on the core, included indexes "
 "externally managed if multi-index is set."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:247
+#: src/Form/Admin/SolrCoreForm.php:250
 msgid "clear_full_index"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:266
+#: src/Form/Admin/SolrCoreForm.php:269
 msgid "Minimum match (or/and)"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:267
+#: src/Form/Admin/SolrCoreForm.php:270
 msgid ""
-"Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions are "
-"possible, like \"3<80%\".\n"
-"If empty, the config of the solr core (solrconfig.xml) will be used."
+"Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions "
+"are possible, like \"3<80%\".\nIf empty, the config of the solr core (solrconfig.xml) "
+"will be used."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:281
-msgid "Tie breaker"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreForm.php:282
+#: src/Form/Admin/SolrCoreForm.php:287
 msgid ""
 "Increase score according to the number of matched fields.\n"
 "If empty, the config of the solr core (solrconfig.xml) will be used."
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:286
+msgid "Tie breaker"
 msgstr ""
 
 #: src/Form/Admin/SolrConfigFieldset.php:57
@@ -1189,68 +1213,84 @@ msgid ""
 "The enclosure can be omitted when the content does not contain the delimiter."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:232
+#: src/Api/Representation/SolrCoreRepresentation.php:228
 msgid "Solr core #{solr_core_id}: incorrect or incomplete configuration."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:246
+#: src/Api/Representation/SolrCoreRepresentation.php:242
 msgid "Solr core not found. Check your url."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:251
+#: src/Api/Representation/SolrCoreRepresentation.php:247
 msgid ""
 "Solr core not found or unauthorized. Check your url and your credentials."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:256
-#: src/Api/Representation/SolrCoreRepresentation.php:263
-#: src/Api/Representation/SolrCoreRepresentation.php:283
+#: src/Api/Representation/SolrCoreRepresentation.php:252
+#: src/Api/Representation/SolrCoreRepresentation.php:259
+#: src/Api/Representation/SolrCoreRepresentation.php:279
 msgid "Solr core #{solr_core_id}: {message}"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:276
+#: src/Api/Representation/SolrCoreRepresentation.php:272
 msgid "Solr core #{solr_core_id} enpoint: {message}"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:292
+#: src/Api/Representation/SolrCoreRepresentation.php:288
 msgid "Solr: the config bypasses the check of the certificate."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:294
+#: src/Api/Representation/SolrCoreRepresentation.php:290
 msgid "OK (warning: check of certificate disabled)"
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:300
+#: src/Api/Representation/SolrCoreRepresentation.php:296
 msgid "OK"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:217
+#: src/Indexer/SolariumIndexer.php:218
 msgid "Indexing in Solr core \"{solr_core}\": {ids}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:285
+#: src/Indexer/SolariumIndexer.php:298
 msgid ""
 "Unable to index resources in Solr core \"{solr_core}\". Some required fields "
 "are not mapped: {list}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:541
+#: src/Indexer/SolariumIndexer.php:571
 msgid ""
-"Indexing of resource failed: Invalid document (wrong field type or missing "
-"required field)."
+"Solr HTTP error: HTTP request failed due to network, limit of requests, or "
+"certificate issue. First document in the buffer: {document_id}."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:556
+#: src/Indexer/SolariumIndexer.php:576
 msgid ""
 "Solr HTTP error: HTTP request failed due to network, limit of requests, or "
 "certificate issue."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:561
+#: src/Indexer/SolariumIndexer.php:586
+msgid ""
+"Indexing of {resource_name} #{id} failed: Invalid document (wrong field type "
+"or missing required field)."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:591
+msgid ""
+"Indexing of resource failed: Invalid document (wrong field type or missing "
+"required field)."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:596
+msgid "Indexing of {resource_name} #{id} failed: {message}"
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:601
 msgid "Indexing of resource failed: {message}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:841
+#: src/Indexer/SolariumIndexer.php:881
 msgid "Solr core is not available."
 msgstr ""
 
@@ -1289,38 +1329,38 @@ msgstr ""
 msgid "Solr map created: {solr_map_name}."
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:272
-#: src/Controller/Admin/MapController.php:337
+#: src/Controller/Admin/MapController.php:273
+#: src/Controller/Admin/MapController.php:339
 #: src/Controller/Admin/CoreController.php:462
 msgid "There was an error during validation"
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:322
+#: src/Controller/Admin/MapController.php:323
 msgid "Solr map modified: {solr_map_name}."
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:326
+#: src/Controller/Admin/MapController.php:327
 msgid "Don’t forget to check search pages that use this map."
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:370
+#: src/Controller/Admin/MapController.php:372
 msgid "Solr map"
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:394
+#: src/Controller/Admin/MapController.php:396
 msgid "Solr map successfully deleted"
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:395
+#: src/Controller/Admin/MapController.php:397
 msgid "Don’t forget to check search pages that used this map."
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:397
+#: src/Controller/Admin/MapController.php:399
 msgid "Solr map could not be deleted"
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:430
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:88
+#: src/Controller/Admin/MapController.php:432
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:99
 msgid "Internal id"
 msgstr ""
 
@@ -1437,133 +1477,137 @@ msgid ""
 msgstr ""
 
 #: src/ValueExtractor/GenericValueExtractor.php:10
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:85
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:96
 msgid "Generic"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:96
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:107
 msgid "Asset (attached thumbnail)"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:97
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:108
 msgid "Item: Item set"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:98
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:109
 msgid "Item: Item sets tree"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:99
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:110
 msgid "Item: Media"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:100
-msgid "Media: Content (html or extracted text)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:101
-msgid "Item set: Is open"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:102
-msgid "Value itself (in particular for module Thesaurus)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:103
-msgid "Access level (module Access)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:105
-msgid "Api url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:106
-msgid "Admin url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:107
-msgid "Site url (default or first site only)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:108
-msgid "Asset/Thumbnail: file url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:109
-msgid "Primary media: original file url"
-msgstr ""
-
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:111
-msgid "Primary media: large thumbnail url"
+msgid "Item: Has media"
 msgstr ""
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:112
-msgid "Primary media: medium thumbnail url"
+msgid "Media: Content (from html or extractable text from file, included alto)"
 msgstr ""
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:113
-msgid "Primary media: square thumbnail url"
+msgid "Item set: Is open"
 msgstr ""
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:114
-msgid "Representative image (asset if any, else primary media large thumbnail)"
+msgid "Value itself (in particular for module Thesaurus)"
 msgstr ""
 
 #: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:115
+msgid "Access level (module Access)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:117
+msgid "Api url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:118
+msgid "Admin url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:119
+msgid "Site url (default or first site only)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:120
+msgid "Asset/Thumbnail: file url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:121
+msgid "Primary media: original file url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:123
+msgid "Primary media: large thumbnail url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:124
+msgid "Primary media: medium thumbnail url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:125
+msgid "Primary media: square thumbnail url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:126
+msgid "Representative image (asset if any, else primary media large thumbnail)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:127
 msgid ""
 "Representative image (asset if any, else primary media medium thumbnail)"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:116
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:128
 msgid ""
 "Representative image (asset if any, else primary media square thumbnail)"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:121
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:133
 msgid "Media language"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:122
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:134
 msgid "Media ingester"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:123
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:135
 msgid "Media renderer"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:124
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:136
 msgid "Media size"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:125
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:137
 msgid "Media source"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:127
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:139
 msgid "File name"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:128
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:140
 msgid "Alternative text"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:129
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:141
 msgid "Asset url"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:130
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:142
 msgid "Original url"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:131
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:143
 msgid "Thumbnail (asset)"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:132
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:144
 msgid "Property or class term"
 msgstr ""
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:133
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:145
 msgid "All property values"
 msgstr ""
 
@@ -1575,31 +1619,31 @@ msgstr ""
 msgid "Suggestions are not implemented here. Use direct url."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1018
+#: src/Querier/SolariumQuerier.php:1055
 msgid "Solr does not support search with \"except\" or \"data type\": {url}"
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1319
+#: src/Querier/SolariumQuerier.php:1356
 #, php-format
 msgid "Search type \"%s\" is not managed currently by SearchSolr."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1352
+#: src/Querier/SolariumQuerier.php:1427
 msgid "Solr does not support alias with more than one field for now: {url}"
 msgstr ""
 
-#: config/module.config.php:56
+#: config/module.config.php:57
 msgid "Search manager"
 msgstr ""
 
-#: config/module.config.php:225
+#: config/module.config.php:226
 msgid "Field"
 msgstr ""
 
-#: config/module.config.php:228
+#: config/module.config.php:229
 msgid "Choose a field…"
 msgstr ""
 
-#: config/module.config.php:229
+#: config/module.config.php:230
 msgid "Dynamic field"
 msgstr ""
