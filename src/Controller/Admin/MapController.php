@@ -482,6 +482,8 @@ class MapController extends AbstractActionController
             'items' => \Omeka\Entity\Item::class,
             'item_sets' => \Omeka\Entity\ItemSet::class,
             'media' => \Omeka\Entity\Media::class,
+            'value_annotations' => \Omeka\Entity\ValueAnnotation::class,
+            'annotations' => \Annotate\Entity\Annotation::class,
         ];
 
         // Manage "generic" type.

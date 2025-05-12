@@ -2,9 +2,9 @@
 
 namespace SearchSolrTest\Controller\Admin;
 
-use SearchSolrTest\Controller\SolrControllerTestCase;
+use SearchSolrTest\Controller\SearchSolrControllerTestCase;
 
-class MapControllerTest extends SolrControllerTestCase
+class MapControllerTest extends SearchSolrControllerTestCase
 {
     public function setUp(): void
     {

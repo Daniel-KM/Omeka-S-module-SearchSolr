@@ -2,9 +2,9 @@
 
 namespace SearchSolrTest\Controller\Admin;
 
-use SearchSolrTest\Controller\SolrControllerTestCase;
+use SearchSolrTest\Controller\SearchSolrControllerTestCase;
 
-class CoreControllerTest extends SolrControllerTestCase
+class CoreControllerTest extends SearchSolrControllerTestCase
 {
     public function testBrowseAction(): void
     {

@@ -41,6 +41,7 @@ class SolrCore extends AbstractEntity
 {
     /**
      * @var int
+     *
      * @Id
      * @Column(type="integer")
      * @GeneratedValue
@@ -49,6 +50,7 @@ class SolrCore extends AbstractEntity
 
     /**
      * @var string
+     *
      * @Column(
      *     type="string",
      *     length=190
@@ -58,6 +60,7 @@ class SolrCore extends AbstractEntity
 
     /**
      * @var array
+     *
      * @Column(
      *     type="json",
      *     nullable=false

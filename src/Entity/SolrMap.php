@@ -55,6 +55,7 @@ class SolrMap extends AbstractEntity
 {
     /**
      * @var int
+     *
      * @Id
      * @Column(type="integer")
      * @GeneratedValue
@@ -63,6 +64,7 @@ class SolrMap extends AbstractEntity
 
     /**
      * @var SolrCore
+     *
      * @ManyToOne(
      *     targetEntity="SearchSolr\Entity\SolrCore",
      *     inversedBy="maps"
@@ -76,6 +78,7 @@ class SolrMap extends AbstractEntity
 
     /**
      * @var string
+     *
      * @Column(
      *     type="string",
      *     length=190
@@ -85,6 +88,7 @@ class SolrMap extends AbstractEntity
 
     /**
      * @var string
+     *
      * @Column(
      *     type="string",
      *     length=190
@@ -94,6 +98,7 @@ class SolrMap extends AbstractEntity
 
     /**
      * @var string
+     *
      * @Column(
      *     type="string",
      *     length=190
@@ -114,6 +119,7 @@ class SolrMap extends AbstractEntity
 
     /**
      * @var array
+     *
      * @Column(
      *     type="json",
      *     nullable=false
@@ -123,6 +129,7 @@ class SolrMap extends AbstractEntity
 
     /**
      * @var array
+     *
      * @Column(
      *     type="json",
      *     nullable=false

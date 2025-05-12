@@ -12,20 +12,27 @@ use Omeka\Module\Exception\ModuleCannotInstallException;
  * @var string $oldVersion
  *
  * @var \Omeka\Api\Manager $api
+ * @var \Omeka\View\Helper\Url $url
+ * @var \Laminas\Log\Logger $logger
  * @var \Omeka\Settings\Settings $settings
  * @var \Laminas\I18n\View\Helper\Translate $translate
  * @var \Doctrine\DBAL\Connection $connection
+ * @var \Laminas\Mvc\I18n\Translator $translator
  * @var \Doctrine\ORM\EntityManager $entityManager
+ * @var \Omeka\Settings\SiteSettings $siteSettings
  * @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger
  */
 $plugins = $services->get('ControllerPluginManager');
+$url = $services->get('ViewHelperManager')->get('url');
 $api = $plugins->get('api');
 $config = $services->get('Config');
+$logger = $services->get('Omeka\Logger');
 $settings = $services->get('Omeka\Settings');
 $translate = $plugins->get('translate');
 $translator = $services->get('MvcTranslator');
 $connection = $services->get('Omeka\Connection');
 $messenger = $plugins->get('messenger');
+$siteSettings = $services->get('Omeka\Settings\Site');
 $entityManager = $services->get('Omeka\EntityManager');
 
 if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.67')) {
@@ -37,15 +44,15 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
 }
 
 if (version_compare($oldVersion, '3.5.15.2', '<')) {
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         CREATE INDEX `IDX_39A565C527B35A195103DEBC` ON `solr_map` (`solr_core_id`, `resource_name`);
         SQL;
     $connection->executeStatement($sql);
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         CREATE INDEX `IDX_39A565C527B35A194DEF17BC` ON `solr_map` (`solr_core_id`, `field_name`);
         SQL;
     $connection->executeStatement($sql);
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         CREATE INDEX `IDX_39A565C527B35A195F8A7F73` ON `solr_map` (`solr_core_id`, `source`);
         SQL;
     $connection->executeStatement($sql);
@@ -57,18 +64,19 @@ if (version_compare($oldVersion, '3.5.15.2', '<')) {
 }
 
 if (version_compare($oldVersion, '3.5.15.3.6', '<')) {
-    $sql = <<<SQL
-        ALTER TABLE `solr_map` ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
+    $sql = <<<'SQL'
+        ALTER TABLE `solr_map`
+        ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
         SQL;
     $connection->executeStatement($sql);
 
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `solr_map`
         SET `data_types` = "[]";
         SQL;
     $connection->executeStatement($sql);
 
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `solr_map`
         SET `source` = REPLACE(`source`, "item_set", "item_sets")
         WHERE `source` LIKE "%item_set%";
@@ -80,25 +88,25 @@ if (version_compare($oldVersion, '3.5.15.3.6', '<')) {
 }
 
 if (version_compare($oldVersion, '3.5.16.3', '<')) {
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         ALTER TABLE `solr_core`
         CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
         SQL;
     $connection->executeStatement($sql);
 
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         ALTER TABLE `solr_map`
         ADD `data_types` LONGTEXT NOT NULL COMMENT '(DC2Type:json_array)' AFTER `source`;
         SQL;
     try {
         $connection->executeStatement($sql);
-        $sql = <<<SQL
+        $sql = <<<'SQL'
             UPDATE `solr_map`
             SET `data_types` = "[]";
             SQL;
         $connection->executeStatement($sql);
 
-        $sql = <<<SQL
+        $sql = <<<'SQL'
             UPDATE `solr_map`
             SET `source` = REPLACE(`source`, "item_set", "item_sets")
             WHERE `source` LIKE "%item_set%";
@@ -107,21 +115,21 @@ if (version_compare($oldVersion, '3.5.16.3', '<')) {
     } catch (\Exception $e) {
     }
 
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         ALTER TABLE `solr_map`
         CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
         CHANGE `settings` `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
         SQL;
     $connection->executeStatement($sql);
 
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `solr_map`
         SET `pool` = "[]"
         WHERE `pool` = "[]" OR `pool` = "{}" OR `pool` = "" OR `pool` IS NULL;
         SQL;
     $connection->executeStatement($sql);
 
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `solr_map`
         SET `pool` = CONCAT('{"data_types":', `pool`, "}")
         WHERE `pool` != "[]" AND `pool` IS NOT NULL;
@@ -129,13 +137,13 @@ if (version_compare($oldVersion, '3.5.16.3', '<')) {
     $connection->executeStatement($sql);
 
     // Keep the standard formatter to simplify improvment.
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `solr_map`
         SET `settings` = REPLACE(`settings`, '"formatter":"standard_no_uri"', '"formatter":"standard_without_uri"')
         WHERE `settings` LIKE '%"formatter":"standard_no_uri"%';
         SQL;
     $connection->executeStatement($sql);
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `solr_map`
         SET `settings` = REPLACE(`settings`, '"formatter":"uri_only"', '"formatter":"uri"')
         WHERE `settings` LIKE '%"formatter":"uri_only"%';
@@ -144,7 +152,7 @@ if (version_compare($oldVersion, '3.5.16.3', '<')) {
 }
 
 if (version_compare($oldVersion, '3.5.18.3', '<')) {
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         ALTER TABLE `solr_map`
         CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
         SQL;
@@ -195,7 +203,7 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
 
 if (version_compare($oldVersion, '3.5.31.3', '<')) {
     // Fix upgrade issue in 3.5.18.3.
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         ALTER TABLE `solr_map`
         CHANGE `data_types` `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)';
         SQL;
@@ -472,7 +480,7 @@ if (version_compare($oldVersion, '3.5.42', '<')) {
 }
 
 if (version_compare($oldVersion, '3.5.44', '<')) {
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `solr_map`
         SET
             `field_name` = REPLACE(`field_name`, 'access_source', 'access_level'),
@@ -521,7 +529,7 @@ if (version_compare($oldVersion, '3.5.47', '<')) {
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
 
-    $sql = <<<SQL
+    $sql = <<<'SQL'
         UPDATE `search_config`
         SET
             `settings` = REPLACE(`settings`, '"score desc"', '"relevance desc"')
