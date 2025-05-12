@@ -559,8 +559,12 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
         throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
     }
 
+    // WARNING: Useless, because aliases are used in 3.5.57, so only kept for info.
+    // The insertion from 3.5.54 was removed earlier too.
+
+    /*
     // Add index "is_id_s" and "ss_name_s" for generic management.
-    // The manes are compatible with drupal.
+    // The names are compatible with drupal.
     $newIndexes = [
         'is_id_i' => 'o:id',
         'ss_name_s' => 'o:title',
@@ -586,7 +590,7 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
                 ->setParameter('solr_core_id', $solrCoreId)
                 ->setParameter('resource_name', 'generic')
                 ->setParameter('field_name', $fieldName)
-                */
+                * /
                 ->where("solr_core_id = $solrCoreId AND resource_name = 'generic' AND field_name = '$fieldName'")
             ;
             $solrCoreMaps = $connection->executeQuery($qb)->rowCount();
@@ -612,6 +616,7 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
     // Remove indices from version 3.5.54.
     $sql = 'DELETE FROM `solr_map` WHERE `field_name` IN ("o_id_i", "o_title_s")';
     $connection->executeStatement($sql);
+    */
 
     $message = new PsrMessage(
         'It is now possible to list {link}all resources and values indexed by a core{link_end}.', // @translate
@@ -730,4 +735,134 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
 if (version_compare($oldVersion, '3.5.56', '<')) {
     $settings->set('searchsolr_solarium_adapter', 'auto');
     $settings->set('searchsolr_solarium_timeout', 5);
+}
+
+if (version_compare($oldVersion, '3.5.57', '<')) {
+    if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.46')) {
+        $message = new \Omeka\Stdlib\Message(
+            $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+            'AdvancedSearch', '3.4.46'
+        );
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+    }
+
+    $sql = <<<'SQL'
+        ALTER TABLE `solr_map`
+        ADD `alias` VARCHAR(190) DEFAULT NULL AFTER `source`;
+        SQL;
+    try {
+        $connection->executeStatement($sql);
+    } catch (\Exception $e) {
+        // Already added.
+    }
+
+    // Log existing map names.
+    $sql = <<<'SQL'
+        SELECT id, field_name
+        FROM solr_map
+        WHERE field_name LIKE "tm\_%"
+            OR field_name LIKE "ts\_%"
+            OR field_name LIKE "sort\_X3b\_%";
+        SQL;
+    $isDrupal = (bool) $connection->executeQuery($sql)->fetchOne();
+    // Rename indexes to use boolean.
+    $renameIndexes = [
+        'o_id_i' => 'id_i',
+        'is_o_id' => 'is_id',
+        // TODO Find why indexing boolean is not working.
+        // 'is_public_i' => 'is_public_b',
+        // 'is_public' => 'bs_is_public',
+        // 'is_is_public' => 'bs_is_public',
+        'o_title_s' => 'name_s',
+        'ss_o_title' => 'ss_name',
+        'ss_name_s' => $isDrupal ? 'ss_name' : 'name_s',
+        'is_id_i' => $isDrupal ? 'is_id' : 'id_i',
+    ];
+    $sql = <<<'SQL'
+        SELECT id, field_name
+        FROM solr_map
+        WHERE field_name IN (:list);
+        SQL;
+    $list = (bool) $connection->executeQuery($sql, ['list' => array_keys($renameIndexes)], ['list' => \Doctrine\DBAL\Connection::PARAM_STR_ARRAY])->fetchAllKeyValue();
+    $logger->info('Updatable field names: {json}', ['json' => json_encode($list, 448)]);
+    $updateds = [];
+    foreach ($renameIndexes as $oldIndex => $newIndex) {
+        try {
+            $result = $connection->update('solr_map', ['field_name' => $newIndex], ['field_name' => $oldIndex]);
+            if ($result) {
+                $updateds[$oldIndex] = $newIndex;
+            }
+        } catch (\Exception $e) {
+            // Nothing to do.
+            $messenger->addError($e->getMessage());
+        }
+    }
+
+    if ($updateds) {
+        $message = new PsrMessage(
+            'Some solr map fields were renamed: {json}.', // @translate
+            ['json' => json_encode($updateds, 448)]
+        );
+        $messenger->addWarning($message);
+    }
+
+    $aliasesFromSource = [
+        'resource_name' => 'resource_name',
+        'o:id' => 'id',
+        'is_public' => 'is_public',
+        'owner/o:id' => 'owner_id',
+        'site/o:id' => 'site_id',
+        'resource_class/o:id' => 'resource_class_id',
+        'resource_class/o:term' => 'resource_class_term',
+        'resource_class/o:label' => 'resource_class_label',
+        'resource_template/o:id' => 'resource_template_id',
+        'resource_template/o:label' => 'resource_template_label',
+        'o:title' => 'title',
+        'item_set/o:id' => 'item_set_id',
+        'item/o:id' => 'item_id',
+        'item/has_media' => 'has_media',
+        'item_set/is_open' => 'is_open',
+        'item_set/o:is_open' => 'is_open',
+        'media/o:media_type' => 'media_type',
+        'media/o:ingester' => 'ingester',
+        'media/o:renderer' => 'renderer',
+    ];
+    foreach ($aliasesFromSource as $source => $alias) {
+        try {
+            $connection->update('solr_map', ['alias' => $alias], ['source' => $source]);
+        } catch (\Exception $e) {
+            // Nothing to do.
+            $messenger->addError($e->getMessage());
+        }
+    }
+
+    $aliasesFromFieldName = [
+        'name_s' => 'name',
+        'ss_name' => 'name',
+        'item_set_id_is' => 'item_set_id',
+        'im_item_set_id' => 'item_set_id',
+    ];
+    foreach ($aliasesFromFieldName as $fieldName => $alias) {
+        try {
+            $connection->update('solr_map', ['alias' => $alias], ['field_name' => $fieldName]);
+        } catch (\Exception $e) {
+            // Nothing to do.
+            $messenger->addError($e->getMessage());
+        }
+    }
+
+    $message = new PsrMessage(
+        'It is now possible to set a default alias for each omeka/solr map. Common aliases were added, for example "id" for "o:id" and "item_set_id" for "item_set_id_is".' // @translate
+    );
+    $messenger->addSuccess($message);
+
+    $message = new PsrMessage(
+        'Property terms can be used as dynamic aliases when an index exists for them.' // @translate
+    );
+    $messenger->addSuccess($message);
+
+    $message = new PsrMessage(
+        'A reindexing is needed.' // @translate
+    );
+    $messenger->addWarning($message);
 }
