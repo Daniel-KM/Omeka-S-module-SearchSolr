@@ -10,7 +10,7 @@ class Integer extends AbstractValueFormatter
 
     public function format($value): array
     {
-        $value = (string) $value;
+        $value = (string) (is_bool($value) ? (int) $value : $value);
         $integer = (int) $value;
         return $integer === 0
                 && !(mb_substr($value, 0, 1) === '0' || mb_substr($value, 0, 2) === '-0')

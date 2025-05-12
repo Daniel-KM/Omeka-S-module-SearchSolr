@@ -66,12 +66,19 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         foreach ($parts as $part) switch ($part) {
             default:
             case 'auto':
-                if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-                    $result['auto'] = $value;
-                } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
-                    $result['value'] = trim((string) $value->altText());
-                    $result['uri'] = trim((string) $value->assetUrl());
-                } else {
+                if (is_object($value)) {
+                    if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                        $v = $value->value();
+                        $result['auto'] = is_bool($v) ? ($v ? '1' : '0') : trim((string) $v);
+                    } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
+                        $result['value'] = trim((string) $value->altText());
+                        $result['uri'] = trim((string) $value->assetUrl());
+                    } elseif (method_exists('__toString', $value)) {
+                        $result['string'] = trim((string) $value);
+                    }
+                } elseif (is_bool($value)) {
+                    $result['bool'] = (int) $value;
+                } elseif (is_scalar($value)) {
                     $result['string'] = trim((string) $value);
                 }
                 break;
@@ -79,12 +86,15 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
             case 'string':
                 if (is_object($value)) {
                     if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-                        $result['string'] = trim((string) $value);
+                        $v = $value->value();
+                        $result['string'] = is_bool($v) ? ($v ? '1' : '0') : trim((string) $v);
                     } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
                         $result['string'] = trim((string) $value->altText());
                     } elseif (method_exists('__toString', $value)) {
                         $result['string'] = trim((string) $value);
                     }
+                } elseif (is_bool($value)) {
+                    $result['string'] = $value ? '1' : "0";
                 } elseif (is_scalar($value)) {
                     $result['string'] = trim((string) $value);
                 }
@@ -92,7 +102,8 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
 
             case 'value':
                 if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-                    $result['value'] = trim((string) $value->value());
+                    $v = $value->value();
+                    $result['value'] = is_bool($v) ? ($v ? '1' : '0') : trim((string) $v);
                 } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
                     $result['value'] = trim((string) $value->altText());
                 }

@@ -10,7 +10,7 @@ class Boolean extends AbstractValueFormatter
 
     public function format($value): array
     {
-        $boolean = (bool) (string) $value;
-        return [$boolean ? '1' : '0'];
+        $boolean = is_bool($value) ? $value : (bool) (string) $value;
+        return [$boolean ? 1 : 0];
     }
 }
