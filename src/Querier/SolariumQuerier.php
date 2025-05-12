@@ -119,9 +119,13 @@ class SolariumQuerier extends AbstractQuerier
             /** @var \Solarium\QueryType\Select\Result\Result $solariumResultSet */
             $solariumResultSet = $this->solariumClient->execute($this->solariumQuery);
         } catch (\Exception $e) {
+            // $this->solariumQuery->getQuery() is only the main query, without filters.
             // To get the query sent by solarium to solr, check the url in
             // vendor/solarium/solarium/src/Core/Client/Adapter/Http.php
             /** @see \Solarium\Core\Client\Adapter\Http::getData() */
+            $this->getLogger()->err('An error occurred with solr query: {url_query}', [
+                'url_query' => urldecode($this->solariumQuery->getRequestBuilder()->build($this->solariumQuery)->getUri()),
+            ]);
             throw new QuerierException($e->getMessage(), $e->getCode(), $e);
         }
 
@@ -159,6 +163,9 @@ class SolariumQuerier extends AbstractQuerier
             $this->solariumQuery->setFields(['id']);
             $solariumResultSetAll = $this->solariumClient->execute($this->solariumQuery);
         } catch (\Exception $e) {
+            $this->getLogger()->err('An error occurred with solr query: {url_query}', [
+                'url_query' => urldecode($this->solariumQuery->getRequestBuilder()->build($this->solariumQuery)->getUri()),
+            ]);
             throw new QuerierException($e->getMessage(), $e->getCode(), $e);
         }
 
