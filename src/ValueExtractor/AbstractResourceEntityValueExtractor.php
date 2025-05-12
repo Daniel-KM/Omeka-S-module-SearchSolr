@@ -912,7 +912,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
      */
     protected function extractContentAlto(MediaRepresentation $media): string
     {
-        if ($media->getMediaType() !== 'application/alto+xml') {
+        if ($media->mediaType() !== 'application/alto+xml') {
             return '';
         }
 
