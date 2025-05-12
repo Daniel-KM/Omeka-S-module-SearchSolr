@@ -326,16 +326,30 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         // The terms query in solarium does not support filtering by field, so
-        // it is not possible to filter by site. So either index values by site,
-        // or use a standard query.
+        // it is not possible to filter by is_public or by site.
+        // So either index values by is_public and site or use a standard query.
+        $isPublic = $this->query->getIsPublic();
+        $isPublicField = $this->solrCore->mapsBySource('is_public', 'generic');
+        $isPublicField = $isPublicField ? (reset($isPublicField))->fieldName() : null;
+
         $siteId = $this->query->getSiteId();
         $sitesField = $this->solrCore->mapsBySource('site/o:id', 'generic');
         $sitesField = $sitesField ? (reset($sitesField))->fieldName() : null;
-        if ($siteId && $sitesField) {
+
+        if (($isPublic && $isPublicField) || ($siteId && $sitesField)) {
             $query = $this->solariumClient->createSelect();
-            $query
-                ->createFilterQuery($sitesField)
-                ->setQuery("$sitesField:$siteId");
+            if ($isPublic) {
+                // The field may be a boolean or an integer.
+                $isPublicFieldIsPublic = $this->fieldIsBool($isPublicField) ? 'true' : 1;
+                $query
+                    ->createFilterQuery($isPublicField)
+                    ->setQuery("$isPublicField:$isPublicFieldIsPublic");
+            }
+            if ($siteId) {
+                $query
+                    ->createFilterQuery($sitesField)
+                    ->setQuery("$sitesField:$siteId");
+            }
             $facetSet = $query->getFacetSet();
             $index = 0;
             foreach ($fields as $field) {
@@ -383,7 +397,7 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Warning: unlike queryValues, the field isn't an alias but a real index.
      *
-     * Currently only used in admin.
+     * Currently only used in admin, so no check for public or site.
      *
      * @todo Merge queryValuesCount() of SolariumQuerier with SolrRepresentation.
      *
@@ -523,9 +537,11 @@ class SolariumQuerier extends AbstractQuerier
         // filter that may be enable or not.
 
         if ($isPublic) {
+            // The field may be a boolean or an integer.
+            $isPublicFieldIsPublic = $this->fieldIsBool($isPublicField) ? 'true' : 1;
             $this->solariumQuery
                 ->createFilterQuery($isPublicField)
-                ->setQuery("$isPublicField:1");
+                ->setQuery("$isPublicField:$isPublicFieldIsPublic");
         }
 
         $this->solariumQuery
@@ -1541,6 +1557,19 @@ class SolariumQuerier extends AbstractQuerier
             // For drupal.
             || substr($name, 0, 3) === 'is_'
             || substr($name, 0, 3) === 'im_'
+        ;
+    }
+
+    /**
+     * @todo Use schema.
+     */
+    protected function fieldIsBool($name): bool
+    {
+        return substr($name, -2) === '_b'
+            || substr($name, -3) === '_bs'
+            // For drupal.
+            || substr($name, 0, 3) === 'bs_'
+            || substr($name, 0, 3) === 'bm_'
         ;
     }
 
