@@ -262,7 +262,7 @@ class MapController extends AbstractActionController
                 ));
 
                 return $this->redirect()->toRoute('admin/search/solr/core-id', [
-                    'core-id' => $solrCoreId,
+                    'id' => $solrCoreId,
                     // TODO Add a filter on resource name.
                     // 'resource-name' => $resourceName,
                 ]);
@@ -331,7 +331,7 @@ class MapController extends AbstractActionController
                 $this->messenger()->addWarning('Don’t forget to check search pages that use this map.'); // @translate
 
                 return $this->redirect()->toRoute('admin/search/solr/core-id', [
-                    'core-id' => $solrCoreId,
+                    'id' => $solrCoreId,
                     // TODO Add a filter on resource name.
                     // 'resource-name' => $resourceName,
                 ]);
