@@ -718,3 +718,8 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
     $message->setEscapeHtml(false);
     $messenger->addSuccess($message);
 }
+
+if (version_compare($oldVersion, '3.5.56', '<')) {
+    $settings->set('searchsolr_solarium_adapter', 'auto');
+    $settings->set('searchsolr_solarium_timeout', 5);
+}
