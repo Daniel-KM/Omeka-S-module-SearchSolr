@@ -95,9 +95,9 @@ Quick start
         aren’t. Some of them allow to prepare search indexes and some other
         facets or sort indexes. Some of them may be used for all uses.
         For example, you can use `dcterms_type_ss`, `dcterms_subject_ss`,
-        `resource_class_s`, `item_set_dcterms_title_ss`, `dcterms_creator_ss`,
+        `resource_class_s`, `item_set_title_ss`, `dcterms_creator_ss`,
         `dcterms_date_s`, `dcterms_spatial_ss`, `dcterms_language_ss` and
-        `dcterms_rights_ss` as facets, and `Relevance`, `dcterms_title_s`,
+        `dcterms_rights_ss` as facets, and `relevance`, `dcterms_title_s`,
         `dcterms_date_s`, and `dcterms_creator_s` as sort fields. See below more
         information about [indexation in Solr].
         3. Edit the name of the label that will be used for facets and sort
@@ -123,8 +123,8 @@ the results as grid or as list. The page can be themed.
 
 **IMPORTANT**
 
-The Search module does not replace the default search page neither the default
-search engine. So the theme should be updated.
+For now, the Search module does not replace the default search page neither the
+default search engine. So the theme should be updated.
 
 Don’t forget to check Search facets and sort fields of each search page each
 time that the list of core fields is modified: the fields that don’t exist
@@ -162,6 +162,9 @@ With Drupal, the default fields to set in the core form are: `bs_is_public`,
 `ss_resource_name`, `im_site_id`, and `index_id`. The mapping should be created
 according to the config inside Drupal, for example: `ss_title` and `tm_body`.
 The sort fields are automatically managed.
+
+To get the default template for new core, copy or rename the mapping
+"config/default_mapping_drupal.php" in "config/default_mappings.php".
 
 
 Solr install <a id="solr-install"></a>
@@ -803,9 +806,11 @@ TODO
 - [ ] Add a redirect from item-set/browse to search page, like item-set/show.
 - [ ] Remove the fix for indexation of string "0", replaced by "00".
 - [ ] Include all new advanced filters mode for properties.
-- [ ] Manage indexation of item sets when module Item Set Tree is used.
+- [x] Manage indexation of item sets when module Item Set Tree is used.
 - [ ] Facet range: determine start/end/gap automatically or add option.
 - [ ] Rename "resource_name" by "resource_type" anywhere.
+- [x] Fix indexing of boolean values with "*_b".
+- [ ] Find a better way to exclude fields than searching in other ones.
 
 
 Warning
