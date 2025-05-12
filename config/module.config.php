@@ -260,6 +260,7 @@ return [
     'searchsolr_value_formatters' => [
         'invokables' => [
             'text' => ValueFormatter\Text::class,
+            'boolean' => ValueFormatter\Boolean::class,
             'integer' => ValueFormatter\Integer::class,
             'date' => ValueFormatter\Date::class,
             'date_range' => ValueFormatter\DateRange::class,
