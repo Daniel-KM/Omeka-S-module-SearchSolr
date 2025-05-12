@@ -373,6 +373,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         $specialMetadata = [
+            'resource_name' => 'resourceName',
             'url_admin' => 'adminUrl',
             'url_api' => 'apiUrl',
             // Special metadata.
