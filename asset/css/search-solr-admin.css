@@ -21,7 +21,7 @@
        float: right;
     }
 
-    #form-solr-map fieldset.source-resource legend {
+    #solr-map-form fieldset.source-resource legend {
         display: none;
     }
 

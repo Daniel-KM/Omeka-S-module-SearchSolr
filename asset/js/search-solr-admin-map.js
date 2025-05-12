@@ -375,7 +375,7 @@
             .on('change',toggleSettingsNormalization);
 
         // On submit.
-        $('#form-solr-map').on('submit', function() {
+        $('#solr-map-form').on('submit', function() {
             $('input[name^="o:source/"]').remove();
         });
 

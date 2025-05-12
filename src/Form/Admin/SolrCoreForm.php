@@ -39,7 +39,7 @@ class SolrCoreForm extends Form
     public function init(): void
     {
         $this
-            ->setAttribute('id', 'form-solr-core');
+            ->setAttribute('id', 'solr-core-form');
 
         $this
             ->add([

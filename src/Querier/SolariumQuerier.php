@@ -663,7 +663,8 @@ class SolariumQuerier extends AbstractQuerier
                         // ->setMinCount(1)
                     ;
                 } else {
-                    // The domain option is used to exclude the tagged search filter related to the facet
+                    // The domain option is used to exclude the tagged search
+                    // filter related to the facet.
                     // see: https://yonik.com/multi-select-faceting/
                     /** @var \Solarium\Component\Facet\FieldValueParametersInterface $facet */
                     $excludeTag = strtoupper($facetName . '-facet');
@@ -723,10 +724,10 @@ class SolariumQuerier extends AbstractQuerier
                            'tag' => 'exclude',
                         ]);
                     }
-                    // TODO Add a exclude facet field?
                 } else {
-                    // we need to add a tag to the facet filter query to be able to exclude it in the facet query
-                    // 'tag' option is ignored when using 'query', add the tag in the query statement
+                    // A tag should be added to the facet filter query to be
+                    // able to exclude it in the facet query 'tag' option is
+                    // ignored when using 'query', add the tag in the query statement
                     $key = $name . '-facet';
                     $tag = strtoupper($key);
                     $enclosedValues = $this->escapePhraseValue($values, 'OR');
@@ -734,11 +735,6 @@ class SolariumQuerier extends AbstractQuerier
                         'key' => $key,
                         'query' => "{!tag=$tag}$name:$enclosedValues",
                     ]);
-                    // TODO Is excluding selected facet still needed?
-                    // $solariumFacetSet->createFacetField([
-                    //     'field' => $name,
-                    //     'exclude' => 'exclude',
-                    // ]);
                 }
             }
         }
