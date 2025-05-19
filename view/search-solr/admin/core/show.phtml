@@ -57,13 +57,15 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         <?= $hyperlink($translate('Remove unused'), $solrCore->resourceMapUrl('items', 'clean'), [
             'class' => 'button',
             'title' => $translate('Remove maps of properties that are not used.')]) ?>
-        <?= $hyperlink($translate('Import'), $solrCore->adminUrl('import'), [
-            'class' => 'button',
-            'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
         <?php endif; ?>
         <?= $hyperlink($translate('Export'), $solrCore->adminUrl('export'), [
             'class' => 'button',
             'title' => $translate('Export maps for easier spreadsheet mapping.')]) ?>
+        <?php if ($solrCore->userIsAllowed('update')): ?>
+        <?= $hyperlink($translate('Import'), $solrCore->adminUrl('import'), [
+            'class' => 'button',
+            'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
+        <?php endif; ?>
         <?php // TODO Add button to reindex. ?>
     </div>
 </div>
