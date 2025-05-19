@@ -371,9 +371,31 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             $maps = [];
             $mapAdapter = $this->getAdapter('solr_maps');
             /** @var \SearchSolr\Entity\SolrMap $mapEntity */
+            $sort = [];
             foreach ($this->resource->getMaps() as $mapEntity) {
-                $maps[$mapEntity->getId()] = $mapAdapter->getRepresentation($mapEntity);
+                // Sort "resources" after "generic".
+                $mapId = $mapEntity->getId();
+                $mapName = $mapEntity->getResourceName();
+                $sort[$mapId] = $mapName;
+                $maps[$mapId] = $mapAdapter->getRepresentation($mapEntity);
             }
+            uasort($sort, function($a, $b) {
+                if ($a === $b) {
+                    return 0;
+                } elseif ($a === 'generic') {
+                    return -1;
+                } elseif ($b === 'generic') {
+                    return 1;
+                } elseif ($a === 'resources') {
+                    return -1;
+                } elseif ($b === 'resources') {
+                    return 1;
+                } else {
+                    // item_sets, items, media.
+                    return $a <=> $b;
+                }
+            });
+            $maps = array_replace($sort, $maps);
         }
 
         return $maps;

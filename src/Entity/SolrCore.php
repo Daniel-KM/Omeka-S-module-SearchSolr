@@ -77,6 +77,7 @@ class SolrCore extends AbstractEntity
      *     indexBy="id"
      * )
      * @OrderBy({
+     *     "resourceName" = "ASC",
      *     "source" = "ASC"
      * })
      */
