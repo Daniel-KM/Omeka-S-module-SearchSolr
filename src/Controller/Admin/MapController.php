@@ -44,10 +44,10 @@ use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 
 class MapController extends AbstractActionController
 {
-    use  TraitArrayFilterRecursiveEmptyValue;
+    use TraitArrayFilterRecursiveEmptyValue;
 
     /**
-     * @var Connection
+     * @var \Doctrine\DBAL\Connection
      */
     protected $connection;
 
@@ -56,13 +56,98 @@ class MapController extends AbstractActionController
      */
     protected $valueExtractorManager;
 
-    public function setConnection(Connection $connection): void
-    {
-        $this->connection = $connection;
-    }
+    /**
+     * @var array
+     */
+    protected $solrLangs = [
+        'cjk' => 'cjk',
+        'zh' => 'cjk',
+        'zho' => 'cjk',
+        'chi' => 'cjk',
+        // 'ja' => 'cjk',
+        // 'jpn' => 'cjk',
+        // 'ko' => 'cjk',
+        // 'kor' => 'cjk',
+        'en' => 'en',
+        'eng' => 'en',
+        'ar' => 'ar',
+        'ara' => 'ar',
+        'bg' => 'bg',
+        'bul' => 'bg',
+        'ca' => 'ca',
+        'cat' => 'ca',
+        'cz' => 'cz',
+        'ces' => 'cz',
+        'cze' => 'cz',
+        'da' => 'da',
+        'dan' => 'da',
+        'de' => 'de',
+        'deu' => 'de',
+        'ger' => 'de',
+        'el' => 'el',
+        'ell' => 'el',
+        'gre' => 'el',
+        'es' => 'es',
+        'spa' => 'es',
+        'et' => 'et',
+        'est' => 'et',
+        'eu' => 'eu',
+        'eus' => 'eu',
+        'bas' => 'eu',
+        'fa' => 'fa',
+        'fas' => 'fa',
+        'per' => 'fa',
+        'fi' => 'fi',
+        'fin' => 'fi',
+        'fr' => 'fr',
+        'fra' => 'fr',
+        'fre' => 'fr',
+        'ga' => 'ga',
+        'gle' => 'ga',
+        'gl' => 'gl',
+        'glg' => 'gl',
+        'hi' => 'hi',
+        'hin' => 'hi',
+        'hu' => 'hu',
+        'hun' => 'hu',
+        'hy' => 'hy',
+        'hye' => 'hy',
+        'arm' => 'hy',
+        'id' => 'id',
+        'ind' => 'id',
+        'it' => 'it',
+        'ita' => 'it',
+        'ja' => 'ja',
+        'jpn' => 'ja',
+        'ko' => 'ko',
+        'kor' => 'ko',
+        'lv' => 'lv',
+        'lav' => 'lv',
+        'nl' => 'nl',
+        'nld' => 'nl',
+        'dut' => 'nl',
+        'no' => 'no',
+        'nor' => 'no',
+        'pt' => 'pt',
+        'por' => 'pt',
+        'ro' => 'ro',
+        'ron' => 'ro',
+        'rum' => 'ro',
+        'ru' => 'ru',
+        'rus' => 'ru',
+        'sv' => 'sv',
+        'swe' => 'sv',
+        'th' => 'th',
+        'tha' => 'th',
+        'tr' => 'tr',
+        'tur' => 'tr',
+    ];
 
-    public function setValueExtractorManager(ValueExtractorManager $valueExtractorManager): void
-    {
+    public function __construct(
+        Connection $connection,
+        ValueExtractorManager $valueExtractorManager
+    ) {
+        $this->connection = $connection;
         $this->valueExtractorManager = $valueExtractorManager;
     }
 
@@ -105,6 +190,44 @@ class MapController extends AbstractActionController
 
         $skipTermTexts = include dirname(__DIR__, 3) . '/config/metadata_text.php';
 
+        // Prepare the indexes by languages.
+        $qb = $this->connection->createQueryBuilder();
+        $qb
+            ->select(
+                'CONCAT(`vocabulary`.`prefix`, ":", `property`.`local_name`) AS term',
+                '`value`.`lang` AS lang',
+                // Required for mysql, but useless.
+                '`property`.`id` AS prop'
+            )
+            ->distinct()
+            ->from('`value`', 'value')
+            ->innerJoin('value', 'property', 'property', '`property`.`id` = `value`.`property_id`')
+            ->innerJoin('property', 'vocabulary', 'vocabulary', '`property`.`vocabulary_id` = `vocabulary`.`id`')
+            ->where('`value`.`lang` IS NOT NULL')
+            ->andWhere('`value`.`lang` != ""')
+            ->orderBy('`property`.`id`', 'asc')
+            ->addOrderBy('`value`.`lang`', 'asc')
+        ;
+        $result = $this->connection->executeQuery($qb)->fetchAllAssociative();
+        $langsByProperties = [];
+        foreach ($result as $propLang) {
+            $langsByProperties[$propLang['term']][] = $propLang['lang'];
+        }
+
+        if (empty($langsByProperties)) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                'No values have a language. The indexes will use a generic language (_txt).' // @translate
+            ));
+        } else {
+            $this->messenger()->addSuccess(new PsrMessage(
+                'The values use the following languages: {json}.', // @translate
+                ['json' => json_encode($langsByProperties, 320)]
+            ));
+        }
+
+        // TODO Use language from the settings to prepare the maps?
+        // $langs = $this->settings('value_languages') ?: [];
+
         // Add all missing maps with a generic multivalued text field.
         // Don't add a map if it exists at a upper level.
         $result = [];
@@ -131,6 +254,22 @@ class MapController extends AbstractActionController
             $data['o:pool'] = [];
             $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
             $api->create('solr_maps', $data);
+
+            foreach ($langsByProperties[$term] ?? [] as $language) {
+                if (!isset($this->solrLangs[$language])) {
+                    continue;
+                }
+                $data = [];
+                $data['o:solr_core']['o:id'] = $solrCoreId;
+                $data['o:resource_name'] = $resourceName;
+                $data['o:field_name'] = str_replace(':', '_', $term) . '_txt_' . $this->solrLangs[$language];
+                $data['o:source'] = $term;
+                $data['o:pool'] = [
+                    'filter_languages' => array_keys($this->solrLangs, $this->solrLangs[$language]),
+                ];
+                $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
+                $api->create('solr_maps', $data);
+            }
 
             $result[] = $term;
 
