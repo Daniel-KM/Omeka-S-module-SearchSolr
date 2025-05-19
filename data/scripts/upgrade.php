@@ -866,3 +866,22 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
     );
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.5.58', '<')) {
+    $message = new PsrMessage(
+        'A {link}config form{link_end} was added to specify the use of php-curl if wanted and the solarium timeout.', // @translate
+        [
+            'link' => sprintf('<a href="%s">', $url('admin/default', ['controller' => 'module', 'action' => 'configure'], ['query' => ['id' => 'SearchSolr']])),
+            'link_end' => '</a>',
+        ]
+    );
+    $message->setEscapeHtml(false);
+    $messenger->addSuccess($message);
+
+    $message = new PsrMessage(
+        'The button {link}Map all{link_end} creates new indexes for languages.', // @translate
+        ['link' => '<a href="/admin/search-manager/solr/core/1">' , 'link_end' => '</a>']
+    );
+    $message->setEscapeHtml(false);
+    $messenger->addSuccess($message);
+}
