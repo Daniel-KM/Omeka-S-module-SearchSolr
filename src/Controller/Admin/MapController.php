@@ -175,18 +175,20 @@ class MapController extends AbstractActionController
 
     public function completeAction()
     {
-        $solrCoreId = $this->params('core-id');
-        $resourceName = $this->params('resource-name');
+        // TODO Complete for all resources names.
 
+        $solrCoreId = $this->params('core-id');
+        $resourceName = $this->params('resource-name') ?: 'items';
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
 
         $api = $this->api();
 
-        // Get all existing indexed properties.
+        // Get all existing indexed properties and keep only field names.
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
         $maps = $solrCore->mapsByResourceName($resourceName);
-        // Keep only the source.
-        $maps = array_map(fn ($v) => $v->source(), $maps);
+        $maps = array_map(fn ($v) => $v->fieldName(), $maps);
 
         $skipTermTexts = include dirname(__DIR__, 3) . '/config/metadata_text.php';
 
@@ -228,9 +230,28 @@ class MapController extends AbstractActionController
         // TODO Use language from the settings to prepare the maps?
         // $langs = $this->settings('value_languages') ?: [];
 
+        $createMap = function (string $name, string $term, ?string $alias, array $pool, array $settings)
+            use ($api, $solrCoreId, $resourceName, &$maps): ?SolrMapRepresentation
+        {
+            if (in_array($name, $maps)) {
+                return null;
+            }
+            $data = [];
+            $data['o:solr_core']['o:id'] = $solrCoreId;
+            $data['o:resource_name'] = $resourceName;
+            $data['o:field_name'] = $name;
+            $data['o:alias'] = $alias;
+            $data['o:source'] = $term;
+            $data['o:pool'] = $pool;
+            $data['o:settings'] = $settings;
+            $result = $api->create('solr_maps', $data)->getContent();
+            $maps[] = $name;
+            return $result;
+        };
+
         // Add all missing maps with a generic multivalued text field.
         // Don't add a map if it exists at a upper level.
-        $result = [];
+        $newMaps = [];
         $properties = $api->search('properties')->getContent();
         $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
         foreach ($properties as $property) {
@@ -240,71 +261,53 @@ class MapController extends AbstractActionController
             }
 
             $term = $property->term();
-            // Skip property that are already mapped.
-            if (in_array($term, $maps)) {
-                continue;
-            }
 
             // For full text search (_t = single value, _txt = multivalued).
-            $data = [];
-            $data['o:solr_core']['o:id'] = $solrCoreId;
-            $data['o:resource_name'] = $resourceName;
-            $data['o:field_name'] = str_replace(':', '_', $term) . '_txt';
-            $data['o:source'] = $term;
-            $data['o:pool'] = [];
-            $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
-            $api->create('solr_maps', $data);
+            $name = str_replace(':', '_', $term) . '_txt';
+            $result = $createMap($name, $term, null, [], ['formatter' => '', 'label' => $property->label()]);
+            if ($result) {
+                $newMaps[] = $name;
+            }
 
+            // For full text search with language managed by solr.
             foreach ($langsByProperties[$term] ?? [] as $language) {
                 if (!isset($this->solrLangs[$language])) {
                     continue;
                 }
-                $data = [];
-                $data['o:solr_core']['o:id'] = $solrCoreId;
-                $data['o:resource_name'] = $resourceName;
-                $data['o:field_name'] = str_replace(':', '_', $term) . '_txt_' . $this->solrLangs[$language];
-                $data['o:source'] = $term;
-                $data['o:pool'] = [
-                    'filter_languages' => array_keys($this->solrLangs, $this->solrLangs[$language]),
-                ];
-                $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
-                $api->create('solr_maps', $data);
+                $name = str_replace(':', '_', $term) . '_txt_' . $this->solrLangs[$language];
+                $result = $createMap(
+                    $name,
+                    $term,
+                    null,
+                    ['filter_languages' => array_keys($this->solrLangs, $this->solrLangs[$language])],
+                    ['formatter' => '', 'label' => $property->label()]
+                );
+                if ($result) {
+                    $newMaps[] = $name;
+                }
             }
-
-            $result[] = $term;
 
             if (!in_array($term, $skipTermTexts)) {
                 // For filters and facets.
-                $data = [];
-                $data['o:solr_core']['o:id'] = $solrCoreId;
-                $data['o:resource_name'] = $resourceName;
-                $data['o:field_name'] = str_replace(':', '_', $term) . '_ss';
-                $data['o:alias'] = $term;
-                $data['o:source'] = $term;
-                $data['o:pool'] = [];
-                $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
-                $api->create('solr_maps', $data);
-
-                $result[] = $term;
+                $name = str_replace(':', '_', $term) . '_ss';
+                $result = $createMap($name, $term, $term, [], ['formatter' => '', 'label' => $property->label()]);
+                if ($result) {
+                    $newMaps[] = $name;
+                }
 
                 // For sort.
-                $data = [];
-                $data['o:solr_core']['o:id'] = $solrCoreId;
-                $data['o:resource_name'] = $resourceName;
-                $data['o:field_name'] = str_replace(':', '_', $term) . '_s';
-                $data['o:source'] = $term;
-                $data['o:pool'] = [];
-                $data['o:settings'] = ['formatter' => '', 'label' => $property->label()];
-                $api->create('solr_maps', $data);
-
-                $result[] = $term;
+                $name = str_replace(':', '_', $term) . '_s';
+                $result = $createMap($name, $term, null, [], ['formatter' => '', 'label' => $property->label()]);
+                if ($result) {
+                    $newMaps[] = $name;
+                }
             }
         }
 
-        if ($result) {
+        if ($newMaps) {
             $this->messenger()->addSuccess(new PsrMessage(
-                '{count} maps successfully created: {list}.', // @translate
-                ['count' => count($result), 'list' => implode(', ', $result)]
+                '{count} new maps successfully created: {list}.', // @translate
+                ['count' => count($newMaps), 'list' => implode(', ', $newMaps)]
             ));
             $this->messenger()->addWarning('Check all new maps and remove useless ones.'); // @translate
             $this->messenger()->addWarning('Don’t forget to run the indexation of the core.'); // @translate
