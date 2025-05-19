@@ -794,23 +794,26 @@ sudo systemctl restart solr
 TODO
 ----
 
-- [ ] Create an automatic mode from the resource templates or from Dublin Core.
-- [ ] Create automatically multiple index by property (text, string, lower, latin, for query, order, facets, etc.).
+- [ ] Align all: Create an automatic mode from the resource templates or from Dublin Core.
+- [ ] Align all: Create automatically multiple index by property (text, string, lower, latin, for query, order, facets, etc.).
+- [ ] Align all: Create a a small form (with/without diacritic, with/without lang, from template or not, etc.).
+- [ ] Align all: Use the option "value_languages".
 - [ ] Use the search engine directly without search api.
 - [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
 - [x] Speed up indexation (in module Search too) via direct sql? BulkExport? Queue?
 - [ ] Replace class Schema and Field with solarium ones.
 - [ ] Rewrite and simplify querier to better handle solarium.
 - [ ] Improve management of value resources and uris, and other special types.
-- [ ] Add a separate indexer for medias and pages.
-- [ ] Add a redirect from item-set/browse to search page, like item-set/show.
+- [x] Add a separate indexer for medias.
+- [ ] Add a separate indexer for pages.
+- [x] Add a redirect from item-set/browse to search page, like item-set/show.
 - [ ] Remove the fix for indexation of string "0", replaced by "00".
 - [ ] Include all new advanced filters mode for properties.
 - [x] Manage indexation of item sets when module Item Set Tree is used.
 - [ ] Facet range: determine start/end/gap automatically or add option.
 - [ ] Rename "resource_name" by "resource_type" anywhere.
 - [x] Fix indexing of boolean values with "*_b".
-- [ ] Find a better way to exclude fields than searching in other ones.
+- [ ] Find a better way to exclude fields than searching in other ones (not supported by solr anyway).
 
 
 Warning
