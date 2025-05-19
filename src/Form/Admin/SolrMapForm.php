@@ -294,6 +294,18 @@ class SolrMapForm extends Form
         $settingsFieldset = new Fieldset('o:settings');
         $settingsFieldset
             ->add([
+                'name' => 'label',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Default label', // @translate
+                    'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'label',
+                ],
+            ])
+
+            ->add([
                 'name' => 'part',
                 'type' => Element\MultiCheckbox::class,
                 'options' => [
@@ -545,18 +557,6 @@ class SolrMapForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'finalization',
-                ],
-            ])
-
-            ->add([
-                'name' => 'label',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Default label', // @translate
-                    'info' => 'The label is automatically translated if it exists in Omeka.', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'label',
                 ],
             ])
         ;
