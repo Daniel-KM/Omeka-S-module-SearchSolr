@@ -351,7 +351,6 @@ class SolrMapForm extends Form
                 'attributes' => [
                     'id' => 'normalization',
                     'value' => [
-                        'strip_tags',
                     ],
                     // Is used with all values.
                     // 'data-formatter' => 'text',
