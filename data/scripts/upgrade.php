@@ -654,64 +654,64 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
         ->from('solr_map', 'solr_map')
         ->orderBy('id', 'asc');
     $solrMapIds = $connection->executeQuery($qb)->fetchAllKeyValue();
-    foreach ($solrMapIds as $solrMapId => $settings) {
-        $settings = json_decode($settings, true);
-        $formatter = $settings['formatter'] ?? '';
-        $label = $settings['label'] ?? '';
+    foreach ($solrMapIds as $solrMapId => $solrMapSettings) {
+        $solrMapSettings = json_decode($solrMapSettings, true);
+        $formatter = $solrMapSettings['formatter'] ?? '';
+        $label = $solrMapSettings['label'] ?? '';
 
         if (!$formatter) {
-            $settings = $label ? ['formatter' => 'standard', 'label' => $label] : ['formatter' => 'standard'];
+            $solrMapSettings = $label ? ['formatter' => 'standard', 'label' => $label] : ['formatter' => 'standard'];
             $formatter = 'standard';
         } else {
             if (array_key_exists($formatter, $replacedToNormalizations)) {
-                $settings = array_filter([
+                $solrMapSettings = array_filter([
                     'formatter' => 'text',
                     'label' => $label,
                     'normalization' => array_filter([$replacedToNormalizations[$formatter]]),
                 ], fn ($v) => $v !== '' && $v !== [] && $v !== null);
                 $formatter = 'text';
             } else {
-                $settings['normalization'] = $settings['transformations'] ?? [];
-                unset($settings['transformations']);
+                $solrMapSettings['normalization'] = $solrMapSettings['transformations'] ?? [];
+                unset($solrMapSettings['transformations']);
             }
         }
 
         if (in_array($formatter, $removedStandards)) {
             switch ($formatter) {
                 case 'standard_with_uri':
-                    $settings['part'] = ['value', 'uri'];
+                    $solrMapSettings['part'] = ['value', 'uri'];
                     break;
                 case 'standard_without_uri':
-                    $settings['part'] = ['value'];
+                    $solrMapSettings['part'] = ['value'];
                     break;
                 case 'uri':
-                    $settings['part'] = ['uri'];
+                    $solrMapSettings['part'] = ['uri'];
                     break;
                 case 'standard':
                 default:
-                    $settings['part'] = ['auto'];
+                    $solrMapSettings['part'] = ['auto'];
                     break;
             }
             $formatter = 'text';
-            $settings['formatter'] = $formatter;
+            $solrMapSettings['formatter'] = $formatter;
         }
 
         if ($formatter === 'table') {
             $formatter = 'text';
-            $settings['formatter'] = $formatter;
-            $settings['parts'] = ['auto'];
-            $settings['normalization'] = ['table'];
+            $solrMapSettings['formatter'] = $formatter;
+            $solrMapSettings['parts'] = ['auto'];
+            $solrMapSettings['normalization'] = ['table'];
         }
 
         if ($formatter === 'year') {
             $formatter = 'date';
-            $settings['formatter'] = $formatter;
-            $settings['parts'] = ['auto'];
-            $settings['normalization'] = ['year'];
+            $solrMapSettings['formatter'] = $formatter;
+            $solrMapSettings['parts'] = ['auto'];
+            $solrMapSettings['normalization'] = ['year'];
         }
 
         $sql = 'UPDATE `solr_map` SET `settings` = ? WHERE `id` = ?;';
-        $connection->executeStatement($sql, [json_encode($settings, 320), $solrMapId]);
+        $connection->executeStatement($sql, [json_encode($solrMapSettings, 320), $solrMapId]);
     }
 
     $message = new PsrMessage(
