@@ -640,6 +640,9 @@ class SolariumQuerier extends AbstractQuerier
             'total' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
             'total asc' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_ASC,
             'total desc' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
+            // Default total then alphabetic order is desc.
+            'total_alpha' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
+            'total_alpha desc' => \Solarium\Component\Facet\JsonTerms::SORT_COUNT_DESC,
             // Default values order is asc.
             'values' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
             'values asc' => \Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC,
