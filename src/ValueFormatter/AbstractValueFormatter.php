@@ -169,6 +169,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         }
 
         if (in_array('alphanumeric', $normalizations)) {
+            // Remove space recursively.
             $value = str_replace('  ', ' ', preg_replace('~[^\p{L}\p{N}-]++~u', ' ', (string) $value));
         }
 
@@ -217,7 +218,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                         'The value "{value}" cannot be included in a path. The "/" is replaced by " - ".', // @translate
                         ['value' => $value]
                     );
-                    $value = trim(str_replace('/', ' - ', $value));
+                    $value = trim(strtr($value, ['/' => ' - ']));
                 }
             }
             unset($value);

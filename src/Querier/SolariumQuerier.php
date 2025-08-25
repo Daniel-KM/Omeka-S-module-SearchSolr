@@ -1493,7 +1493,7 @@ class SolariumQuerier extends AbstractQuerier
                 return null;
             }
             // Check if a standard index exists.
-            $indices = $this->usedSolrFields([], [], [str_replace(':', '_', $term)]);
+            $indices = $this->usedSolrFields([], [], [strtr($term, ':', '_')]);
             if (!count($indices)) {
                 return null;
             } elseif (count($indices) > 1) {
@@ -1769,9 +1769,9 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         $regexVal = function ($string) use ($prepend, $append, $basicDiacritics) {
-            $latinized = str_replace(array_keys($basicDiacritics), array_values($basicDiacritics), mb_strtolower($string));
+            $latinized = strtr(mb_strtolower($string), $basicDiacritics);
             return '/' . $prepend
-                . str_replace(array_keys($this->regexDiacritics), array_values($this->regexDiacritics), $latinized)
+                . strtr($latinized, $this->regexDiacritics)
                 . $append . '/';
         };
 

@@ -674,6 +674,6 @@ trait TransliteratorCharacterTrait
 
         // For solr regex, use only first character to simplify the pattern.
         // To split the string by character?
-        return str_replace(array_keys($this->baseDiacritics), array_values($this->baseDiacritics), $string);
+        return strtr($string, $this->baseDiacritics);
     }
 }

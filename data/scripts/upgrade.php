@@ -57,7 +57,7 @@ if (version_compare($oldVersion, '3.5.15.2', '<')) {
         SQL;
     $connection->executeStatement($sql);
 
-    $serverId = strtolower(substr(str_replace(['+', '/', '='], ['', '', ''], base64_encode(random_bytes(128))), 0, 6));
+    $serverId = strtolower(substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(128))), 0, 6));
     $settings->set('searchsolr_server_id', $serverId);
 
     $messenger->addWarning('You should reindex your Solr cores.'); // @translate

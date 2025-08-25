@@ -23,7 +23,7 @@ class Date extends AbstractValueFormatter
             $value = trim((string) $value);
             // Manage the common case where the date is uncertain and wrapped
             // with "[]" or "()" or "{}". Wrap may be on part of the date only.
-            $value = str_replace(['[', ']', '(', ')', '{', '}', '?', '!'], '', $value);
+            $value = strtr($value, ['[' => '', ']' => '', '(' => '', ')' => '', '{' => '', '}' => '', '?' => '', '!' => '']);
             $matches = [];
             // Check for another format than ISO 8601 (partial or full) too.
             // Of course, garbage in, garbage out.
@@ -34,7 +34,7 @@ class Date extends AbstractValueFormatter
                     return [];
                 }
                 // The year should be at least 4 digits for next process.
-                $value = str_replace('+', '', $matches[1]) . sprintf('%04s', $val);
+                $value = strtr($matches[1], ['+' => '']) . sprintf('%04s', $val);
                 $value = $this->fillFullDate($value);
             } elseif (strpos($value, '/') > 0) {
                 // Manage "1914/1918" via a recursive call.
@@ -46,10 +46,10 @@ class Date extends AbstractValueFormatter
                 $value = $this->fillFullDate($matches[1]);
             } elseif (preg_match('~^[+-]?\d+-\d\d-\d\d[ T]\d\d:\d\d:\d\dZ?$~', $value, $matches)) {
                 // This is a mysql date.
-                $value = str_replace(' ', 'T', $value);
+                $value = strtr($value, ' ', 'T');
             } elseif (preg_match('~^([+-]?)(\d+:\d\d:\d\d) (\d\d:\d\d:\d\d)Z?$~', $value, $matches)) {
                 // This is an old exif date.
-                $value = $matches[1] . str_replace(':', '-', $matches[2]) . 'T' . $matches[3];
+                $value = $matches[1] . strtr($matches[2], [':' => '-']) . 'T' . $matches[3];
             }
         } elseif (!(is_scalar($value) || (is_object($value) && method_exists($value, '__toString')))) {
             return [];

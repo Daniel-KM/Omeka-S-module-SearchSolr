@@ -263,7 +263,7 @@ class MapController extends AbstractActionController
             $term = $property->term();
 
             // For full text search (_t = single value, _txt = multivalued).
-            $name = str_replace(':', '_', $term) . '_txt';
+            $name = strtr($term, ':', '_') . '_txt';
             $result = $createMap($name, $term, null, [], ['formatter' => '', 'label' => $property->label()]);
             if ($result) {
                 $newMaps[] = $name;
@@ -274,7 +274,7 @@ class MapController extends AbstractActionController
                 if (!isset($this->solrLangs[$language])) {
                     continue;
                 }
-                $name = str_replace(':', '_', $term) . '_txt_' . $this->solrLangs[$language];
+                $name = strtr($term, ':', '_') . '_txt_' . $this->solrLangs[$language];
                 $result = $createMap(
                     $name,
                     $term,
@@ -289,14 +289,14 @@ class MapController extends AbstractActionController
 
             if (!in_array($term, $skipTermTexts)) {
                 // For filters and facets.
-                $name = str_replace(':', '_', $term) . '_ss';
+                $name = strtr($term, ':', '_') . '_ss';
                 $result = $createMap($name, $term, $term, [], ['formatter' => '', 'label' => $property->label()]);
                 if ($result) {
                     $newMaps[] = $name;
                 }
 
                 // For sort.
-                $name = str_replace(':', '_', $term) . '_s';
+                $name = strtr($term, ':', '_') . '_s';
                 $result = $createMap($name, $term, null, [], ['formatter' => '', 'label' => $property->label()]);
                 if ($result) {
                     $newMaps[] = $name;

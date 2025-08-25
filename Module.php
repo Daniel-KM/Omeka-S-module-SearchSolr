@@ -554,7 +554,7 @@ class Module extends AbstractModule
 
         // Set the default server id, used in some cases (shared core with Drupal).
         $settings = $services->get('Omeka\Settings');
-        $serverId = strtolower(substr(str_replace(['+', '/', '='], ['', '', ''], base64_encode(random_bytes(128))), 0, 6));
+        $serverId = strtolower(substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(128))), 0, 6));
         $settings->set('searchsolr_server_id', $serverId);
 
         // Install a default config.
