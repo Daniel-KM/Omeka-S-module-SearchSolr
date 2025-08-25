@@ -305,6 +305,9 @@ class SolariumQuerier extends AbstractQuerier
 
         $resourceIdField = $this->mapsBySource('o:id', 'generic');
         $resourceIdField = $resourceIdField ? (reset($resourceIdField))->fieldName() : null;
+        if (!$resourceTypeField || !$resourceIdField) {
+            return [];
+        }
 
         $this->solariumQuery
             ->createSelect()
