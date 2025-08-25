@@ -105,8 +105,8 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
 
     public function pool(?string $name = null, $default = null)
     {
-        if (!is_null($this->pool)) {
-            return is_null($name) ? $this->pool : ($this->pool[$name] ?? $default);
+        if ($this->pool !== null) {
+            return $name === null ? $this->pool : ($this->pool[$name] ?? $default);
         }
 
         $this->pool = $this->resource->getPool();
@@ -156,7 +156,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
             $this->pool['filter_visibility'] = null;
         }
 
-        return is_null($name) ? $this->pool : ($this->pool[$name] ?? $default);
+        return $name === null ? $this->pool : ($this->pool[$name] ?? $default);
     }
 
     public function settings(): array

@@ -298,7 +298,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         if ($field === 'url_site') {
-            if (is_null($defaultSiteSlug)) {
+            if ($defaultSiteSlug === null) {
                 /** @var \Common\View\Helper\DefaultSite $defaultSite */
                 $defaultSite = $resource->getServiceLocator()->get('ViewHelperManager')->get('defaultSite');
                 $defaultSiteSlug = $defaultSite('slug') ?: false;
@@ -360,14 +360,14 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         // TODO Use all available locales to get the title and the description.
         if ($field === 'o:title' && method_exists($resource, 'displayTitle')) {
             $result = $resource->displayTitle();
-            return is_null($result) || $result === '' || $result === []
+            return $result === null || $result === '' || $result === []
                 ? []
                 : [$result];
         }
 
         if ($field === 'o:description' && method_exists($resource, 'displayDescription')) {
             $result = $resource->displayDescription();
-            return is_null($result) || $result === '' || $result === []
+            return $result === null || $result === '' || $result === []
                 ? []
                 : [$result];
         }
@@ -402,7 +402,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             } catch (\Exception $e) {
                 $result = null;
             }
-            return is_null($result) || $result === '' || $result === []
+            return $result === null || $result === '' || $result === []
                 ? []
                 : [$result];
         }
@@ -553,7 +553,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     ): array {
         static $itemSetsTreeAncestorsOrSelf;
 
-        if (is_null($itemSetsTreeAncestorsOrSelf)) {
+        if ($itemSetsTreeAncestorsOrSelf === null) {
             $itemSetsTreeAncestorsOrSelf = [];
             $services = $item->getServiceLocator();
             if ($services->has('ItemSetsTree')) {

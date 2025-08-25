@@ -39,7 +39,7 @@ class SolrSubMap extends SolrMapRepresentation
             'filter_visibility' => null,
         ];
 
-        return is_null($name)
+        return $name === null
             ? $subPool
             : ($subPool[$name] ?? $default);
     }

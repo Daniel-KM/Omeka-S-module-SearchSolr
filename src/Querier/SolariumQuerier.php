@@ -1740,7 +1740,7 @@ class SolariumQuerier extends AbstractQuerier
     protected function regexDiacriticsValue($value, string $prepend = '', string $append = ''): string
     {
         static $basicDiacritics;
-        if (is_null($basicDiacritics)) {
+        if ($basicDiacritics === null) {
             $basicDiacritics = [
                 '\\' => '\\\\',
                 '.' => '\.',

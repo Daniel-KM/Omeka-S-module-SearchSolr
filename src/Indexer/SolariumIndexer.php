@@ -152,7 +152,7 @@ class SolariumIndexer extends AbstractIndexer
             $solariumQuery = $this->searchEngine->querier()
                 ->setQuery($query)
                 ->getPreparedQuery();
-            $isQuery = !is_null($solariumQuery);
+            $isQuery = $solariumQuery !== null;
         }
 
         if ($isQuery) {
@@ -533,7 +533,7 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function isNotNullAndNotEmptyString($value): bool
     {
-        return !is_null($value)
+        return $value !== null
             && (string) $value !== '';
     }
 
@@ -618,7 +618,7 @@ class SolariumIndexer extends AbstractIndexer
     {
         // Inspired from module Drupal search api solr.
         // See search_api_solr\Utility\Utility::getSiteHash()).
-        if (is_null($this->serverId)) {
+        if ($this->serverId === null) {
             $this->serverId = $this->getSolrCore()->setting('server_id') ?: false;
         }
         return $this->serverId;
@@ -646,7 +646,7 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function getIndexField()
     {
-        if (is_null($this->indexField)) {
+        if ($this->indexField === null) {
             $this->prepareIndexFieldAndName();
         }
         return $this->indexField;
@@ -659,7 +659,7 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function getIndexName()
     {
-        if (is_null($this->indexName)) {
+        if ($this->indexName === null) {
             $this->prepareIndexFieldAndName();
         }
         return $this->indexName;
@@ -695,7 +695,7 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected function getSupportFields()
     {
-        if (is_null($this->supportFields)) {
+        if ($this->supportFields === null) {
             $this->support = $this->solrCore->setting('support') ?: null;
             $this->supportFields = array_filter($this->solrCore->schemaSupport($this->support));
             // Manage some static values.

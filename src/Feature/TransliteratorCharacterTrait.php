@@ -665,7 +665,7 @@ trait TransliteratorCharacterTrait
         /*
         static $transliterator;
         if (extension_loaded('intl')) {
-            if (is_null($transliterator)) {
+            if ($transliterator === null) {
                 $transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
             }
             return $transliterator->transliterate($string);
