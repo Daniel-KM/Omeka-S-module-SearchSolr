@@ -20,7 +20,7 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
 $this->headLink()
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()
-        ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
+    ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
 $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-map-browse browse');
 ?>
@@ -105,7 +105,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
             </tr>
         </thead>
         <tbody>
-            <?php /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $fieldMaps */ ?>
+            <?php /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $fieldMaps */ ?>
             <?php foreach ($maps as $fieldName => $fieldMaps):
             $aliases = [];
             foreach ($fieldMaps as $map) {
