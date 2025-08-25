@@ -52,7 +52,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     public function getJsonLd(): array
     {
         return [
-            'o:solr_core' => $this->solrCore()->getReference(),
+            'o:solr_core' => $this->solrCore()->getReference()->jsonSerialize(),
             'o:resource_name' => $this->resource->getResourceName(),
             'o:field_name' => $this->resource->getFieldName(),
             'o:alias' => $this->resource->getAlias(),
