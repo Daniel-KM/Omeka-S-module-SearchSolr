@@ -255,7 +255,8 @@ class SolrMapForm extends Form
                     'required' => false,
                     'value' => '',
                 ],
-            ]);
+            ])
+        ;
 
         $this
             ->add($poolFieldset)
@@ -302,6 +303,18 @@ class SolrMapForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'label',
+                ],
+            ])
+
+            ->add([
+                'name' => 'index_for_link',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Index for bounce link (for multi-string "_ss")', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'index_for_link',
+                    'required' => false,
                 ],
             ])
 

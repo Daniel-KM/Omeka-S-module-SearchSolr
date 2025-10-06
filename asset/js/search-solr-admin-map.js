@@ -86,6 +86,12 @@
             source = source.replace(/[^a-zA-Z0-9]/g, '_');
             fieldName = field.replace('*', source);
 
+            var inputIndexForLink = $('input[name="o:settings[index_for_link]"]');
+            if (inputIndexForLink.is(':checked')) {
+                var linkInsertPos = indexOfStar + source.length;
+                fieldName = fieldName.slice(0, linkInsertPos) + '_link' + fieldName.slice(linkInsertPos);
+            }
+
             setTimeout(function() {
                 var htmlInput = input.get(0);
                 htmlInput.focus();
@@ -233,6 +239,10 @@
             'data-placeholder': Omeka.jsTranslate('Choose a field…'),
         });
 
+        var inputIndexForLink = $('input[name="o:settings[index_for_link]"]');
+
+        var inputParts = $('input[name="o:settings[parts][]"]');
+
         var emptyOption = $('<option>').val('');
         select.append(emptyOption);
 
@@ -300,6 +310,13 @@
         input.before(select);
 
         select.chosen(chosenOptions);
+
+        inputIndexForLink.on('change', function() {
+            generateFieldName();
+            if ($(this).is(':checked')) {
+                inputParts.filter('[value="link"]').prop('checked', true);
+            }
+        });
 
         var timeout = 0;
         var regexps = {};

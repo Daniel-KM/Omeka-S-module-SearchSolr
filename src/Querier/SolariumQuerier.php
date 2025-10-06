@@ -824,20 +824,65 @@ class SolariumQuerier extends AbstractQuerier
         // Search config aliases have priority.
         $aliases = $this->query->getAliases();
 
-        // The same for specific resources in maps, so reverse maps
-        // Aliases are not merged for simplicity.
+        // TODO Check !isset($aliases[$alias]) like before?
+
+        // Get all aliases, then sort them like in fieldToIndex() and more
+        // specific resource, then take the first one.
+        $aliasFields = [];
+
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
+        // The same for specific resources in maps, so reverse maps.
         foreach (array_reverse($this->getSolrCore()->mapsOrderedByStructure()) as $map) {
             $alias = $map->alias();
-            if ($alias && !isset($aliases[$alias])) {
-                $aliases[$alias] = [
-                    'name' => $alias,
-                    'label' => $map->setting('label') ?: $alias,
-                    'fields' => [
-                        $map->fieldName(),
-                    ],
-                ];
+            if ($alias) {
+                $aliasFields[$alias][$map->fieldName()] = $map;
             }
+        }
+
+        foreach ($aliasFields as $alias => $maps) {
+            if (count($maps) > 1) {
+                // The fields are alredy sorted by specific/resource/generic.
+                // Try to use full multiple strings, not the tokenized ones.
+                // TODO Ideally, the sort should take the specificity fully.
+                // See fieldToIndex().
+                $fieldsForAlias = array_keys($maps);
+                usort($fieldsForAlias, function ($a, $b) {
+                    $priority = function ($field) {
+                        if (substr($field, -8) === '_link_ss') {
+                            return 0;
+                        }
+                        if (substr($field, -3) === '_ss') {
+                            return 1;
+                        }
+                        if (substr($field, -9) === '_ss_lower') {
+                            return 2;
+                        }
+                        if (substr($field, -5) === '_link') {
+                            return 3;
+                        }
+                        if (substr($field, 0, 3) === 'sm_') {
+                            return 4;
+                        }
+                        return 5;
+                    };
+                    $pa = $priority($a);
+                    $pb = $priority($b);
+                    if ($pa === $pb) {
+                        return strcmp($a, $b);
+                    }
+                    return $pa - $pb;
+                });
+                $map = $maps[reset($fieldsForAlias)];
+            } else {
+                $map = reset($maps);
+            }
+            $aliases[$alias] = [
+                'name' => $alias,
+                'label' => $map->setting('label') ?: $alias,
+                'fields' => [
+                    $map->fieldName()
+                ]
+            ];
         }
 
         $this->query->setAliases($aliases);
@@ -1493,10 +1538,20 @@ class SolariumQuerier extends AbstractQuerier
      * Convert a field argument into one or more indexes.
      *
      * The indexes are the properties in internal sql.
-     * This process allows to support same indexes in Solr.
+     * This method allows to support same indexes in Solr, in particular for
+     * automatic and manual links, when the index is unknown.
      * Any property can be used, but the index should exist.
+     * The default index used is "_link_ss", then "_ss", "_ss_lower". and
+     * "_link" and "sm_" (drupal). Don't forget to index linked resource ids
+     * when needed.
+     *
+     * The index "link" is useful for llnks that allow to rebound between pages:
+     * it contains the uri or the id for exact search, but it can be displayed
+     * with another index ("_ss") in facets and filters.
      *
      * @todo For now, only one field is supported, since an index with multiple properties can be created.
+     * @todo Store the right order of indexes to avoid to repeat the sort when the list of index is stored.
+     * @todo Check if the aliases can be used for the bounce links.
      *
      * @return array|string|null
      */
@@ -1517,30 +1572,32 @@ class SolariumQuerier extends AbstractQuerier
                 return null;
             } elseif (count($indices) > 1) {
                 // Try to use full multiple strings, not the tokenized ones.
+                // See appendCoreAliasesToQuery().
                 usort($indices, function ($a, $b) {
-                    $isTokenA = $this->fieldIsTokenized($a);
-                    $isTokenB = $this->fieldIsTokenized($b);
-                    if ($isTokenA && $isTokenB) {
-                        return 0;
-                    } elseif ($isTokenA) {
-                        return 1;
-                    } elseif ($isTokenB) {
-                        return -1;
+                    $priority = function ($field) {
+                        if (substr($field, -8) === '_link_ss') {
+                            return 0;
+                        }
+                        if (substr($field, -3) === '_ss') {
+                            return 1;
+                        }
+                        if (substr($field, -9) === '_ss_lower') {
+                            return 2;
+                        }
+                        if (substr($field, -5) === '_link') {
+                            return 3;
+                        }
+                        if (substr($field, 0, 3) === 'sm_') {
+                            return 4;
+                        }
+                        return 5;
+                    };
+                    $pa = $priority($a);
+                    $pb = $priority($b);
+                    if ($pa === $pb) {
+                        return strcmp($a, $b);
                     }
-                    $isMultiStringA = substr($a, -3) === '_ss'
-                        || substr($a, -9) === '_ss_lower'
-                        || substr($a, 0, 3) === 'sm_';
-                    $isMultiStringB = substr($b, -3) === '_ss'
-                        || substr($b, -9) === '_ss_lower'
-                        || substr($b, 0, 3) === 'sm_';
-                    if ($isMultiStringA && $isMultiStringB) {
-                        return 0;
-                    } elseif ($isMultiStringA) {
-                        return -1;
-                    } elseif ($isMultiStringB) {
-                        return 1;
-                    }
-                    return strcmp($a, $b);
+                    return $pa - $pb;
                 });
             }
             return reset($indices);
