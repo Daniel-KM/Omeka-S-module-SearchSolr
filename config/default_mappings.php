@@ -349,6 +349,16 @@ return [
         'settings' => ['label' => 'Creator'],
     ],
 
+    // Fields for bounce links.
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'dcterms_creator_link_ss',
+        'alias' => '',
+        'source' => 'dcterms:creator',
+        'pool' => [],
+        'settings' => ['index_for_link' => true, 'parts' => ['link'], 'label' => 'Creator (link)'],
+    ],
+
     // Items.
 
     // Required fields.

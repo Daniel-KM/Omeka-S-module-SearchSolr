@@ -301,6 +301,13 @@ class MapController extends AbstractActionController
                 if ($result) {
                     $newMaps[] = $name;
                 }
+
+                // For bounce links.
+                $name = strtr($term, ':', '_') . '_link_ss';
+                $result = $createMap($name, $term, null, [], ['index_for_link' => true, 'parts' => ['link'], 'formatter' => '', 'label' => $property->label()]);
+                if ($result) {
+                    $newMaps[] = $name;
+                }
             }
         }
 

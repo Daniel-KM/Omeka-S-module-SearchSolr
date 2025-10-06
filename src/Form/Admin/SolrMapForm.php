@@ -330,7 +330,7 @@ class SolrMapForm extends Form
                         'uri' => 'Uri (for values with an uri)', // @translate
                         'vrid' => 'Id of the linked resource', // @translate
                         'id' => 'Id of the resource', // @translate
-                        'link' => 'Bounce link (value, uri or id according to data)', // @translate
+                        'link' => 'Bounce link (value, uri or linked id)', // @translate
                         'html' => 'Html (as seen)', // @translate
                     ],
                 ],
