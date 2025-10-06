@@ -131,6 +131,25 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                 }
                 break;
 
+            case 'vrid':
+                if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                    $v = $value->valueResource();
+                    if ($v) {
+                        $result['vrid'] = $v->id();
+                    }
+                } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
+                    // TODO Get the list of all resources ids with this asset.
+                }
+                break;
+
+            case 'id':
+                if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                    $result['id'] = $value->resource()->id();
+                } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
+                    $result['id'] = $value->id();
+                }
+                break;
+
             case 'html':
                 if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
                     $result['html'] = trim((string) $value->asHtml());

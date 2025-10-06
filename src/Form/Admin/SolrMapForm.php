@@ -315,6 +315,8 @@ class SolrMapForm extends Form
                         'main' => 'Single linked resource label, uri label, uri or any extracted value', // @translate
                         'value' => 'Property values only (as stored in database)', // @translate
                         'uri' => 'Uri (for values with an uri)', // @translate
+                        'vrid' => 'Id of the linked resource', // @translate
+                        'id' => 'Id of the resource', // @translate
                         'html' => 'Html (as seen)', // @translate
                     ],
                 ],
