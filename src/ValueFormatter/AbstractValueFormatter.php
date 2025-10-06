@@ -59,17 +59,26 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
 
         $result = [];
 
-        $parts = empty($this->settings['parts']) ? ['auto'] : $this->settings['parts'];
+        $parts = empty($this->settings['parts']) ? ['full'] : $this->settings['parts'];
 
         // Keep only scalar or ValueRepresentation.
 
         foreach ($parts as $part) switch ($part) {
             default:
-            case 'auto':
+            case 'full':
                 if (is_object($value)) {
+                    // Full means all possible values.
                     if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
                         $v = $value->value();
-                        $result['auto'] = is_bool($v) ? ($v ? '1' : '0') : trim((string) $v);
+                        $result['full_1'] = is_bool($v) ? ($v ? '1' : '0') : trim((string) $v);
+                        $v = trim((string) $value->uri());
+                        if ($v !== '') {
+                            $result['full_2'] = $v;
+                        }
+                        $vr = $value->valueResource();
+                        if ($vr) {
+                            $result['full_3'] = $vr->displayTitle();
+                        }
                     } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
                         $result['value'] = trim((string) $value->altText());
                         $result['uri'] = trim((string) $value->assetUrl());
@@ -77,7 +86,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                         $result['string'] = trim((string) $value);
                     }
                 } elseif (is_bool($value)) {
-                    $result['bool'] = (int) $value;
+                    $result['bool'] = $value ? '1' : "0";
                 } elseif (is_scalar($value)) {
                     $result['string'] = trim((string) $value);
                 }

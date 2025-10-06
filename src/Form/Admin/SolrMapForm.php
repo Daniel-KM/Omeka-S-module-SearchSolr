@@ -311,7 +311,7 @@ class SolrMapForm extends Form
                 'options' => [
                     'label' => 'Values to extract', // @translate
                     'value_options' => [
-                        'auto' => 'Auto (extracted values as it is and uri)', // @translate
+                        'full' => 'Full (linked resource label, uri label, uri, and value)', // @translate
                         'string' => 'Extracted values as string', // @translate
                         'value' => 'Values only (as stored in database)', // @translate
                         'uri' => 'Uri (for values with an uri)', // @translate
@@ -321,7 +321,7 @@ class SolrMapForm extends Form
                 'attributes' => [
                     'id' => 'parts',
                     'value' => [
-                        'auto',
+                        'full',
                     ],
                 ],
             ])
