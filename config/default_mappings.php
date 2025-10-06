@@ -41,7 +41,7 @@ return [
         'alias' => 'is_public',
         'source' => 'is_public',
         'pool' => [],
-        'settings' => ['label' => 'Public'],
+        'settings' => ['parts' => ['main'], 'formatter' => 'boolean', 'label' => 'Public'],
     ],
     [
         // The generic name of the resource: may be main title, label or name.
@@ -246,7 +246,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:spatial',
         'pool' => [],
-        'settings' => ['label' => 'Spatial coverage'],
+        'settings' => ['parts' => ['main'], 'label' => 'Spatial coverage'],
     ],
     [
         'resource_name' => 'resources',
@@ -264,7 +264,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:type',
         'pool' => [],
-        'settings' => ['label' => 'Type'],
+        'settings' => ['parts' => ['main'], 'label' => 'Type'],
     ],
     [
         'resource_name' => 'resources',
@@ -272,7 +272,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:subject',
         'pool' => [],
-        'settings' => ['label' => 'Subject'],
+        'settings' => ['parts' => ['main'], 'label' => 'Subject'],
     ],
     [
         'resource_name' => 'resources',
@@ -280,7 +280,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:creator',
         'pool' => [],
-        'settings' => ['label' => 'Creator'],
+        'settings' => ['parts' => ['main'], 'label' => 'Creator'],
     ],
     [
         'resource_name' => 'resources',
@@ -288,7 +288,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:publisher',
         'pool' => [],
-        'settings' => ['label' => 'Publisher'],
+        'settings' => ['parts' => ['main'], 'label' => 'Publisher'],
     ],
     [
         'resource_name' => 'resources',
@@ -296,7 +296,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:language',
         'pool' => [],
-        'settings' => ['label' => 'Language'],
+        'settings' => ['parts' => ['main'], 'label' => 'Language'],
     ],
     [
         'resource_name' => 'resources',
@@ -304,7 +304,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:rights',
         'pool' => [],
-        'settings' => ['label' => 'Rights'],
+        'settings' => ['parts' => ['main'], 'label' => 'Rights'],
     ],
     [
         'resource_name' => 'resources',
@@ -312,7 +312,7 @@ return [
         'alias' => 'item_set_title',
         'source' => 'item_set/o:title',
         'pool' => [],
-        'settings' => ['label' => 'Item Set'],
+        'settings' => ['parts' => ['main'], 'label' => 'Item Set'],
     ],
     [
         'resource_name' => 'resources',
@@ -330,7 +330,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:title',
         'pool' => [],
-        'settings' => ['label' => 'Title'],
+        'settings' => ['parts' => ['main'], 'label' => 'Title'],
     ],
     [
         'resource_name' => 'resources',
@@ -338,7 +338,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:date',
         'pool' => [],
-        'settings' => ['label' => 'Date'],
+        'settings' => ['parts' => ['main'], 'label' => 'Date'],
     ],
     [
         'resource_name' => 'resources',
@@ -346,7 +346,7 @@ return [
         'alias' => '',
         'source' => 'dcterms:creator',
         'pool' => [],
-        'settings' => ['label' => 'Creator'],
+        'settings' => ['parts' => ['main'], 'label' => 'Creator'],
     ],
 
     // Fields for bounce links.
