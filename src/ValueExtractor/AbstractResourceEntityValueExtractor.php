@@ -678,7 +678,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             if ($vr) {
                 if (!$this->excludeResourceViaQueryFilter($vr, $solrMap, 'filter_value_resources')) {
                     $solrSubMap = $solrMap->subMap();
-                    if ($solrSubMap->firstSource() === 'value') {
+                    $firstSource = $solrSubMap->firstSource();
+                    if (!$firstSource || $firstSource === 'value') {
                         $extractedValues[] = $value;
                     } else {
                         $resourceExtractedValues = $this->extractValue($vr, $solrSubMap);
