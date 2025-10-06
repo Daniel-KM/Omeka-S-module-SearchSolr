@@ -306,12 +306,12 @@ class SolrMapForm extends Form
             ])
 
             ->add([
-                'name' => 'part',
+                'name' => 'parts',
                 'type' => Element\MultiCheckbox::class,
                 'options' => [
                     'label' => 'Values to extract', // @translate
                     'value_options' => [
-                        'auto' => 'Auto (extracted values as it is)', // @translate
+                        'auto' => 'Auto (extracted values as it is and uri)', // @translate
                         'string' => 'Extracted values as string', // @translate
                         'value' => 'Values only (as stored in database)', // @translate
                         'uri' => 'Uri (for values with an uri)', // @translate
@@ -319,7 +319,7 @@ class SolrMapForm extends Form
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'part',
+                    'id' => 'parts',
                     'value' => [
                         'auto',
                     ],

@@ -679,17 +679,17 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
         if (in_array($formatter, $removedStandards)) {
             switch ($formatter) {
                 case 'standard_with_uri':
-                    $solrMapSettings['part'] = ['value', 'uri'];
+                    $solrMapSettings['parts'] = ['value', 'uri'];
                     break;
                 case 'standard_without_uri':
-                    $solrMapSettings['part'] = ['value'];
+                    $solrMapSettings['parts'] = ['value'];
                     break;
                 case 'uri':
-                    $solrMapSettings['part'] = ['uri'];
+                    $solrMapSettings['parts'] = ['uri'];
                     break;
                 case 'standard':
                 default:
-                    $solrMapSettings['part'] = ['auto'];
+                    $solrMapSettings['parts'] = ['auto'];
                     break;
             }
             $formatter = 'text';

@@ -59,7 +59,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
 
         $result = [];
 
-        $parts = empty($this->settings['part']) ? ['auto'] : $this->settings['part'];
+        $parts = empty($this->settings['parts']) ? ['auto'] : $this->settings['parts'];
 
         // Keep only scalar or ValueRepresentation.
 

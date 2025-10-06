@@ -562,7 +562,7 @@ class CoreController extends AbstractActionController
                     ]),
                     'o:settings' => $this->arrayFilterRecursiveEmptyValue([
                         'label' => $row['settings:label'],
-                        'part' => empty($row['settings:part']) ? [] : $cleanArray($row['settings:part']),
+                        'parts' => empty($row['settings:parts']) ? [] : $cleanArray($row['settings:parts']),
                         'formatter' => $row['settings:formatter'],
                         'normalization' => empty($row['settings:normalization']) ? [] : $cleanArray($row['settings:normalization']),
                         'max_length' => empty($row['settings:max_length']) ? null : (int) $row['settings:max_length'],
@@ -655,7 +655,7 @@ class CoreController extends AbstractActionController
                     (string) $map->pool('filter_visibility'),
                     // Settings.
                     (string) $map->setting('label', ''),
-                    implode(' | ', $map->setting('part', [])),
+                    implode(' | ', $map->setting('parts', [])),
                     (string) $map->setting('formatter', ''),
                     implode(' | ', $map->setting('normalization', [])),
                     (string) $map->setting('max_length', ''),
