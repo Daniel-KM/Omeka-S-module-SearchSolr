@@ -94,7 +94,8 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
 
             case 'main':
                 if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-                    $v = trim((string) $value->value());
+                    $v = $value->value();
+                    $v = is_bool($v) ? ($v ? '1' : '0') : trim((string) $v);
                     if ($v === '') {
                         $vr = $value->valueResource();
                         $result['main'] = $vr
@@ -182,6 +183,10 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         }
 
         $normalizations = $this->settings['normalization'] ?? [];
+
+        if (is_bool($value)) {
+            $value = (int) $value;
+        }
 
         if (in_array('html_escaped', $normalizations)) {
             // New default for php 8.1.

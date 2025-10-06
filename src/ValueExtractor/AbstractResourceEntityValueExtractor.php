@@ -191,6 +191,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         if ($field === 'is_public') {
+            // Some resources like assets have no isPublic method.
             return method_exists($resource, 'isPublic')
                 ? [$resource->isPublic()]
                 : [true];
