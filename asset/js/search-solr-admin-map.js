@@ -391,6 +391,8 @@
         $('input[type=checkbox][name="o:settings[normalization]"]')
             .on('change',toggleSettingsNormalization);
 
+        toggleSettingsNormalization();
+
         // On submit.
         $('#solr-map-form').on('submit', function() {
             $('input[name^="o:source/"]').remove();
