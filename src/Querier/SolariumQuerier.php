@@ -364,7 +364,12 @@ class SolariumQuerier extends AbstractQuerier
         $sitesField = $this->solrCore->mapsBySource('site/o:id', 'generic');
         $sitesField = $sitesField ? (reset($sitesField))->fieldName() : null;
 
-        if (($isPublic && $isPublicField) || ($siteId && $sitesField)) {
+        if (
+            ($isPublic && $isPublicField)
+            || ($siteId && $sitesField)
+            // "Terms" cannot be used for numeric fields (date, integer, float).
+            || $this->fieldIsNumeric(reset($fields))
+        ) {
             $query = $this->solariumClient->createSelect();
             if ($isPublic) {
                 // The field may be a boolean or an integer.
@@ -704,11 +709,25 @@ class SolariumQuerier extends AbstractQuerier
                     $min = isset($facetData['min']) ? $facetData['min'] : $fieldRanges[$facetName]['min'];
                     $max = isset($facetData['max']) ? $facetData['max'] : $fieldRanges[$facetName]['max'];
                     $step = isset($facetData['step']) ? (int) $facetData['step'] : 1;
+                    // Solr upper bounds are excluded by default
+                    /** @see https://solr.apache.org/guide/solr/latest/query-guide/faceting.html */
+                    if ($max) {
+                        $max = (int) $max + ($step ?: 1);
+                    }
+                    /** @var \Solarium\Component\Facet\JsonRange $facet */
                     $facet = $solariumFacetSet
                         ->createJsonFacetRange($facetName)
                         ->setField($facetField)
                         ->setStart($min)
                         ->setEnd($max)
+                        /*
+                        ->setInclude([
+                            // Default is lower only, avoiding double counting.
+                            // Edge is useless in most of the case.
+                            \Solarium\Component\Facet\AbstractRange::INCLUDE_LOWER,
+                            // \Solarium\Component\Facet\AbstractRange::INCLUDE_EDGE,
+                        ])
+                        */
                         ->setGap($step ?: 1)
                         // MinCount is used only with standard facet range.
                         // ->setMinCount(1)
@@ -1641,6 +1660,19 @@ class SolariumQuerier extends AbstractQuerier
             || substr($name, 0, 3) === 'bs_'
             || substr($name, 0, 3) === 'bm_'
         ;
+    }
+
+    protected function fieldIsNumeric($name): bool
+    {
+        return $this->fieldIsInteger($name)
+            || substr($name, - 2) === '_f'
+            || substr($name, - 2) === '_fs'
+            || substr($name, - 3) === '_ds'
+            || substr($name, - 3) === '_dl'
+            // For drupal.
+            || substr($name, 0, 3) === 'fn_'
+            || substr($name, 0, 3) === 'dl_'
+            || substr($name, 0, 3) === 'dm_';
     }
 
     /**
