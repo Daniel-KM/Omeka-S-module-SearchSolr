@@ -137,7 +137,7 @@ class Schema
             $field = $this->getFieldsByName()[$name]
                 ?? $this->getDynamicFieldFor($name);
             if ($field) {
-                $type = $this->getType($field['type']);
+                $type = $this->getType($field['type']) ?? [];
                 $field = new Field($name, $field, $type);
             }
             $this->fields[$name] = $field;

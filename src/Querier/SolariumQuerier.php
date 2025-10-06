@@ -1597,82 +1597,53 @@ class SolariumQuerier extends AbstractQuerier
         return $fields;
     }
 
-    /**
-     * @todo Use schema.
-     */
-    protected function fieldIsTokenized($name): bool
-    {
-        return substr($name, -2) === '_t'
-            || substr($name, -4) === '_txt'
-            || substr($name, -3) === '_ws'
-            || strpos($name, '_txt_') !== false
-            // For drupal.
-            || substr($name, 0, 2) === 't_'
-            || substr($name, 0, 4) === 'txt_'
-            || substr($name, 0, 3) === 'ws_'
-        ;
-    }
-
-    /**
-     * @todo Use schema.
-     */
-    protected function fieldIsString($name): bool
-    {
-        return substr($name, -2) === '_s'
-            || substr($name, -3) === '_ss'
-            || substr($name, -8) === '_s_lower'
-            || substr($name, -9) === '_ss_lower'
-            // For drupal.
-            || substr($name, 0, 3) === 'sm_'
-            || substr($name, 0, 3) === 'ss_'
-        ;
-    }
-
-    /**
-     * @todo Use schema.
-     */
-    protected function fieldIsLower($name): bool
-    {
-        return strpos($name, '_lower') !== false;
-    }
-
-    /**
-     * @todo Use schema.
-     */
-    protected function fieldIsInteger($name): bool
-    {
-        return substr($name, -2) === '_i'
-            || substr($name, -3) === '_is'
-            // For drupal.
-            || substr($name, 0, 3) === 'is_'
-            || substr($name, 0, 3) === 'im_'
-        ;
-    }
-
-    /**
-     * @todo Use schema.
-     */
     protected function fieldIsBool($name): bool
     {
-        return substr($name, -2) === '_b'
-            || substr($name, -3) === '_bs'
-            // For drupal.
-            || substr($name, 0, 3) === 'bs_'
-            || substr($name, 0, 3) === 'bm_'
-        ;
+        /** @var \SearchSolr\Schema\Field $field */
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isBoolean() : false;
+    }
+
+    protected function fieldIsDate($name): bool
+    {
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isDate() : false;
+    }
+
+    protected function fieldIsFloat($name): bool
+    {
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isFloat() : false;
+    }
+
+    protected function fieldIsInteger($name): bool
+    {
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isInteger() : false;
+    }
+
+    protected function fieldIsLowercase($name): bool
+    {
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isLowercase() : false;
     }
 
     protected function fieldIsNumeric($name): bool
     {
-        return $this->fieldIsInteger($name)
-            || substr($name, - 2) === '_f'
-            || substr($name, - 2) === '_fs'
-            || substr($name, - 3) === '_ds'
-            || substr($name, - 3) === '_dl'
-            // For drupal.
-            || substr($name, 0, 3) === 'fn_'
-            || substr($name, 0, 3) === 'dl_'
-            || substr($name, 0, 3) === 'dm_';
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isNumeric() : false;
+    }
+
+    protected function fieldIsString($name): bool
+    {
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isString() : false;
+    }
+
+    protected function fieldIsTokenized($name): bool
+    {
+        $field = $this->getSolrCore()->schema()->getField($name);
+        return $field ? $field->isTokenized() : false;
     }
 
     /**
