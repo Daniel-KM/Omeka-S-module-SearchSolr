@@ -38,6 +38,11 @@ use Omeka\Api\Manager as ApiManager;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 use SearchSolr\ValueFormatter\Manager as ValueFormatterManager;
 
+/**
+ * Adapted:
+ * @see \BulkExport\Form\ShaperConfigFieldset
+ * @see \SearchSolr\Form\Admin\SolrMapForm
+ */
 class SolrMapForm extends Form
 {
     /**

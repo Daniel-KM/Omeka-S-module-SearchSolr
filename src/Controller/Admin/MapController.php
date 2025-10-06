@@ -370,6 +370,10 @@ class MapController extends AbstractActionController
                 continue;
             }
 
+            // TODO Skip map where the values are too much long for exact strings,
+            // for example ocr text should not be "_ss".
+            // But it should be already done because a check is done on complete action.
+
             // There may be multiple maps with the same term.
             $ids = array_keys(array_filter($mapList, fn ($v) => $v === $term));
             $api->batchDelete('solr_maps', $ids);

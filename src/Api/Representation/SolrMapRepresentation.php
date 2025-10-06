@@ -117,6 +117,11 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         } else {
             $test = @preg_match($this->pool['filter_values'], '');
             if ($test === false) {
+                $this->getServiceLocator()->get('Omeka\Logger')
+                    ->err(
+                        'The regex for values in the solr map "{solr_map_id}" of search engine "{solr_core_name}" is invalid: {regex}', // @translate
+                        ['solr_map_id' => $this->id(), 'search_engine_name' => $this->solrCore()->name(), 'regex' => $this->pool['filter_values']]
+                    );
                 $this->pool['filter_values'] = null;
             }
         }

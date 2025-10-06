@@ -239,6 +239,7 @@ class CoreController extends AbstractActionController
         $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
         $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
 
+        // FIXME Find why the value totals are always different than the count of actual resource ids fetched.
         try {
             $counts = $resourceTypeField
                 ? $solrCore->queryValuesCount($resourceTypeField)

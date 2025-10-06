@@ -845,7 +845,8 @@ class SolariumQuerier extends AbstractQuerier
                 } else {
                     // A tag should be added to the facet filter query to be
                     // able to exclude it in the facet query 'tag' option is
-                    // ignored when using 'query', add the tag in the query statement
+                    // ignored when using 'query', add the tag in the query
+                    // statement.
                     $key = $name . '-facet';
                     $tag = strtoupper($key);
                     $enclosedValues = $this->escapePhraseValue($values, 'OR');
@@ -865,7 +866,7 @@ class SolariumQuerier extends AbstractQuerier
      *
      * The configured search alias of the page are not overridden.
      * When the same alias is used multiple times, the more specific is used,
-     * so specific resource > resource > generic.
+     * so: specific resource > resource > generic.
      */
     protected function appendCoreAliasesToQuery(): self
     {
