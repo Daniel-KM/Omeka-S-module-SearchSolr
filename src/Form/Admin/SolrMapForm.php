@@ -312,8 +312,8 @@ class SolrMapForm extends Form
                     'label' => 'Values to extract', // @translate
                     'value_options' => [
                         'full' => 'Full (linked resource label, uri label, uri, and value)', // @translate
-                        'string' => 'Extracted values as string', // @translate
-                        'value' => 'Values only (as stored in database)', // @translate
+                        'main' => 'Single linked resource label, uri label, uri or any extracted value', // @translate
+                        'value' => 'Property values only (as stored in database)', // @translate
                         'uri' => 'Uri (for values with an uri)', // @translate
                         'html' => 'Html (as seen)', // @translate
                     ],

@@ -290,14 +290,14 @@ class MapController extends AbstractActionController
             if (!in_array($term, $skipTermTexts)) {
                 // For filters and facets.
                 $name = strtr($term, ':', '_') . '_ss';
-                $result = $createMap($name, $term, $term, [], ['formatter' => '', 'label' => $property->label()]);
+                $result = $createMap($name, $term, $term, [], ['formatter' => '', 'parts' => ['main'], 'label' => $property->label()]);
                 if ($result) {
                     $newMaps[] = $name;
                 }
 
                 // For sort.
                 $name = strtr($term, ':', '_') . '_s';
-                $result = $createMap($name, $term, null, [], ['formatter' => '', 'label' => $property->label()]);
+                $result = $createMap($name, $term, null, [], ['formatter' => '', 'parts' => ['main'], 'label' => $property->label()]);
                 if ($result) {
                     $newMaps[] = $name;
                 }

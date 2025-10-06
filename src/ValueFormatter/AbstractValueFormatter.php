@@ -92,20 +92,25 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                 }
                 break;
 
-            case 'string':
-                if (is_object($value)) {
-                    if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
-                        $v = $value->value();
-                        $result['string'] = is_bool($v) ? ($v ? '1' : '0') : trim((string) $v);
-                    } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
-                        $result['string'] = trim((string) $value->altText());
-                    } elseif (method_exists('__toString', $value)) {
-                        $result['string'] = trim((string) $value);
+            case 'main':
+                if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                    $v = trim((string) $value->value());
+                    if ($v === '') {
+                        $vr = $value->valueResource();
+                        $result['main'] = $vr
+                            ? trim((string) $vr->displayTitle())
+                            : trim((string) $value->uri());
+                    } else {
+                        $result['main'] = $v;
                     }
-                } elseif (is_bool($value)) {
-                    $result['string'] = $value ? '1' : "0";
-                } elseif (is_scalar($value)) {
+                } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
+                    $result['main'] = trim((string) $value->altText());
+                } elseif (is_object($value) && method_exists('__toString', $value)) {
                     $result['string'] = trim((string) $value);
+                } elseif (is_bool($value)) {
+                    $result['main'] = $value ? '1' : "0";
+                } elseif (is_scalar($value)) {
+                    $result['main'] = trim((string) $value);
                 }
                 break;
 
