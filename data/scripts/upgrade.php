@@ -43,6 +43,14 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
     throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
 }
 
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.53')) {
+    $message = new PsrMessage(
+        $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
+        ['module' => 'Advanced Search', 'version' => '3.4.53']
+    );
+    throw new ModuleCannotInstallException((string) $message);
+}
+
 if (version_compare($oldVersion, '3.5.15.2', '<')) {
     $sql = <<<'SQL'
         CREATE INDEX `IDX_39A565C527B35A195103DEBC` ON `solr_map` (`solr_core_id`, `resource_name`);
@@ -883,5 +891,77 @@ if (version_compare($oldVersion, '3.5.58', '<')) {
         ['link' => '<a href="/admin/search-manager/solr/core/1">' , 'link_end' => '</a>']
     );
     $message->setEscapeHtml(false);
+    $messenger->addSuccess($message);
+}
+
+if (version_compare($oldVersion, '3.5.60', '<')) {
+    // For all maps with no parts or part auto without uri, update the setting
+    // to replace "auto" by "main".
+    // Furtermore, rename "part" as "parts".
+    $sql = <<<'SQL'
+        UPDATE `solr_map`
+        SET
+            `settings` = ?
+        WHERE
+            `id` = ?
+        SQL;
+    $qb = $connection->createQueryBuilder();
+    $qb
+        ->select('id', 'settings')
+        ->from('solr_map', 'solr_map')
+        ->orderBy('id', 'asc');
+    $solrMapIds = $connection->executeQuery($qb)->fetchAllKeyValue();
+    foreach ($solrMapIds as $solrMapId => $solrMapSettings) {
+        $solrMapSettings = json_decode($solrMapSettings, true);
+        $parts = $solrMapSettings['part'] ?? $solrMapSettings['parts'] ?? [];
+        // Can be simplified of course.
+        if (empty($parts)) {
+            // Keep old behavior for empty parts. "auto" is now "main".
+            $parts = ['main'];
+        } elseif (in_array('auto', $parts) && in_array('uri', $parts)) {
+            // Replace auto by value to avoid to add uri.
+            $parts[] = 'value';
+        } elseif (in_array('auto', $parts)) {
+            $parts[] = 'main';
+        }
+        if (in_array('string', $parts)) {
+            $parts[] = 'main';
+        }
+        $solrMapSettings['parts'] = array_diff($parts, ['auto', 'label', 'string']);
+        unset($solrMapSettings['part']);
+        $formatter = $solrMapSettings['formatter'] ?? '';
+        if (empty($solrMapSettings['index_for_link'])) {
+            unset($solrMapSettings['index_for_link']);
+        }
+        if ($formatter !== 'place') {
+            unset(
+                $solrMapSettings['place_mode']
+            );
+        }
+        if ($formatter !== 'thesaurus_self') {
+            unset(
+                $solrMapSettings['thesaurus_resources'],
+                $solrMapSettings['thesaurus_self'],
+                $solrMapSettings['thesaurus_metadata']
+            );
+        }
+        $sql = 'UPDATE `solr_map` SET `settings` = ? WHERE `id` = ?;';
+        $connection->executeStatement($sql, [json_encode($solrMapSettings, 320), $solrMapId]);
+    }
+
+    $message = new PsrMessage(
+        'The default option "auto" for format of indexed values was replaced by "main". A new option "full" now include the uri and the linked resource id. You should check your indices, filters and facets.', // @translate
+    );
+    $messenger->addWarning($message);
+
+    $message = new PsrMessage(
+        'It is now possible to index the label of uri and linked resource.' // @translate
+    );
+    $messenger->addSuccess($message);
+
+
+    $message = new PsrMessage(
+        'It is now possible to specify a boost for selected indexes.' // @translate
+    );
     $messenger->addSuccess($message);
 }
