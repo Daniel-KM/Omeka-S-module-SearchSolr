@@ -245,7 +245,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 <?php endif; ?>
 </div>
 
-
 <h3><?= $translate('By resource') ?></h3>
 
 <div class="by-solr-resource">
@@ -283,7 +282,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     <td>
                         <?php
                             try {
-                                $total = $api->search($resourceName)->getTotalResults();
+                                $total = $api->search($resourceName, ['limit' => 0])->getTotalResults();
                             } catch (Exception $e) {
                                 $total = 0;
                             }
