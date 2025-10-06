@@ -410,6 +410,8 @@ class MapController extends AbstractActionController
             if ($form->isValid()) {
                 $data = $form->getData();
                 $data = $this->arrayFilterRecursiveEmptyValue($data);
+                $data = $this->cleanMapSettings($data);
+                $data = $this->arrayFilterRecursiveEmptyValue($data);
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
@@ -479,6 +481,8 @@ class MapController extends AbstractActionController
             $form->setData($data);
             if ($form->isValid()) {
                 $data = $form->getData();
+                $data = $this->arrayFilterRecursiveEmptyValue($data);
+                $data = $this->cleanMapSettings($data);
                 $data = $this->arrayFilterRecursiveEmptyValue($data);
                 $data['o:source'] = $this->sourceArrayToString($data['o:source']);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
@@ -708,5 +712,26 @@ class MapController extends AbstractActionController
     protected function sourceStringToArray($source)
     {
         return array_map(fn ($v) => ['source' => $v], explode('/', $source));
+    }
+
+    protected function cleanMapSettings(array $data): array
+    {
+        $formatter = $data['o:settings']['formatter'] ?? '';
+        if (empty($data['o:settings']['index_for_link'])) {
+            unset($data['o:settings']['index_for_link']);
+        }
+        if ($formatter !== 'place') {
+            unset(
+                $data['o:settings']['place_mode']
+            );
+        }
+        if ($formatter !== 'thesaurus_self') {
+            unset(
+                $data['o:settings']['thesaurus_resources'],
+                $data['o:settings']['thesaurus_self'],
+                $data['o:settings']['thesaurus_metadata']
+            );
+        }
+        return $data;
     }
 }
