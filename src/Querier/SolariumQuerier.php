@@ -1196,10 +1196,11 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
-            $name = $this->fieldToIndex($field) ?? $field;
-
             $fq = '';
             $first = true;
+            $name = null;
+            $nameAny = null;
+            $nameInteger = null;
 
             foreach ($filter as $queryFilter) {
                 // There is no default in Omeka.
@@ -1224,6 +1225,16 @@ class SolariumQuerier extends AbstractQuerier
                         'Solr does not support search with "except" or "data type": {url}', // @translate
                         ['url' => $_SERVER['REQUEST_URI']]
                     );
+                }
+
+                $requireInteger = in_array($queryType, SearchResources::FIELD_QUERY['value_integer']);
+                if ($requireInteger) {
+                    $nameInteger ??= $this->fieldToIndexNumeric($field)
+                        ?? $nameAny ?? ($nameAny = ($this->fieldToIndex($field) ?? $field));
+                    $name = $nameInteger;
+                } else {
+                    $nameAny ??= $this->fieldToIndex($field) ?? $field;
+                    $name = $nameAny;
                 }
 
                 // Adapted from SearchResources.
@@ -1505,8 +1516,9 @@ class SolariumQuerier extends AbstractQuerier
                     case 'res':
                         // Like equal, but the field must be an integer.
                         if ($this->fieldIsInteger($name)) {
-                            $value = (int) $value;
-                            $fq .= " $joiner ($name:$bool$value$endBool)";
+                            $fqValues = is_array($value) ? array_map('intval', $value) : [(int) $value];
+                            $fqValues = implode(' OR ', $fqValues);
+                            $fq .= " $joiner ($name:$bool($fqValues)$endBool)";
                         }
                         break;
 
@@ -1588,6 +1600,84 @@ class SolariumQuerier extends AbstractQuerier
                             return 3;
                         }
                         if (substr($field, 0, 3) === 'sm_') {
+                            return 4;
+                        }
+                        return 5;
+                    };
+                    $pa = $priority($a);
+                    $pb = $priority($b);
+                    if ($pa === $pb) {
+                        return strcmp($a, $b);
+                    }
+                    return $pa - $pb;
+                });
+            }
+            return reset($indices);
+        }
+
+        if (is_array($result)) {
+            if (count($result) > 1) {
+                $this->logger->warn(
+                    'Solr does not support alias with more than one field for now: {url}', // @translate
+                    ['url' => $_SERVER['REQUEST_URI']]
+                );
+            }
+            return reset($result);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Convert a field argument into one or more numeric indexes.
+     *
+     * The indexes are the properties in internal sql.
+     * This method allows to support same indexes in Solr, in particular for
+     * automatic and manual links, when the index is unknown.
+     * Any property can be used, but the index should exist.
+     * The default index used is "_link_is", then "_is", and "_link" and "si_"
+     * (drupal). Don't forget to index linked resource ids when needed.
+     *
+     * The index "link" is useful for llnks that allow to rebound between pages:
+     * it contains the uri or the id for exact search, but it can be displayed
+     * with another index ("_is") in facets and filters.
+     *
+     * @todo For now, only one field is supported, since an index with multiple properties can be created.
+     * @todo Store the right order of indexes to avoid to repeat the sort when the list of index is stored.
+     * @todo Check if the aliases can be used for the bounce links.
+     *
+     * @return array|string|null
+     */
+    protected function fieldToIndexNumeric(string $field)
+    {
+        $result = $this->query->getAliases()[$field]['fields'] ?? null;
+
+        // Allow to use property terms and dynamic fields. Note: they should be indexed.
+        if (!$result) {
+            // Try to convert terms into standard field.
+            $term = $this->easyMeta->propertyTerm($field);
+            if (!$term) {
+                return null;
+            }
+            // Check if a standard index exists.
+            $indices = $this->usedSolrFields([], [], [strtr($term, ':', '_')]);
+            if (!count($indices)) {
+                return null;
+            } elseif (count($indices) > 1) {
+                // Try to use full multiple strings, not the tokenized ones.
+                // See appendCoreAliasesToQuery().
+                usort($indices, function ($a, $b) {
+                    $priority = function ($field) {
+                        if (substr($field, -8) === '_link_is') {
+                            return 0;
+                        }
+                        if (substr($field, -3) === '_is') {
+                            return 1;
+                        }
+                        if (substr($field, -5) === '_link') {
+                            return 3;
+                        }
+                        if (substr($field, 0, 3) === 'si_') {
                             return 4;
                         }
                         return 5;
