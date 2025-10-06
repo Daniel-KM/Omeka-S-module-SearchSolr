@@ -609,6 +609,28 @@ class SolariumQuerier extends AbstractQuerier
         $this->appendHiddenFilters();
         $this->filterQuery();
 
+        // DisMax is the only querier for now (not standard, not eDisMax).
+        // Boosts from the index and from the query.
+        // In practice, solr manage boost only at search time, so the difference
+        // is only for configuration by the user.
+        // Important: when used, the full list of fields should be set.
+        $fieldsWithBoost = $this->solrCore->setting('field_boost');
+        $fieldsWithBoostQuery = $this->query->getFieldBoosts();
+        if ($fieldsWithBoostQuery) {
+            $fields = array_unique(explode(' ', (string) $fieldsWithBoost));
+            $fields = array_combine($fields, $fields);
+            /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
+            foreach ($this->solrCore->mapsOrderedByStructure() as $map) {
+                $field = $map->fieldName();
+                $fields[$field] = $field;
+            }
+            $fieldsWithBoost = implode(' ', $fields);
+        }
+        if ($fieldsWithBoost) {
+            $dismax = $this->solariumQuery->getDisMax();
+            $dismax->setQueryFields($fieldsWithBoost);
+        }
+
         $sort = $this->query->getSort();
         if ($sort) {
             @[$sortField, $sortOrder] = explode(' ', $sort, 2);

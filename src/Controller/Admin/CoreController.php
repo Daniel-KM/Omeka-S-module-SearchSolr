@@ -46,6 +46,7 @@ use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 class CoreController extends AbstractActionController
 {
     use TraitArrayFilterRecursiveEmptyValue;
+    use TraitSolrController;
 
     /**
      * The structure should be the same in import and export.
@@ -179,6 +180,7 @@ class CoreController extends AbstractActionController
         $data['o:settings']['client']['secure'] = !empty($data['o:settings']['client']['secure']);
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
         $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages']))));
+        $data['o:settings']['field_boost'] = $this->prepareFieldsBoost($solrCore);
         unset($data['o:settings']['clear_full_index']);
         $this->api()->update('solr_cores', $id, $data);
 

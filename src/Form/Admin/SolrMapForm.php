@@ -307,6 +307,22 @@ class SolrMapForm extends Form
             ])
 
             ->add([
+                'name' => 'boost',
+                'type' => CommonElement\OptionalNumber::class,
+                'options' => [
+                    'label' => 'Boost multiplier', // @translate
+                    'info' => 'The boost is set by index, so if the boost is set multiple times, only the value of the last index will be used. Moreover, they can be overridden by the search fields boosts.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'boost',
+                    'required' => false,
+                    'min' => '0.001',
+                    'max' => '9999.999',
+                    'step' => '0.001',
+                ],
+            ])
+
+            ->add([
                 'name' => 'index_for_link',
                 'type' => Element\Checkbox::class,
                 'options' => [

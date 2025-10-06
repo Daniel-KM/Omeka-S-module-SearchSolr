@@ -45,6 +45,7 @@ use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 class MapController extends AbstractActionController
 {
     use TraitArrayFilterRecursiveEmptyValue;
+    use TraitSolrController;
 
     /**
      * @var \Doctrine\DBAL\Connection
@@ -311,6 +312,9 @@ class MapController extends AbstractActionController
             }
         }
 
+        // Ideally, the update of the core should be done one time via an event.
+        $this->updateFieldsBoost($solrCore);
+
         if ($newMaps) {
             $this->messenger()->addSuccess(new PsrMessage(
                 '{count} new maps successfully created: {list}.', // @translate
@@ -327,9 +331,13 @@ class MapController extends AbstractActionController
 
     public function cleanAction()
     {
+        /**
+         * @var \Omeka\Mvc\Controller\Plugin\Api $api
+         */
+        $api = $this->api();
+
         $solrCoreId = $this->params('core-id');
         $resourceName = $this->params('resource-name');
-        $api = $this->api();
 
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
@@ -370,6 +378,8 @@ class MapController extends AbstractActionController
         }
 
         if ($result) {
+            // Ideally, the update of the core should be done via an event.
+            $this->updateFieldsBoost($solrCore);
             $this->messenger()->addSuccess(new PsrMessage(
                 '{count} maps successfully deleted: {list}.', // @translate
                 ['count' => count($result), 'list' => implode(', ', $result)]
@@ -404,6 +414,9 @@ class MapController extends AbstractActionController
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_maps', $data);
+
+                // Ideally, the update of the core should be done via event.
+                $this->updateFieldsBoost($solrCore);
 
                 $this->messenger()->addSuccess(new PsrMessage(
                     'Solr map created: {solr_map_name}.', // @translate
@@ -471,6 +484,9 @@ class MapController extends AbstractActionController
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->update('solr_maps', $id, $data);
+
+                // Ideally, the update of the core should be done via an event.
+                $this->updateFieldsBoost($solrCore);
 
                 $this->messenger()->addSuccess(new PsrMessage(
                     'Solr map modified: {solr_map_name}.', // @translate
@@ -545,7 +561,10 @@ class MapController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
+                $solrCore = $map->solrCore();
                 $this->api()->delete('solr_maps', $id);
+                // Ideally, the update of the core should be done via event.
+                $this->updateFieldsBoost($solrCore);
                 $this->messenger()->addSuccess('Solr map successfully deleted'); // @translate
                 $this->messenger()->addWarning('Don’t forget to check search pages that used this map.'); // @translate
             } else {
