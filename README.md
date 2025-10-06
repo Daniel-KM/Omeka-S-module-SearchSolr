@@ -82,7 +82,12 @@ Quick start
     1. Create an index
         1. Add a new index with name `Default` or whatever you want, using the
         Solr adapter and the `default` core.
-        2. Launch the indexation by clicking on the "reindex" button (two arrows
+        2. Default mapping between omeka metadata and solr indexes are added
+        automatically, but it possible to add new ones for various purposes
+        (general search, specific search, display, link, facets, sort, etc.).
+        This is the main point to understand: it is recommended to index a value
+        multiple times.
+        3. Launch the indexation by clicking on the "reindex" button (two arrows
         forming a circle).
     2. Create a page
         1. Add a page with name `Default` or whatever you want, a path to access
@@ -148,6 +153,15 @@ Nevertheless, some people want an advanced search where they can request on a
 specific property, or a group of metadata, with pattern, and even combine them
 together with various joiners (and, or, not, near…). In that particular case, it
 will be required to create multiple indexes in details.
+
+### Bounce links
+
+When indexing linked resources (local resource with another item, for example
+when [Custom Vocab] is used, or external resource with an uri, for example for
+values from module [Value Suggest]), it is recommended to add an index formatted
+as "link" for it and to name it as `*_link_ss` to simplify the browsing with
+bounce links. Automatic bounce links can be added via the module [Advanced Resource Template]
+and manual bounce links can be added manually via the theme or pages.
 
 ### Indexation with third party
 
@@ -899,6 +913,9 @@ the [digital library Explore] of [Université Paris Sciences & Lettres]. The for
 [below]: #manage-solr
 [below for Debian]: #solr-install
 [below "Solr management"]: #solr-management
+[Custom Vocab]: https://github.com/Omeka-S-modules/CustomVocab
+[Value Suggest]: https://github.com/Omeka-S-modules/ValueSuggest
+[Advanced Resource Template]: https://gitlab.com/Daniel-KM/Omeka-S-module-AdvancedResourceTemplate
 [Solr system requirements]: https://solr.apache.org/guide/solr/latest/deployment-guide/system-requirements.html
 [official guide for production]: https://solr.apache.org/guide/solr/latest/deployment-guide/taking-solr-to-production.html
 [http://localhost:8983]: http://localhost:8983
