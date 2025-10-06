@@ -227,10 +227,15 @@
             });
 
         // Sub-property managing.
+        // Other checkboxes are added dynamically.
         $('input[name="o:source[0][set_sub]"]')
             .on('change', function() {
                 subPropertyChange(this, 0);
             });
+
+        // On load, check all sub-properties except last one.
+        const checkboxes = $('fieldset#o-source .field input[type=checkbox][name^="o:source"][name$="[set_sub]"]');
+        checkboxes.slice(0, -1).prop('checked', true);
 
         // Init main select and input.
 
@@ -395,6 +400,12 @@
 
         // On submit.
         $('#solr-map-form').on('submit', function() {
+            // Remove all empty selects for source, except the first one.
+            const selects = $('fieldset#o-source select[name^="o:source["]');
+            selects
+                .slice(1).filter((_, el) => $(el).val() === '')
+                .remove();
+            // Cleaning. Still needed?
             $('input[name^="o:source/"]').remove();
         });
 

@@ -2,6 +2,7 @@
 
 namespace SearchSolr\Form\Admin;
 
+use Common\Form\Element as CommonElement;
 use Laminas\Form\Element;
 use Laminas\Form\Fieldset;
 use Laminas\InputFilter\InputFilterProviderInterface;
@@ -19,7 +20,7 @@ class SourceFieldset extends Fieldset implements InputFilterProviderInterface
         $this
             ->add([
                 'name' => 'source',
-                'type' => Element\Select::class,
+                'type' => CommonElement\OptionalSelect::class,
                 'options' => [
                     'value_options' => $this->getOption('options'),
                     'empty_option' => 'Select a metadata from the resource…', // @translate
@@ -28,7 +29,7 @@ class SourceFieldset extends Fieldset implements InputFilterProviderInterface
                 'name' => 'set_sub',
                 'type' => Element\Checkbox::class,
                 'options' => [
-                    'label' => 'Set sub-property', // @translate
+                    'label' => 'Sub-property', // @translate
                     'use_hidden_element' => false,
                 ],
             ]);

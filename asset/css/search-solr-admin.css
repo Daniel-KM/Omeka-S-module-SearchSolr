@@ -25,6 +25,13 @@
         display: none;
     }
 
+    .required fieldset[name^="o:source["] .field-meta::after {
+        content: "";
+    }
+    .required fieldset[name^="o:source["] .field-meta label[for^="o:source["] {
+        line-height: initial;
+    }
+
     #field-info {
         line-height: initial;
         font-size: 80%;
