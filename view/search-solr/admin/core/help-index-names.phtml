@@ -24,6 +24,7 @@ $translate = $plugins->get('translate');
 	        <li><?= $escape($translate('For global searches, indices should be "_t" and "_txt".')) ?></li>
 	        <li><?= $escape($translate('For simple filters and facets, indices should be a multiple whole values ("_ss", "_is" and "_dts").')) ?></li>
 	        <li><?= $escape($translate('For sort, it should be a single value ("_s", "_i" and "_dt").')) ?></li>
+	        <li><?= $escape($translate('For bounce links, it should be multiple values formatted for linking ("_link_ss").')) ?></li>
 	        <li><?= $escape($translate('"_ancestor_path" and "_descendent_path" are generally used for search and facets, generally with a thesaurus, a classification scheme, or geographic names.')) ?></li>
         </ul>
         <?= $escape($translate('Other indices are available for complex cases. Solr should be configured first if more types are needed.')) ?>

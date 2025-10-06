@@ -150,6 +150,19 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                 }
                 break;
 
+            case 'link':
+                if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
+                    $vr = $value->valueResource();
+                    if ($vr) {
+                        $result['link'] = (string) $vr->id();
+                    } elseif ($v = trim((string) $value->uri())) {
+                        $result['link'] = $v;
+                    } else {
+                        $result['link'] = trim((string) $value->value());
+                    }
+                }
+                break;
+
             case 'html':
                 if ($value instanceof \Omeka\Api\Representation\ValueRepresentation) {
                     $result['html'] = trim((string) $value->asHtml());
