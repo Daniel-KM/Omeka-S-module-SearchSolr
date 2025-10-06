@@ -27,7 +27,7 @@ $baseUrlEscaped = $escapeAttr($url('admin') . '/' . $easyMeta->resourceType($res
 	        $translate($easyMeta->resourceLabelPlural($resourceName)), $resourceName, count($resourceTitles)) ?></h4>
     <ul>
         <?php foreach ($resourceTitles as $resourceId => $title): ?>
-        <li><?= sprintf('<a href="%s" class="value-text">%s</a>', $baseUrlEscaped . $resourceId, $escape($title)) ?></li>
+        <li><?= sprintf('<a href="%1$s" class="value-text">%2$s #%3$s</a>', $baseUrlEscaped . $resourceId, $escape($title), $resourceId) ?></li>
         <?php endforeach; ?>
     </ul>
 </div>
