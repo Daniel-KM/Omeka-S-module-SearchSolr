@@ -609,26 +609,52 @@ class SolariumQuerier extends AbstractQuerier
         $this->appendHiddenFilters();
         $this->filterQuery();
 
-        // DisMax is the only querier for now (not standard, not eDisMax).
-        // Boosts from the index and from the query.
-        // In practice, solr manage boost only at search time, so the difference
-        // is only for configuration by the user.
-        // Important: when used, the full list of fields should be set.
-        $fieldsWithBoost = $this->solrCore->setting('field_boost');
-        $fieldsWithBoostQuery = $this->query->getFieldBoosts();
-        if ($fieldsWithBoostQuery) {
-            $fields = array_unique(explode(' ', (string) $fieldsWithBoost));
-            $fields = array_combine($fields, $fields);
-            /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
-            foreach ($this->solrCore->mapsOrderedByStructure() as $map) {
-                $field = $map->fieldName();
-                $fields[$field] = $field;
+        // The boost is only useful when there is a query.
+        $q = (string) $this->solariumQuery->getQuery();
+        if (strlen($q)
+            && $q !== '*:*' && $q !== '*%3A*' && $q !== '*'
+        ) {
+            // DisMax is the only querier for now (not standard, not eDisMax).
+            // Boosts from the index and from the query.
+            // In practice, solr manage boost only at search time, so the difference
+            // is only for configuration by the user.
+            // Important: when used, the full list of fields should be set.
+            $fieldsWithBoost = $this->solrCore->setting('field_boost');
+            $fieldsWithBoostQuery = $this->query->getFieldBoosts();
+            if ($fieldsWithBoostQuery) {
+                $fields = array_unique(explode(' ', (string) $fieldsWithBoost));
+                $fields = array_combine($fields, $fields);
+                /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
+                foreach ($this->solrCore->mapsOrderedByStructure() as $map) {
+                    $field = $map->fieldName();
+                    $fields[$field] = $field;
+                }
+                $fieldsWithBoost = $fields;
+            } elseif ($fieldsWithBoost) {
+                $fieldsWithBoost = explode(' ', $fieldsWithBoost);
             }
-            $fieldsWithBoost = implode(' ', $fields);
-        }
-        if ($fieldsWithBoost) {
-            $dismax = $this->solariumQuery->getDisMax();
-            $dismax->setQueryFields($fieldsWithBoost);
+            if ($fieldsWithBoost) {
+                $fields = array_unique($fieldsWithBoost);
+                $fieldsWithBoost = array_combine($fields, $fields);
+                // Avoid issue with fields that are not content, but only filter, so
+                // that cannot be boosted.
+                $skipBoostFields = array_filter([
+                    'id',
+                    'id_i',
+                    'name_s',
+                    'ss_name',
+                    'owner_id',
+                    'owner_id_i',
+                    $resourceTypeField,
+                    $isPublicField,
+                    $sitesField,
+                ]);
+                $fieldsWithBoost = array_diff_key($fields, $skipBoostFields);
+                if ($fieldsWithBoost) {
+                    $dismax = $this->solariumQuery->getDisMax();
+                    $dismax->setQueryFields(implode(' ', $fieldsWithBoost));
+                }
+            }
         }
 
         $sort = $this->query->getSort();

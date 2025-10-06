@@ -25,6 +25,8 @@ trait TraitSolrController
      *
      * All the fields are included by default, else they will be excluded from
      * any search.
+     *
+     * @todo Keep only the "_txt", dates fields and other contents fields? Not ids?
      */
     protected function prepareFieldsBoost(SolrCoreRepresentation $solrCore): string
     {
