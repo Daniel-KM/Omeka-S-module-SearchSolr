@@ -173,6 +173,13 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
             $value = str_replace('  ', ' ', preg_replace('~[^\p{L}\p{N}-]++~u', ' ', (string) $value));
         }
 
+        if (in_array('alphabetic', $normalizations)) {
+            // Remove space recursively.
+            $value = str_replace('  ', ' ', preg_replace('~[^\p{L}\p{N}-]++~u', ' ', (string) $value));
+            // Remove digits.
+            $value = preg_replace('~\p{N}+~u', '', (string) $value);
+        }
+
         if (in_array('max_length', $normalizations)) {
             $maxLength = !empty($this->settings['max_length'])
                 ? (int) $this->settings['max_length']

@@ -352,6 +352,7 @@ class SolrMapForm extends Form
                         'ucfirst' => 'Upper case first character', // @translate
                         'remove_diacritics' => 'Remove diacritics', // @translate
                         'alphanumeric' => 'Alphanumeric only', // @translate
+                        'alphabetic' => 'Alphabetic only', // @translate
                         'max_length' => 'Max length', // @translate
                         'integer' => 'Number', // @translate
                         'year' => 'Year', // @translate
