@@ -74,6 +74,12 @@ $hyperlink = $plugins->get('hyperlink');
                             ]) ?>
                         </li>
                         <li>
+                            <?= $solrCore->link('', 'show-indexing-stats', [
+                                'class' => 'o-icon- far fa-sun',
+                                'title' => $translate('Indexing stats'),  // @translate
+                            ]) ?>
+                        </li>
+                        <li>
                             <a href="#"
                             data-sidebar-content-url="<?= $escape($solrCore->url('delete-confirm')) ?>"
                             class="o-icon-delete sidebar-content"

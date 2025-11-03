@@ -268,6 +268,52 @@ class CoreController extends AbstractActionController
         ]);
     }
 
+public function showIndexingStatsAction()
+    {
+        /**
+         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         */
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        $valueExtractors = [];
+        foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
+            $valueExtractors[$name] = $this->valueExtractorManager->get($name);
+        }
+
+        // For compatibility with drupal, allow to use the alias.
+        $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+
+        // FIXME Find why the value totals are always different than the count of actual resource ids fetched.
+        try {
+            $counts = $resourceTypeField
+                ? $solrCore->queryValuesCount($resourceTypeField)
+                : [];
+        } catch (\Exception $e) {
+            $counts = [];
+            $this->messenger()->addError(new PsrMessage(
+                'Solr issue: {msg}', // @translate
+                ['msg' => $e->getMessage()]
+            ));
+        }
+
+        $missingMaps = $solrCore->missingRequiredMaps();
+        if ($missingMaps) {
+            $this->messenger()->addError(new PsrMessage(
+                'Some required fields are missing or not available in the core: {fields}. Update the generic or the resource mappings.', // @translate
+                ['fields' => implode(', ', array_unique($missingMaps))]
+            ));
+        }
+
+        return new ViewModel([
+            'solrCore' => $solrCore,
+            'resource' => $solrCore,
+            'valueExtractors' => $valueExtractors,
+            'counts' => $counts,
+        ]);
+    }
+
     public function deleteConfirmAction()
     {
         /**
