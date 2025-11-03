@@ -245,59 +245,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 <?php endif; ?>
 </div>
 
-<h3><?= $translate('By resource') ?></h3>
 
-<div class="by-solr-resource">
-    <table class="tablesaw" data-tablesaw-mode="stack">
-        <thead>
-            <tr>
-                <th><?= $translate('Name') ?></th>
-                <th><?= $translate('Info') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($counts as $resourceName => $count): ?>
-                <tr>
-                    <td>
-                        <span><?= $escape(sprintf($translate('%1$s (%2$s)'), $translate($easyMeta->resourceLabel($resourceName)), $resourceName)) ?></span>
-                        <?php if ($resourceName !== 'resources'): ?>
-                        <ul class="actions">
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName,
-                                    'class' => 'o-icon- fas fa-spell-check sidebar-content',
-                                    'title' => $translate('List indexed resources'),
-                                ]) ?>
-                            </li>
-                            <li>
-                                <?= $hyperlink('', '#', [
-                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName . '&missing=1',
-                                    'class' => 'o-icon- fas fa-times-circle sidebar-content',
-                                    'title' => $translate('List non-indexed resources'),
-                                ]) ?>
-                            </li>
-                        </ul>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <?php
-                            try {
-                                $total = $api->search($resourceName, ['limit' => 0])->getTotalResults();
-                            } catch (Exception $e) {
-                                $total = 0;
-                            }
-                            echo $count > $total
-                                ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (too many or indexed multiple times)'), $resourceName, $count, $total, $total - $count)
-                                : ($count < $total
-                                    ? sprintf($translate('%1$s: %2$d indexed / %3$d = %4$d (missing)'), $resourceName, $count, $total, $total - $count)
-                                    : sprintf($translate('%1$s: %2$d indexed / %3$d (all)'), $resourceName, $count, $total))
-                        ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
 
 <div class="sidebar">
     <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
