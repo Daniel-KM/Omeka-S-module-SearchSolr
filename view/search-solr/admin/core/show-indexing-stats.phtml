@@ -2,7 +2,6 @@
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
- * @var \SearchSolr\ValueExtractor\ValueExtractorInterface[] $valueExtractors
  * @var array $counts
  */
 
@@ -26,51 +25,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 ?>
 
 <?= $this->pageTitle($solrCore->name(), 1, $translate('Solr core')) ?>
-
-<h1>SHOW INDEXING STATS TEMPLATE</h1>
-
-<div id="page-actions">
-    <?php // $this->trigger('view.show.page_actions', ['resource' => $solrCore]); ?>
-    <div id="page-action-menu">
-        <?php if ($solrCore->userIsAllowed('update')): ?>
-        <div class="with-sub-menu">
-            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
-                <?= $translate('Maps') ?>
-            </a>
-            <ul class="collapsible">
-                <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
-                <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name), ['class' => 'link']) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <div class="with-sub-menu">
-            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
-                <?= $translate('Add a map') ?>
-            </a>
-            <ul class="collapsible">
-                <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
-                <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name, 'add'), ['class' => 'link']) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <?= $hyperlink($translate('Map all'), $solrCore->resourceMapUrl('items', 'complete'), [
-            'class' => 'button',
-            'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?>
-        <?= $hyperlink($translate('Remove unused'), $solrCore->resourceMapUrl('items', 'clean'), [
-            'class' => 'button',
-            'title' => $translate('Remove maps of properties that are not used.')]) ?>
-        <?php endif; ?>
-        <?= $hyperlink($translate('Export'), $solrCore->adminUrl('export'), [
-            'class' => 'button',
-            'title' => $translate('Export maps for easier spreadsheet mapping.')]) ?>
-        <?php if ($solrCore->userIsAllowed('update')): ?>
-        <?= $hyperlink($translate('Import'), $solrCore->adminUrl('import'), [
-            'class' => 'button',
-            'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
-        <?php endif; ?>
-        <?php // TODO Add button to reindex. ?>
-    </div>
-</div>
 
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
     <?= $hyperlink($translate('Search'), $url('admin/search')) ?>

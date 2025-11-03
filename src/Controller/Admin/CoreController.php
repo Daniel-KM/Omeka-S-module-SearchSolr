@@ -37,6 +37,8 @@ use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Container\ContainerExceptionInterface;
 use SearchSolr\Api\Adapter\TraitArrayFilterRecursiveEmptyValue;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
@@ -235,23 +237,6 @@ class CoreController extends AbstractActionController
             $valueExtractors[$name] = $this->valueExtractorManager->get($name);
         }
 
-        // For compatibility with drupal, allow to use the alias.
-        $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
-        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
-
-        // FIXME Find why the value totals are always different than the count of actual resource ids fetched.
-        try {
-            $counts = $resourceTypeField
-                ? $solrCore->queryValuesCount($resourceTypeField)
-                : [];
-        } catch (\Exception $e) {
-            $counts = [];
-            $this->messenger()->addError(new PsrMessage(
-                'Solr issue: {msg}', // @translate
-                ['msg' => $e->getMessage()]
-            ));
-        }
-
         $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
             $this->messenger()->addError(new PsrMessage(
@@ -264,7 +249,6 @@ class CoreController extends AbstractActionController
             'solrCore' => $solrCore,
             'resource' => $solrCore,
             'valueExtractors' => $valueExtractors,
-            'counts' => $counts,
         ]);
     }
 
@@ -276,27 +260,7 @@ public function showIndexingStatsAction()
         $id = $this->params('id');
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
-        $valueExtractors = [];
-        foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
-            $valueExtractors[$name] = $this->valueExtractorManager->get($name);
-        }
-
-        // For compatibility with drupal, allow to use the alias.
-        $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
-        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
-
-        // FIXME Find why the value totals are always different than the count of actual resource ids fetched.
-        try {
-            $counts = $resourceTypeField
-                ? $solrCore->queryValuesCount($resourceTypeField)
-                : [];
-        } catch (\Exception $e) {
-            $counts = [];
-            $this->messenger()->addError(new PsrMessage(
-                'Solr issue: {msg}', // @translate
-                ['msg' => $e->getMessage()]
-            ));
-        }
+        $counts = $this->getIndexedResourceCounts($solrCore);
 
         $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
@@ -309,7 +273,6 @@ public function showIndexingStatsAction()
         return new ViewModel([
             'solrCore' => $solrCore,
             'resource' => $solrCore,
-            'valueExtractors' => $valueExtractors,
             'counts' => $counts,
         ]);
     }
@@ -838,5 +801,34 @@ public function showIndexingStatsAction()
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * 
+     * @param SolrCoreRepresentation $solrCore 
+     * @return array 
+     * @throws NotFoundExceptionInterface 
+     * @throws ContainerExceptionInterface 
+     */
+    protected function getIndexedResourceCounts(SolrCoreRepresentation $solrCore): array
+    {
+        // For compatibility with drupal, allow to use the alias.
+        $resourceTypeField = $solrCore->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+
+        // FIXME Find why the value totals are always different than the count of actual resource ids fetched.
+        try {
+            $counts = $resourceTypeField
+                ? $solrCore->queryValuesCount($resourceTypeField)
+                : [];
+        } catch (\Exception $e) {
+            $counts = [];
+            $this->messenger()->addError(new PsrMessage(
+                'Solr issue: {msg}', // @translate
+                ['msg' => $e->getMessage()]
+            ));
+        }
+
+        return $counts;
     }
 }
