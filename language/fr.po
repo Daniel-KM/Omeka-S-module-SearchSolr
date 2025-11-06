@@ -155,6 +155,11 @@ msgstr ""
 "Afficher les infos sur Solr et les alignements entre les métadonnées Omeka "
 "et les index Solr"
 
+#: view/search-solr/admin/core/browse-table.phtml:79
+msgid "View indexing statistics"
+msgstr "Voir les statistiques d'indexation."
+
+
 #: view/search-solr/admin/core/browse.phtml:51
 msgid "Add new core"
 msgstr "Ajouter un nouveau cœur"

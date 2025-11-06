@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-06 00:00+0000\n"
+"POT-Creation-Date: 2025-11-06 16:43+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/scripts/upgrade.php:40 data/scripts/upgrade.php:751 Module.php:120
+#: data/scripts/upgrade.php:40 Module.php:120
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr ""
@@ -25,10 +25,6 @@ msgstr ""
 #: data/scripts/upgrade.php:48 Module.php:136
 msgid ""
 "This module requires module \"{module}\" version \"{version}\" or greater."
-msgstr ""
-
-#: Module.php:377
-msgid "Solr"
 msgstr ""
 
 #: src/EngineAdapter/Solarium.php:116 src/EngineAdapter/Solarium.php:205
@@ -41,7 +37,7 @@ msgstr ""
 
 #: src/EngineAdapter/Solarium.php:180 src/EngineAdapter/Solarium.php:219
 #: src/EngineAdapter/Solarium.php:244
-#: view/search-solr/admin/core/show.phtml:262
+#: view/search-solr/admin/core/show-indexing-stats.phtml:49
 #, php-format
 msgid "%1$s (%2$s)"
 msgstr ""
@@ -101,7 +97,8 @@ msgstr ""
 #: view/search-solr/admin/core/add.phtml:49
 #: view/search-solr/admin/core/edit.phtml:49
 #: view/search-solr/admin/core/import.phtml:22
-#: view/search-solr/admin/core/show.phtml:28
+#: view/search-solr/admin/core/show-indexing-stats.phtml:27
+#: view/search-solr/admin/core/show.phtml:27
 #: view/search-solr/admin/map/add.phtml:51
 #: view/search-solr/admin/map/browse-resource.phtml:51
 #: view/search-solr/admin/map/edit.phtml:52
@@ -112,7 +109,8 @@ msgstr ""
 #: view/search-solr/admin/core/browse.phtml:54
 #: view/search-solr/admin/core/edit.phtml:55
 #: view/search-solr/admin/core/import.phtml:29
-#: view/search-solr/admin/core/show.phtml:73
+#: view/search-solr/admin/core/show-indexing-stats.phtml:29
+#: view/search-solr/admin/core/show.phtml:72
 msgid "Breadcrumb"
 msgstr ""
 
@@ -122,7 +120,8 @@ msgstr ""
 #: view/search-solr/admin/core/browse.phtml:56
 #: view/search-solr/admin/core/edit.phtml:57
 #: view/search-solr/admin/core/import.phtml:31
-#: view/search-solr/admin/core/show.phtml:75
+#: view/search-solr/admin/core/show-indexing-stats.phtml:31
+#: view/search-solr/admin/core/show.phtml:74
 #: view/search-solr/admin/map/add.phtml:55
 #: view/search-solr/admin/map/browse-resource.phtml:61
 #: view/search-solr/admin/map/edit.phtml:56
@@ -139,6 +138,10 @@ msgstr ""
 
 #: view/search-solr/admin/core/browse-table.phtml:73
 msgid "Get info about the Solr core and map Omeka metadata and Solr indices"
+msgstr ""
+
+#: view/search-solr/admin/core/browse-table.phtml:79
+msgid "View indexing statistics"
 msgstr ""
 
 #: view/search-solr/admin/core/browse.phtml:51
@@ -228,7 +231,7 @@ msgid "Import mapping"
 msgstr ""
 
 #: view/search-solr/admin/core/import.phtml:25
-#: view/search-solr/admin/core/show.phtml:63
+#: view/search-solr/admin/core/show.phtml:62
 msgid "Export maps for easier spreadsheet mapping."
 msgstr ""
 
@@ -267,141 +270,141 @@ msgstr ""
 msgid "Total indexed values: %d"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:36
-#: view/search-solr/admin/core/show.phtml:92
-#: view/search-solr/admin/core/show.phtml:154
+#: view/search-solr/admin/core/show-indexing-stats.phtml:35
+msgid "By resource"
+msgstr ""
+
+#: view/search-solr/admin/core/show-indexing-stats.phtml:56
+msgid "List indexed resources"
+msgstr ""
+
+#: view/search-solr/admin/core/show-indexing-stats.phtml:63
+msgid "List non-indexed resources"
+msgstr ""
+
+#: view/search-solr/admin/core/show-indexing-stats.phtml:77
+#, php-format
+msgid "%1$s: %2$d indexed / %3$d = %4$d (too many or indexed multiple times)"
+msgstr ""
+
+#: view/search-solr/admin/core/show-indexing-stats.phtml:79
+#, php-format
+msgid "%1$s: %2$d indexed / %3$d = %4$d (missing)"
+msgstr ""
+
+#: view/search-solr/admin/core/show-indexing-stats.phtml:80
+#, php-format
+msgid "%1$s: %2$d indexed / %3$d (all)"
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:35
+#: view/search-solr/admin/core/show.phtml:91
+#: view/search-solr/admin/core/show.phtml:153
 #: view/search-solr/admin/map/browse-resource.phtml:68
 msgid "Maps"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:46
+#: view/search-solr/admin/core/show.phtml:45
 msgid "Add a map"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:54
+#: view/search-solr/admin/core/show.phtml:53
 msgid "Map all"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:56
+#: view/search-solr/admin/core/show.phtml:55
 msgid "Add indices (_txt, _ss, _s) to all missing and used properties."
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:57
+#: view/search-solr/admin/core/show.phtml:56
 msgid "Remove unused"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:59
+#: view/search-solr/admin/core/show.phtml:58
 #: view/search-solr/admin/map/browse-resource.phtml:56
 msgid "Remove maps of properties that are not used."
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:67
+#: view/search-solr/admin/core/show.phtml:66
 msgid ""
 "Import maps. Warning: it will reset the current mapping for all resources. "
 "It is recommended to export it first."
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:79
+#: view/search-solr/admin/core/show.phtml:78
 msgid "By index"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:89
+#: view/search-solr/admin/core/show.phtml:88
 msgid "Index"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:95
-#: view/search-solr/admin/core/show.phtml:157
+#: view/search-solr/admin/core/show.phtml:94
+#: view/search-solr/admin/core/show.phtml:156
 #: view/search-solr/admin/map/browse-resource.phtml:71
 msgid "Source Omeka"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:96
-#: view/search-solr/admin/core/show.phtml:158
+#: view/search-solr/admin/core/show.phtml:95
+#: view/search-solr/admin/core/show.phtml:157
 #: view/search-solr/admin/map/browse-resource.phtml:72
 msgid "Pool / Filter"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:127
+#: view/search-solr/admin/core/show.phtml:126
 msgid "List indexed values alphabetically"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:134
+#: view/search-solr/admin/core/show.phtml:133
 msgid "List indexed values alphabetically (reverse)"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:141
+#: view/search-solr/admin/core/show.phtml:140
 msgid "List indexed values by count"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:148
+#: view/search-solr/admin/core/show.phtml:147
 msgid "List indexed values by count (reverse)"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:202
+#: view/search-solr/admin/core/show.phtml:201
 #: view/search-solr/admin/map/browse-resource.phtml:119
 msgid "Filtered by values"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:205
+#: view/search-solr/admin/core/show.phtml:204
 #: view/search-solr/admin/map/browse-resource.phtml:122
 msgid "Filtered by uris"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:208
+#: view/search-solr/admin/core/show.phtml:207
 #: view/search-solr/admin/map/browse-resource.phtml:125
 msgid "Filtered by resources"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:211
+#: view/search-solr/admin/core/show.phtml:210
 #: view/search-solr/admin/map/browse-resource.phtml:128
 msgid "Filtered by value resources"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:216
+#: view/search-solr/admin/core/show.phtml:215
 #: view/search-solr/admin/map/browse-resource.phtml:133
 msgid "Excluded data types"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:221
+#: view/search-solr/admin/core/show.phtml:220
 #: view/search-solr/admin/map/browse-resource.phtml:138
 msgid "Only languages"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:226
+#: view/search-solr/admin/core/show.phtml:225
 #: view/search-solr/admin/map/browse-resource.phtml:143
 msgid "Filtered by visibility Public"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:228
+#: view/search-solr/admin/core/show.phtml:227
 #: view/search-solr/admin/map/browse-resource.phtml:145
 msgid "Filtered by visibility Private"
-msgstr ""
-
-#: view/search-solr/admin/core/show.phtml:248
-msgid "By resource"
-msgstr ""
-
-#: view/search-solr/admin/core/show.phtml:269
-msgid "List indexed resources"
-msgstr ""
-
-#: view/search-solr/admin/core/show.phtml:276
-msgid "List non-indexed resources"
-msgstr ""
-
-#: view/search-solr/admin/core/show.phtml:290
-#, php-format
-msgid "%1$s: %2$d indexed / %3$d = %4$d (too many or indexed multiple times)"
-msgstr ""
-
-#: view/search-solr/admin/core/show.phtml:292
-#, php-format
-msgid "%1$s: %2$d indexed / %3$d = %4$d (missing)"
-msgstr ""
-
-#: view/search-solr/admin/core/show.phtml:293
-#, php-format
-msgid "%1$s: %2$d indexed / %3$d (all)"
 msgstr ""
 
 #: view/search-solr/admin/map/add.phtml:51
@@ -474,154 +477,12 @@ msgstr ""
 msgid "Adapt the metadata"
 msgstr ""
 
-#: data/scripts/upgrade.php:71 data/scripts/upgrade.php:636
-msgid "You should reindex your Solr cores."
-msgstr ""
-
-#: data/scripts/upgrade.php:94
-msgid "Now, values can be indexed differently for each data type, if wanted."
-msgstr ""
-
-#: data/scripts/upgrade.php:95
-msgid "Use the new import/export tool to simplify config."
-msgstr ""
-
-#: data/scripts/upgrade.php:187 data/scripts/upgrade.php:205
-#: data/scripts/upgrade.php:228 data/scripts/upgrade.php:423
-#: data/scripts/upgrade.php:434 data/scripts/upgrade.php:446
-#: data/scripts/upgrade.php:514 data/scripts/upgrade.php:526
-#: data/scripts/upgrade.php:552 data/scripts/upgrade.php:564
-msgid ""
-"This module requires the module \"{module}\", version {version} or above."
-msgstr ""
-
-#: data/scripts/upgrade.php:194
-msgid "The auto-suggestion requires a specific url for now."
-msgstr ""
-
-#: data/scripts/upgrade.php:400
-msgid ""
-"The resource types are now structured to simplify config: \"generic\" and "
-"\"resource\" allow to set mapping for any resource."
-msgstr ""
-
-#: data/scripts/upgrade.php:404
-msgid "All mapping for items and item sets have been copied to resources."
-msgstr ""
-
-#: data/scripts/upgrade.php:408
-msgid ""
-"It is recommended to check mappings, to remove the useless and duplicate "
-"ones, and to run a full reindexation."
-msgstr ""
-
-#: data/scripts/upgrade.php:415
-msgid "It is now possible to index original and thumbnails urls."
-msgstr ""
-
-#: data/scripts/upgrade.php:467
-msgid ""
-"It is now possible to filter values to index via a regex, a list of "
-"languages or a visibility."
-msgstr ""
-
-#: data/scripts/upgrade.php:472
-msgid ""
-"It is now possible to filter resources to index, for example an item set, a "
-"template, an owner, a visibility, etc."
-msgstr ""
-
-#: data/scripts/upgrade.php:477
-msgid ""
-"It is now possible to use module Table to manage tables for normalization of "
-"indexation."
-msgstr ""
-
-#: data/scripts/upgrade.php:482
-msgid ""
-"The table used for indexation has been converted into a standard {link}"
-"table{link_end}. It is recommended to remove the old one from the config."
-msgstr ""
-
-#: data/scripts/upgrade.php:501
-msgid ""
-"The support of module Access Resource has been removed. Support of module "
-"Access has been added."
-msgstr ""
-
-#: data/scripts/upgrade.php:506 data/scripts/upgrade.php:873
-msgid "A reindexing is needed."
-msgstr ""
-
-#: data/scripts/upgrade.php:535
-msgid ""
-"You should remove key \"table\" from the file config/local.config.php before "
-"upgrading."
-msgstr ""
-
-#: data/scripts/upgrade.php:630
-msgid ""
-"It is now possible to list {link}all resources and values indexed by a "
-"core{link_end}."
-msgstr ""
-
-#: data/scripts/upgrade.php:726
-msgid "The list of formats was simplified."
-msgstr ""
-
-#: data/scripts/upgrade.php:731
-msgid ""
-"It is now possible to do exact search with query wrapped with double quotes."
-msgstr ""
-
-#: data/scripts/upgrade.php:736
-msgid ""
-"The management of indices has been merged in a {link}single page{link_end}."
-msgstr ""
-
-#: data/scripts/upgrade.php:811
-msgid "Some solr map fields were renamed: {json}."
-msgstr ""
-
-#: data/scripts/upgrade.php:863
-msgid ""
-"It is now possible to set a default alias for each omeka/solr map. Common "
-"aliases were added, for example \"id\" for \"o:id\" and \"item_set_id\" for "
-"\"item_set_id_is\"."
-msgstr ""
-
-#: data/scripts/upgrade.php:868
-msgid ""
-"Property terms can be used as dynamic aliases when an index exists for them."
-msgstr ""
-
-#: data/scripts/upgrade.php:880
-msgid ""
-"A {link}config form{link_end} was added to specify the use of php-curl if "
-"wanted and the solarium timeout."
-msgstr ""
-
-#: data/scripts/upgrade.php:890
-msgid "The button {link}Map all{link_end} creates new indexes for languages."
-msgstr ""
-
-#: data/scripts/upgrade.php:953
-msgid ""
-"The default option \"auto\" for format of indexed values was replaced by "
-"\"main\". A new option \"full\" now include the uri and the linked resource "
-"id. You should check your indices, filters and facets."
-msgstr ""
-
-#: data/scripts/upgrade.php:958
-msgid "It is now possible to index the label of uri and linked resource."
-msgstr ""
-
-#: data/scripts/upgrade.php:964
-msgid "It is now possible to specify a boost for selected indexes."
-msgstr ""
-
 #: Module.php:128 src/Api/Representation/SolrCoreRepresentation.php:216
 msgid "The composer library \"{library}\" is not installed. See readme."
+msgstr ""
+
+#: Module.php:377 config/module.config.php:65
+msgid "Solr"
 msgstr ""
 
 #: Module.php:592
@@ -629,54 +490,45 @@ msgstr ""
 msgid "The default core can be configured in the %1$ssearch manager%2$s."
 msgstr ""
 
-#: src/ValueFormatter/AbstractValueFormatter.php:276
-msgid ""
-"The value \"{value}\" cannot be included in a path. The \"/\" is replaced by "
-"\" - \"."
+#: config/module.config.php:58
+msgid "Search manager"
 msgstr ""
 
-#: src/ValueFormatter/AbstractValueFormatter.php:312
-msgid "For formatter \"Table\", the table is not set."
+#: config/module.config.php:227
+msgid "Field"
 msgstr ""
 
-#: src/ValueFormatter/AbstractValueFormatter.php:326
-msgid ""
-"For formatter \"Table\", the table #{table_id} does not exist and values are "
-"not normalized."
+#: config/module.config.php:229
+msgid "Set sub-property"
 msgstr ""
 
-#: src/ValueFormatter/Thesaurus.php:13
-msgid "Thesaurus"
+#: config/module.config.php:230
+msgid "Choose a field…"
 msgstr ""
 
-#: src/ValueFormatter/Thesaurus.php:15
-msgid "Get the resource ids or labels from thesaurus (module Thesaurus)"
+#: config/module.config.php:231
+msgid "Dynamic field"
 msgstr ""
 
-#: src/ValueFormatter/Integer.php:7
-msgid "Integer"
+#: src/Querier/SolariumQuerier.php:113
+msgid "An issue occurred."
 msgstr ""
 
-#: src/ValueFormatter/Integer.php:9
-msgid "Convert string into integer"
+#: src/Querier/SolariumQuerier.php:276
+msgid "Suggestions are not implemented here. Use direct url."
 msgstr ""
 
-#: src/ValueFormatter/Date.php:13
-msgid "Check and get date and time"
+#: src/Querier/SolariumQuerier.php:1274
+msgid "Solr does not support search with \"except\" or \"data type\": {url}"
 msgstr ""
 
-#: src/ValueFormatter/Point.php:9
-msgid "Point"
+#: src/Querier/SolariumQuerier.php:1586
+#, php-format
+msgid "Search type \"%s\" is not managed currently by SearchSolr."
 msgstr ""
 
-#: src/ValueFormatter/Point.php:11
-msgid ""
-"Create a geographic point from data types geometry, geography and place "
-"(modules Data Type Geometry and Data Type Place)"
-msgstr ""
-
-#: src/ValueFormatter/Text.php:12
-msgid "Get the value and normalize"
+#: src/Querier/SolariumQuerier.php:1670 src/Querier/SolariumQuerier.php:1748
+msgid "Solr does not support alias with more than one field for now: {url}"
 msgstr ""
 
 #: src/ValueFormatter/Place.php:12 src/Form/Admin/SolrMapForm.php:426
@@ -696,6 +548,42 @@ msgstr ""
 msgid "Convert value into boolean true or false"
 msgstr ""
 
+#: src/ValueFormatter/AbstractValueFormatter.php:276
+msgid ""
+"The value \"{value}\" cannot be included in a path. The \"/\" is replaced by "
+"\" - \"."
+msgstr ""
+
+#: src/ValueFormatter/AbstractValueFormatter.php:312
+msgid "For formatter \"Table\", the table is not set."
+msgstr ""
+
+#: src/ValueFormatter/AbstractValueFormatter.php:326
+msgid ""
+"For formatter \"Table\", the table #{table_id} does not exist and values are "
+"not normalized."
+msgstr ""
+
+#: src/ValueFormatter/Integer.php:7
+msgid "Integer"
+msgstr ""
+
+#: src/ValueFormatter/Integer.php:9
+msgid "Convert string into integer"
+msgstr ""
+
+#: src/ValueFormatter/Thesaurus.php:13
+msgid "Thesaurus"
+msgstr ""
+
+#: src/ValueFormatter/Thesaurus.php:15
+msgid "Get the resource ids or labels from thesaurus (module Thesaurus)"
+msgstr ""
+
+#: src/ValueFormatter/Date.php:13
+msgid "Check and get date and time"
+msgstr ""
+
 #: src/ValueFormatter/DateRange.php:35
 msgid "Date range"
 msgstr ""
@@ -704,8 +592,255 @@ msgstr ""
 msgid "Date range from two dates separated with a \"/\"."
 msgstr ""
 
+#: src/ValueFormatter/Text.php:12
+msgid "Get the value and normalize"
+msgstr ""
+
+#: src/ValueFormatter/Point.php:9
+msgid "Point"
+msgstr ""
+
+#: src/ValueFormatter/Point.php:11
+msgid ""
+"Create a geographic point from data types geometry, geography and place "
+"(modules Data Type Geometry and Data Type Place)"
+msgstr ""
+
 #: src/EngineAdapter/Solarium.php:50
 msgid "Solr [via Solarium]"
+msgstr ""
+
+#: src/Api/Representation/SolrMapRepresentation.php:122
+msgid ""
+"The regex for values in the solr map \"{solr_map_id}\" of search engine "
+"\"{solr_core_name}\" is invalid: {regex}"
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:228
+msgid "Solr core #{solr_core_id}: incorrect or incomplete configuration."
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:242
+msgid "Solr core not found. Check your url."
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:247
+msgid ""
+"Solr core not found or unauthorized. Check your url and your credentials."
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:252
+#: src/Api/Representation/SolrCoreRepresentation.php:259
+#: src/Api/Representation/SolrCoreRepresentation.php:279
+msgid "Solr core #{solr_core_id}: {message}"
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:272
+msgid "Solr core #{solr_core_id} enpoint: {message}"
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:288
+msgid "Solr: the config bypasses the check of the certificate."
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:290
+msgid "OK (warning: check of certificate disabled)"
+msgstr ""
+
+#: src/Api/Representation/SolrCoreRepresentation.php:296
+msgid "OK"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:139
+msgid "Solr core \"{solr_core_name}\" created."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:190
+msgid "Solr core \"{solr_core_name}\" updated."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:197
+msgid ""
+"Some required fields are missing or not available in the core: {list}. "
+"Update the generic or the resource mappings."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:207
+msgid ""
+"Some specific static or dynamic fields are missing or not available for "
+"\"{value}\" in the core: {list}."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:211
+msgid "Don’t forget to reindex this core with external indexers."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:213
+msgid ""
+"Don’t forget to reindex the resources and to check the mapping of the search "
+"pages that use this core."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:219
+msgid "All indexes of core \"{solr_core_name}\" were deleted."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:243
+#: src/Controller/Admin/CoreController.php:268
+msgid ""
+"Some required fields are missing or not available in the core: {fields}. "
+"Update the generic or the resource mappings."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:312
+msgid "Solr core successfully deleted"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:314
+msgid "Solr core could not be deleted"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:344
+msgid "Missing file."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:351
+msgid "Wrong request for file."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:358
+msgid "An error occurred when uploading the file."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:361
+msgid "Wrong media type ({media_type}) for file."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:365
+msgid "The file is empty."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:498
+#: src/Controller/Admin/MapController.php:445
+#: src/Controller/Admin/MapController.php:516
+msgid "There was an error during validation"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:519
+msgid "The file does not contain any row."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:527
+msgid ""
+"The headers of the file are not the default ones. Or the delimiter is not "
+"the good one according to the media-type or extension."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:547
+msgid "The row #{index} does not contain required data."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:553
+msgid "The row #{index} does not manage resource \"{resource_name}\"."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:596
+msgid "The file does not contain any valid data."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:608
+msgid ""
+"The existing mapping of core \"{solr_core_name}\" (#{solr_core_id}) has been "
+"deleted."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:616
+msgid ""
+"An error has occurred during import of the mapping for core "
+"\"{solr_core_name}\" (#{solr_core_id})."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:623
+msgid ""
+"{count} fields have been mapped for core "
+"\"{solr_core_name}\" (#{solr_core_id})."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:827
+msgid "Solr issue: {msg}"
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:166
+msgid ""
+"This core seems to have no default field. If there are no results to a "
+"default query, add the copy field \"_text_\" with source \"*\"."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:222
+msgid ""
+"No values have a language. The indexes will use a generic language (_txt)."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:226
+msgid "The values use the following languages: {json}."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:320
+msgid "{count} new maps successfully created: {list}."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:323
+msgid "Check all new maps and remove useless ones."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:324
+#: src/Controller/Admin/MapController.php:391
+msgid "Don’t forget to run the indexation of the core."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:326
+msgid "No new maps added."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:388
+msgid "{count} maps successfully deleted: {list}."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:393
+msgid "No maps deleted."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:428
+msgid "Solr map created: {solr_map_name}."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:500
+msgid "Solr map modified: {solr_map_name}."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:504
+msgid "Don’t forget to check search pages that use this map."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:549
+msgid "Solr map"
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:576
+msgid "Solr map successfully deleted"
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:577
+msgid "Don’t forget to check search pages that used this map."
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:579
+msgid "Solr map could not be deleted"
+msgstr ""
+
+#: src/Controller/Admin/MapController.php:596
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:88
+msgid "Internal id"
 msgstr ""
 
 #: src/Schema/Schema.php:84
@@ -727,6 +862,187 @@ msgstr ""
 msgid ""
 "Response is not valid. Check output of {ur}, that should be a json with a "
 "key \"schema\"."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:218
+msgid "Indexing in Solr core \"{solr_core}\": {ids}"
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:298
+msgid ""
+"Unable to index resources in Solr core \"{solr_core}\". Some required fields "
+"are not mapped: {list}"
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:574
+msgid ""
+"Solr HTTP error: HTTP request failed due to network, limit of requests, or "
+"certificate issue. First document in the buffer: {document_id}."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:579
+msgid ""
+"Solr HTTP error: HTTP request failed due to network, limit of requests, or "
+"certificate issue."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:589
+msgid ""
+"Indexing of {resource_name} #{id} failed: Invalid document (wrong field type "
+"or missing required field)."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:594
+msgid ""
+"Indexing of resource failed: Invalid document (wrong field type or missing "
+"required field)."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:599
+msgid "Indexing of {resource_name} #{id} failed: {message}"
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:604
+msgid "Indexing of resource failed: {message}"
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:884
+msgid "Solr core is not available."
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:85
+#: src/ValueExtractor/GenericValueExtractor.php:10
+msgid "Generic"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:96
+msgid "Asset (attached thumbnail)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:97
+msgid "Item: Item set"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:98
+msgid "Item: Item sets tree"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:99
+msgid "Item: Media"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:100
+msgid "Item: Has media"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:101
+msgid "Media: Content (from html or extractable text from file, included alto)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:102
+msgid "Item set: Is open"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:103
+msgid "Value itself (in particular for module Thesaurus)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:104
+msgid "Access level (module Access)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:106
+msgid "Api url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:107
+msgid "Admin url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:108
+msgid "Site url (default or first site only)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:109
+msgid "Asset/Thumbnail: file url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:110
+msgid "Primary media: original file url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:112
+msgid "Primary media: large thumbnail url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:113
+msgid "Primary media: medium thumbnail url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:114
+msgid "Primary media: square thumbnail url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:115
+msgid "Representative image (asset if any, else primary media large thumbnail)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:116
+msgid ""
+"Representative image (asset if any, else primary media medium thumbnail)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:117
+msgid ""
+"Representative image (asset if any, else primary media square thumbnail)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:122
+msgid "Media language"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:123
+msgid "Media ingester"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:124
+msgid "Media renderer"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:125
+msgid "Media size"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:126
+msgid "Media source"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:128
+msgid "File name"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:129
+msgid "Alternative text"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:130
+msgid "Asset url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:131
+msgid "Original url"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:132
+msgid "Thumbnail (asset)"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:133
+msgid "Property or class term"
+msgstr ""
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:134
+msgid "All property values"
 msgstr ""
 
 #: src/Form/ConfigForm.php:17
@@ -753,12 +1069,18 @@ msgstr ""
 msgid "Solarium timeout (seconds)"
 msgstr ""
 
-#: src/Form/Admin/SourceFieldset.php:26
-msgid "Select a metadata from the resource…"
+#: src/Form/Admin/SolrConfigFieldset.php:57
+msgid "Solr index name for shared core"
 msgstr ""
 
-#: src/Form/Admin/SourceFieldset.php:32
-msgid "Sub-property"
+#: src/Form/Admin/SolrConfigFieldset.php:58
+msgid ""
+"May be empty, or may be or may not be the same index name than the third "
+"party, depending on its configuration."
+msgstr ""
+
+#: src/Form/Admin/SolrConfigFieldset.php:102
+msgid "{label} (unavailable: option multi-index not set)"
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:71 src/Form/Admin/SolrMapForm.php:526
@@ -878,35 +1200,79 @@ msgstr ""
 msgid "Minimum match (or/and)"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:270
-msgid ""
-"Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions are "
-"possible, like \"3<80%\".\n"
-"If empty, the config of the solr core (solrconfig.xml) will be used."
+#: src/Form/Admin/SolrCoreForm.php:270 src/Form/Admin/SolrCoreForm.php:287
+msgid "info"
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:286
 msgid "Tie breaker"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:287
+#: src/Form/Admin/SourceFieldset.php:26
+msgid "Select a metadata from the resource…"
+msgstr ""
+
+#: src/Form/Admin/SourceFieldset.php:32
+msgid "Sub-property"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:14
+msgid "comma"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:15
+msgid "semi-colon"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:16
+msgid "colon"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:17
+msgid "tabulation"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:26
+msgid "double quote"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:27
+msgid "single quote"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:28
+msgid "hash"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:29
+msgid "empty"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:42
+msgid "Spreadsheet (tsv or csv)"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:43
+msgid "LibreOffice and tsv are recommended for compliant formats."
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:54
+msgid "Column delimiter"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreMappingImportForm.php:55
 msgid ""
-"Increase score according to the number of matched fields.\n"
-"If empty, the config of the solr core (solrconfig.xml) will be used."
+"A single character that will be used to separate columns in the csv file."
 msgstr ""
 
-#: src/Form/Admin/SolrConfigFieldset.php:57
-msgid "Solr index name for shared core"
+#: src/Form/Admin/SolrCoreMappingImportForm.php:67
+msgid "Column enclosure"
 msgstr ""
 
-#: src/Form/Admin/SolrConfigFieldset.php:58
+#: src/Form/Admin/SolrCoreMappingImportForm.php:68
 msgid ""
-"May be empty, or may be or may not be the same index name than the third "
-"party, depending on its configuration."
-msgstr ""
-
-#: src/Form/Admin/SolrConfigFieldset.php:102
-msgid "{label} (unavailable: option multi-index not set)"
+"A single character that will be used to separate columns in the csv file. "
+"The enclosure can be omitted when the content does not contain the delimiter."
 msgstr ""
 
 #: src/Form/Admin/SolrMapForm.php:80
@@ -1254,515 +1620,148 @@ msgstr ""
 msgid "Merge values as a path with parts separated with a \"/\""
 msgstr ""
 
-#: src/Form/Admin/SolrCoreMappingImportForm.php:14
-msgid "comma"
+#: data/scripts/upgrade.php:71 data/scripts/upgrade.php:636
+msgid "You should reindex your Solr cores."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreMappingImportForm.php:15
-msgid "semi-colon"
+#: data/scripts/upgrade.php:94
+msgid "Now, values can be indexed differently for each data type, if wanted."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreMappingImportForm.php:16
-msgid "colon"
+#: data/scripts/upgrade.php:95
+msgid "Use the new import/export tool to simplify config."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreMappingImportForm.php:17
-msgid "tabulation"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:26
-msgid "double quote"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:27
-msgid "single quote"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:28
-msgid "hash"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:29
-msgid "empty"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:42
-msgid "Spreadsheet (tsv or csv)"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:43
-msgid "LibreOffice and tsv are recommended for compliant formats."
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:54
-msgid "Column delimiter"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreMappingImportForm.php:55
+#: data/scripts/upgrade.php:187 data/scripts/upgrade.php:205
+#: data/scripts/upgrade.php:228 data/scripts/upgrade.php:423
+#: data/scripts/upgrade.php:434 data/scripts/upgrade.php:446
+#: data/scripts/upgrade.php:514 data/scripts/upgrade.php:526
+#: data/scripts/upgrade.php:552 data/scripts/upgrade.php:564
 msgid ""
-"A single character that will be used to separate columns in the csv file."
+"This module requires the module \"{module}\", version {version} or above."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreMappingImportForm.php:67
-msgid "Column enclosure"
+#: data/scripts/upgrade.php:194
+msgid "The auto-suggestion requires a specific url for now."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreMappingImportForm.php:68
+#: data/scripts/upgrade.php:400
 msgid ""
-"A single character that will be used to separate columns in the csv file. "
-"The enclosure can be omitted when the content does not contain the delimiter."
+"The resource types are now structured to simplify config: \"generic\" and "
+"\"resource\" allow to set mapping for any resource."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:228
-msgid "Solr core #{solr_core_id}: incorrect or incomplete configuration."
+#: data/scripts/upgrade.php:404
+msgid "All mapping for items and item sets have been copied to resources."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:242
-msgid "Solr core not found. Check your url."
-msgstr ""
-
-#: src/Api/Representation/SolrCoreRepresentation.php:247
+#: data/scripts/upgrade.php:408
 msgid ""
-"Solr core not found or unauthorized. Check your url and your credentials."
+"It is recommended to check mappings, to remove the useless and duplicate "
+"ones, and to run a full reindexation."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:252
-#: src/Api/Representation/SolrCoreRepresentation.php:259
-#: src/Api/Representation/SolrCoreRepresentation.php:279
-msgid "Solr core #{solr_core_id}: {message}"
+#: data/scripts/upgrade.php:415
+msgid "It is now possible to index original and thumbnails urls."
 msgstr ""
 
-#: src/Api/Representation/SolrCoreRepresentation.php:272
-msgid "Solr core #{solr_core_id} enpoint: {message}"
-msgstr ""
-
-#: src/Api/Representation/SolrCoreRepresentation.php:288
-msgid "Solr: the config bypasses the check of the certificate."
-msgstr ""
-
-#: src/Api/Representation/SolrCoreRepresentation.php:290
-msgid "OK (warning: check of certificate disabled)"
-msgstr ""
-
-#: src/Api/Representation/SolrCoreRepresentation.php:296
-msgid "OK"
-msgstr ""
-
-#: src/Api/Representation/SolrMapRepresentation.php:122
+#: data/scripts/upgrade.php:467
 msgid ""
-"The regex for values in the solr map \"{solr_map_id}\" of search engine "
-"\"{solr_core_name}\" is invalid: {regex}"
+"It is now possible to filter values to index via a regex, a list of "
+"languages or a visibility."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:218
-msgid "Indexing in Solr core \"{solr_core}\": {ids}"
-msgstr ""
-
-#: src/Indexer/SolariumIndexer.php:298
+#: data/scripts/upgrade.php:472
 msgid ""
-"Unable to index resources in Solr core \"{solr_core}\". Some required fields "
-"are not mapped: {list}"
+"It is now possible to filter resources to index, for example an item set, a "
+"template, an owner, a visibility, etc."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:574
+#: data/scripts/upgrade.php:477
 msgid ""
-"Solr HTTP error: HTTP request failed due to network, limit of requests, or "
-"certificate issue. First document in the buffer: {document_id}."
+"It is now possible to use module Table to manage tables for normalization of "
+"indexation."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:579
+#: data/scripts/upgrade.php:482
 msgid ""
-"Solr HTTP error: HTTP request failed due to network, limit of requests, or "
-"certificate issue."
+"The table used for indexation has been converted into a standard {link}"
+"table{link_end}. It is recommended to remove the old one from the config."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:589
+#: data/scripts/upgrade.php:501
 msgid ""
-"Indexing of {resource_name} #{id} failed: Invalid document (wrong field type "
-"or missing required field)."
+"The support of module Access Resource has been removed. Support of module "
+"Access has been added."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:594
+#: data/scripts/upgrade.php:506 data/scripts/upgrade.php:873
+msgid "A reindexing is needed."
+msgstr ""
+
+#: data/scripts/upgrade.php:535
 msgid ""
-"Indexing of resource failed: Invalid document (wrong field type or missing "
-"required field)."
+"You should remove key \"table\" from the file config/local.config.php before "
+"upgrading."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:599
-msgid "Indexing of {resource_name} #{id} failed: {message}"
-msgstr ""
-
-#: src/Indexer/SolariumIndexer.php:604
-msgid "Indexing of resource failed: {message}"
-msgstr ""
-
-#: src/Indexer/SolariumIndexer.php:884
-msgid "Solr core is not available."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:166
+#: data/scripts/upgrade.php:630
 msgid ""
-"This core seems to have no default field. If there are no results to a "
-"default query, add the copy field \"_text_\" with source \"*\"."
+"It is now possible to list {link}all resources and values indexed by a "
+"core{link_end}."
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:222
+#: data/scripts/upgrade.php:726
+msgid "The list of formats was simplified."
+msgstr ""
+
+#: data/scripts/upgrade.php:731
 msgid ""
-"No values have a language. The indexes will use a generic language (_txt)."
+"It is now possible to do exact search with query wrapped with double quotes."
 msgstr ""
 
-#: src/Controller/Admin/MapController.php:226
-msgid "The values use the following languages: {json}."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:320
-msgid "{count} new maps successfully created: {list}."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:323
-msgid "Check all new maps and remove useless ones."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:324
-#: src/Controller/Admin/MapController.php:391
-msgid "Don’t forget to run the indexation of the core."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:326
-msgid "No new maps added."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:388
-msgid "{count} maps successfully deleted: {list}."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:393
-msgid "No maps deleted."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:428
-msgid "Solr map created: {solr_map_name}."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:445
-#: src/Controller/Admin/MapController.php:516
-#: src/Controller/Admin/CoreController.php:489
-msgid "There was an error during validation"
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:500
-msgid "Solr map modified: {solr_map_name}."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:504
-msgid "Don’t forget to check search pages that use this map."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:549
-msgid "Solr map"
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:576
-msgid "Solr map successfully deleted"
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:577
-msgid "Don’t forget to check search pages that used this map."
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:579
-msgid "Solr map could not be deleted"
-msgstr ""
-
-#: src/Controller/Admin/MapController.php:596
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:88
-msgid "Internal id"
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:137
-msgid "Solr core \"{solr_core_name}\" created."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:188
-msgid "Solr core \"{solr_core_name}\" updated."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:195
+#: data/scripts/upgrade.php:736
 msgid ""
-"Some required fields are missing or not available in the core: {list}. "
-"Update the generic or the resource mappings."
+"The management of indices has been merged in a {link}single page{link_end}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:205
+#: data/scripts/upgrade.php:811
+msgid "Some solr map fields were renamed: {json}."
+msgstr ""
+
+#: data/scripts/upgrade.php:863
 msgid ""
-"Some specific static or dynamic fields are missing or not available for "
-"\"{value}\" in the core: {list}."
+"It is now possible to set a default alias for each omeka/solr map. Common "
+"aliases were added, for example \"id\" for \"o:id\" and \"item_set_id\" for "
+"\"item_set_id_is\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:209
-msgid "Don’t forget to reindex this core with external indexers."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:211
+#: data/scripts/upgrade.php:868
 msgid ""
-"Don’t forget to reindex the resources and to check the mapping of the search "
-"pages that use this core."
+"Property terms can be used as dynamic aliases when an index exists for them."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:217
-msgid "All indexes of core \"{solr_core_name}\" were deleted."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:250
-msgid "Solr issue: {msg}"
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:258
+#: data/scripts/upgrade.php:880
 msgid ""
-"Some required fields are missing or not available in the core: {fields}. "
-"Update the generic or the resource mappings."
+"A {link}config form{link_end} was added to specify the use of php-curl if "
+"wanted and the solarium timeout."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:303
-msgid "Solr core successfully deleted"
+#: data/scripts/upgrade.php:890
+msgid "The button {link}Map all{link_end} creates new indexes for languages."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:305
-msgid "Solr core could not be deleted"
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:335
-msgid "Missing file."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:342
-msgid "Wrong request for file."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:349
-msgid "An error occurred when uploading the file."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:352
-msgid "Wrong media type ({media_type}) for file."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:356
-msgid "The file is empty."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:510
-msgid "The file does not contain any row."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:518
+#: data/scripts/upgrade.php:953
 msgid ""
-"The headers of the file are not the default ones. Or the delimiter is not "
-"the good one according to the media-type or extension."
+"The default option \"auto\" for format of indexed values was replaced by "
+"\"main\". A new option \"full\" now include the uri and the linked resource "
+"id. You should check your indices, filters and facets."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:538
-msgid "The row #{index} does not contain required data."
+#: data/scripts/upgrade.php:958
+msgid "It is now possible to index the label of uri and linked resource."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:544
-msgid "The row #{index} does not manage resource \"{resource_name}\"."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:587
-msgid "The file does not contain any valid data."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:599
-msgid ""
-"The existing mapping of core \"{solr_core_name}\" (#{solr_core_id}) has been "
-"deleted."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:607
-msgid ""
-"An error has occurred during import of the mapping for core "
-"\"{solr_core_name}\" (#{solr_core_id})."
-msgstr ""
-
-#: src/Controller/Admin/CoreController.php:614
-msgid ""
-"{count} fields have been mapped for core \"{solr_core_name}\" "
-"(#{solr_core_id})."
-msgstr ""
-
-#: src/ValueExtractor/GenericValueExtractor.php:10
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:85
-msgid "Generic"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:96
-msgid "Asset (attached thumbnail)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:97
-msgid "Item: Item set"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:98
-msgid "Item: Item sets tree"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:99
-msgid "Item: Media"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:100
-msgid "Item: Has media"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:101
-msgid "Media: Content (from html or extractable text from file, included alto)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:102
-msgid "Item set: Is open"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:103
-msgid "Value itself (in particular for module Thesaurus)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:104
-msgid "Access level (module Access)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:106
-msgid "Api url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:107
-msgid "Admin url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:108
-msgid "Site url (default or first site only)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:109
-msgid "Asset/Thumbnail: file url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:110
-msgid "Primary media: original file url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:112
-msgid "Primary media: large thumbnail url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:113
-msgid "Primary media: medium thumbnail url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:114
-msgid "Primary media: square thumbnail url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:115
-msgid "Representative image (asset if any, else primary media large thumbnail)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:116
-msgid ""
-"Representative image (asset if any, else primary media medium thumbnail)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:117
-msgid ""
-"Representative image (asset if any, else primary media square thumbnail)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:122
-msgid "Media language"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:123
-msgid "Media ingester"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:124
-msgid "Media renderer"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:125
-msgid "Media size"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:126
-msgid "Media source"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:128
-msgid "File name"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:129
-msgid "Alternative text"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:130
-msgid "Asset url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:131
-msgid "Original url"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:132
-msgid "Thumbnail (asset)"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:133
-msgid "Property or class term"
-msgstr ""
-
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:134
-msgid "All property values"
-msgstr ""
-
-#: src/Querier/SolariumQuerier.php:113
-msgid "An issue occurred."
-msgstr ""
-
-#: src/Querier/SolariumQuerier.php:276
-msgid "Suggestions are not implemented here. Use direct url."
-msgstr ""
-
-#: src/Querier/SolariumQuerier.php:1274
-msgid "Solr does not support search with \"except\" or \"data type\": {url}"
-msgstr ""
-
-#: src/Querier/SolariumQuerier.php:1586
-#, php-format
-msgid "Search type \"%s\" is not managed currently by SearchSolr."
-msgstr ""
-
-#: src/Querier/SolariumQuerier.php:1670 src/Querier/SolariumQuerier.php:1748
-msgid "Solr does not support alias with more than one field for now: {url}"
-msgstr ""
-
-#: config/module.config.php:58
-msgid "Search manager"
-msgstr ""
-
-#: config/module.config.php:227
-msgid "Field"
-msgstr ""
-
-#: config/module.config.php:229
-msgid "Set sub-property"
-msgstr ""
-
-#: config/module.config.php:230
-msgid "Choose a field…"
-msgstr ""
-
-#: config/module.config.php:231
-msgid "Dynamic field"
+#: data/scripts/upgrade.php:964
+msgid "It is now possible to specify a boost for selected indexes."
 msgstr ""
