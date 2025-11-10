@@ -150,9 +150,9 @@ msgid "Solr admin interface, if reachable"
 msgstr "Interface d'administration de Solr, si accessible"
 
 #: view/search-solr/admin/core/browse-table.phtml:73
-msgid "Get info about the Solr core and map Omeka metadata and Solr indices"
+msgid "Map Omeka metadata and Solr indices"
 msgstr ""
-"Afficher les infos sur Solr et les alignements entre les métadonnées Omeka "
+"Voir les alignements entre les métadonnées Omeka "
 "et les index Solr"
 
 #: view/search-solr/admin/core/browse-table.phtml:79
