@@ -36,6 +36,7 @@ use SearchSolr\Schema\Schema;
 use Solarium\Client as SolariumClient;
 use Solarium\Exception\HttpException as SolariumException;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
+
 // TODO Use Laminas event manager when #12 will be merged.
 // @see https://github.com/laminas/laminas-eventmanager/pull/12
 
@@ -379,7 +380,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 $sort[$mapId] = $mapName;
                 $maps[$mapId] = $mapAdapter->getRepresentation($mapEntity);
             }
-            uasort($sort, function($a, $b) {
+            uasort($sort, function ($a, $b) {
                 if ($a === $b) {
                     return 0;
                 } elseif ($a === 'generic') {

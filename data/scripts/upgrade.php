@@ -959,7 +959,6 @@ if (version_compare($oldVersion, '3.5.60', '<')) {
     );
     $messenger->addSuccess($message);
 
-
     $message = new PsrMessage(
         'It is now possible to specify a boost for selected indexes.' // @translate
     );

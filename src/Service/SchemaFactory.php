@@ -30,8 +30,8 @@
 
 namespace SearchSolr\Service;
 
-use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 use SearchSolr\Schema\Schema;
 
 class SchemaFactory implements FactoryInterface

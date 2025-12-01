@@ -30,8 +30,8 @@
 
 namespace SearchSolr\Service\Controller;
 
-use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 use SearchSolr\Controller\Admin\MapController;
 
 class MapControllerFactory implements FactoryInterface

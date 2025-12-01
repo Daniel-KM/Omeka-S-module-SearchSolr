@@ -2,8 +2,8 @@
 
 namespace SearchSolr\Service\Controller;
 
-use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 use SearchSolr\Controller\ApiLocalController;
 
 class ApiLocalControllerFactory implements FactoryInterface

@@ -247,7 +247,7 @@ return [
             'searchsolr_solarium_timeout' => 5,
             // Allow to share a server between multiple tools (drupal).
             'searchsolr_server_id' => null,
-        ]
+        ],
     ],
     'searchsolr_value_extractors' => [
         'factories' => [

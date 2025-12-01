@@ -30,8 +30,8 @@
 
 namespace SearchSolr\Service;
 
-use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 use Solarium\Client as SolariumClient;
 use Solarium\Core\Client\Adapter\Curl;
 use Solarium\Core\Client\Adapter\Http;

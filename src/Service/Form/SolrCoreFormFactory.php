@@ -2,8 +2,8 @@
 
 namespace SearchSolr\Service\Form;
 
-use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 use SearchSolr\Form\Admin\SolrCoreForm;
 
 class SolrCoreFormFactory implements FactoryInterface

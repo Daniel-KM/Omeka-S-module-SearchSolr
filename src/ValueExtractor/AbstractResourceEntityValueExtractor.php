@@ -555,7 +555,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
     protected function extractItemItemSetsValue(
         ItemRepresentation $item,
         ?SolrMapRepresentation $solrMap
-        ): array {
+    ): array {
         $extractedValues = [];
         foreach ($item->itemSets() as $itemSet) {
             $values = $this->extractValue($itemSet, $solrMap->subMap());
@@ -943,7 +943,6 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             ->innerJoin('selection_resource', 'selection', 'selection', 'selection.id = selection_resource.selection_id')
             ->where('selection_resource.resource_id = :id')
             ->orderBy('selection.id', 'ASC');
-        ;
 
         $bind = [
             'id' => $resource->id(),

@@ -30,8 +30,8 @@
 
 namespace SearchSolr\Service\EngineAdapter;
 
-use Psr\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
+use Psr\Container\ContainerInterface;
 use SearchSolr\EngineAdapter\Solarium;
 
 class SolariumFactory implements FactoryInterface
