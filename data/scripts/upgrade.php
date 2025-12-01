@@ -43,10 +43,10 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
     throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.53')) {
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.54')) {
     $message = new PsrMessage(
         $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.53']
+        ['module' => 'Advanced Search', 'version' => '3.4.54']
     );
     throw new ModuleCannotInstallException((string) $message);
 }
@@ -963,4 +963,16 @@ if (version_compare($oldVersion, '3.5.60', '<')) {
         'It is now possible to specify a boost for selected indexes.' // @translate
     );
     $messenger->addSuccess($message);
+}
+
+if (version_compare($oldVersion, '3.5.61', '<')) {
+    $message = new PsrMessage(
+        'The statistics about index were moved to a specific page.' // @translate
+    );
+    $messenger->addSuccess($message);
+
+    $message = new PsrMessage(
+        'The performance was improved for indexing and querying. Warning: It is no more possible to query with any diacritics on static fields like _ss.' // @translate
+    );
+    $messenger->addWarning($message);
 }
