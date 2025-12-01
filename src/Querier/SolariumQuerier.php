@@ -1622,6 +1622,13 @@ class SolariumQuerier extends AbstractQuerier
 
         // Allow to use property terms and dynamic fields. Note: they should be indexed.
         if (!$result) {
+            if ($field === 'selection_id' || $field === 'selection_public_id') {
+                $name = $this->getSelectionIdFieldName($field);
+                if ($name) {
+                    return $name;
+                }
+            }
+
             // Try to convert terms into standard field.
             $term = $this->easyMeta->propertyTerm($field);
             if (!$term) {
@@ -1703,6 +1710,13 @@ class SolariumQuerier extends AbstractQuerier
 
         // Allow to use property terms and dynamic fields. Note: they should be indexed.
         if (!$result) {
+            if ($field === 'selection_id' || $field === 'selection_public_id') {
+                $name = $this->getSelectionIdFieldName($field);
+                if ($name) {
+                    return $name;
+                }
+            }
+
             // Try to convert terms into standard field.
             $term = $this->easyMeta->propertyTerm($field);
             if (!$term) {
@@ -1753,6 +1767,60 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         return $result;
+    }
+
+    /**
+     * Get the field use for selection.
+     *
+     * @todo Make the search of the field name more generic than just selection. For example for resource_type/resource_name, etc. Default aliases in fact.
+     * @todo Clarify this method and this complex process.
+     */
+    protected function getSelectionIdFieldName(?string $fieldName = null): ?string
+    {
+        // Use from map when possible.
+        $mapping = [
+            'selection_id',
+            'selection_public_id',
+        ];
+
+        if ($fieldName) {
+            $mapping = array_intersect($mapping, [$fieldName]);
+        }
+
+        // TODO Implement the o:selection/o:id in extractor.
+        foreach ($mapping as $field) {
+            $maps = $this->getSolrCore()->mapsBySource($field);
+            if ($maps) {
+                $map = reset($maps);
+                if ($map) {
+                    return $map->fieldName();
+                }
+            }
+        }
+
+        // Fallback.
+        $checks = $this->usedSolrFields([], ['_is', '_i'], $mapping);
+        foreach ($checks as $check) {
+            if ($this->fieldIsInteger($check)) {
+                return $check;
+            }
+        }
+
+        // Second fallback: use of selection_public_id to selection_public_is.
+        $mapping = [
+            'selection_id',
+            'selection_public_id',
+            'selection',
+            'selection_public',
+        ];
+        $checks = $this->usedSolrFields([], ['_is', '_i'], $mapping);
+        foreach ($checks as $check) {
+            if ($this->fieldIsInteger($check)) {
+                return $check;
+            }
+        }
+
+        return null;
     }
 
     /**

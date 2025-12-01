@@ -102,6 +102,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'is_open' => 'Item set: Is open', // @translate
                     'value' => 'Value itself (in particular for module Thesaurus)', // @translate
                     'access_level' => 'Access level (module Access)', // @translate
+                    // 'o:selection/o:id' => 'Selections (module Selection)', // @translate
+                    // 'o:selection[is_public=1]/o:id' => 'Public selections (module Selection)', // @translate
+                    'selection_id' => 'Selections (module Selection)', // @translate
+                    'selection_public_id' => 'Public selections (module Selection)', // @translate
                     // Urls.
                     'url_api' => 'Api url', // @translate
                     'url_admin' => 'Admin url', // @translate
@@ -295,6 +299,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         if ($field === 'access_level') {
             return $resource instanceof AbstractResourceEntityRepresentation
                 ? $this->accessLevel($resource, $solrMap)
+                : [];
+        }
+
+        if ($field === 'selection_id') {
+            return class_exists('Selection\Module', false) && $resource instanceof AbstractResourceEntityRepresentation
+                ? $this->selection($resource, $solrMap, false)
+                : [];
+        }
+
+        if ($field === 'selection_public_id') {
+            return class_exists('Selection\Module', false) && $resource instanceof AbstractResourceEntityRepresentation
+                ? $this->selection($resource, $solrMap, true)
                 : [];
         }
 
@@ -904,6 +920,52 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         return $structure;
+    }
+
+    /**
+     * Get the list of selection ids in which the resource is.
+     */
+    protected function selection(
+        AbstractResourceEntityRepresentation $resource,
+        ?SolrMapRepresentation $solrMap,
+        bool $isPublic = false
+    ): array {
+        $services = $resource->getServiceLocator();
+
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $connection = $services->get('Omeka\Connection');
+
+        $qb = $connection->createQueryBuilder();
+        $qb
+            ->select('selection_resource.selection_id')
+            ->distinct()
+            ->from('selection_resource', 'selection_resource')
+            ->innerJoin('selection_resource', 'selection', 'selection', 'selection.id = selection_resource.selection_id')
+            ->where('selection_resource.resource_id = :id')
+            ->orderBy('selection.id', 'ASC');
+        ;
+
+        $bind = [
+            'id' => $resource->id(),
+        ];
+
+        if ($isPublic) {
+            $qb
+                ->andWhere($qb->expr()->eq('selection.is_public', ':is_public'));
+            $bind['is_public'] = 1;
+        }
+
+        $qb
+            ->setParameters($bind);
+
+        try {
+            $ids = $qb
+                ->executeQuery()->fetchFirstColumn();
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map('intval', $ids ?: [])));
     }
 
     /**
