@@ -221,6 +221,14 @@ class CoreController extends AbstractActionController
             ));
         }
 
+        $maps = $solrCore->maps();
+        if (count($maps) > 1024) {
+            $this->messenger()->addNotice(new PsrMessage(
+                'The core "{solr_core_name}" has {count} maps. Some queries are not possible with more than 1024 indexes. You may remove indexes used to sort ("_s") or useless indexes, or group them.', // @translate
+                ['solr_core_name' => $solrCore->name(), 'count' => count($maps)]
+            ));
+        }
+
         return $this->redirect()->toRoute('admin/search/solr');
     }
 
