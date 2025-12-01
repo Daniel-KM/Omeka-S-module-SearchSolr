@@ -36,7 +36,6 @@ use AdvancedSearch\Query;
 use AdvancedSearch\Response;
 use AdvancedSearch\Stdlib\SearchResources;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
-use SearchSolr\Feature\TransliteratorCharacterTrait;
 use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 
@@ -44,14 +43,15 @@ use Solarium\QueryType\Select\Query\Query as SolariumQuery;
  * @todo Rewrite the querier to simplify it and to use all solarium features directly.
  * @todo Use Solarium helpers (geo, escape, xml, etc.).
  *
+ * Note: it is useless to try to manage diacritics with _ss, because it is not
+ * designed for.
+ *
  * @see \Solarium\Core\Query\Helper
  * @see https://solarium.readthedocs.io/en/stable/getting-started/
  * @see https://solarium.readthedocs.io/en/stable/queries/select-query/building-a-select-query/building-a-select-query/
  */
 class SolariumQuerier extends AbstractQuerier
 {
-    use TransliteratorCharacterTrait;
-
     /**
      * @var Response
      */
@@ -105,6 +105,13 @@ class SolariumQuerier extends AbstractQuerier
         $this->response->setByResourceType($this->byResourceType);
 
         $this->solariumQuery = $this->getPreparedQuery();
+
+        // Finalize configuration of the solr client to support diacritics
+        // removal, etc. without schema change, relying on edismax.
+        $this->configureEDisMax();
+        $this->normalizeMainQueryString();
+        // Before boost.
+        // $this->clampClausesForQuery();
 
         // When no query or resource types are set.
         // The solr query cannot be an empty string.
@@ -609,6 +616,9 @@ class SolariumQuerier extends AbstractQuerier
         $this->appendHiddenFilters();
         $this->filterQuery();
 
+        // Before boosting, ensure the query isn't going to exceed boolean clause limits.
+        $this->clampClausesForQuery();
+
         // The boost is only useful when there is a query.
         $q = (string) $this->solariumQuery->getQuery();
         if (strlen($q)
@@ -1000,7 +1010,7 @@ class SolariumQuerier extends AbstractQuerier
             } elseif (extension_loaded('iconv')) {
                 $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
             } else {
-                $q = $this->latinize($q);
+                // No local transliteration: rely on solr.
             }
         }
         $q = $this->escapeTermOrPhrase($q);
@@ -1040,7 +1050,7 @@ class SolariumQuerier extends AbstractQuerier
             } elseif (extension_loaded('iconv')) {
                 $q = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $q);
             } else {
-                $q = $this->latinize($q);
+                // No local transliteration: rely on solr.
             }
         }
 
@@ -1105,10 +1115,8 @@ class SolariumQuerier extends AbstractQuerier
             $name = $this->fieldToIndex($fieldName) ?? $fieldName;
             if ($name === 'id') {
                 $value = [];
-                array_walk_recursive($values, function ($v) use (&$value): void {
-                    $value[] = $v;
-                });
-                $values = array_unique(array_map('intval', $value));
+                array_walk_recursive($values, fn($v) => $value[] = (int) $v);
+                $values = array_values(array_unique($value));
                 if (count($values)) {
                     // Manage any special indexers for third party.
                     // TODO Add a second (hidden?) field from source "o:id".
@@ -1411,7 +1419,7 @@ class SolariumQuerier extends AbstractQuerier
                     case 'list':
                         if ($this->fieldIsString($name)) {
                             // $value = $this->->escapeTermOrPhrase($value);
-                            $value = $this->regexDiacriticsValue($value, '', '');
+                            $value = $this->escape($value, '', '');
                         } else {
                             $value = $this->escapePhraseValue($value, 'OR');
                         }
@@ -1422,7 +1430,7 @@ class SolariumQuerier extends AbstractQuerier
                     case 'nin':
                     case 'in':
                         if ($this->fieldIsString($name)) {
-                            $value = $this->regexDiacriticsValue($value, '.*', '.*');
+                            $value = $this->escape($value, '.*', '.*');
                         } else {
                             $value = $this->escapePhraseValue($value, 'AND');
                         }
@@ -1433,7 +1441,7 @@ class SolariumQuerier extends AbstractQuerier
                     case 'nsw':
                     case 'sw':
                         if ($this->fieldIsString($name)) {
-                            $value = $this->regexDiacriticsValue($value, '', '.*');
+                            $value = $this->escape($value, '', '.*');
                         } else {
                             $value = $this->escapePhraseValue($value, 'AND');
                         }
@@ -1444,7 +1452,7 @@ class SolariumQuerier extends AbstractQuerier
                     case 'new':
                     case 'ew':
                         if ($this->fieldIsString($name)) {
-                            $value = $this->regexDiacriticsValue($value, '.*', '');
+                            $value = $this->escape($value, '.*', '');
                         } else {
                             $value = $this->escapePhraseValue($value, 'AND');
                         }
@@ -1593,6 +1601,30 @@ class SolariumQuerier extends AbstractQuerier
                 ->createFilterQuery($name . '_fq' . '_' . ++$this->appendToKey)
                 ->setQuery(ltrim($fq));
         }
+    }
+
+    /**
+     * Add a "contains" filter query.
+     *
+     * TODO Use contains filter, so a "_txt", to avoid regex in filter builders.
+     */
+    protected function addContainsFilter(string $field, array $values): void
+    {
+        $folded = $this->fieldsText();
+        $target = $field === '' ? $folded : $field;
+        $vals = array_values(array_filter(array_map('strval', $values), 'strlen'));
+        if (!$vals) {
+            return;
+        }
+
+        // Use analyzed terms on folded field.
+        // TODO If an ngram field is available, swap it here.
+        $or = implode(' OR ', array_map(fn($v) => $this->escapePhrase($v), $vals));
+        $this->solariumQuery
+            ->addFilterQuery([
+                'key'   => $target . '_contains',
+                'query' => sprintf('%s:(%s)', $target, $or),
+            ]);
     }
 
     /**
@@ -1770,6 +1802,19 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
+     * Get default managed-schema dynamic text fields (so _txt and _t).
+     *
+     * The default text files usually include ASCII folding.
+     */
+    protected function fieldsText(): array
+    {
+        // *_txt and *_t are standard dynamic fields bound to text_general in
+        // default managed schema.
+        $fields = $this->usedSolrFields([], ['_txt', '_t'], []);
+        return array_values(array_unique(array_filter($fields, 'strlen')));
+    }
+
+    /**
      * Get the field use for selection.
      *
      * @todo Make the search of the field name more generic than just selection. For example for resource_type/resource_name, etc. Default aliases in fact.
@@ -1911,6 +1956,27 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
+     * Escape one or multiple value.
+     *
+     * Previous versions managed diacritics, case and joker "*" and "?", but it
+     * is no more needed: Solr edismax parser should manage everything now via
+     * ICU and ASCIIFolding.
+     *
+     * For the list of characters to escape:
+     * @see https://solr.apache.org/guide/solr/latest/query-guide/standard-query-parser.html#escaping-special-characters
+     */
+    protected function escape($value, string $prepend = '', string $append = ''): string
+    {
+        $vals = is_array($value) ? $value : [$value];
+        $vals = array_values(array_filter(array_map('strval', $vals), 'strlen'));
+        if (!$vals) {
+            return '';
+        }
+        $escaped = array_map(fn ($v) => $this->escapePhrase($prepend . $v . $append), $vals);
+        return implode(' OR ', $escaped);
+    }
+
+    /**
      * Escape a string to query keeping meaning of solr special characters.
      *
      * @see https://solr.apache.org/guide/solr/latest/query-guide/standard-query-parser.html#escaping-special-characters
@@ -1991,60 +2057,66 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
-     * Prepare a value for a regular expression, managing diacritics, case and
-     * joker "*" and "?".
-     *
-     * For the list of characters to escape:
-     * @see https://solr.apache.org/guide/solr/latest/query-guide/standard-query-parser.html#escaping-special-characters
-     *
-     * @deprecated Instead, index and query without diacritics.
-     *
-     * @param array|string $value
-     * @param string $append
-     * @param string $prepend
-     * @return string
+     * Quote dot numbers to avoid analyzer splitting and nested clause growth.
      */
-    protected function regexDiacriticsValue($value, string $prepend = '', string $append = ''): string
+    protected function normalizeMainQueryString(): void
     {
-        static $basicDiacritics;
-        if ($basicDiacritics === null) {
-            $basicDiacritics = [
-                '\\' => '\\\\',
-                '.' => '\.',
-                // To expand.
-                '*' => '.*',
-                '?' => '.',
-                // To escape.
-                '+' => '\+',
-                '[' => '\[',
-                '^' => '\^',
-                ']' => '\]',
-                '$' => '\$',
-                '(' => '\(',
-                ')' => '\)',
-                '{' => '\{',
-                '}' => '\}',
-                '=' => '\=',
-                '!' => '\!',
-                '<' => '\<',
-                '>' => '\>',
-                '|' => '\|',
-                ':' => '\:',
-                '-' => '\-',
-                '/' => '\/',
-            ] + array_map(fn ($v) => substr($v, 0, 1), $this->baseDiacritics);
+        $q = trim((string) $this->solariumQuery->getQuery());
+        if ($q !== '' && preg_match('~^\d[\d.\-_/]*\d$~u', $q)) {
+            $this->solariumQuery->setQuery($this->escapePhrase($q));
         }
+    }
 
-        $regexVal = function ($string) use ($prepend, $append, $basicDiacritics) {
-            $latinized = strtr(mb_strtolower($string), $basicDiacritics);
-            return '/' . $prepend
-                . strtr($latinized, $this->regexDiacritics)
-                . $append . '/';
-        };
+    /**
+     * Simple estimated clause guard. If too large, fallback to a single foldable field with a phrase.
+     */
+    protected function clampClausesForQuery(): void
+    {
+        $q = trim((string) $this->solariumQuery->getQuery());
+        if ($q === '') {
+            return;
+        }
+        $dismax = $this->solariumQuery->getDisMax();
+        $fields = array_values(array_filter(preg_split('/\s+/', (string) $dismax->getQueryFields()) ?: [], 'strlen'));
+        $tokens = array_values(array_filter(preg_split('/\s+/', preg_replace('~[():"\[\]\{\}]+~', ' ', $q)) ?: []));
+        $estimated = max(1, count($fields)) * max(1, count($tokens));
+        if ($estimated > 900) {
+            $foldable = $this->fieldsText();
+            $field = $foldable[0] ?? ($fields[0] ?? null);
+            if ($field) {
+                $this->solariumQuery->setQuery(sprintf('%s:%s', $field, $this->escapePhrase((string) $this->query->getQuery())));
+                $dismax->setQueryFields($field);
+            }
+        }
+    }
 
-        $values = array_map($regexVal, is_array($value) ? $value : [$value]);
-
-        return implode(' OR ', $values);
+    /**
+     * Configure EDisMax per-request and keep only foldable query fields.
+     *
+     * Also disable SOW to avoid splitting tokens like "949.0252" into too many
+     * clauses.
+     */
+    protected function configureEDisMax(): void
+    {
+        $this->solariumQuery->addParam('defType', 'edismax');
+        $this->solariumQuery->addParam('sow', 'false');
+        $dismax = $this->solariumQuery->getDisMax();
+        $qf = trim((string) $dismax->getQueryFields());
+        if ($qf === '') {
+            $foldable = $this->fieldsText();
+            if ($foldable) {
+                $dismax->setQueryFields(implode(' ', $foldable));
+            }
+        } else {
+            $current = array_values(array_filter(preg_split('/\s+/', $qf) ?: [], 'strlen'));
+            $foldable = $this->fieldsText();
+            if ($foldable) {
+                $keep = array_values(array_intersect($current, $foldable));
+                if ($keep) {
+                    $dismax->setQueryFields(implode(' ', $keep));
+                }
+            }
+        }
     }
 
     protected function getSolrCore(): \SearchSolr\Api\Representation\SolrCoreRepresentation
