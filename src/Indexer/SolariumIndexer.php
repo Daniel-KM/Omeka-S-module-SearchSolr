@@ -219,10 +219,12 @@ class SolariumIndexer extends AbstractIndexer
             ['solr_core' => $this->solrCore->name(), 'ids' => implode(', ', $resourcesIds)]
         );
 
+        $batchSize = count($resourcesIds);
+
         $this->buffer = $this->getClient()->getPlugin('bufferedadd');
         $this->buffer
             ->setOverwrite(true)
-            ->setBufferSize(count($resourcesIds));
+            ->setBufferSize($batchSize);
 
         foreach ($resources as $resource) {
             $document = $this->prepareDocument($resource);
@@ -564,7 +566,7 @@ class SolariumIndexer extends AbstractIndexer
                 try {
                     $this->buffer->commit();
                 } catch (Exception $e) {
-                    $this->solrError($exception, null, null, true);
+                    $this->solrError($e, null, null, true);
                 }
             } else {
                 $firstDocument = $this->buffer->getBuffer();
@@ -599,9 +601,17 @@ class SolariumIndexer extends AbstractIndexer
                 'Indexing of {resource_name} #{id} failed: {message}', // @translate
                 ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id(), 'message' => $message]
             );
+        } elseif (!$isRecall && $this->buffer->getBuffer()) {
+            // Most of the time, the issue is a config issue with a limit.
+            sleep(30);
+            try {
+                $this->buffer->commit();
+            } catch (Exception $e) {
+                $this->solrError($e, null, null, true);
+            }
         } else {
             $this->getLogger()->err(
-                'Indexing of resource failed: {message}', // @translate
+                'Indexing of the batch failed: {message}', // @translate
                 ['message' => $message]
             );
         }
