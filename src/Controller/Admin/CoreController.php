@@ -754,14 +754,17 @@ public function showIndexingStatsAction()
      * Check the file, according to its media type.
      *
      * @todo Use the class TempFile before.
+     * @todo Use OpenSpount (see module Locate).
      *
-     * @param array $fileData
-     *            File data from a post ($_FILES).
+     * @param array $fileData File data from a post ($_FILES).
      * @return array|bool
      */
     protected function checkFile(array $fileData)
     {
-        if (empty($fileData) || empty($fileData['tmp_name'])) {
+        if (empty($fileData)
+            || empty($fileData['tmp_name'])
+            || empty($fileData['type'])
+        ) {
             return false;
         }
 
