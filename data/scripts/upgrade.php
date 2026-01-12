@@ -976,3 +976,47 @@ if (version_compare($oldVersion, '3.5.61', '<')) {
     );
     $messenger->addWarning($message);
 }
+
+if (version_compare($oldVersion, '3.5.62', '<')) {
+    // Convert field_boost from string format "field1 field2^2 field3^0.5" to
+    // array format [field => boost].
+    $qb = $connection->createQueryBuilder();
+    $qb
+        ->select('id', 'settings')
+        ->from('solr_core', 'solr_core')
+        ->orderBy('id', 'asc');
+    $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
+    foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
+        $solrCoreSettings = json_decode($solrCoreSettings, true) ?: [];
+        $fieldBoost = $solrCoreSettings['field_boost'] ?? '';
+        // Skip if already an array (already migrated) or empty.
+        if (is_array($fieldBoost)) {
+            continue;
+        }
+        // Parse string format "field1 field2^2 field3^0.5" into array [field => boost].
+        $result = [];
+        $parts = preg_split('/\s+/', trim((string) $fieldBoost));
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+            if (strpos($part, '^') !== false) {
+                [$field, $boost] = explode('^', $part, 2);
+                $result[$field] = (float) $boost;
+            } else {
+                $result[$part] = 1.0;
+            }
+        }
+        $solrCoreSettings['field_boost'] = $result;
+        $sql = <<<'SQL'
+            UPDATE `solr_core`
+            SET `settings` = :settings
+            WHERE `id` = :id
+            SQL;
+        $connection
+            ->executeStatement($sql, [
+                'settings' => json_encode($solrCoreSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                'id' => $solrCoreId,
+            ]);
+    }
+}
