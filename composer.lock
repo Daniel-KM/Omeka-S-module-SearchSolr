@@ -4,24 +4,24 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9527302029ea6d1fe6144893900de6ed",
+    "content-hash": "fe0e1c2e8cdc38883bd56a87e6a70f84",
     "packages": [
         {
             "name": "halaxa/json-machine",
-            "version": "1.2.5",
+            "version": "1.2.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/halaxa/json-machine.git",
-                "reference": "d0f84abf79ac98145d478b66d2bcf363d706477c"
+                "reference": "8bf0b0ff6ff60ab480778eaa5ad7d505b442c2d4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/halaxa/json-machine/zipball/d0f84abf79ac98145d478b66d2bcf363d706477c",
-                "reference": "d0f84abf79ac98145d478b66d2bcf363d706477c",
+                "url": "https://api.github.com/repos/halaxa/json-machine/zipball/8bf0b0ff6ff60ab480778eaa5ad7d505b442c2d4",
+                "reference": "8bf0b0ff6ff60ab480778eaa5ad7d505b442c2d4",
                 "shasum": ""
             },
             "require": {
-                "php": "7.2 - 8.4"
+                "php": "7.2 - 8.5"
             },
             "require-dev": {
                 "ext-json": "*",
@@ -58,7 +58,7 @@
             "description": "Efficient, easy-to-use and fast JSON pull parser",
             "support": {
                 "issues": "https://github.com/halaxa/json-machine/issues",
-                "source": "https://github.com/halaxa/json-machine/tree/1.2.5"
+                "source": "https://github.com/halaxa/json-machine/tree/1.2.6"
             },
             "funding": [
                 {
@@ -66,7 +66,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2025-07-07T13:38:34+00:00"
+            "time": "2025-12-05T14:53:09+00:00"
         },
         {
             "name": "psr/event-dispatcher",
@@ -509,58 +509,13 @@
             "time": "2022-07-20T09:59:04+00:00"
         }
     ],
-    "packages-dev": [
-        {
-            "name": "biblibre/omeka-s-test-helper",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/biblibre/omeka-s-test-helper.git",
-                "reference": "a02c8dc4259365f7de1d09626a97347ba19cbf6e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/biblibre/omeka-s-test-helper/zipball/a02c8dc4259365f7de1d09626a97347ba19cbf6e",
-                "reference": "a02c8dc4259365f7de1d09626a97347ba19cbf6e",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.5.0"
-            },
-            "default-branch": true,
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "OmekaTestHelper\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Test helpers for Omeka S",
-            "homepage": "https://github.com/biblibre/omeka-s-test-helper",
-            "keywords": [
-                "omeka",
-                "test"
-            ],
-            "support": {
-                "issues": "https://github.com/biblibre/omeka-s-test-helper/issues",
-                "source": "https://github.com/biblibre/omeka-s-test-helper/tree/master"
-            },
-            "time": "2016-09-22T16:40:26+00:00"
-        }
-    ],
+    "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "biblibre/omeka-s-test-helper": 20
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": {
-        "php": "^7.4"
-    },
+    "platform": {},
     "platform-dev": {},
     "platform-overrides": {
         "php": "7.4"

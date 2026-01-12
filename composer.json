@@ -1,14 +1,31 @@
 {
+    "name": "daniel-km/omeka-s-module-search-solr",
+    "description": "Module for Omeka S to add a Solr search engine adapter for module AdvancedSearch.",
+    "type": "library",
+    "license": "CECILL-2.1",
+    "authors": [
+        {
+            "name": "Daniel Berthereau",
+            "email": "Daniel.packagist@Berthereau.net"
+        }
+    ],
+    "homepage": "https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr",
+    "support": {
+        "issues": "https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr/-/issues",
+        "forum": "https://forum.omeka.org/"
+    },
+    "keywords": [
+        "Omeka S",
+        "module",
+        "search",
+        "solr"
+    ],
     "require": {
-        "php" : "^7.4",
         "solarium/solarium": "^6.2",
         "symfony/event-dispatcher": "^4.4"
     },
     "provide": {
         "symfony/polyfill-php80": "*"
-    },
-    "require-dev": {
-        "biblibre/omeka-s-test-helper": "dev-master"
     },
     "autoload-dev": {
         "psr-4": {
@@ -18,6 +35,13 @@
     "config": {
         "platform": {
             "php": "7.4"
+        },
+        "allow-plugins": {
+            "composer/installers": true,
+            "oomphinc/composer-installers-extender": true
         }
+    },
+    "extra": {
+        "installer-name" : "SearchSolr"
     }
 }
