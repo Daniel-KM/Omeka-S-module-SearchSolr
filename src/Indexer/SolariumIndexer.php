@@ -131,6 +131,41 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected $vars = [];
 
+    /**
+     * Cached value extractors by resource name.
+     *
+     * @var \SearchSolr\ValueExtractor\ValueExtractorInterface[]
+     */
+    protected $valueExtractorCache = [];
+
+    /**
+     * Cached value formatters by formatter name.
+     *
+     * @var \SearchSolr\ValueFormatter\ValueFormatterInterface[]
+     */
+    protected $valueFormatterCache = [];
+
+    /**
+     * Cached maps by resource name.
+     *
+     * @var array
+     */
+    protected $mapsByResourceNameCache = [];
+
+    /**
+     * Counter for soft commit threshold.
+     *
+     * @var int
+     */
+    protected $documentCount = 0;
+
+    /**
+     * Hard commit every N documents.
+     *
+     * @var int
+     */
+    protected $hardCommitThreshold = 2000;
+
     public function canIndex(string $resourceName): bool
     {
         return $this->getServiceLocator()
@@ -208,34 +243,24 @@ class SolariumIndexer extends AbstractIndexer
             return $this;
         }
 
-        // For quick log.
-        $resourcesIds = [];
-        foreach ($resources as $resource) {
-            $resourcesIds[] = $this->easyMeta->resourceType(get_class($resource)) . ' #' . $resource->id();
-        }
-
-        $this->getLogger()->info(
-            'Indexing in Solr core "{solr_core}": {ids}', // @translate
-            ['solr_core' => $this->solrCore->name(), 'ids' => implode(', ', $resourcesIds)]
-        );
-
-        $batchSize = count($resourcesIds);
+        $batchSize = count($resources);
 
         $this->buffer = $this->getClient()->getPlugin('bufferedadd');
         $this->buffer
             ->setOverwrite(true)
             ->setBufferSize($batchSize);
 
+        $successCount = 0;
         foreach ($resources as $resource) {
             $document = $this->prepareDocument($resource);
             if ($document) {
-                // With buffer, the check is done when the document is added.
                 try {
                     $this->buffer->addDocument($document);
+                    ++$successCount;
+                    ++$this->documentCount;
                 } catch (Exception $e) {
                     $this->solrError($e, $resource, $document);
-                    // Remove the document with an issue from the buffer,
-                    // allowing to commit other ones.
+                    // Remove the document with issue from the buffer.
                     $documents = $this->buffer->getDocuments();
                     array_pop($documents);
                     $this->buffer->clear();
@@ -245,13 +270,35 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
+        // Use soft commit for performance, hard commit periodically.
         try {
-            $this->buffer->commit();
+            $useHardCommit = $this->documentCount >= $this->hardCommitThreshold;
+            $this->buffer->commit(null, null, !$useHardCommit);
+            if ($useHardCommit) {
+                $this->documentCount = 0;
+            }
         } catch (Exception $e) {
             $this->solrError($e);
             $this->buffer->clear();
+            $this->documentCount = 0;
         }
 
+        return $this;
+    }
+
+    /**
+     * Force a hard commit to Solr (call after indexing is complete).
+     */
+    public function commit(): IndexerInterface
+    {
+        if ($this->buffer) {
+            try {
+                $this->buffer->commit();
+            } catch (Exception $e) {
+                $this->solrError($e);
+            }
+        }
+        $this->documentCount = 0;
         return $this;
     }
 
@@ -330,7 +377,7 @@ class SolariumIndexer extends AbstractIndexer
         $resourceId = $resource->id();
 
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
-        $valueExtractor = $this->valueExtractorManager->get($resourceName);
+        $valueExtractor = $this->getValueExtractor($resourceName);
 
         // This shortcut is not working on some databases: the representation is
         // not fully loaded, so when getting resource values ($representation->values()),
@@ -351,7 +398,7 @@ class SolariumIndexer extends AbstractIndexer
         }
 
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $solrMap */
-        foreach ($this->solrCore->mapsByResourceName($resourceName) as $solrMap) {
+        foreach ($this->getMapsByResourceName($resourceName) as $solrMap) {
             $solrField = $solrMap->fieldName();
             $source = $solrMap->source();
 
@@ -465,29 +512,39 @@ class SolariumIndexer extends AbstractIndexer
 
     protected function formatValues(array $values, SolrMapRepresentation $solrMap)
     {
-        /** @var \SearchSolr\ValueFormatter\ValueFormatterInterface $valueFormatter */
-        $formatter = $solrMap->setting('formatter', '');
-        $formatter = $formatter && $this->valueFormatterManager->has($formatter) ? $formatter : 'text';
-        $valueFormatter = $this->valueFormatterManager->get($formatter)
-            ->setServiceLocator($this->services)
-            ->setSettings($solrMap->settings());
+        $valueFormatter = $this->getValueFormatter($solrMap);
 
+        // Optimize: pre-allocate and use array_push for better performance.
         $resultPreformatted = [];
         foreach ($values as $value) {
             $preFormattedValues = $valueFormatter->preFormat($value);
-            $resultPreformatted = array_merge($resultPreformatted, $preFormattedValues);
+            if ($preFormattedValues) {
+                array_push($resultPreformatted, ...$preFormattedValues);
+            }
+        }
+
+        if (!$resultPreformatted) {
+            return [];
         }
 
         $resultFormatted = [];
         foreach ($resultPreformatted as $value) {
             $formattedValues = $valueFormatter->format($value);
-            $resultFormatted = array_merge($resultFormatted, $formattedValues);
+            if ($formattedValues) {
+                array_push($resultFormatted, ...$formattedValues);
+            }
+        }
+
+        if (!$resultFormatted) {
+            return [];
         }
 
         $resultPostFormatted = [];
         foreach ($resultFormatted as $value) {
             $postFormattedValues = $valueFormatter->postFormat($value);
-            $resultPostFormatted = array_merge($resultPostFormatted, $postFormattedValues);
+            if ($postFormattedValues) {
+                array_push($resultPostFormatted, ...$postFormattedValues);
+            }
         }
 
         return $valueFormatter->finalizeFormat($resultPostFormatted);
@@ -905,5 +962,56 @@ class SolariumIndexer extends AbstractIndexer
             $this->solariumClient->getPlugin('bufferedadd');
         }
         return $this->solariumClient;
+    }
+
+    /**
+     * Get cached value extractor for a resource name.
+     */
+    protected function getValueExtractor(
+        string $resourceName
+    ): \SearchSolr\ValueExtractor\ValueExtractorInterface {
+        if (!isset($this->valueExtractorCache[$resourceName])) {
+            $this->valueExtractorCache[$resourceName] = $this->valueExtractorManager
+                ->get($resourceName);
+        }
+        return $this->valueExtractorCache[$resourceName];
+    }
+
+    /**
+     * Get cached value formatter for a solr map.
+     *
+     * Note: Settings are applied per call since they vary by map.
+     */
+    protected function getValueFormatter(
+        SolrMapRepresentation $solrMap
+    ): \SearchSolr\ValueFormatter\ValueFormatterInterface {
+        $formatter = $solrMap->setting('formatter', '');
+        $formatter = $formatter && $this->valueFormatterManager->has($formatter)
+            ? $formatter
+            : 'text';
+
+        if (!isset($this->valueFormatterCache[$formatter])) {
+            $this->valueFormatterCache[$formatter] = $this->valueFormatterManager
+                ->get($formatter)
+                ->setServiceLocator($this->services);
+        }
+
+        // Settings must be applied per map since they vary.
+        return $this->valueFormatterCache[$formatter]
+            ->setSettings($solrMap->settings());
+    }
+
+    /**
+     * Get cached maps for a resource name.
+     *
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[]
+     */
+    protected function getMapsByResourceName(string $resourceName): array
+    {
+        if (!isset($this->mapsByResourceNameCache[$resourceName])) {
+            $this->mapsByResourceNameCache[$resourceName] = $this->solrCore
+                ->mapsByResourceName($resourceName);
+        }
+        return $this->mapsByResourceNameCache[$resourceName];
     }
 }
