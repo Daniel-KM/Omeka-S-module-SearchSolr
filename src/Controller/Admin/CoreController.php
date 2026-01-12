@@ -74,7 +74,7 @@ class CoreController extends AbstractActionController
         'pool:filter_visibility',
         // Settings.
         'settings:label',
-        'settings:part',
+        'settings:parts',
         'settings:formatter',
         'settings:normalization',
         'settings:max_length',
