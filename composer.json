@@ -29,7 +29,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "SearchSolrTest\\": "test/SearchSolrTest/"
+            "SearchSolrTest\\": "tests/SearchSolrTest/"
         }
     },
     "config": {

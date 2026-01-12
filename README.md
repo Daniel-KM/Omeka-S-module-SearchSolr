@@ -57,7 +57,7 @@ The module includes a comprehensive test suite with unit and functional tests.
 Run them from the root of Omeka:
 
 ```sh
-vendor/bin/phpunit -c modules/SearchSolr/test/phpunit.xml --testdox
+vendor/bin/phpunit -c modules/SearchSolr/phpunit.xml --testdox
 ```
 
 ### Requirements

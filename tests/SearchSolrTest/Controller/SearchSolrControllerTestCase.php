@@ -2,7 +2,7 @@
 
 namespace SearchSolrTest\Controller;
 
-use SearchSolr\Test\TestCase;
+use SearchSolrTest\TestCase;
 
 abstract class SearchSolrControllerTestCase extends TestCase
 {
@@ -21,6 +21,7 @@ abstract class SearchSolrControllerTestCase extends TestCase
             'o:name' => 'TestCore',
             'o:settings' => [
                 'client' => [
+                    'scheme' => 'http',
                     'host' => 'localhost',
                     'port' => '8983',
                     'path' => '/',
@@ -84,42 +85,77 @@ abstract class SearchSolrControllerTestCase extends TestCase
 
     public function tearDown(): void
     {
+        // Re-authenticate in case test logged out.
         $this->loginAsAdmin();
+
         $this->api()->delete('search_configs', $this->searchConfig->id());
         $this->api()->delete('search_engines', $this->searchEngine->id());
         $this->api()->delete('solr_maps', $this->solrMap->id());
         $this->api()->delete('solr_cores', $this->solrCore->id());
     }
 
-    protected function login($email, $password)
-    {
-        $serviceLocator = $this->getServiceLocator();
-        $auth = $serviceLocator->get('Omeka\AuthenticationService');
-        $adapter = $auth->getAdapter();
-        $adapter->setIdentity($email);
-        $adapter->setCredential($password);
-        return $auth->authenticate();
-    }
-
-    protected function logout(): void
-    {
-        $serviceLocator = $this->getServiceLocator();
-        $auth = $serviceLocator->get('Omeka\AuthenticationService');
-        $auth->clearIdentity();
-    }
-
-    protected function loginAsAdmin(): void
-    {
-        $this->login('admin@example.com', 'root');
-    }
-
+    /**
+     * Get the service locator (alias for getApplicationServiceLocator).
+     */
     protected function getServiceLocator()
     {
-        return $this->getApplication()->getServiceManager();
+        return $this->getApplicationServiceLocator();
     }
 
-    protected function api()
+    /**
+     * Login as admin using adapter (avoids static caching issues with Doctrine).
+     */
+    protected function loginAsAdmin(): void
     {
-        return $this->getServiceLocator()->get('Omeka\ApiManager');
+        $services = $this->getApplicationServiceLocator();
+        $auth = $services->get('Omeka\AuthenticationService');
+        $adapter = $auth->getAdapter();
+        $adapter->setIdentity('admin@example.com');
+        $adapter->setCredential('root');
+        $auth->authenticate();
+    }
+
+    /**
+     * Get a valid CSRF token for a form.
+     *
+     * @param string $formClass The form class name.
+     * @param array $options Form options.
+     * @param string $csrfName The CSRF element name (default 'csrf').
+     * @return string The CSRF token value.
+     */
+    protected function getCsrfToken(string $formClass, array $options = [], string $csrfName = 'csrf'): string
+    {
+        $forms = $this->getServiceLocator()->get('FormElementManager');
+        $form = $forms->get($formClass, $options);
+        return $form->get($csrfName)->getValue();
+    }
+
+    /**
+     * Dispatch a POST request with automatic CSRF token injection.
+     *
+     * @param string $url The URL to dispatch.
+     * @param array $params POST parameters (without CSRF).
+     * @param string $formClass The form class to get CSRF from.
+     * @param array $formOptions Form options for getting the form.
+     * @param string $csrfName The CSRF element name.
+     */
+    protected function dispatchPost(
+        string $url,
+        array $params,
+        string $formClass,
+        array $formOptions = [],
+        string $csrfName = 'csrf'
+    ): void {
+        // Reset and setup first.
+        $this->reset();
+        $this->getApplication();
+
+        $this->loginAsAdmin();
+
+        // Get CSRF from the fresh application.
+        $params[$csrfName] = $this->getCsrfToken($formClass, $formOptions, $csrfName);
+
+        // Dispatch without reset.
+        \Laminas\Test\PHPUnit\Controller\AbstractHttpControllerTestCase::dispatch($url, 'POST', $params);
     }
 }

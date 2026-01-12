@@ -9,16 +9,14 @@ class ApiControllerTest extends SearchSolrControllerTestCase
 {
     public function testApiSolrCoreIsDeniedToAnonymousUsers(): void
     {
-        $this->logout();
         $this->expectException(PermissionDeniedException::class);
-        $this->dispatch('/api/solr_cores');
+        $this->dispatchUnauthenticated('/api/solr_cores');
     }
 
     public function testApiSolrMapsIsDeniedToAnonymousUsers(): void
     {
-        $this->logout();
         $this->expectException(PermissionDeniedException::class);
-        $this->dispatch('/api/solr_maps');
+        $this->dispatchUnauthenticated('/api/solr_maps');
     }
 
     public function testApiSolrCoresIsAllowedToAdmin(): void
