@@ -40,6 +40,7 @@ use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Api\Representation\ItemRepresentation;
 use Omeka\Api\Representation\ItemSetRepresentation;
 use Omeka\Api\Representation\MediaRepresentation;
+use Omeka\Api\Representation\ValueAnnotationRepresentation;
 use Omeka\Api\Representation\ValueRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 
@@ -101,6 +102,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'content' => 'Media: Content (from html or extractable text from file, included alto)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
                     'value' => 'Value itself (in particular for module Thesaurus)', // @translate
+                    'annotation' => 'Value annotation appended to property', // @translate
                     'access_level' => 'Access level (module Access)', // @translate
                     // 'o:selection/o:id' => 'Selections (module Selection)', // @translate
                     // 'o:selection[is_public=1]/o:id' => 'Public selections (module Selection)', // @translate
@@ -666,6 +668,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $excludedDataTypes = $solrMap->pool('data_types_exclude');
         $hasExcludedDataTypes = !empty($excludedDataTypes);
 
+        // Check if we need to extract annotations (path like property/annotation).
+        $solrSubMap = $solrMap->subMap();
+        $subFirstSource = $solrSubMap->firstSource();
+        $extractAnnotation = $subFirstSource === 'annotation';
+
         // Only value resources are managed here: other types are managed with
         // the formatter.
         foreach ($values as $value) {
@@ -689,12 +696,31 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     continue;
                 }
             }
+
+            // Handle annotation extraction (path: property/annotation[/property]).
+            if ($extractAnnotation) {
+                $annotation = $value->valueAnnotation();
+                if ($annotation) {
+                    $annotationSubMap = $solrSubMap->subMap();
+                    $annotationFirstSource = $annotationSubMap->firstSource();
+                    if (!$annotationFirstSource) {
+                        // No sub-property specified: extract all annotation values.
+                        $annotationExtractedValues = $this->extractAnnotationValues($annotation, $solrSubMap);
+                        $extractedValues = array_merge($extractedValues, $annotationExtractedValues);
+                    } else {
+                        // Extract specific property from annotation.
+                        $annotationExtractedValues = $this->extractValue($annotation, $annotationSubMap);
+                        $extractedValues = array_merge($extractedValues, $annotationExtractedValues);
+                    }
+                }
+                continue;
+            }
+
             // A value resource may be set for multiple types, included a custom
             // vocab with a resource.
             $vr = $value->valueResource();
             if ($vr) {
                 if (!$this->excludeResourceViaQueryFilter($vr, $solrMap, 'filter_value_resources')) {
-                    $solrSubMap = $solrMap->subMap();
                     $firstSource = $solrSubMap->firstSource();
                     if (!$firstSource || $firstSource === 'value') {
                         $extractedValues[] = $value;
@@ -708,6 +734,27 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             }
         }
 
+        return $extractedValues;
+    }
+
+    /**
+     * Extract all values from a value annotation.
+     *
+     * @param ValueAnnotationRepresentation $annotation
+     * @param SolrMapRepresentation $solrMap
+     * @return mixed[]|ValueRepresentation[]
+     */
+    protected function extractAnnotationValues(
+        ValueAnnotationRepresentation $annotation,
+        SolrMapRepresentation $solrMap
+    ): array {
+        $extractedValues = [];
+        foreach (array_keys($annotation->values()) as $term) {
+            $values = $annotation->value($term, ['all' => true]);
+            foreach ($values as $value) {
+                $extractedValues[] = $value;
+            }
+        }
         return $extractedValues;
     }
 
