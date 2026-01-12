@@ -34,6 +34,41 @@ class SolariumQuerier extends AbstractQuerier
     protected SolariumClient $solariumClient;
     protected SolrCoreRepresentation $solrCore;
 
+    /**
+     * Cache for Solr field names to avoid repeated API queries.
+     */
+    protected ?array $solrFieldNamesCache = null;
+
+    /**
+     * Cache for foldable fields.
+     */
+    protected ?array $fieldsFoldableCache = null;
+
+    /**
+     * Cache for field type checks to avoid repeated schema lookups.
+     */
+    protected array $fieldTypeCache = [];
+
+    /**
+     * Cache for Transliterator instance.
+     */
+    protected static ?\Transliterator $transliterator = null;
+
+    /**
+     * Cache for Collator instance.
+     */
+    protected static ?\Collator $collator = null;
+
+    /**
+     * Cache for solrCoreField() lookups.
+     */
+    protected array $solrCoreFieldCache = [];
+
+    /**
+     * Flag to track if aliases have been appended.
+     */
+    protected bool $aliasesAppended = false;
+
     public function setQuery(Query $query): self
     {
         $this->query = $query;
@@ -418,14 +453,22 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Configure EDisMax per-request and keep only foldable query fields.
      *
-     * Also disable SOW to avoid splitting tokens like "949.0252" into too many
-     * clauses.
+     * Also disable SOW to avoid splitting tokens like "949.0252" into too
+     * many clauses.
+     *
+     * The number of query fields is limited to avoid exceeding Solr's
+     * maxClauseCount (default 1024). With many fields, each search term
+     * creates a clause per field, quickly hitting the limit.
      */
     protected function configureEDisMax(): self
     {
         if (!$this->select) {
             return $this;
         }
+
+        // Limit query fields to avoid "too many nested clauses" error.
+        // With 100 fields and 10 search terms, we stay well under 1024.
+        $maxQueryFields = 100;
 
         $this->select->addParam('defType', 'edismax')->addParam('sow', 'false');
         $dismax = $this->select->getDisMax();
@@ -434,6 +477,8 @@ class SolariumQuerier extends AbstractQuerier
         if ($existing === '') {
             $foldable = $this->fieldsFoldable();
             if ($foldable) {
+                // Limit to max fields to prevent clause explosion.
+                $foldable = array_slice($foldable, 0, $maxQueryFields);
                 $dismax->setQueryFields(implode(' ', $foldable));
             }
         } else {
@@ -443,6 +488,8 @@ class SolariumQuerier extends AbstractQuerier
                 fn ($p) => isset($allowed[preg_replace('~\^.*$~', '', $p)])
             );
             if ($kept) {
+                // Limit to max fields to prevent clause explosion.
+                $kept = array_slice($kept, 0, $maxQueryFields);
                 $dismax->setQueryFields(implode(' ', $kept));
             }
         }
@@ -744,21 +791,39 @@ class SolariumQuerier extends AbstractQuerier
     protected function prepareRangeFacetBounds(array $facets): array
     {
         $fieldRanges = [];
+        // Map facet name to Solr field name.
+        $nameToField = [];
+
         foreach ($facets as $name => $data) {
             if (in_array($data['type'] ?? '', ['Range', 'RangeDouble', 'SelectRange'])) {
                 if (!isset($data['min']) || !isset($data['max'])) {
-                    $fieldRanges[$name] = [];
+                    $field = $data['field'] ?? null;
+                    if ($field) {
+                        $fieldRanges[$name] = [];
+                        $nameToField[$name] = $field;
+                    }
                 }
             }
         }
 
-        if ($fieldRanges) {
-            $all = $this->queryValuesCount(array_keys($fieldRanges));
-            foreach ($all as $name => $values) {
-                $values = array_keys(array_filter($values));
-                $fieldRanges[$name]['min'] = $values ? min($values) : 0;
-                $fieldRanges[$name]['max'] = $values ? max($values) : 0;
+        if ($fieldRanges && $nameToField) {
+            // Use the actual Solr field names for the query.
+            $solrFields = array_unique(array_values($nameToField));
+            $all = $this->queryValuesCount($solrFields);
+
+            // Map results back to facet names.
+            foreach ($fieldRanges as $name => &$range) {
+                $field = $nameToField[$name] ?? null;
+                if ($field && isset($all[$field])) {
+                    $values = array_keys(array_filter($all[$field]));
+                    $range['min'] = $values ? min($values) : 0;
+                    $range['max'] = $values ? max($values) : 0;
+                } else {
+                    $range['min'] = 0;
+                    $range['max'] = 0;
+                }
             }
+            unset($range);
         }
 
         return $fieldRanges;
@@ -1398,8 +1463,7 @@ class SolariumQuerier extends AbstractQuerier
                 /* @see https://www.unicode.org/reports/tr10/ */
                 if (count($val) > 1) {
                     if (extension_loaded('intl')) {
-                        $col = new \Collator('root');
-                        $col->sort($val);
+                        $this->getCollator()->sort($val);
                     } else {
                         natcasesort($val);
                     }
@@ -1434,7 +1498,7 @@ class SolariumQuerier extends AbstractQuerier
                     if (is_int($first)) {
                         $val = ($type === '<' || $type === '≤') ? min($val) : max($val);
                     } else {
-                        extension_loaded('intl') ? (new \Collator('root'))->sort($val, \Collator::SORT_NUMERIC) : sort($val);
+                        extension_loaded('intl') ? $this->getCollator()->sort($val, \Collator::SORT_NUMERIC) : sort($val);
                         $val = ($type === '<' || $type === '≤') ? reset($val) : array_pop($val);
                     }
                 } else {
@@ -1494,10 +1558,25 @@ class SolariumQuerier extends AbstractQuerier
     // HELPER METHODS
     // =========================================================================
 
+    /**
+     * Get cached Collator instance for Unicode sorting.
+     */
+    protected function getCollator(): \Collator
+    {
+        if (self::$collator === null) {
+            self::$collator = new \Collator('root');
+        }
+        return self::$collator;
+    }
+
     protected function removeDiacritics(string $text): string
     {
         if (extension_loaded('intl')) {
-            return \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;')->transliterate($text);
+            // Cache the Transliterator instance for performance.
+            if (self::$transliterator === null) {
+                self::$transliterator = \Transliterator::createFromRules(':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;');
+            }
+            return self::$transliterator->transliterate($text);
         }
         if (extension_loaded('iconv')) {
             $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
@@ -1531,13 +1610,42 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Get default managed-schema dynamic text fields (so _txt and _t).
      *
-     * The default text files usually include ASCII folding.
+     * The default text fields usually include ASCII folding and tokenization.
+     * When multiple field types exist for the same base name (e.g. _txt, _ss,
+     * _s_lower), prefer _txt/_t fields as they are analyzed and best for
+     * full-text search.
      */
     protected function fieldsFoldable(): array
     {
-        $text = $this->usedSolrFields([], ['_txt', '_t'], []);
-        $lower = $this->usedSolrFields([], ['_s_lower', '_ss_lower'], []);
-        return array_values(array_unique(array_merge($text, $lower)));
+        if ($this->fieldsFoldableCache !== null) {
+            return $this->fieldsFoldableCache;
+        }
+
+        // Get all text fields (_txt, _t): tokenized and best for search.
+        $textFields = $this->usedSolrFields([], ['_txt', '_t'], []);
+
+        // Extract base names from text fields to avoid duplicates.
+        $textBases = [];
+        foreach ($textFields as $field) {
+            // Remove suffix to get base name.
+            $base = preg_replace('/(_txt|_t)$/', '', $field);
+            $textBases[$base] = true;
+        }
+
+        // Get lowercase fields only if no _txt/_t version exists.
+        $lowerFields = $this->usedSolrFields([], ['_s_lower', '_ss_lower'], []);
+        $filteredLower = [];
+        foreach ($lowerFields as $field) {
+            $base = preg_replace('/(_s_lower|_ss_lower)$/', '', $field);
+            // Only add if no text field exists for this base.
+            if (!isset($textBases[$base])) {
+                $filteredLower[] = $field;
+            }
+        }
+
+        $this->fieldsFoldableCache = array_values(array_unique(array_merge($textFields, $filteredLower)));
+
+        return $this->fieldsFoldableCache;
     }
 
     /**
@@ -1750,10 +1858,13 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function solrCoreField(string $source): ?string
     {
-        $maps = $this->solrCore->mapsBySource($source, 'generic');
-        return $maps
-            ? (reset($maps))->fieldName()
-            : null;
+        if (!array_key_exists($source, $this->solrCoreFieldCache)) {
+            $maps = $this->solrCore->mapsBySource($source, 'generic');
+            $this->solrCoreFieldCache[$source] = $maps
+                ? (reset($maps))->fieldName()
+                : null;
+        }
+        return $this->solrCoreFieldCache[$source];
     }
 
     /**
@@ -1761,12 +1872,15 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function usedSolrFields(array $prefixes, array $suffixes, array $contains): array
     {
-        $api = $this->services->get('Omeka\ApiManager');
-        $fields = $api->search('solr_maps', [
-            'solr_core_id' => $this->solrCore->id(),
-        ], ['returnScalar' => 'fieldName'])->getContent();
+        // Cache all field names on first call to avoid repeated API queries.
+        if ($this->solrFieldNamesCache === null) {
+            $api = $this->services->get('Omeka\ApiManager');
+            $this->solrFieldNamesCache = $api->search('solr_maps', [
+                'solr_core_id' => $this->solrCore->id(),
+            ], ['returnScalar' => 'fieldName'])->getContent();
+        }
 
-        return array_filter($fields, function ($v) use ($prefixes, $suffixes, $contains) {
+        return array_filter($this->solrFieldNamesCache, function ($v) use ($prefixes, $suffixes, $contains) {
             foreach ($prefixes as $p) {
                 if (strncmp($v, $p, strlen($p)) === 0) {
                     return true;
@@ -1786,52 +1900,62 @@ class SolariumQuerier extends AbstractQuerier
         });
     }
 
+    /**
+     * Get cached schema field to avoid repeated lookups.
+     */
+    protected function getSchemaField(string $name): ?\SearchSolr\Schema\Field
+    {
+        if (!isset($this->fieldTypeCache[$name])) {
+            $this->fieldTypeCache[$name] = $this->getSolrCore()->schema()->getField($name);
+        }
+        return $this->fieldTypeCache[$name];
+    }
+
     protected function fieldIsBool(string $name): bool
     {
-        /** @var \SearchSolr\Schema\Field $field */
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isBoolean() : false;
     }
 
     protected function fieldIsDate(string $name): bool
     {
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isDate() : false;
     }
 
     protected function fieldIsFloat(string $name): bool
     {
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isFloat() : false;
     }
 
     protected function fieldIsInteger(string $name): bool
     {
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isInteger() : false;
     }
 
     protected function fieldIsLowercase(string $name): bool
     {
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isLowercase() : false;
     }
 
     protected function fieldIsNumeric(string $name): bool
     {
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isNumeric() : false;
     }
 
     protected function fieldIsString(string $name): bool
     {
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isString() : false;
     }
 
     protected function fieldIsTokenized(string $name): bool
     {
-        $field = $this->getSolrCore()->schema()->getField($name);
+        $field = $this->getSchemaField($name);
         return $field ? $field->isTokenized() : false;
     }
 
@@ -1940,6 +2064,12 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function appendCoreAliasesToQuery(): self
     {
+        // Avoid re-processing if already done.
+        if ($this->aliasesAppended) {
+            return $this;
+        }
+        $this->aliasesAppended = true;
+
         // Search config aliases have priority.
         $aliases = $this->query->getAliases();
 
