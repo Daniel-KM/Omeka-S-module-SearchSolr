@@ -51,6 +51,15 @@ the module to `SearchSolr`, go to the root of the module, and run:
 composer install --no-dev
 ```
 
+- For test
+
+The module includes a comprehensive test suite with unit and functional tests.
+Run them from the root of Omeka:
+
+```sh
+vendor/bin/phpunit -c modules/SearchSolr/test/phpunit.xml --testdox
+```
+
 ### Requirements
 
 - Module [Advanced Search] version 3.5.46 or above.
