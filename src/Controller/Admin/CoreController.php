@@ -815,6 +815,75 @@ public function showIndexingStatsAction()
     }
 
     /**
+     * Create the catchall copyField "_text_" in Solr for full-text search.
+     */
+    public function createCatchallAction()
+    {
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        $schema = $solrCore->schema();
+
+        // Check if _text_ already exists.
+        if ($schema->checkDefaultField()) {
+            $this->messenger()->addWarning(new PsrMessage(
+                'The catchall field "_text_" already exists in core "{solr_core_name}".', // @translate
+                ['solr_core_name' => $solrCore->name()]
+            ));
+            return $this->redirect()->toRoute('admin/search/solr/core-id', [
+                'id' => $id,
+                'action' => 'show',
+            ]);
+        }
+
+        // Create the copyField via Solr API.
+        try {
+            $solariumClient = $solrCore->solariumClient();
+            $endpoint = $solariumClient->getEndpoint();
+            $url = $endpoint->getBaseUri() . 'schema';
+
+            $data = json_encode([
+                'add-copy-field' => [
+                    'source' => '*',
+                    'dest' => '_text_',
+                ],
+            ]);
+
+            $httpClient = new \Laminas\Http\Client($url, [
+                'timeout' => 30,
+            ]);
+            $httpClient->setMethod('POST');
+            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $httpClient->setRawBody($data);
+            $response = $httpClient->send();
+
+            if ($response->isSuccess()) {
+                $this->messenger()->addSuccess(new PsrMessage(
+                    'Catchall field "_text_" created in core "{solr_core_name}". Reindex required.', // @translate
+                    ['solr_core_name' => $solrCore->name()]
+                ));
+            } else {
+                $body = json_decode($response->getBody(), true);
+                $error = $body['error']['msg'] ?? $response->getReasonPhrase();
+                $this->messenger()->addError(new PsrMessage(
+                    'Failed to create catchall field: {error}', // @translate
+                    ['error' => $error]
+                ));
+            }
+        } catch (\Exception $e) {
+            $this->messenger()->addError(new PsrMessage(
+                'Error creating catchall field: {error}', // @translate
+                ['error' => $e->getMessage()]
+            ));
+        }
+
+        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+            'id' => $id,
+            'action' => 'show',
+        ]);
+    }
+
+    /**
      * 
      * @param SolrCoreRepresentation $solrCore 
      * @return array 

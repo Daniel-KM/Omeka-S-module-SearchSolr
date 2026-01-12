@@ -64,6 +64,11 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         <?= $hyperlink($translate('Import'), $solrCore->adminUrl('import'), [
             'class' => 'button',
             'title' => $translate('Import maps. Warning: it will reset the current mapping for all resources. It is recommended to export it first.')]) ?>
+        <?php if (!$solrCore->schema()->checkDefaultField()): ?>
+        <?= $hyperlink($translate('Create _text_'), $solrCore->adminUrl('create-catchall'), [
+            'class' => 'button',
+            'title' => $translate('Create the catchall copyField "_text_" for optimized full-text search. Reindexing will be required.')]) ?>
+        <?php endif; ?>
         <?php endif; ?>
         <?php // TODO Add button to reindex. ?>
     </div>
