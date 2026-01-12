@@ -1585,16 +1585,26 @@ class SolariumQuerier extends AbstractQuerier
                 $val = ($type === 'yrgt') ? ++$val : $val;
                 return "$field:[$val TO *]";
 
-            // Resource with id.
+            // Linked resource by id.
+            // The value is a resource id (integer). The ideal index is _link_is
+            // (integer), but when only _link_ss (string) is available, the
+            // resource id is compared as string (e.g. "30945" instead of 30945).
             case 'nres':
             case 'res':
-                // Like equal, but the field must be an integer.
+                // Filter to keep only valid numeric ids.
+                $fqValues = is_array($val)
+                    ? array_filter($val, 'is_numeric')
+                    : (is_numeric($val) ? [$val] : []);
+                if (!$fqValues) {
+                    return '';
+                }
                 if ($this->fieldIsInteger($field)) {
-                    $fqValues = is_array($val) ? array_map('intval', $val) : [(int) $val];
-                    $fqValues = implode(' OR ', $fqValues);
+                    $fqValues = implode(' OR ', array_map('intval', $fqValues));
                     return "$field:$wrap($fqValues)$end";
                 }
-                break;
+                // Fallback for string field (_link_ss).
+                $fqValues = $this->escapePhraseValue(array_map('strval', $fqValues), 'OR');
+                return "$field:$wrap$fqValues$end";
 
             // Exists (has a value).
             case 'nex':
@@ -1800,7 +1810,13 @@ class SolariumQuerier extends AbstractQuerier
             return null;
         }
 
-        return $this->selectBestIndexNumeric($indices);
+        // Filter to only include actual integer fields.
+        $integerIndices = array_filter($indices, fn ($idx) => $this->fieldIsInteger($idx));
+        if (!$integerIndices) {
+            return null;
+        }
+
+        return $this->selectBestIndexNumeric($integerIndices);
     }
 
     /**
