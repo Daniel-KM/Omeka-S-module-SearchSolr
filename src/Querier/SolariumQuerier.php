@@ -911,7 +911,7 @@ class SolariumQuerier extends AbstractQuerier
         // Important: when used, the full list of fields should be set.
         // Note: field_boost is stored as array [field => boost] for solarium,
         // that matches solr string format "field1 field2^2".
-        $coreBoosts = $this->solrCore->setting('field_boost');
+        $coreBoosts = $this->solrCore->setting('field_boost', []);
         $queryBoosts = (array) $this->query->getFieldBoosts();
         $merged = array_merge($coreBoosts, $queryBoosts);
 
