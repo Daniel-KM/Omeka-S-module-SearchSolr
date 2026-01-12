@@ -112,7 +112,7 @@ class Schema
                 $credentials = isset($parsed['username']) ? substr($parsed['username'], 0, 1) . '***:***@' : '';
                 $url = $parsed['scheme'] . '://' . $credentials . $parsed['host'] . ':' . $parsed['port'] . $parsed['path'];
                 $message = new PsrMessage(
-                    'Response is not valid. Check output of {ur}, that should be a json with a key "schema".', // @translate
+                    'Response is not valid. Check output of {url}, that should be a json with a key "schema".', // @translate
                     ['url' => $url]
                 );
                 throw new SolariumException((string) $message);

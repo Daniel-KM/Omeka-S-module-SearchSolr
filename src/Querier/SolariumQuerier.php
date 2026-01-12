@@ -1079,7 +1079,6 @@ class SolariumQuerier extends AbstractQuerier
                     // TODO Add a second (hidden?) field from source "o:id".
                     // TODO Or reindex in the other way #id/items-index-serverId.
                     $value = '*\/' . implode(' OR *\/', $values);
-                    $value = '*\/' . implode(' OR *\/', $values);
                     $this->select
                         ->createFilterQuery($name . '_' . ++$this->appendToKey)
                         ->setQuery("$name:$value");

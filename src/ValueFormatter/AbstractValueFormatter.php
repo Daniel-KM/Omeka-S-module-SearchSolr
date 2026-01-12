@@ -284,11 +284,12 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         }
 
         // FIXME Indexation of string "0" breaks Solr, so currently replaced by "00".
-        foreach ($values as $value) {
+        foreach ($values as &$value) {
             if ($value === '0') {
                 $value = '00';
             }
         }
+        unset($value);
 
         // Don't use array_unique early, because objects may not be stringable.
         return array_values(array_unique($values));
