@@ -21,27 +21,26 @@ trait TraitSolrController
     }
 
     /**
-     * Build Solr query fields with boost multipliers from solr maps as string.
+     * Build Solr query fields with boost multipliers from solr maps as array.
      *
      * All the fields are included by default, else they will be excluded from
      * any search.
      *
+     * @return array Associative array [field => boost], with boost default 1.0.
      * @todo Keep only the "_txt", dates fields and other contents fields? Not ids?
      */
-    protected function prepareFieldsBoost(SolrCoreRepresentation $solrCore): string
+    protected function prepareFieldsBoost(SolrCoreRepresentation $solrCore): array
     {
         $fields = [];
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $field = $map->fieldName();
             $boost = $map->setting('boost');
-            if ($boost && is_numeric($boost) && $boost > 0) {
-                $fields[] = $field . '^' . $boost;
-            } else {
-                $fields[] = $field;
-            }
+            $fields[$field] = ($boost && is_numeric($boost) && $boost > 0)
+                ? (float) $boost
+                : 1.0;
         }
-        return implode(' ', array_unique($fields));
+        return $fields;
     }
 
     /**
