@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-01 00:00+0000\n"
-"PO-Revision-Date: 2025-12-01 00:00+0000\n"
+"POT-Creation-Date: 2026-01-12 00:00+0000\n"
+"PO-Revision-Date: 2026-01-12 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -126,7 +126,7 @@ msgstr "Cœur Solr"
 #: view/search-solr/admin/core/edit.phtml:55
 #: view/search-solr/admin/core/import.phtml:29
 #: view/search-solr/admin/core/show-indexing-stats.phtml:29
-#: view/search-solr/admin/core/show.phtml:72
+#: view/search-solr/admin/core/show.phtml:77
 msgid "Breadcrumb"
 msgstr "Fil d’Ariane"
 
@@ -137,7 +137,7 @@ msgstr "Fil d’Ariane"
 #: view/search-solr/admin/core/edit.phtml:57
 #: view/search-solr/admin/core/import.phtml:31
 #: view/search-solr/admin/core/show-indexing-stats.phtml:31
-#: view/search-solr/admin/core/show.phtml:74
+#: view/search-solr/admin/core/show.phtml:79
 #: view/search-solr/admin/map/add.phtml:55
 #: view/search-solr/admin/map/browse-resource.phtml:61
 #: view/search-solr/admin/map/edit.phtml:56
@@ -340,8 +340,8 @@ msgid "%1$s: %2$d indexed / %3$d (all)"
 msgstr "%1$s : %2$d indexés / %3$d (tous)"
 
 #: view/search-solr/admin/core/show.phtml:35
-#: view/search-solr/admin/core/show.phtml:91
-#: view/search-solr/admin/core/show.phtml:153
+#: view/search-solr/admin/core/show.phtml:96
+#: view/search-solr/admin/core/show.phtml:158
 #: view/search-solr/admin/map/browse-resource.phtml:68
 msgid "Maps"
 msgstr "Alignements"
@@ -378,78 +378,90 @@ msgstr ""
 "correspondances en cours de toutes les ressources. Il est recommandé de les "
 "exporter d’abord."
 
-#: view/search-solr/admin/core/show.phtml:78
+#: view/search-solr/admin/core/show.phtml:68
+msgid "Create _text_"
+msgstr "Créer _text_"
+
+#: view/search-solr/admin/core/show.phtml:70
+msgid ""
+"Create the catchall copyField \"_text_\" for optimized full-text search. "
+"Reindexing will be required."
+msgstr ""
+"Créer le champ attrape-tout \"_text_\" (copyField) pour une recherche plein-"
+"texte optimisée. Une réindexation sera nécessaire."
+
+#: view/search-solr/admin/core/show.phtml:83
 msgid "By index"
 msgstr "Par index"
 
-#: view/search-solr/admin/core/show.phtml:88
+#: view/search-solr/admin/core/show.phtml:93
 msgid "Index"
 msgstr "Index"
 
-#: view/search-solr/admin/core/show.phtml:94
-#: view/search-solr/admin/core/show.phtml:156
+#: view/search-solr/admin/core/show.phtml:99
+#: view/search-solr/admin/core/show.phtml:161
 #: view/search-solr/admin/map/browse-resource.phtml:71
 msgid "Source Omeka"
 msgstr "Source Omeka"
 
-#: view/search-solr/admin/core/show.phtml:95
-#: view/search-solr/admin/core/show.phtml:157
+#: view/search-solr/admin/core/show.phtml:100
+#: view/search-solr/admin/core/show.phtml:162
 #: view/search-solr/admin/map/browse-resource.phtml:72
 msgid "Pool / Filter"
 msgstr "Entrepôt / Filtre"
 
-#: view/search-solr/admin/core/show.phtml:126
+#: view/search-solr/admin/core/show.phtml:131
 msgid "List indexed values alphabetically"
 msgstr "Lister les valeurs indexées par ordre alphabétique"
 
-#: view/search-solr/admin/core/show.phtml:133
+#: view/search-solr/admin/core/show.phtml:138
 msgid "List indexed values alphabetically (reverse)"
 msgstr "Lister les valeurs indexées par ordre alphabétique inverse"
 
-#: view/search-solr/admin/core/show.phtml:140
+#: view/search-solr/admin/core/show.phtml:145
 msgid "List indexed values by count"
 msgstr "Lister les valeurs indexées par total"
 
-#: view/search-solr/admin/core/show.phtml:147
+#: view/search-solr/admin/core/show.phtml:152
 msgid "List indexed values by count (reverse)"
 msgstr "Lister les valeurs indexées par total (inverse)"
 
-#: view/search-solr/admin/core/show.phtml:201
+#: view/search-solr/admin/core/show.phtml:206
 #: view/search-solr/admin/map/browse-resource.phtml:119
 msgid "Filtered by values"
 msgstr "Filtré par les valeurs"
 
-#: view/search-solr/admin/core/show.phtml:204
+#: view/search-solr/admin/core/show.phtml:209
 #: view/search-solr/admin/map/browse-resource.phtml:122
 msgid "Filtered by uris"
 msgstr "Filtré par uris"
 
-#: view/search-solr/admin/core/show.phtml:207
+#: view/search-solr/admin/core/show.phtml:212
 #: view/search-solr/admin/map/browse-resource.phtml:125
 msgid "Filtered by resources"
 msgstr "Filtré par les ressources"
 
-#: view/search-solr/admin/core/show.phtml:210
+#: view/search-solr/admin/core/show.phtml:215
 #: view/search-solr/admin/map/browse-resource.phtml:128
 msgid "Filtered by value resources"
 msgstr "Filtré par les ressources des valeurs"
 
-#: view/search-solr/admin/core/show.phtml:215
+#: view/search-solr/admin/core/show.phtml:220
 #: view/search-solr/admin/map/browse-resource.phtml:133
 msgid "Excluded data types"
 msgstr "Types de données exclues"
 
-#: view/search-solr/admin/core/show.phtml:220
+#: view/search-solr/admin/core/show.phtml:225
 #: view/search-solr/admin/map/browse-resource.phtml:138
 msgid "Only languages"
 msgstr "Seulement les langues"
 
-#: view/search-solr/admin/core/show.phtml:225
+#: view/search-solr/admin/core/show.phtml:230
 #: view/search-solr/admin/map/browse-resource.phtml:143
 msgid "Filtered by visibility Public"
 msgstr "Filtré par visibilité Public"
 
-#: view/search-solr/admin/core/show.phtml:227
+#: view/search-solr/admin/core/show.phtml:232
 #: view/search-solr/admin/map/browse-resource.phtml:145
 msgid "Filtered by visibility Private"
 msgstr "Filtré par visibilité Privé"
@@ -752,11 +764,11 @@ msgstr ""
 "La valeur « {value} » ne peut pas être inclue dans un chemin. La « / » est "
 "remplacé par un « - »."
 
-#: src/ValueFormatter/AbstractValueFormatter.php:312
+#: src/ValueFormatter/AbstractValueFormatter.php:313
 msgid "For formatter \"Table\", the table is not set."
 msgstr "Pour le formateur « Table », la table n’est pas définie."
 
-#: src/ValueFormatter/AbstractValueFormatter.php:326
+#: src/ValueFormatter/AbstractValueFormatter.php:327
 msgid ""
 "For formatter \"Table\", the table #{table_id} does not exist and values are "
 "not normalized."
@@ -856,11 +868,11 @@ msgstr ""
 
 #: src/Schema/Schema.php:115
 msgid ""
-"Response is not valid. Check output of {ur}, that should be a json with a "
+"Response is not valid. Check output of {url}, that should be a json with a "
 "key \"schema\"."
 msgstr ""
-"La réponse n’est pas valide. Vérifiez la sortie de {ur}, qui devrait être un "
-"json avec une clé « schéma »."
+"La réponse n’est pas valide. Vérifiez la sortie de {url}, qui devrait être "
+"un json avec une clé « schéma »."
 
 #: src/Form/ConfigForm.php:17
 msgid "Solarium adapter"
@@ -1025,13 +1037,27 @@ msgstr "clear_full_index"
 msgid "Minimum match (or/and)"
 msgstr "Correspondance minimale (ou/et)"
 
-#: src/Form/Admin/SolrCoreForm.php:270 src/Form/Admin/SolrCoreForm.php:287
-msgid "info"
-msgstr "info"
+#: src/Form/Admin/SolrCoreForm.php:270
+msgid ""
+"Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions are "
+"possible, like \"3<80%\".\n"
+"If empty, the config of the solr core (solrconfig.xml) will be used."
+msgstr ""
+"Le nombre « 1 » signifie « OR » et « 100% » signifie « AND ». Les "
+"expressions complexes sont possibles, comme « 3<80% ».\n"
+"Si vide, la configuration du cœur Solr (solrconfig.xml) sera utilisée."
 
 #: src/Form/Admin/SolrCoreForm.php:286
 msgid "Tie breaker"
 msgstr "Rupture d’égalité"
+
+#: src/Form/Admin/SolrCoreForm.php:287
+msgid ""
+"Increase score according to the number of matched fields.\n"
+"If empty, the config of the solr core (solrconfig.xml) will be used."
+msgstr ""
+"Augmente le score en fonction du nombre de champs correspondants.\n"
+"Si vide, la configuration du cœur Solr (solrconfig.xml) sera utilisée."
 
 #: src/Form/Admin/SolrConfigFieldset.php:57
 msgid "Solr index name for shared core"
@@ -1522,11 +1548,7 @@ msgstr ""
 "La regex pour les valeurs dans l’alignement solr « {solr_map_id} » du moteur "
 "« {solr_core_name} » est incorrecte : {regex}"
 
-#: src/Indexer/SolariumIndexer.php:218
-msgid "Indexing in Solr core \"{solr_core}\": {ids}"
-msgstr "Indexation dans le cœur Solr « {solr_core} » : {ids}"
-
-#: src/Indexer/SolariumIndexer.php:300
+#: src/Indexer/SolariumIndexer.php:347
 msgid ""
 "Unable to index resources in Solr core \"{solr_core}\". Some required fields "
 "are not mapped: {list}"
@@ -1534,7 +1556,7 @@ msgstr ""
 "Impossible d’indexer les ressources dans le cœur Solr « {solr_core} ». "
 "Certains champs obligatoires ne sont pas alignés : {list}"
 
-#: src/Indexer/SolariumIndexer.php:576
+#: src/Indexer/SolariumIndexer.php:633
 msgid ""
 "Solr HTTP error: HTTP request failed due to network, limit of requests, or "
 "certificate issue. First document in the buffer: {document_id}."
@@ -1543,7 +1565,7 @@ msgstr ""
 "réseau, du nombre limite de requêtes ou de certificat. Premier document dans "
 "le tampon : {document_id}."
 
-#: src/Indexer/SolariumIndexer.php:581
+#: src/Indexer/SolariumIndexer.php:638
 msgid ""
 "Solr HTTP error: HTTP request failed due to network, limit of requests, or "
 "certificate issue."
@@ -1551,7 +1573,7 @@ msgstr ""
 "Erreur HTTP Solr : La requête HTTP a échoué en raison d’un problème de "
 "réseau, du nombre limite de requêtes ou de certificat."
 
-#: src/Indexer/SolariumIndexer.php:591
+#: src/Indexer/SolariumIndexer.php:648
 msgid ""
 "Indexing of {resource_name} #{id} failed: Invalid document (wrong field type "
 "or missing required field)."
@@ -1559,7 +1581,7 @@ msgstr ""
 "L’indexation du {resource_name} #{id} a échoué : document non valide "
 "(mauvais type de champ ou champ obligatoire manquant)."
 
-#: src/Indexer/SolariumIndexer.php:596
+#: src/Indexer/SolariumIndexer.php:653
 msgid ""
 "Indexing of resource failed: Invalid document (wrong field type or missing "
 "required field)."
@@ -1567,15 +1589,15 @@ msgstr ""
 "L’indexation de la ressource a échoué : document non valide (mauvais type de "
 "champ ou champ obligatoire manquant)."
 
-#: src/Indexer/SolariumIndexer.php:601
+#: src/Indexer/SolariumIndexer.php:658
 msgid "Indexing of {resource_name} #{id} failed: {message}"
 msgstr "L’indexation du {resource_name} #{id} a échoué : {message}"
 
-#: src/Indexer/SolariumIndexer.php:614
+#: src/Indexer/SolariumIndexer.php:671
 msgid "Indexing of the batch failed: {message}"
 msgstr "L’indexation du lot a échoué : {message}"
 
-#: src/Indexer/SolariumIndexer.php:894
+#: src/Indexer/SolariumIndexer.php:951
 msgid "Solr core is not available."
 msgstr "Le cœur Solr n’est pas disponible."
 
@@ -1664,7 +1686,7 @@ msgid "Solr map could not be deleted"
 msgstr "La correspondance Solr n’a pas pu être supprimée"
 
 #: src/Controller/Admin/MapController.php:596
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:88
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:89
 msgid "Internal id"
 msgstr "Id interne"
 
@@ -1806,207 +1828,203 @@ msgstr ""
 "{count} champs ont été alignés pour le cœur « {solr_core_name} » "
 "(#{solr_core_id})."
 
-#: src/Controller/Admin/CoreController.php:838
+#: src/Controller/Admin/CoreController.php:830
+msgid ""
+"The catchall field \"_text_\" already exists in core \"{solr_core_name}\"."
+msgstr ""
+"Le champ attrape-tout \"_text_\" existe déjà dans le cœur \"{solr_core_name}"
+"\"."
+
+#: src/Controller/Admin/CoreController.php:862
+msgid ""
+"Catchall field \"_text_\" created in core \"{solr_core_name}\". Reindex "
+"required."
+msgstr ""
+"Le champ attrape-tout \"_text_\" a été créé dans le cœur \"{solr_core_name}"
+"\". Une réindexation est nécessaire."
+
+#: src/Controller/Admin/CoreController.php:869
+msgid "Failed to create catchall field: {error}"
+msgstr "Impossible de créer le champ attrape-tout : {error}"
+
+#: src/Controller/Admin/CoreController.php:875
+msgid "Error creating catchall field: {error}"
+msgstr "Erreur lors de la création du champ attrape-tout : {error}"
+
+#: src/Controller/Admin/CoreController.php:907
 msgid "Solr issue: {msg}"
 msgstr "Problème Solr :  {msg}"
 
 #: src/ValueExtractor/GenericValueExtractor.php:10
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:85
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:86
 msgid "Generic"
 msgstr "Générique"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:96
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:97
 msgid "Asset (attached thumbnail)"
 msgstr "Fichier (vignette jointe)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:97
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:98
 msgid "Item: Item set"
 msgstr "Contenu : collection"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:98
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:99
 msgid "Item: Item sets tree"
 msgstr "Contenu : hiérarchie des collections"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:99
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:100
 msgid "Item: Media"
 msgstr "Média attaché à un contenu"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:100
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:101
 msgid "Item: Has media"
 msgstr "Contenu : a un média"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:101
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:102
 msgid "Media: Content (from html or extractable text from file, included alto)"
 msgstr ""
 "Média : Contenu (html ou texte extrait depuis le fichier, notamment alto)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:102
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:103
 msgid "Item set: Is open"
 msgstr "Collection : ouvert"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:103
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:104
 msgid "Value itself (in particular for module Thesaurus)"
 msgstr "Valeur elle-même (en particulier pour le module Thesaurus)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:104
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:105
+msgid "Value annotation appended to property"
+msgstr "Annotation de valeur attachée à une propriété"
+
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:106
 msgid "Access level (module Access)"
 msgstr "Niveau d’accès (module Access)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:107
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:109
 msgid "Selections (module Selection)"
 msgstr "Sélections (module Sélection)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:108
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:110
 msgid "Public selections (module Selection)"
 msgstr "Sélections publiques (module Selection)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:110
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:112
 msgid "Api url"
 msgstr "Url de l’api"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:111
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:113
 msgid "Admin url"
 msgstr "URL de l’administrateur"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:112
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:114
 msgid "Site url (default or first site only)"
 msgstr "Url du site (site par défaut ou premier site)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:113
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:115
 msgid "Asset/Thumbnail: file url"
 msgstr "Fichier/Vignette : url du fichier"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:114
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:116
 msgid "Primary media: original file url"
 msgstr "Média principal : url du fichier original"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:116
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:118
 msgid "Primary media: large thumbnail url"
 msgstr "Média principal : grande vignette url"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:117
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:119
 msgid "Primary media: medium thumbnail url"
 msgstr "Média principal : url de la vignette moyenne"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:118
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:120
 msgid "Primary media: square thumbnail url"
 msgstr "Média principal : vignette carrée url"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:119
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:121
 msgid "Representative image (asset if any, else primary media large thumbnail)"
 msgstr ""
 "Image représentative (vignette spécifique le cas échéant, sinon vignette "
 "large du média principal)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:120
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:122
 msgid ""
 "Representative image (asset if any, else primary media medium thumbnail)"
 msgstr ""
 "Image représentative (vignette spécifique le cas échéant, sinon vignette du "
 "média principal)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:121
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:123
 msgid ""
 "Representative image (asset if any, else primary media square thumbnail)"
 msgstr ""
 "Image représentative (vignette spécifique le cas échéant, sinon vignette "
 "carrée du média principal)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:126
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:128
 msgid "Media language"
 msgstr "Langue du média"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:127
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:129
 msgid "Media ingester"
 msgstr "Ingéreur de média"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:128
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:130
 msgid "Media renderer"
 msgstr "Rendu du média"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:129
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:131
 msgid "Media size"
 msgstr "Taille du fichier"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:130
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:132
 msgid "Media source"
 msgstr "Source du média"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:132
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:134
 msgid "File name"
 msgstr "Nom du fichier"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:133
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:135
 msgid "Alternative text"
 msgstr "Texte alternatif"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:134
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:136
 msgid "Asset url"
 msgstr "Url du fichier"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:135
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:137
 msgid "Original url"
 msgstr "Url original"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:136
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:138
 msgid "Thumbnail (asset)"
 msgstr "Vignette (fichier)"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:137
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:139
 msgid "Property or class term"
 msgstr "Terme de propriété ou de classe"
 
-#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:138
+#: src/ValueExtractor/AbstractResourceEntityValueExtractor.php:140
 msgid "All property values"
 msgstr "Toutes les valeurs des propriétés"
 
-#: src/Querier/SolariumQuerier.php:56 src/Querier/SolariumQuerier.prev.php:117
-#: src/Querier/SolariumQuerier.prev.ori.php:117
-#: src/Querier/SolariumQuerier.old.php:120
+#: src/Querier/SolariumQuerier.php:91
 msgid "An issue occurred."
 msgstr "Un problème est survenu."
 
-#: src/Querier/SolariumQuerier.php:66
+#: src/Querier/SolariumQuerier.php:103
 msgid "Solr query error {url}: {message}"
 msgstr "Erreur de requête Solr {url} : {message}"
 
-#: src/Querier/SolariumQuerier.php:85
+#: src/Querier/SolariumQuerier.php:122
 msgid "Suggestions not implemented. Use direct URL."
 msgstr ""
 "Les suggestions ne sont pas implémentées ici. Utilisez une url directe."
 
-#: src/Querier/SolariumQuerier.php:335 src/Querier/SolariumQuerier.php:986
+#: src/Querier/SolariumQuerier.php:372 src/Querier/SolariumQuerier.php:1112
 msgid "Could not fetch all resource ids: {message}"
 msgstr "Impossible de récupérer tous les ids des ressources : {message}"
-
-#: src/Querier/SolariumQuerier.prev.php:280
-#: src/Querier/SolariumQuerier.prev.ori.php:280
-#: src/Querier/SolariumQuerier.old.php:283
-msgid "Suggestions are not implemented here. Use direct url."
-msgstr ""
-"Les suggestions ne sont pas implémentées ici. Utilisez une url directe."
-
-#: src/Querier/SolariumQuerier.prev.php:1278
-#: src/Querier/SolariumQuerier.prev.ori.php:1278
-#: src/Querier/SolariumQuerier.old.php:1284
-msgid "Solr does not support search with \"except\" or \"data type\": {url}"
-msgstr "Solr ne gère pas la recherche avec « except » ou « data type » : {url}"
-
-#: src/Querier/SolariumQuerier.prev.php:1590
-#: src/Querier/SolariumQuerier.prev.ori.php:1590
-#: src/Querier/SolariumQuerier.old.php:1596
-#, php-format
-msgid "Search type \"%s\" is not managed currently by SearchSolr."
-msgstr "Le type de recherche « %s » n’est pas géré actuellement par le module."
-
-#: src/Querier/SolariumQuerier.prev.php:1705
-#: src/Querier/SolariumQuerier.prev.php:1790
-#: src/Querier/SolariumQuerier.prev.ori.php:1705
-#: src/Querier/SolariumQuerier.prev.ori.php:1790
-#: src/Querier/SolariumQuerier.old.php:1711
-#: src/Querier/SolariumQuerier.old.php:1796
-msgid "Solr does not support alias with more than one field for now: {url}"
-msgstr "Solr ne gère pas les alias avec plus d’un champ actuellement : {url}"
 
 #: config/module.config.php:58
 msgid "Search manager"
@@ -2028,21 +2046,28 @@ msgstr "Choisir un champ…"
 msgid "Dynamic field"
 msgstr "Champ dynamique"
 
-#~ msgid ""
-#~ "Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions "
-#~ "are possible, like \"3<80%\".\n"
-#~ "If empty, the config of the solr core (solrconfig.xml) will be used."
-#~ msgstr ""
-#~ "Le nombre « 1 » signifie « OR » et « 100% » signifie « AND ». Les "
-#~ "expressions complexes sont possibles, comme « 3<80% ».\n"
-#~ "Si vide, la configuration du cœur Solr (solrconfig.xml) sera utilisée."
+#~ msgid "Indexing in Solr core \"{solr_core}\": {ids}"
+#~ msgstr "Indexation dans le cœur Solr « {solr_core} » : {ids}"
 
-#~ msgid ""
-#~ "Increase score according to the number of matched fields.\n"
-#~ "If empty, the config of the solr core (solrconfig.xml) will be used."
+#~ msgid "info"
+#~ msgstr "info"
+
+#~ msgid "Suggestions are not implemented here. Use direct url."
 #~ msgstr ""
-#~ "Augmente le score en fonction du nombre de champs correspondants.\n"
-#~ "Si vide, la configuration du cœur Solr (solrconfig.xml) sera utilisée."
+#~ "Les suggestions ne sont pas implémentées ici. Utilisez une url directe."
+
+#~ msgid "Solr does not support search with \"except\" or \"data type\": {url}"
+#~ msgstr ""
+#~ "Solr ne gère pas la recherche avec « except » ou « data type » : {url}"
+
+#, php-format
+#~ msgid "Search type \"%s\" is not managed currently by SearchSolr."
+#~ msgstr ""
+#~ "Le type de recherche « %s » n’est pas géré actuellement par le module."
+
+#~ msgid "Solr does not support alias with more than one field for now: {url}"
+#~ msgstr ""
+#~ "Solr ne gère pas les alias avec plus d’un champ actuellement : {url}"
 
 #~ msgid "Auto (extracted values as it is and uri)"
 #~ msgstr "Auto (extraire la valeur telle quelle et l’uri)"
