@@ -459,6 +459,9 @@ class SolariumQuerier extends AbstractQuerier
      * The number of query fields is limited to avoid exceeding Solr's
      * maxClauseCount (default 1024). With many fields, each search term
      * creates a clause per field, quickly hitting the limit.
+     *
+     * If the catchall field `_text_` exists, use it instead of listing
+     * all fields individually.
      */
     protected function configureEDisMax(): self
     {
@@ -466,32 +469,53 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
-        // Limit query fields to avoid "too many nested clauses" error.
-        // With 100 fields and 10 search terms, we stay well under 1024.
-        $maxQueryFields = 100;
-
         $this->select->addParam('defType', 'edismax')->addParam('sow', 'false');
         $dismax = $this->select->getDisMax();
+
+        // Use catchall field _text_ if available.
+        // Add only fields with custom boosts (≠1) for scoring priority.
+        if ($this->solrCore->schema()->checkDefaultField()) {
+            $boostedFields = $this->getCustomBoostedFields();
+            if ($boostedFields) {
+                $dismax->setQueryFields('_text_ ' . implode(' ', $boostedFields));
+            } else {
+                $dismax->setQueryFields('_text_');
+            }
+            return $this;
+        }
+
         $existing = trim((string) $dismax->getQueryFields());
 
-        if ($existing === '') {
-            $foldable = $this->fieldsFoldable();
-            if ($foldable) {
-                // Limit to max fields to prevent clause explosion.
-                $foldable = array_slice($foldable, 0, $maxQueryFields);
-                $dismax->setQueryFields(implode(' ', $foldable));
-            }
-        } else {
+        if ($existing !== '') {
+            // Limit existing query fields to avoid clause explosion.
             $allowed = array_flip($this->fieldsFoldable());
             $kept = array_filter(
                 preg_split('/\s+/', $existing) ?: [],
                 fn ($p) => isset($allowed[preg_replace('~\^.*$~', '', $p)])
             );
             if ($kept) {
-                // Limit to max fields to prevent clause explosion.
-                $kept = array_slice($kept, 0, $maxQueryFields);
+                $kept = array_slice($kept, 0, 100);
                 $dismax->setQueryFields(implode(' ', $kept));
             }
+            return $this;
+        }
+
+        // Fallback: use foldable fields with limit.
+        $foldable = $this->fieldsFoldable();
+        if ($foldable) {
+            // Prioritize important fields (title, description, subject).
+            $priority = [];
+            $rest = [];
+            foreach ($foldable as $field) {
+                if (preg_match('/title|description|subject|creator/i', $field)) {
+                    $priority[] = $field;
+                } else {
+                    $rest[] = $field;
+                }
+            }
+            $foldable = array_merge($priority, $rest);
+            $foldable = array_slice($foldable, 0, 100);
+            $dismax->setQueryFields(implode(' ', $foldable));
         }
 
         return $this;
@@ -896,11 +920,39 @@ class SolariumQuerier extends AbstractQuerier
         return $this;
     }
 
+    /**
+     * Get fields with custom boosts (different from default 1).
+     *
+     * @return string[] Array of "field^boost" strings
+     */
+    protected function getCustomBoostedFields(): array
+    {
+        $coreBoosts = $this->solrCore->setting('field_boost') ?: [];
+        $queryBoosts = (array) $this->query->getFieldBoosts();
+        $merged = array_merge($coreBoosts, $queryBoosts);
+
+        $result = [];
+        foreach ($merged as $field => $boost) {
+            $boost = (float) $boost;
+            if ($boost !== 1.0 && $boost > 0) {
+                $result[] = "$field^$boost";
+            }
+        }
+        return $result;
+    }
+
     protected function applyBoosts(): self
     {
         // The boost is only useful when there is a query.
         $q = (string) $this->select->getQuery();
         if (!$q || $q === '*:*') {
+            return $this;
+        }
+
+        // Skip if using _text_ catchall - no need for additional fields.
+        $dismax = $this->select->getDisMax();
+        $existing = trim((string) $dismax->getQueryFields());
+        if ($existing === '_text_') {
             return $this;
         }
 
@@ -919,10 +971,15 @@ class SolariumQuerier extends AbstractQuerier
             $qf = [];
             foreach ($merged as $field => $boost) {
                 $boost = (float) $boost;
-                $qf[] = $boost > 0 ? "$field^$boost" : $field;
+                // Skip ^1 boost (default) - it's useless and lengthens query.
+                if ($boost === 1.0) {
+                    $qf[] = $field;
+                } elseif ($boost > 0) {
+                    $qf[] = "$field^$boost";
+                } else {
+                    $qf[] = $field;
+                }
             }
-            $dismax = $this->select->getDisMax();
-            $existing = trim((string) $dismax->getQueryFields());
             $final = $existing
                 ? "$existing " . implode(' ', $qf)
                 : implode(' ', $qf);
