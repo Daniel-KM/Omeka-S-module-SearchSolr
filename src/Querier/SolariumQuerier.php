@@ -175,34 +175,40 @@ class SolariumQuerier extends AbstractQuerier
             return [];
         }
 
-        // Init solr client.
-        $this->getClient();
+        try {
+            // Init solr client.
+            $this->getClient();
 
-        // Check if the field is a special or a multifield.
-        $aliases = $this->query->getAliases();
-        $fields = $aliases[$field]['fields'] ?? [$field];
-        $fields = is_array($fields) ? $fields : [$fields];
+            // Check if the field is a special or a multifield.
+            $aliases = $this->query->getAliases();
+            $fields = $aliases[$field]['fields'] ?? [$field];
+            $fields = is_array($fields) ? $fields : [$fields];
 
-        // The terms query in solarium does not support filtering by field, so
-        // it is not possible to filter by is_public or by site.
-        // So either index values by is_public and site or use a standard query.
-        $isPublicField = $this->solrCoreField('is_public');
-        $sitesField = $this->solrCoreField('site/o:id');
+            // The terms query in solarium does not support filtering by field,
+            // so it is not possible to filter by is_public or by site.
+            // So either index values by is_public and site or use a standard
+            // query.
+            $isPublicField = $this->solrCoreField('is_public');
+            $sitesField = $this->solrCoreField('site/o:id');
 
-        if (($this->query->getIsPublic() && $isPublicField)
-            || ($this->query->getSiteId() && $sitesField)
-            // "Terms" cannot be used for numeric fields (date, integer, float).
-            || $this->fieldIsNumeric(reset($fields))
-        ) {
-            $result = $this->queryValuesWithFacets($fields, $isPublicField, $sitesField);
-        } else {
-            $result = $this->queryValuesWithTerms($fields);
+            if (($this->query->getIsPublic() && $isPublicField)
+                || ($this->query->getSiteId() && $sitesField)
+                // "Terms" cannot be used for numeric fields (date, integer, float).
+                || $this->fieldIsNumeric(reset($fields))
+            ) {
+                $result = $this->queryValuesWithFacets($fields, $isPublicField, $sitesField);
+            } else {
+                $result = $this->queryValuesWithTerms($fields);
+            }
+
+            $list = array_merge(...array_values($result));
+            natcasesort($list);
+            $list = array_keys(array_flip(array_filter($list, 'strlen')));
+            return array_combine($list, $list);
+        } catch (\Throwable $e) {
+            // Return empty array if Solr is not available.
+            return [];
         }
-
-        $list = array_merge(...array_values($result));
-        natcasesort($list);
-        $list = array_keys(array_flip(array_filter($list, 'strlen')));
-        return array_combine($list, $list);
     }
 
     protected function queryValuesWithFacets(array $fields, ?string $isPublicField, ?string $sitesField): array
@@ -324,7 +330,8 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         try {
-            // Clone and fetch all ids without pagination limits and with grouping preserved.
+            // Clone and fetch all ids without pagination limits and with
+            // grouping preserved.
             $allQuery = clone $this->select;
             $allQuery
                 ->setFields(['id'])
@@ -795,10 +802,9 @@ class SolariumQuerier extends AbstractQuerier
                 }
             } else {
                 // Term facet - add tag for multi-select.
-                // A tag should be added to the facet filter query to be
-                // able to exclude it in the facet query 'tag' option is
-                // ignored when using 'query', add the tag in the query
-                // statement.
+                // A tag should be added to the facet filter query to be able to
+                // exclude it in the facet query 'tag' option is ignored when
+                // using 'query', add the tag in the query statement.
                 $key = $fname . '-facet';
                 $tag = strtoupper($key);
                 $escaped = $this->escapePhraseValue($values, 'OR');
