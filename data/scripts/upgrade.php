@@ -43,10 +43,10 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
     throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.54')) {
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.56')) {
     $message = new PsrMessage(
         $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.54']
+        ['module' => 'Advanced Search', 'version' => '3.4.56']
     );
     throw new ModuleCannotInstallException((string) $message);
 }
