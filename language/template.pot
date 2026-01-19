@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-12 00:00+0000\n"
+"POT-Creation-Date: 2026-01-19 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -302,8 +302,8 @@ msgid "%1$s: %2$d indexed / %3$d (all)"
 msgstr ""
 
 #: view/search-solr/admin/core/show.phtml:35
-#: view/search-solr/admin/core/show.phtml:96
-#: view/search-solr/admin/core/show.phtml:158
+#: view/search-solr/admin/core/show.phtml:129
+#: view/search-solr/admin/core/show.phtml:191
 #: view/search-solr/admin/map/browse-resource.phtml:68
 msgid "Maps"
 msgstr ""
@@ -345,78 +345,116 @@ msgid ""
 "Reindexing will be required."
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:83
-msgid "By index"
+#: view/search-solr/admin/core/show.phtml:85
+msgid "Search configuration"
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:86
+msgid ""
+"Configure the analyzer for the catchall field \"_text_\". This affects how "
+"search queries match indexed content."
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:92
+msgid "Keep current configuration"
 msgstr ""
 
 #: view/search-solr/admin/core/show.phtml:93
-msgid "Index"
+msgid "Do not change the Solr schema."
 msgstr ""
 
 #: view/search-solr/admin/core/show.phtml:99
-#: view/search-solr/admin/core/show.phtml:161
+msgid "Default (strict matching)"
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:100
+msgid ""
+"Use text_general: matches exact words only. \"napo\" does not find "
+"\"napoléon\"."
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:106
+msgid "Optimized (Google-like search)"
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:107
+msgid ""
+"Use EdgeNGram: prefix matching, accent-insensitive. \"napo\" finds "
+"\"napoléon\", \"cafe\" finds \"café\". Works for all languages."
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:116
+msgid "By index"
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:126
+msgid "Index"
+msgstr ""
+
+#: view/search-solr/admin/core/show.phtml:132
+#: view/search-solr/admin/core/show.phtml:194
 #: view/search-solr/admin/map/browse-resource.phtml:71
 msgid "Source Omeka"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:100
-#: view/search-solr/admin/core/show.phtml:162
+#: view/search-solr/admin/core/show.phtml:133
+#: view/search-solr/admin/core/show.phtml:195
 #: view/search-solr/admin/map/browse-resource.phtml:72
 msgid "Pool / Filter"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:131
+#: view/search-solr/admin/core/show.phtml:164
 msgid "List indexed values alphabetically"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:138
+#: view/search-solr/admin/core/show.phtml:171
 msgid "List indexed values alphabetically (reverse)"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:145
+#: view/search-solr/admin/core/show.phtml:178
 msgid "List indexed values by count"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:152
+#: view/search-solr/admin/core/show.phtml:185
 msgid "List indexed values by count (reverse)"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:206
+#: view/search-solr/admin/core/show.phtml:239
 #: view/search-solr/admin/map/browse-resource.phtml:119
 msgid "Filtered by values"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:209
+#: view/search-solr/admin/core/show.phtml:242
 #: view/search-solr/admin/map/browse-resource.phtml:122
 msgid "Filtered by uris"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:212
+#: view/search-solr/admin/core/show.phtml:245
 #: view/search-solr/admin/map/browse-resource.phtml:125
 msgid "Filtered by resources"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:215
+#: view/search-solr/admin/core/show.phtml:248
 #: view/search-solr/admin/map/browse-resource.phtml:128
 msgid "Filtered by value resources"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:220
+#: view/search-solr/admin/core/show.phtml:253
 #: view/search-solr/admin/map/browse-resource.phtml:133
 msgid "Excluded data types"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:225
+#: view/search-solr/admin/core/show.phtml:258
 #: view/search-solr/admin/map/browse-resource.phtml:138
 msgid "Only languages"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:230
+#: view/search-solr/admin/core/show.phtml:263
 #: view/search-solr/admin/map/browse-resource.phtml:143
 msgid "Filtered by visibility Public"
 msgstr ""
 
-#: view/search-solr/admin/core/show.phtml:232
+#: view/search-solr/admin/core/show.phtml:265
 #: view/search-solr/admin/map/browse-resource.phtml:145
 msgid "Filtered by visibility Private"
 msgstr ""
@@ -1637,7 +1675,35 @@ msgstr ""
 msgid "Error creating catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:907
+#: src/Controller/Admin/CoreController.php:904
+msgid "Search configuration unchanged."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:958
+msgid "Failed to create text_search field type: {error}"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:987
+msgid ""
+"Field \"_text_\" configured for Google-like search in core \"{solr_core_name}"
+"\". Reindex required."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:988
+msgid ""
+"Field \"_text_\" configured for strict matching in core \"{solr_core_name}"
+"\". Reindex required."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:997
+msgid "Failed to configure _text_ field: {error}"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:1003
+msgid "Error configuring search: {error}"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:1035
 msgid "Solr issue: {msg}"
 msgstr ""
 
@@ -1792,15 +1858,15 @@ msgstr ""
 msgid "An issue occurred."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:103
+#: src/Querier/SolariumQuerier.php:101
 msgid "Solr query error {url}: {message}"
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:122
+#: src/Querier/SolariumQuerier.php:120
 msgid "Suggestions not implemented. Use direct URL."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:372 src/Querier/SolariumQuerier.php:1112
+#: src/Querier/SolariumQuerier.php:377 src/Querier/SolariumQuerier.php:1128
 msgid "Could not fetch all resource ids: {message}"
 msgstr ""
 

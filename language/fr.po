@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-12 00:00+0000\n"
-"PO-Revision-Date: 2026-01-12 00:00+0000\n"
+"POT-Creation-Date: 2026-01-19 00:00+0000\n"
+"PO-Revision-Date: 2026-01-19 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -340,8 +340,8 @@ msgid "%1$s: %2$d indexed / %3$d (all)"
 msgstr "%1$s : %2$d indexés / %3$d (tous)"
 
 #: view/search-solr/admin/core/show.phtml:35
-#: view/search-solr/admin/core/show.phtml:96
-#: view/search-solr/admin/core/show.phtml:158
+#: view/search-solr/admin/core/show.phtml:129
+#: view/search-solr/admin/core/show.phtml:191
 #: view/search-solr/admin/map/browse-resource.phtml:68
 msgid "Maps"
 msgstr "Alignements"
@@ -390,78 +390,123 @@ msgstr ""
 "Créer le champ attrape-tout \"_text_\" (copyField) pour une recherche plein-"
 "texte optimisée. Une réindexation sera nécessaire."
 
-#: view/search-solr/admin/core/show.phtml:83
+#: view/search-solr/admin/core/show.phtml:85
+msgid "Search configuration"
+msgstr "Configuration de la recherche"
+
+#: view/search-solr/admin/core/show.phtml:86
+msgid ""
+"Configure the analyzer for the catchall field \"_text_\". This affects how "
+"search queries match indexed content."
+msgstr ""
+"Configurer l’analyser pour le champ attrape-tout \"_text\". Cela modifie "
+"comment les recherches trouvent le contenu indexé."
+
+#: view/search-solr/admin/core/show.phtml:92
+msgid "Keep current configuration"
+msgstr "Conserver la configuration actuelle"
+
+#: view/search-solr/admin/core/show.phtml:93
+msgid "Do not change the Solr schema."
+msgstr "Ne pas modifier le schema Solr"
+
+#: view/search-solr/admin/core/show.phtml:99
+msgid "Default (strict matching)"
+msgstr "Défaut (correspondance stricte)"
+
+#: view/search-solr/admin/core/show.phtml:100
+msgid ""
+"Use text_general: matches exact words only. \"napo\" does not find "
+"\"napoléon\"."
+msgstr ""
+"Utiliser text_general : correspond aux mots exacts.\"napo\" ne trouve pas "
+"\"napoléon\"."
+
+#: view/search-solr/admin/core/show.phtml:106
+msgid "Optimized (Google-like search)"
+msgstr "Optimisé (à-la-google)"
+
+#: view/search-solr/admin/core/show.phtml:107
+msgid ""
+"Use EdgeNGram: prefix matching, accent-insensitive. \"napo\" finds "
+"\"napoléon\", \"cafe\" finds \"café\". Works for all languages."
+msgstr ""
+"Utiliser EdgeNGram : recherche avec préfixe, insensible à la casse et aux "
+"accents. \"napo\" trouve \"napoléon\", \"cafe\" trouve \"café\". Fonctionne "
+"avec toutes les langues."
+
+#: view/search-solr/admin/core/show.phtml:116
 msgid "By index"
 msgstr "Par index"
 
-#: view/search-solr/admin/core/show.phtml:93
+#: view/search-solr/admin/core/show.phtml:126
 msgid "Index"
 msgstr "Index"
 
-#: view/search-solr/admin/core/show.phtml:99
-#: view/search-solr/admin/core/show.phtml:161
+#: view/search-solr/admin/core/show.phtml:132
+#: view/search-solr/admin/core/show.phtml:194
 #: view/search-solr/admin/map/browse-resource.phtml:71
 msgid "Source Omeka"
 msgstr "Source Omeka"
 
-#: view/search-solr/admin/core/show.phtml:100
-#: view/search-solr/admin/core/show.phtml:162
+#: view/search-solr/admin/core/show.phtml:133
+#: view/search-solr/admin/core/show.phtml:195
 #: view/search-solr/admin/map/browse-resource.phtml:72
 msgid "Pool / Filter"
 msgstr "Entrepôt / Filtre"
 
-#: view/search-solr/admin/core/show.phtml:131
+#: view/search-solr/admin/core/show.phtml:164
 msgid "List indexed values alphabetically"
 msgstr "Lister les valeurs indexées par ordre alphabétique"
 
-#: view/search-solr/admin/core/show.phtml:138
+#: view/search-solr/admin/core/show.phtml:171
 msgid "List indexed values alphabetically (reverse)"
 msgstr "Lister les valeurs indexées par ordre alphabétique inverse"
 
-#: view/search-solr/admin/core/show.phtml:145
+#: view/search-solr/admin/core/show.phtml:178
 msgid "List indexed values by count"
 msgstr "Lister les valeurs indexées par total"
 
-#: view/search-solr/admin/core/show.phtml:152
+#: view/search-solr/admin/core/show.phtml:185
 msgid "List indexed values by count (reverse)"
 msgstr "Lister les valeurs indexées par total (inverse)"
 
-#: view/search-solr/admin/core/show.phtml:206
+#: view/search-solr/admin/core/show.phtml:239
 #: view/search-solr/admin/map/browse-resource.phtml:119
 msgid "Filtered by values"
 msgstr "Filtré par les valeurs"
 
-#: view/search-solr/admin/core/show.phtml:209
+#: view/search-solr/admin/core/show.phtml:242
 #: view/search-solr/admin/map/browse-resource.phtml:122
 msgid "Filtered by uris"
 msgstr "Filtré par uris"
 
-#: view/search-solr/admin/core/show.phtml:212
+#: view/search-solr/admin/core/show.phtml:245
 #: view/search-solr/admin/map/browse-resource.phtml:125
 msgid "Filtered by resources"
 msgstr "Filtré par les ressources"
 
-#: view/search-solr/admin/core/show.phtml:215
+#: view/search-solr/admin/core/show.phtml:248
 #: view/search-solr/admin/map/browse-resource.phtml:128
 msgid "Filtered by value resources"
 msgstr "Filtré par les ressources des valeurs"
 
-#: view/search-solr/admin/core/show.phtml:220
+#: view/search-solr/admin/core/show.phtml:253
 #: view/search-solr/admin/map/browse-resource.phtml:133
 msgid "Excluded data types"
 msgstr "Types de données exclues"
 
-#: view/search-solr/admin/core/show.phtml:225
+#: view/search-solr/admin/core/show.phtml:258
 #: view/search-solr/admin/map/browse-resource.phtml:138
 msgid "Only languages"
 msgstr "Seulement les langues"
 
-#: view/search-solr/admin/core/show.phtml:230
+#: view/search-solr/admin/core/show.phtml:263
 #: view/search-solr/admin/map/browse-resource.phtml:143
 msgid "Filtered by visibility Public"
 msgstr "Filtré par visibilité Public"
 
-#: view/search-solr/admin/core/show.phtml:232
+#: view/search-solr/admin/core/show.phtml:265
 #: view/search-solr/admin/map/browse-resource.phtml:145
 msgid "Filtered by visibility Private"
 msgstr "Filtré par visibilité Privé"
@@ -1851,7 +1896,39 @@ msgstr "Impossible de créer le champ attrape-tout : {error}"
 msgid "Error creating catchall field: {error}"
 msgstr "Erreur lors de la création du champ attrape-tout : {error}"
 
-#: src/Controller/Admin/CoreController.php:907
+#: src/Controller/Admin/CoreController.php:904
+msgid "Search configuration unchanged."
+msgstr "Configuration de Solr non modifiée."
+
+#: src/Controller/Admin/CoreController.php:958
+msgid "Failed to create text_search field type: {error}"
+msgstr "Impossible de créer le type de champ text_search : {error}"
+
+#: src/Controller/Admin/CoreController.php:987
+msgid ""
+"Field \"_text_\" configured for Google-like search in core \"{solr_core_name}"
+"\". Reindex required."
+msgstr ""
+"Le champ attrape-tout \"_text_\" a été configuré à-la-google dans le cœur "
+"\"{solr_core_name}\". Une réindexation est nécessaire."
+
+#: src/Controller/Admin/CoreController.php:988
+msgid ""
+"Field \"_text_\" configured for strict matching in core \"{solr_core_name}"
+"\". Reindex required."
+msgstr ""
+"Le champ attrape-tout \"_text_\" a été configuré pour la correspondance "
+"stricte dans le cœur \"{solr_core_name}\". Une réindexation est nécessaire."
+
+#: src/Controller/Admin/CoreController.php:997
+msgid "Failed to configure _text_ field: {error}"
+msgstr "Impossible de configurer le champ attrape-tout : {error}"
+
+#: src/Controller/Admin/CoreController.php:1003
+msgid "Error configuring search: {error}"
+msgstr "Erreur lors de la configuration de la recherche : {error}"
+
+#: src/Controller/Admin/CoreController.php:1035
 msgid "Solr issue: {msg}"
 msgstr "Problème Solr :  {msg}"
 
@@ -2013,16 +2090,16 @@ msgstr "Toutes les valeurs des propriétés"
 msgid "An issue occurred."
 msgstr "Un problème est survenu."
 
-#: src/Querier/SolariumQuerier.php:103
+#: src/Querier/SolariumQuerier.php:101
 msgid "Solr query error {url}: {message}"
 msgstr "Erreur de requête Solr {url} : {message}"
 
-#: src/Querier/SolariumQuerier.php:122
+#: src/Querier/SolariumQuerier.php:120
 msgid "Suggestions not implemented. Use direct URL."
 msgstr ""
 "Les suggestions ne sont pas implémentées ici. Utilisez une url directe."
 
-#: src/Querier/SolariumQuerier.php:372 src/Querier/SolariumQuerier.php:1112
+#: src/Querier/SolariumQuerier.php:377 src/Querier/SolariumQuerier.php:1128
 msgid "Could not fetch all resource ids: {message}"
 msgstr "Impossible de récupérer tous les ids des ressources : {message}"
 
@@ -2223,9 +2300,6 @@ msgstr "Champ dynamique"
 #~ msgstr ""
 #~ "L’indexation de la ressource a échoué : document vide ou invalide : "
 #~ "{exception}"
-
-#~ msgid "Solr configuration"
-#~ msgstr "Configuration de Solr"
 
 #~ msgid "Import Solr core mapping"
 #~ msgstr "Importer les correspondances du cœur Solr"
