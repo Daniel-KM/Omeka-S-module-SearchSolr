@@ -770,6 +770,69 @@ curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-f
 The response status should be 0. Of course, you need to reindex resources after
 this modification of the schema.
 
+### Optimizing search for prefix matching (Google-like search)
+
+By default, Solr uses the `text_general` field type for `_text_`, which only
+matches exact tokens. For example, searching "napo" won't find "Napoléon".
+
+To enable prefix matching and provide a "Google-like" search experience, you can
+configure the `_text_` field with an optimized analyzer. This can be done via:
+
+1. Omeka interface: In Solr admin, click "Optimize search" button (appears after
+  `_text_` is created).
+
+2. Command line: Run these commands to create an optimized field type and apply
+  it to `_text_`:
+
+```sh
+# Create text_search field type with EdgeNGram for prefix matching
+curl -X POST -H "Content-Type: application/json" \
+  "http://localhost:8983/solr/omeka/schema" \
+  -d '{
+    "add-field-type": {
+      "name": "text_search",
+      "class": "solr.TextField",
+      "indexAnalyzer": {
+        "tokenizer": {"class": "solr.StandardTokenizerFactory"},
+        "filters": [
+          {"class": "solr.LowerCaseFilterFactory"},
+          {"class": "solr.ASCIIFoldingFilterFactory", "preserveOriginal": true},
+          {"class": "solr.EdgeNGramFilterFactory", "minGramSize": 2, "maxGramSize": 20}
+        ]
+      },
+      "queryAnalyzer": {
+        "tokenizer": {"class": "solr.StandardTokenizerFactory"},
+        "filters": [
+          {"class": "solr.LowerCaseFilterFactory"},
+          {"class": "solr.ASCIIFoldingFilterFactory", "preserveOriginal": true}
+        ]
+      }
+    }
+  }'
+
+# Apply text_search type to _text_ field
+curl -X POST -H "Content-Type: application/json" \
+  "http://localhost:8983/solr/omeka/schema" \
+  -d '{"replace-field": {"name": "_text_", "type": "text_search", "multiValued": true, "indexed": true, "stored": false}}'
+```
+
+This configuration provides:
+
+| Filter        | Function                                                |
+|---------------|---------------------------------------------------------|
+| LowerCase     | Case-insensitive search ("napoléon" = "Napoléon")       |
+| ASCIIFolding  | Accent-insensitive search ("napoleon" finds "napoléon") |
+| EdgeNGram     | Prefix matching ("napo" finds "napoléon")          |
+
+The `preserveOriginal: true` option on ASCIIFolding ensures that both accented
+and non-accented versions can be found.
+
+This configuration is multilingual and works for all languages (French, English,
+Greek, Arabic, etc.) without requiring language-specific stemmers.
+
+After applying this configuration, you should reindex all resources for the
+changes to take effect.
+
 ### Upgrade a config
 
 If you choose a data driven schema, you can remove it and create a new one with
