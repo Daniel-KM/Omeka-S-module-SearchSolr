@@ -539,16 +539,17 @@ class SolariumQuerier extends AbstractQuerier
         // The default query with Solarium returns all results.
         // $defaultQuery = '';
 
-        $raw = trim($this->query->getQuery()
-            . ' ' . $this->query->getQueryRefine());
+        $mainQuery = trim($this->query->getQuery());
+        $refineQuery = trim($this->query->getQueryRefine());
 
-        if ($raw === '') {
+        if ($mainQuery === '' && $refineQuery === '') {
             $this->select->setQuery('*:*');
             return $this;
         }
 
         if ($this->query->getOption('remove_diacritics', false)) {
-            $raw = $this->removeDiacritics($raw);
+            $mainQuery !== '' && $mainQuery = $this->removeDiacritics($mainQuery);
+            $refineQuery !== '' && $refineQuery = $this->removeDiacritics($refineQuery);
         }
 
         $excludedFields = array_merge(
@@ -556,27 +557,38 @@ class SolariumQuerier extends AbstractQuerier
             $this->getFullTextFieldsForSearchInRecord()
         );
 
-        /**
-         * Only called from mainQuery(). $q is never empty.
-         */
-        if ($raw !== '*:*' && $excludedFields) {
-            $fields = array_diff(
-                $this->usedSolrFields(
-                    ['t_', 'txt_', 'ss_', 'sm_', 'ws_'],
-                    ['_t', '_txt', '_ss', '_s', '_ss_lower', '_s_lower', '_ws'],
-                    []
-                ),
-                $excludedFields
+        // When there are excluded fields, we need to search only in allowed
+        // fields. Use the same field selection as before but limit count to
+        // stay under Solr's maxClauseCount of 1024.
+        if (($mainQuery !== '' || $refineQuery !== '') && $excludedFields) {
+            $allFields = $this->usedSolrFields(
+                ['t_', 'txt_', 'ss_', 'sm_', 'ws_'],
+                ['_t', '_txt', '_ss', '_s', '_ss_lower', '_s_lower', '_ws'],
+                []
             );
-
-            if ($fields) {
-                $escaped = $this->escapeTermOrPhrase($raw);
-                $this->select->setQuery(implode(' OR ', array_map(fn ($f) => "$f:$escaped", $fields)));
-                return $this;
+            $allowedFields = array_diff($allFields, $excludedFields);
+            if ($allowedFields) {
+                // Limit fields to avoid clause explosion. Use DisMax with
+                // restricted qf for efficient multi-field search.
+                $allowedFields = array_slice($allowedFields, 0, 400);
+                $dismax = $this->select->getDisMax();
+                $dismax->setQueryFields(implode(' ', $allowedFields));
             }
         }
 
-        $this->select->setQuery($this->escapeTermOrPhrase($raw));
+        // Use simple query with DisMax (configured in configureEDisMax).
+        // Escape each query separately, then combine with "+" (required) prefix
+        // for AND behavior between main and refine queries.
+        $mainEscaped = $mainQuery !== '' ? $this->escapeTermOrPhrase($mainQuery) : '';
+        $refineEscaped = $refineQuery !== '' ? $this->escapeTermOrPhrase($refineQuery) : '';
+
+        if ($mainEscaped !== '' && $refineEscaped !== '') {
+            $this->select->setQuery("+($mainEscaped) +($refineEscaped)");
+        } elseif ($mainEscaped !== '') {
+            $this->select->setQuery($mainEscaped);
+        } else {
+            $this->select->setQuery($refineEscaped);
+        }
 
         // Set settings used for main search.
         $cfg = array_filter($this->solrCore->settings()['query'] ?? []);
