@@ -2070,6 +2070,13 @@ class SolariumQuerier extends AbstractQuerier
 
         // TODO Manage the escaping of query with an odd number of quotes. Check for escaped quote \".
         if ($countQuotes < 2 || ($countQuotes % 2) === 1) {
+            // Google-like search: escape each word individually and prefix with
+            // "+" to require all terms (like refine behavior).
+            $words = preg_split('/\s+/', $string, -1, PREG_SPLIT_NO_EMPTY);
+            if (count($words) > 1) {
+                $escaped = array_map(fn ($w) => '+' . $this->select->getHelper()->escapeTerm($w), $words);
+                return implode(' ', $escaped);
+            }
             return $this->select->getHelper()->escapeTerm($string);
         }
 
