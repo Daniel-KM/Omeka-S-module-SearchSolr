@@ -884,11 +884,139 @@ public function showIndexingStatsAction()
     }
 
     /**
-     * 
-     * @param SolrCoreRepresentation $solrCore 
-     * @return array 
-     * @throws NotFoundExceptionInterface 
-     * @throws ContainerExceptionInterface 
+     * Configure the "_text_" field analyzer for search.
+     *
+     * Options:
+     * - keep: Do nothing
+     * - default: Use text_general (strict matching)
+     * - optimized: Use text_search with EdgeNGram (Google-like search)
+     */
+    public function configureSearchAction()
+    {
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        $searchConfig = $this->params()->fromPost('search_config', 'keep');
+
+        // Option "keep": do nothing.
+        if ($searchConfig === 'keep') {
+            $this->messenger()->addNotice(new PsrMessage(
+                'Search configuration unchanged.' // @translate
+            ));
+            return $this->redirect()->toRoute('admin/search/solr/core-id', [
+                'id' => $id,
+                'action' => 'show',
+            ]);
+        }
+
+        try {
+            $solariumClient = $solrCore->solariumClient();
+            $endpoint = $solariumClient->getEndpoint();
+            $url = $endpoint->getBaseUri() . 'schema';
+
+            $httpClient = new \Laminas\Http\Client($url, [
+                'timeout' => 30,
+            ]);
+            $httpClient->setMethod('POST');
+            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+
+            // For "optimized" option, create text_search field type first.
+            if ($searchConfig === 'optimized') {
+                $fieldTypeData = json_encode([
+                    'add-field-type' => [
+                        'name' => 'text_search',
+                        'class' => 'solr.TextField',
+                        'indexAnalyzer' => [
+                            'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+                            'filters' => [
+                                ['class' => 'solr.LowerCaseFilterFactory'],
+                                ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],
+                                ['class' => 'solr.EdgeNGramFilterFactory', 'minGramSize' => 2, 'maxGramSize' => 20],
+                            ],
+                        ],
+                        'queryAnalyzer' => [
+                            'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+                            'filters' => [
+                                ['class' => 'solr.LowerCaseFilterFactory'],
+                                ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],
+                            ],
+                        ],
+                    ],
+                ]);
+
+                $httpClient->setRawBody($fieldTypeData);
+                $response = $httpClient->send();
+
+                // Ignore "already exists" error for field type.
+                $body = json_decode($response->getBody(), true);
+                $alreadyExists = isset($body['error']['details'][0]['errorMessages'][0])
+                    && strpos($body['error']['details'][0]['errorMessages'][0], 'already exists') !== false;
+
+                if (!$response->isSuccess() && !$alreadyExists) {
+                    $error = $body['error']['msg'] ?? $response->getReasonPhrase();
+                    $this->messenger()->addError(new PsrMessage(
+                        'Failed to create text_search field type: {error}', // @translate
+                        ['error' => $error]
+                    ));
+                    return $this->redirect()->toRoute('admin/search/solr/core-id', [
+                        'id' => $id,
+                        'action' => 'show',
+                    ]);
+                }
+            }
+
+            // Determine the field type to use.
+            $fieldType = $searchConfig === 'optimized' ? 'text_search' : 'text_general';
+
+            // Apply the field type to _text_.
+            $replaceFieldData = json_encode([
+                'replace-field' => [
+                    'name' => '_text_',
+                    'type' => $fieldType,
+                    'multiValued' => true,
+                    'indexed' => true,
+                    'stored' => false,
+                ],
+            ]);
+
+            $httpClient->setRawBody($replaceFieldData);
+            $response = $httpClient->send();
+
+            if ($response->isSuccess()) {
+                $message = $searchConfig === 'optimized'
+                    ? 'Field "_text_" configured for Google-like search in core "{solr_core_name}". Reindex required.' // @translate
+                    : 'Field "_text_" configured for strict matching in core "{solr_core_name}". Reindex required.'; // @translate
+                $this->messenger()->addSuccess(new PsrMessage(
+                    $message,
+                    ['solr_core_name' => $solrCore->name()]
+                ));
+            } else {
+                $body = json_decode($response->getBody(), true);
+                $error = $body['error']['msg'] ?? $response->getReasonPhrase();
+                $this->messenger()->addError(new PsrMessage(
+                    'Failed to configure _text_ field: {error}', // @translate
+                    ['error' => $error]
+                ));
+            }
+        } catch (\Exception $e) {
+            $this->messenger()->addError(new PsrMessage(
+                'Error configuring search: {error}', // @translate
+                ['error' => $e->getMessage()]
+            ));
+        }
+
+        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+            'id' => $id,
+            'action' => 'show',
+        ]);
+    }
+
+    /**
+     *
+     * @param SolrCoreRepresentation $solrCore
+     * @return array
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
      */
     protected function getIndexedResourceCounts(SolrCoreRepresentation $solrCore): array
     {

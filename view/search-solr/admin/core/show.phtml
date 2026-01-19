@@ -80,6 +80,39 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
     <span aria-current="page"><?= $escape($solrCore->name()) ?></span>
 </nav>
 
+<?php if ($solrCore->userIsAllowed('update') && $solrCore->schema()->checkDefaultField()): ?>
+<fieldset id="search-config">
+    <legend><?= $translate('Search configuration') ?></legend>
+    <p class="explanation"><?= $translate('Configure the analyzer for the catchall field "_text_". This affects how search queries match indexed content.') ?></p>
+    <form method="post" action="<?= $escape($solrCore->adminUrl('configure-search')) ?>">
+        <div class="field">
+            <div class="inputs">
+                <label>
+                    <input type="radio" name="search_config" value="keep" checked>
+                    <?= $translate('Keep current configuration') ?>
+                    <span class="explanation"><?= $translate('Do not change the Solr schema.') ?></span>
+                </label>
+            </div>
+            <div class="inputs">
+                <label>
+                    <input type="radio" name="search_config" value="default">
+                    <?= $translate('Default (strict matching)') ?>
+                    <span class="explanation"><?= $translate('Use text_general: matches exact words only. "napo" does not find "napoléon".') ?></span>
+                </label>
+            </div>
+            <div class="inputs">
+                <label>
+                    <input type="radio" name="search_config" value="optimized">
+                    <?= $translate('Optimized (Google-like search)') ?>
+                    <span class="explanation"><?= $translate('Use EdgeNGram: prefix matching, accent-insensitive. "napo" finds "napoléon", "cafe" finds "café". Works for all languages.') ?></span>
+                </label>
+            </div>
+        </div>
+        <button type="submit"><?= $translate('Apply') ?></button>
+    </form>
+</fieldset>
+<?php endif; ?>
+
 <h3><?= $translate('By index') ?></h3>
 
 <?= $partial('search-solr/admin/core/help-index-names') ?>
