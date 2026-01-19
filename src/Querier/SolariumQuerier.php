@@ -897,20 +897,24 @@ class SolariumQuerier extends AbstractQuerier
         $limit = $this->query->getLimit();
         $offset = $this->query->getOffset();
 
-        if ($limit !== null) {
-            $this->select->setRows($limit);
-        }
-
-        if ($offset !== null) {
-            $this->select->setStart($offset);
-        }
-
+        // With grouping (by resource type), pagination works differently:
+        // - rows/start control groups (not documents)
+        // - group.limit/group.offset control documents within each group
         if ($this->select->getGrouping()->getFields()) {
+            // Return all groups (resource types), paginate within each.
             if ($limit !== null) {
                 $this->select->getGrouping()->setLimit($limit);
             }
             if ($offset !== null) {
                 $this->select->getGrouping()->setOffset($offset);
+            }
+        } else {
+            // No grouping: standard pagination.
+            if ($limit !== null) {
+                $this->select->setRows($limit);
+            }
+            if ($offset !== null) {
+                $this->select->setStart($offset);
             }
         }
 
