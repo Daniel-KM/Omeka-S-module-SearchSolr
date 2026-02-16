@@ -781,7 +781,7 @@ class Module extends AbstractModule
             FROM `solr_core`
             ORDER BY `id` ASC
             SQL;
-        $solrCoreId = (int) $connection->fetchColumn($sqlSolrCoreId);
+        $solrCoreId = (int) $connection->fetchOne($sqlSolrCoreId);
         if ($solrCoreId) {
             return;
         }
@@ -801,7 +801,7 @@ class Module extends AbstractModule
             $solrCoreData['o:name'],
             json_encode($solrCoreData['o:settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
         ]);
-        $solrCoreId = (int) $connection->fetchColumn($sqlSolrCoreId);
+        $solrCoreId = (int) $connection->fetchOne($sqlSolrCoreId);
 
         // Install a default mapping.
         $sql = <<<'SQL'
@@ -857,7 +857,7 @@ class Module extends AbstractModule
             WHERE `adapter` = 'solarium'
             ORDER BY `id` ASC
             SQL;
-        $searchEngineId = (int) $connection->fetchColumn($sqlSearchEngineId);
+        $searchEngineId = (int) $connection->fetchOne($sqlSearchEngineId);
         if ($searchEngineId) {
             return $searchEngineId;
         }
@@ -877,7 +877,7 @@ class Module extends AbstractModule
             json_encode($searchEngineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
         ]);
 
-        $searchEngineId = (int) $connection->fetchColumn($sqlSearchEngineId);
+        $searchEngineId = (int) $connection->fetchOne($sqlSearchEngineId);
 
         $message = new \Omeka\Stdlib\Message(
             'A default Solr search engine has been created. Configure it in the %1$ssearch manager%2$s.', // @translate
@@ -905,7 +905,7 @@ class Module extends AbstractModule
             WHERE `engine_id` = ?
             ORDER BY `id` ASC
             SQL;
-        $suggesterId = (int) $connection->fetchColumn($sqlSuggesterId, [$searchEngineId]);
+        $suggesterId = (int) $connection->fetchOne($sqlSuggesterId, [$searchEngineId]);
         if ($suggesterId) {
             return;
         }
