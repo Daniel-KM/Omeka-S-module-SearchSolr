@@ -1,31 +1,45 @@
 {
     "name": "daniel-km/omeka-s-module-search-solr",
-    "description": "Module for Omeka S to add a Solr search engine adapter for module AdvancedSearch.",
-    "type": "library",
+    "type": "omeka-s-module",
+    "description": "Module for Omeka S: Search Omeka resources instantly and deeply on any server with Apache Solr / Lucene, via the library Solarium.",
+    "keywords": [
+        "Omeka S",
+        "Omeka S module",
+        "Solr",
+        "Lucene",
+        "search",
+        "facet",
+        "filter",
+        "indexation",
+        "auto-suggestion"
+    ],
     "license": "CECILL-2.1",
+    "homepage": "https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr",
     "authors": [
         {
             "name": "Daniel Berthereau",
             "email": "Daniel.packagist@Berthereau.net"
         }
     ],
-    "homepage": "https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr",
     "support": {
         "issues": "https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr/-/issues",
         "forum": "https://forum.omeka.org/"
     },
-    "keywords": [
-        "Omeka S",
-        "module",
-        "search",
-        "solr"
-    ],
+    "_require (not set until Omeka S merges PR #2412)": {
+        "omeka/omeka-s": "^4.1",
+        "daniel-km/omeka-s-module-common": "*"
+    },
     "require": {
         "solarium/solarium": "^6.2",
         "symfony/event-dispatcher": "^4.4"
     },
     "provide": {
         "symfony/polyfill-php80": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "SearchSolr\\": "src/"
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -35,13 +49,10 @@
     "config": {
         "platform": {
             "php": "7.4"
-        },
-        "allow-plugins": {
-            "composer/installers": true,
-            "oomphinc/composer-installers-extender": true
         }
     },
     "extra": {
-        "installer-name" : "SearchSolr"
+        "installer-name": "SearchSolr",
+        "configurable": true
     }
 }

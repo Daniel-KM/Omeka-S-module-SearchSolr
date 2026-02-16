@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fe0e1c2e8cdc38883bd56a87e6a70f84",
+    "content-hash": "cc76a3784bde4c049ee2825ea1e97e3c",
     "packages": [
         {
             "name": "halaxa/json-machine",
