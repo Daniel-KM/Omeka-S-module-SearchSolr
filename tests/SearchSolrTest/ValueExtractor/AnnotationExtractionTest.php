@@ -3,8 +3,8 @@
 namespace SearchSolrTest\ValueExtractor;
 
 use Omeka\Api\Representation\ItemRepresentation;
-use SearchSolrTest\TestCase;
 use SearchSolrTest\SearchSolrTestTrait;
+use SearchSolrTest\TestCase;
 
 /**
  * Tests for value annotation extraction in Solr indexing.
@@ -179,9 +179,7 @@ class AnnotationExtractionTest extends TestCase
         $this->assertCount(2, $values);
 
         // Extract the string values.
-        $stringValues = array_map(function ($v) {
-            return (string) $v;
-        }, $values);
+        $stringValues = array_map(fn ($v) => (string) $v, $values);
 
         $this->assertContains('Library of Congress', $stringValues);
         $this->assertContains('British Library', $stringValues);
@@ -202,9 +200,7 @@ class AnnotationExtractionTest extends TestCase
         // - 1 from second creator (source)
         $this->assertCount(3, $values);
 
-        $stringValues = array_map(function ($v) {
-            return (string) $v;
-        }, $values);
+        $stringValues = array_map(fn ($v) => (string) $v, $values);
 
         $this->assertContains('Library of Congress', $stringValues);
         $this->assertContains('2024-01-15', $stringValues);
@@ -225,9 +221,7 @@ class AnnotationExtractionTest extends TestCase
         // Bob Wilson has no annotation, so should not contribute.
         $this->assertCount(2, $values);
 
-        $stringValues = array_map(function ($v) {
-            return (string) $v;
-        }, $values);
+        $stringValues = array_map(fn ($v) => (string) $v, $values);
 
         // Bob Wilson should not appear.
         $this->assertNotContains('Bob Wilson', $stringValues);
@@ -274,9 +268,7 @@ class AnnotationExtractionTest extends TestCase
         // Should get 3 creator values (the values themselves, not annotations).
         $this->assertCount(3, $values);
 
-        $stringValues = array_map(function ($v) {
-            return (string) $v;
-        }, $values);
+        $stringValues = array_map(fn ($v) => (string) $v, $values);
 
         $this->assertContains('John Smith', $stringValues);
         $this->assertContains('Jane Doe', $stringValues);

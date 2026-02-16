@@ -180,7 +180,7 @@ trait SearchSolrTestTrait
 
         $response = $this->api()->create('search_engines', [
             'o:name' => $name,
-            'o:adapter' => 'solarium',
+            'o:engine_adapter' => 'solarium',
             'o:settings' => $settings,
         ]);
         $engine = $response->getContent();
