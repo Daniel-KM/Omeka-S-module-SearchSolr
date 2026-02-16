@@ -796,7 +796,7 @@ class Module extends AbstractModule
             INSERT INTO `solr_core` (`name`, `settings`)
             VALUES (?, ?);
             SQL;
-        $solrCoreData = require __DIR__ . '/data/solr_cores/default.php';
+        $solrCoreData = require __DIR__ . '/data/configs/solr_core.default.php';
         $connection->executeStatement($sql, [
             $solrCoreData['o:name'],
             json_encode($solrCoreData['o:settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
@@ -830,5 +830,101 @@ class Module extends AbstractModule
         );
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
+
+        // Create a default search engine using Solr adapter.
+        $searchEngineId = $this->createDefaultSearchEngine($connection, $solrCoreId, $messenger, $urlHelper);
+        if ($searchEngineId) {
+            // Create a default suggester for the search engine.
+            $this->createDefaultSuggester($connection, $searchEngineId, $messenger);
+        }
+    }
+
+    /**
+     * Create a default search engine using Solr adapter.
+     *
+     * @return int|null The search engine ID or null on failure.
+     */
+    protected function createDefaultSearchEngine(
+        \Doctrine\DBAL\Connection $connection,
+        int $solrCoreId,
+        $messenger,
+        $urlHelper
+    ): ?int {
+        // Check if a Solr search engine already exists.
+        $sqlSearchEngineId = <<<'SQL'
+            SELECT `id`
+            FROM `search_engine`
+            WHERE `adapter` = 'solarium'
+            ORDER BY `id` ASC
+            SQL;
+        $searchEngineId = (int) $connection->fetchColumn($sqlSearchEngineId);
+        if ($searchEngineId) {
+            return $searchEngineId;
+        }
+
+        // Load default search engine config.
+        $searchEngineData = require __DIR__ . '/data/configs/search_engine.solr.php';
+        $searchEngineSettings = $searchEngineData['o:settings'];
+        $searchEngineSettings['engine_adapter']['solr_core_id'] = $solrCoreId;
+
+        $sql = <<<'SQL'
+            INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`)
+            VALUES (?, ?, ?, NOW(), NOW());
+            SQL;
+        $connection->executeStatement($sql, [
+            $searchEngineData['o:name'],
+            $searchEngineData['o:engine_adapter'],
+            json_encode($searchEngineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $searchEngineId = (int) $connection->fetchColumn($sqlSearchEngineId);
+
+        $message = new \Omeka\Stdlib\Message(
+            'A default Solr search engine has been created. Configure it in the %1$ssearch manager%2$s.', // @translate
+            sprintf('<a href="%s">', $urlHelper('admin') . '/search-manager/engine/' . $searchEngineId . '/edit'),
+            '</a>'
+        );
+        $message->setEscapeHtml(false);
+        $messenger->addSuccess($message);
+
+        return $searchEngineId;
+    }
+
+    /**
+     * Create a default suggester for the Solr search engine.
+     */
+    protected function createDefaultSuggester(
+        \Doctrine\DBAL\Connection $connection,
+        int $searchEngineId,
+        $messenger
+    ): void {
+        // Check if a suggester already exists for this engine.
+        $sqlSuggesterId = <<<'SQL'
+            SELECT `id`
+            FROM `search_suggester`
+            WHERE `engine_id` = ?
+            ORDER BY `id` ASC
+            SQL;
+        $suggesterId = (int) $connection->fetchColumn($sqlSuggesterId, [$searchEngineId]);
+        if ($suggesterId) {
+            return;
+        }
+
+        // Load default suggester config.
+        $suggesterData = require __DIR__ . '/data/configs/search_suggester.solr.php';
+
+        $sql = <<<'SQL'
+            INSERT INTO `search_suggester` (`engine_id`, `name`, `settings`, `created`, `modified`)
+            VALUES (?, ?, ?, NOW(), NOW());
+            SQL;
+        $connection->executeStatement($sql, [
+            $searchEngineId,
+            $suggesterData['o:name'],
+            json_encode($suggesterData['o:settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $messenger->addSuccess(new \Omeka\Stdlib\Message(
+            'A default Solr suggester has been created.' // @translate
+        ));
     }
 }
