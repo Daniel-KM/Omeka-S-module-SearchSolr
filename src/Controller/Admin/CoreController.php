@@ -37,8 +37,8 @@ use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
 use Laminas\View\Model\ViewModel;
 use Omeka\Form\ConfirmForm;
-use Psr\Container\NotFoundExceptionInterface;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use SearchSolr\Api\Adapter\TraitArrayFilterRecursiveEmptyValue;
 use SearchSolr\Api\Representation\SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
@@ -282,7 +282,7 @@ class CoreController extends AbstractActionController
         ]);
     }
 
-public function showIndexingStatsAction()
+    public function showIndexingStatsAction()
     {
         /**
          * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
@@ -1034,7 +1034,6 @@ public function showIndexingStatsAction()
     }
 
     /**
-     *
      * @param SolrCoreRepresentation $solrCore
      * @return array
      * @throws NotFoundExceptionInterface
