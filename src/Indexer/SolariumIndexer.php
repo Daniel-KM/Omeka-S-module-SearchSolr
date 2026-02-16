@@ -960,6 +960,11 @@ class SolariumIndexer extends AbstractIndexer
             $this->solariumClient = $this->getSolrCore()->solariumClient();
             // Use BufferedAdd plugin to reduce memory issue.
             $this->solariumClient->getPlugin('bufferedadd');
+            // Indexing is heavier than querying, so use a longer timeout.
+            $adapter = $this->solariumClient->getAdapter();
+            if ($adapter->getTimeout() < 60) {
+                $adapter->setTimeout(60);
+            }
         }
         return $this->solariumClient;
     }
