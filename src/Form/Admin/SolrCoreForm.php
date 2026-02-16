@@ -258,8 +258,37 @@ class SolrCoreForm extends Form
         */
 
         $querySettingsFieldset = new Fieldset('query');
+        $querySettingsFieldset
+            ->setLabel('Query settings'); // @translate
         $settingsFieldset
             ->add($querySettingsFieldset);
+
+        // Add informational message about the copy field _text_.
+        $copyFieldInfo = $this->getOption('copy_field_info');
+        if ($copyFieldInfo) {
+            if ($copyFieldInfo['has_copy_field']) {
+                $fieldType = $copyFieldInfo['field_type'] ?? 'unknown';
+                $isOptimized = $fieldType === 'text_search';
+                $info = $isOptimized
+                    ? 'The catchall copy field "_text_" is present and uses the type "text_search" (Google-like search with EdgeNGram). To change it, use the "Search configuration" section in the core show page.' // @translate
+                    : 'The catchall copy field "_text_" is present and uses a standard type (strict matching). To change it, use the "Search configuration" section in the core show page.'; // @translate
+            } else {
+                $info = 'The catchall copy field "_text_" is not configured. Without it, full-text search will not return results. Use the "Create _text_" button in the core show page to create it.'; // @translate
+            }
+            $querySettingsFieldset
+                ->add([
+                    'name' => 'copy_field_info',
+                    'type' => Element\Hidden::class,
+                    'options' => [
+                        'label' => 'Catchall copy field', // @translate
+                        'info' => $info,
+                    ],
+                    'attributes' => [
+                        'id' => 'copy_field_info',
+                        'value' => '',
+                    ],
+                ]);
+        }
 
         $querySettingsFieldset
             ->add([
@@ -317,6 +346,10 @@ class SolrCoreForm extends Form
             ]);
         $settingFilters
             ->get('query')
+            ->add([
+                'name' => 'copy_field_info',
+                'required' => false,
+            ])
             ->add([
                 'name' => 'tie_breaker',
                 'required' => false,

@@ -150,9 +150,31 @@ class CoreController extends AbstractActionController
         $id = $this->params('id');
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
+        // Detect copy field and its type for informational message in form.
+        $copyFieldInfo = null;
+        try {
+            $schema = $solrCore->schema();
+            $hasDefaultField = $schema->checkDefaultField();
+            if ($hasDefaultField) {
+                $textFieldType = $schema->getFieldsByName()['_text_']['type'] ?? null;
+                $copyFieldInfo = [
+                    'has_copy_field' => true,
+                    'field_type' => $textFieldType,
+                ];
+            } else {
+                $copyFieldInfo = [
+                    'has_copy_field' => false,
+                    'field_type' => null,
+                ];
+            }
+        } catch (\Exception $e) {
+            // Schema not accessible.
+        }
+
         /** @var \SearchSolr\Form\Admin\SolrCoreForm $form */
         $form = $this->getForm(SolrCoreForm::class, [
             'server_id' => $this->settings()->get('searchsolr_server_id'),
+            'copy_field_info' => $copyFieldInfo,
         ]);
         $data = $solrCore->jsonSerialize();
 

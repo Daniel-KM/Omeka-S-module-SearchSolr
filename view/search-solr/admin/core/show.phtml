@@ -84,6 +84,16 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 <fieldset id="search-config">
     <legend><?= $translate('Search configuration') ?></legend>
     <p class="explanation"><?= $translate('Configure the analyzer for the catchall field "_text_". This affects how search queries match indexed content.') ?></p>
+    <?php
+    $textFieldType = $solrCore->schema()->getFieldsByName()['_text_']['type'] ?? null;
+    if ($textFieldType):
+        $isOptimized = $textFieldType === 'text_search';
+        $currentLabel = $isOptimized
+            ? $translate('optimized (Google-like search via EdgeNGram)')
+            : sprintf($translate('default (strict matching via "%s")'), $escape($textFieldType));
+    ?>
+    <p class="explanation"><strong><?= sprintf($translate('Current configuration: %s.'), $currentLabel) ?></strong></p>
+    <?php endif; ?>
     <form method="post" action="<?= $escape($solrCore->adminUrl('configure-search')) ?>">
         <div class="field">
             <div class="inputs">
