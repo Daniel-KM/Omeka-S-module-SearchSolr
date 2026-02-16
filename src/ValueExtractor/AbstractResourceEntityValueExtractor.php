@@ -1006,7 +1006,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         try {
             $ids = $qb
-                ->executeQuery()->fetchFirstColumn();
+                ->execute()->fetchFirstColumn();
         } catch (\Throwable $e) {
             return [];
         }
