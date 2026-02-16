@@ -40,15 +40,17 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
         $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
         'Common', '3.4.79'
     );
-    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+    $messenger->addError($message);
+    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.56')) {
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.57')) {
     $message = new PsrMessage(
         $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.56']
+        ['module' => 'Advanced Search', 'version' => '3.4.57']
     );
-    throw new ModuleCannotInstallException((string) $message);
+    $messenger->addError($message);
+    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
 if (version_compare($oldVersion, '3.5.15.2', '<')) {
@@ -187,7 +189,8 @@ if (version_compare($oldVersion, '3.5.25.3', '<')) {
             'This module requires the module "{module}", version {version} or above.', // @translate
             ['module' => 'Search / AdvancedSearch', 'version' => '3.5.22.3 / 3.3.6']
         );
-        throw new ModuleCannotInstallException((string) $message);
+        $messenger->addError($message);
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
     }
 
     $message = new PsrMessage(
@@ -205,7 +208,8 @@ if (version_compare($oldVersion, '3.5.27.3', '<')) {
             'This module requires the module "{module}", version {version} or above.', // @translate
             ['module' => 'AdvancedSearch', 'version' => '3.3.6']
         );
-        throw new ModuleCannotInstallException((string) $message);
+        $messenger->addError($message);
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
     }
 }
 
@@ -228,7 +232,8 @@ if (version_compare($oldVersion, '3.5.31.3', '<')) {
             'This module requires the module "{module}", version {version} or above.', // @translate
             ['module' => 'AdvancedSearch', 'version' => '3.3.6.7']
         );
-        throw new ModuleCannotInstallException((string) $message);
+        $messenger->addError($message);
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
     }
 
     // Remove an old option.
@@ -751,7 +756,8 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
             $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
             'AdvancedSearch', '3.4.46'
         );
-        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
+        $messenger->addError($message);
+        throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
     }
 
     $sql = <<<'SQL'
@@ -1018,5 +1024,232 @@ if (version_compare($oldVersion, '3.5.62', '<')) {
                 'settings' => json_encode($solrCoreSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                 'id' => $solrCoreId,
             ]);
+    }
+}
+
+if (version_compare($oldVersion, '3.5.64', '<')) {
+    // Fix possible invalid data in json columns (pool and settings).
+    $sql = <<<'SQL'
+        UPDATE `solr_map`
+        SET `pool` = '[]'
+        WHERE `pool` = '' OR `pool` IS NULL OR JSON_VALID(`pool`) = 0
+        SQL;
+    $fixed = $connection->executeStatement($sql);
+    $sql = <<<'SQL'
+        UPDATE `solr_map`
+        SET `settings` = '[]'
+        WHERE `settings` = '' OR `settings` IS NULL OR JSON_VALID(`settings`) = 0
+        SQL;
+    $fixed += $connection->executeStatement($sql);
+    if ($fixed) {
+        $message = new PsrMessage(
+            '{count} invalid data in solr maps were fixed.', // @translate
+            ['count' => $fixed]
+        );
+        $messenger->addWarning($message);
+    }
+
+    // Clean up normalization "table" referencing an empty or missing table.
+    $qb = $connection->createQueryBuilder();
+    $qb
+        ->select('id', 'settings')
+        ->from('solr_map', 'solr_map')
+        ->where('settings LIKE \'%"table"%\'')
+        ->orderBy('id', 'asc');
+    $solrMapRows = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $fixedTable = 0;
+    foreach ($solrMapRows as $solrMapId => $solrMapSettings) {
+        $solrMapSettings = json_decode($solrMapSettings, true) ?: [];
+        $normalizations = $solrMapSettings['normalization'] ?? [];
+        if (!in_array('table', $normalizations)) {
+            continue;
+        }
+        $tableId = $solrMapSettings['table'] ?? '';
+        if ($tableId !== '' && $tableId !== null) {
+            continue;
+        }
+        $solrMapSettings['normalization'] = array_values(array_diff($normalizations, ['table']));
+        unset(
+            $solrMapSettings['table'],
+            $solrMapSettings['table_mode'],
+            $solrMapSettings['table_index_original'],
+            $solrMapSettings['table_check_strict']
+        );
+        $connection->executeStatement(
+            'UPDATE `solr_map` SET `settings` = ? WHERE `id` = ?',
+            [json_encode($solrMapSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $solrMapId]
+        );
+        ++$fixedTable;
+    }
+    if ($fixedTable) {
+        $message = new PsrMessage(
+            '{count} solr maps with normalization "table" referencing an empty table were cleaned.', // @translate
+            ['count' => $fixedTable]
+        );
+        $messenger->addWarning($message);
+    }
+
+    // Create missing required maps for each solr core.
+    // Checked by source, like missingRequiredMaps().
+    $requiredMapsBySource = [
+        ['source' => 'resource_name', 'field_name' => 'resource_name_s', 'alias' => 'resource_name', 'settings' => ['label' => 'Resource type']],
+        ['source' => 'o:id', 'field_name' => 'id_i', 'alias' => 'id', 'settings' => ['label' => 'Internal id']],
+        ['source' => 'is_public', 'field_name' => 'is_public_i', 'alias' => 'is_public', 'settings' => ['parts' => ['main'], 'formatter' => 'boolean', 'label' => 'Public']],
+        ['source' => 'owner/o:id', 'field_name' => 'owner_id_i', 'alias' => 'owner_id', 'settings' => ['label' => 'Owner']],
+        ['source' => 'site/o:id', 'field_name' => 'site_id_is', 'alias' => 'site_id', 'settings' => ['label' => 'Site']],
+    ];
+    // Checked by field_name: name_s is required but o:title may already exist
+    // for "resources" (title_s); missingRequiredMaps() checks field_name.
+    $requiredMapsByFieldName = [
+        ['field_names' => ['name_s', 'ss_name'], 'source' => 'o:title', 'field_name' => 'name_s', 'alias' => 'name', 'settings' => ['label' => 'Name']],
+    ];
+    $solrCoreIds = $connection->executeQuery('SELECT `id` FROM `solr_core` ORDER BY `id` ASC')->fetchFirstColumn();
+    $createdMaps = 0;
+    $sqlInsert = 'INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `alias`, `source`, `pool`, `settings`) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    foreach ($solrCoreIds as $solrCoreId) {
+        foreach ($requiredMapsBySource as $requiredMap) {
+            $exists = $connection->fetchOne(
+                'SELECT `id` FROM `solr_map` WHERE `solr_core_id` = ? AND `source` = ? LIMIT 1',
+                [$solrCoreId, $requiredMap['source']]
+            );
+            if ($exists) {
+                continue;
+            }
+            $connection->executeStatement($sqlInsert, [
+                $solrCoreId, 'generic', $requiredMap['field_name'], $requiredMap['alias'],
+                $requiredMap['source'], '[]',
+                json_encode($requiredMap['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            ]);
+            ++$createdMaps;
+        }
+        foreach ($requiredMapsByFieldName as $requiredMap) {
+            $exists = $connection->fetchOne(
+                'SELECT `id` FROM `solr_map` WHERE `solr_core_id` = ? AND `field_name` IN (?) LIMIT 1',
+                [$solrCoreId, $requiredMap['field_names']],
+                [null, \Doctrine\DBAL\Connection::PARAM_STR_ARRAY]
+            );
+            if ($exists) {
+                continue;
+            }
+            $connection->executeStatement($sqlInsert, [
+                $solrCoreId, 'generic', $requiredMap['field_name'], $requiredMap['alias'],
+                $requiredMap['source'], '[]',
+                json_encode($requiredMap['settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            ]);
+            ++$createdMaps;
+        }
+    }
+    if ($createdMaps) {
+        $message = new PsrMessage(
+            '{count} required maps were created for existing solr cores.', // @translate
+            ['count' => $createdMaps]
+        );
+        $messenger->addSuccess($message);
+        $messenger->addWarning('You should reindex your Solr cores.'); // @translate
+    }
+
+    // Create a default Solr suggester and add it to search configs without suggester.
+
+    // Check if there's a Solr search engine.
+    $sql = <<<'SQL'
+        SELECT `id`
+        FROM `search_engine`
+        WHERE `adapter` = 'solarium'
+        ORDER BY `id` ASC
+        LIMIT 1
+        SQL;
+    $solrEngineId = (int) $connection->fetchOne($sql);
+
+    if ($solrEngineId) {
+        // Check if a suggester already exists for this engine.
+        $sql = <<<'SQL'
+            SELECT `id`
+            FROM `search_suggester`
+            WHERE `engine_id` = ?
+            ORDER BY `id` ASC
+            LIMIT 1
+            SQL;
+        $suggesterId = (int) $connection->fetchOne($sql, [$solrEngineId]);
+
+        if (!$suggesterId) {
+            // Create a default Solr suggester using _text_ catchall copy field.
+            $suggesterSettings = [
+                'solr_suggester_name' => 'omeka_suggester',
+                'solr_fields' => ['_text_'],
+                'solr_lookup_impl' => 'AnalyzingInfixLookupFactory',
+                'solr_build_on_commit' => true,
+            ];
+
+            $sql = <<<'SQL'
+                INSERT INTO `search_suggester` (`engine_id`, `name`, `settings`, `created`, `modified`)
+                VALUES (?, ?, ?, NOW(), NOW())
+                SQL;
+            $connection->executeStatement($sql, [
+                $solrEngineId,
+                'Solr',
+                json_encode($suggesterSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            ]);
+
+            // Get the new suggester ID.
+            $sql = <<<'SQL'
+                SELECT `id`
+                FROM `search_suggester`
+                WHERE `engine_id` = ?
+                ORDER BY `id` DESC
+                LIMIT 1
+                SQL;
+            $suggesterId = (int) $connection->fetchOne($sql, [$solrEngineId]);
+        }
+
+        if ($suggesterId) {
+            // Update search configs that use this Solr engine and don't have a suggester.
+            $sql = <<<'SQL'
+                SELECT `id`, `settings`
+                FROM `search_config`
+                WHERE `engine_id` = ?
+                SQL;
+            $searchConfigs = $connection->fetchAllKeyValue($sql, [$solrEngineId]);
+
+            $updatedConfigs = 0;
+            foreach ($searchConfigs as $configId => $configSettings) {
+                $settings = json_decode($configSettings, true) ?: [];
+                // Check if suggester is not set or is empty/null.
+                $currentSuggester = $settings['q']['suggester'] ?? null;
+                if (empty($currentSuggester)) {
+                    $settings['q']['suggester'] = $suggesterId;
+                    $sql = <<<'SQL'
+                        UPDATE `search_config`
+                        SET `settings` = ?
+                        WHERE `id` = ?
+                        SQL;
+                    $connection->executeStatement($sql, [
+                        json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                        $configId,
+                    ]);
+                    $updatedConfigs++;
+                }
+            }
+
+            // Messages - routes are not available during upgrade, use static paths.
+            $message = new PsrMessage(
+                'A default Solr suggester has been created. You can configure it in the {link}search manager{link_end}.', // @translate
+                ['link' => '<a href="/admin/search-manager/suggester/' . $suggesterId . '/edit">', 'link_end' => '</a>']
+            );
+            $message->setEscapeHtml(false);
+            $messenger->addSuccess($message);
+
+            if ($updatedConfigs) {
+                $message = new PsrMessage(
+                    '{count} search configuration(s) have been updated to use the new Solr suggester.', // @translate
+                    ['count' => $updatedConfigs]
+                );
+                $messenger->addSuccess($message);
+            }
+
+            $message = new PsrMessage(
+                'Note: The suggester uses the catchall copy field "_text_". If it does not exist, create it via the Solr core admin page or change the suggester field. Reindex your Solr core and build the suggester dictionary.' // @translate
+            );
+            $messenger->addWarning($message);
+        }
     }
 }
