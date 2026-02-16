@@ -114,10 +114,56 @@ class SolariumQuerier extends AbstractQuerier
     {
         $this->response = new Response();
         $this->response->setApi($this->services->get('Omeka\ApiManager'));
-        $this->query
-            ? $this->response->setQuery($this->query)
-            : null;
-        return $this->response->setMessage('Suggestions not implemented. Use direct URL.'); // @translate
+        if ($this->query) {
+            $this->response->setQuery($this->query);
+        }
+
+        $suggestOptions = $this->query ? $this->query->getSuggestOptions() : [];
+        $suggesterName = $suggestOptions['solr_suggester_name'] ?? null;
+
+        if (empty($suggesterName)) {
+            return $this->response->setMessage('Solr suggester not configured.'); // @translate
+        }
+
+        $q = $this->query ? $this->query->getQuery() : '';
+        if ($q === '') {
+            return $this->response
+                ->setSuggestions([])
+                ->setIsSuccess(true);
+        }
+
+        try {
+            $client = $this->getClient();
+            $suggesterQuery = $client->createSuggester();
+            $suggesterQuery->setQuery($q);
+            $suggesterQuery->setDictionary($suggesterName);
+            $suggesterQuery->setCount($this->query ? $this->query->getLimit() : 10);
+
+            $result = $client->suggester($suggesterQuery);
+
+            $suggestions = [];
+            foreach ($result as $dictionary) {
+                foreach ($dictionary as $term) {
+                    // Each term has suggestions.
+                    foreach ($term->getSuggestions() as $suggestion) {
+                        $suggestions[] = [
+                            'value' => $suggestion['term'],
+                            'data' => $suggestion['weight'] ?? 1,
+                        ];
+                    }
+                }
+            }
+
+            // Sort by weight descending.
+            usort($suggestions, fn($a, $b) => $b['data'] <=> $a['data']);
+
+            return $this->response
+                ->setSuggestions($suggestions)
+                ->setIsSuccess(true);
+        } catch (\Exception $e) {
+            $this->getLogger()->err('Solr suggester error: ' . $e->getMessage());
+            return $this->response->setMessage('Solr suggester error: ' . $e->getMessage());
+        }
     }
 
     /**

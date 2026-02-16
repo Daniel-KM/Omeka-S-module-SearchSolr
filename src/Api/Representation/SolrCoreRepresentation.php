@@ -815,4 +815,199 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         return $unavailableFields ?: null;
     }
+
+    /**
+     * Check if a suggester exists in Solr config.
+     */
+    public function hasSuggester(string $suggesterName): bool
+    {
+        $config = $this->getSolrConfig();
+        if (!$config) {
+            return false;
+        }
+
+        // Check in searchComponent definitions.
+        $searchComponents = $config['config']['searchComponent'] ?? [];
+        foreach ($searchComponents as $component) {
+            if (($component['class'] ?? '') === 'solr.SuggestComponent') {
+                $suggesters = $component['suggester'] ?? [];
+                // Can be a single suggester or an array of suggesters.
+                if (!is_array($suggesters) || isset($suggesters['name'])) {
+                    $suggesters = [$suggesters];
+                }
+                foreach ($suggesters as $suggester) {
+                    if (($suggester['name'] ?? '') === $suggesterName) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Create a suggester in Solr via Config API.
+     *
+     * @param string $suggesterName Name for the suggester.
+     * @param string $field Solr field to use for suggestions.
+     * @param array $options Additional options.
+     * @return bool|string True on success, error message on failure.
+     */
+    public function createSuggester(string $suggesterName, string $field, array $options = [])
+    {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
+        $configUrl = $this->clientUrl() . '/config';
+
+        // Default options.
+        $lookupImpl = $options['lookupImpl'] ?? 'AnalyzingInfixLookupFactory';
+        $dictionaryImpl = $options['dictionaryImpl'] ?? 'DocumentDictionaryFactory';
+        $analyzerFieldType = $options['suggestAnalyzerFieldType'] ?? 'text_general';
+
+        // 1. Add the searchComponent.
+        $componentPayload = json_encode([
+            'add-searchcomponent' => [
+                'name' => $suggesterName,
+                'class' => 'solr.SuggestComponent',
+                'suggester' => [
+                    'name' => $suggesterName,
+                    'lookupImpl' => $lookupImpl,
+                    'dictionaryImpl' => $dictionaryImpl,
+                    'field' => $field,
+                    'suggestAnalyzerFieldType' => $analyzerFieldType,
+                    'buildOnCommit' => true,
+                ],
+            ],
+        ]);
+
+        $result = $this->postToSolrConfig($configUrl, $componentPayload);
+        if ($result !== true) {
+            $logger->err('SearchSolr: Failed to create suggester component: ' . $result);
+            return $result;
+        }
+
+        // 2. Add the request handler.
+        $handlerPayload = json_encode([
+            'add-requesthandler' => [
+                'name' => '/suggest',
+                'class' => 'solr.SearchHandler',
+                'startup' => 'lazy',
+                'defaults' => [
+                    'suggest' => true,
+                    'suggest.count' => 10,
+                    'suggest.dictionary' => $suggesterName,
+                ],
+                'components' => [$suggesterName],
+            ],
+        ]);
+
+        $result = $this->postToSolrConfig($configUrl, $handlerPayload);
+        if ($result !== true) {
+            // Try to update existing handler instead.
+            $handlerPayload = json_encode([
+                'update-requesthandler' => [
+                    'name' => '/suggest',
+                    'class' => 'solr.SearchHandler',
+                    'startup' => 'lazy',
+                    'defaults' => [
+                        'suggest' => true,
+                        'suggest.count' => 10,
+                        'suggest.dictionary' => $suggesterName,
+                    ],
+                    'components' => [$suggesterName],
+                ],
+            ]);
+            $result = $this->postToSolrConfig($configUrl, $handlerPayload);
+            if ($result !== true) {
+                $logger->warn('SearchSolr: Failed to create/update suggest handler: ' . $result);
+                // Not a fatal error, component was created.
+            }
+        }
+
+        $logger->info('SearchSolr: Created suggester "{name}" on field "{field}".', [
+            'name' => $suggesterName,
+            'field' => $field,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Build/rebuild the suggester dictionary.
+     */
+    public function buildSuggester(string $suggesterName): bool
+    {
+        $client = $this->solariumClient();
+        if (!$client) {
+            return false;
+        }
+
+        try {
+            $suggesterQuery = $client->createSuggester();
+            $suggesterQuery->setDictionary($suggesterName);
+            $suggesterQuery->setBuild(true);
+            $suggesterQuery->setQuery('_'); // Dummy query, just to trigger build.
+            $client->suggester($suggesterQuery);
+            return true;
+        } catch (\Exception $e) {
+            $services = $this->getServiceLocator();
+            $logger = $services->get('Omeka\Logger');
+            $logger->err('SearchSolr: Failed to build suggester: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get Solr config via API.
+     */
+    protected function getSolrConfig(): ?array
+    {
+        $configUrl = $this->clientUrl() . '/config';
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => 'Content-Type: application/json',
+                'timeout' => 10,
+            ],
+        ]);
+
+        $response = @file_get_contents($configUrl, false, $context);
+        if ($response === false) {
+            return null;
+        }
+
+        return json_decode($response, true);
+    }
+
+    /**
+     * Post to Solr Config API.
+     *
+     * @return bool|string True on success, error message on failure.
+     */
+    protected function postToSolrConfig(string $url, string $payload)
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => 'Content-Type: application/json',
+                'content' => $payload,
+                'timeout' => 30,
+            ],
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) {
+            return 'Connection failed';
+        }
+
+        $result = json_decode($response, true);
+        if (isset($result['error'])) {
+            return $result['error']['msg'] ?? 'Unknown error';
+        }
+
+        return true;
+    }
 }
