@@ -2267,10 +2267,31 @@ class SolariumQuerier extends AbstractQuerier
 
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
         // The same for specific resources in maps, so reverse maps.
-        foreach (array_reverse($this->getSolrCore()->mapsOrderedByStructure()) as $map) {
+        $allMaps = array_reverse($this->getSolrCore()->mapsOrderedByStructure());
+        foreach ($allMaps as $map) {
             $alias = $map->alias();
             if ($alias) {
                 $aliasFields[$alias][$map->fieldName()] = $map;
+            }
+        }
+
+        // Include sibling maps (same source, no explicit alias) as candidates
+        // for priority sorting, so _link_ss is considered even without alias.
+        // Fix tef:partenaireRecherche with uri doesn't return the index.
+        $aliasSources = [];
+        foreach ($aliasFields as $alias => $maps) {
+            foreach ($maps as $map) {
+                $aliasSources[$map->source()][] = $alias;
+            }
+        }
+        foreach ($allMaps as $map) {
+            if (!$map->alias()) {
+                $source = $map->source();
+                if (isset($aliasSources[$source])) {
+                    foreach ($aliasSources[$source] as $alias) {
+                        $aliasFields[$alias][$map->fieldName()] = $map;
+                    }
+                }
             }
         }
 
