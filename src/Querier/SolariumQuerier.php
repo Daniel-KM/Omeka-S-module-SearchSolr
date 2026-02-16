@@ -119,9 +119,10 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         $suggestOptions = $this->query ? $this->query->getSuggestOptions() : [];
-        $suggesterName = $suggestOptions['solr_suggester_name'] ?? null;
 
-        if (empty($suggesterName)) {
+        // Build suggester names from settings.
+        $suggesterNames = $this->getSuggesterNames($suggestOptions);
+        if (empty($suggesterNames)) {
             return $this->response->setMessage('Solr suggester not configured.'); // @translate
         }
 
@@ -136,7 +137,9 @@ class SolariumQuerier extends AbstractQuerier
             $client = $this->getClient();
             $suggesterQuery = $client->createSuggester();
             $suggesterQuery->setQuery($q);
-            $suggesterQuery->setDictionary($suggesterName);
+            // setDictionary accepts a string or an array of dictionary names.
+            // Solr handles merging results from multiple suggesters.
+            $suggesterQuery->setDictionary($suggesterNames);
             $suggesterQuery->setCount($this->query ? $this->query->getLimit() : 10);
 
             $result = $client->suggester($suggesterQuery);
@@ -144,7 +147,6 @@ class SolariumQuerier extends AbstractQuerier
             $suggestions = [];
             foreach ($result as $dictionary) {
                 foreach ($dictionary as $term) {
-                    // Each term has suggestions.
                     foreach ($term->getSuggestions() as $suggestion) {
                         $suggestions[] = [
                             'value' => $suggestion['term'],
@@ -154,9 +156,6 @@ class SolariumQuerier extends AbstractQuerier
                 }
             }
 
-            // Sort by weight descending.
-            usort($suggestions, fn($a, $b) => $b['data'] <=> $a['data']);
-
             return $this->response
                 ->setSuggestions($suggestions)
                 ->setIsSuccess(true);
@@ -164,6 +163,45 @@ class SolariumQuerier extends AbstractQuerier
             $this->getLogger()->err('Solr suggester error: ' . $e->getMessage());
             return $this->response->setMessage('Solr suggester error: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Build suggester names from settings.
+     *
+     * @return array|string Suggester name(s) to query.
+     */
+    protected function getSuggesterNames(array $suggestOptions)
+    {
+        // Support both old single field (solr_field) and new multi-field (solr_fields).
+        $solrFields = $suggestOptions['solr_fields'] ?? [];
+        if (empty($solrFields) && !empty($suggestOptions['solr_field'])) {
+            $solrFields = [$suggestOptions['solr_field']];
+        }
+
+        // If _text_ is in the list, use only _text_.
+        if (in_array('_text_', $solrFields)) {
+            $solrFields = ['_text_'];
+        }
+
+        if (empty($solrFields)) {
+            // Fallback to direct suggester name if provided.
+            return $suggestOptions['solr_suggester_name'] ?? null;
+        }
+
+        // Generate base suggester name.
+        $baseSuggesterName = $suggestOptions['solr_suggester_name'] ?? 'omeka_suggester';
+
+        // For single field, use base name; for multiple, append field names.
+        if (count($solrFields) === 1) {
+            return $baseSuggesterName;
+        }
+
+        $suggesterNames = [];
+        foreach ($solrFields as $field) {
+            $suggesterNames[] = $baseSuggesterName . '_' . preg_replace('/[^a-z0-9_]/i', '_', $field);
+        }
+
+        return $suggesterNames;
     }
 
     /**

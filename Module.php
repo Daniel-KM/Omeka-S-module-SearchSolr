@@ -268,13 +268,19 @@ class Module extends AbstractModule
         $solrCore = $engineAdapter->getSolrCore();
         $solrFields = $this->getSolrFieldsForSuggester($solrCore);
 
+        // Add _text_ as first option (catchall copy field).
+        $fieldOptions = [
+            '_text_' => 'All fields (_text_ copy field)', // @translate
+        ];
+        $fieldOptions += $solrFields;
+
         $fieldset
             ->add([
                 'name' => 'solr_suggester_name',
                 'type' => \Laminas\Form\Element\Text::class,
                 'options' => [
                     'label' => 'Solr suggester name', // @translate
-                    'info' => 'Name of the suggester component in Solr. If empty, will be auto-generated from the suggester name. The suggester will be created automatically via Solr Config API.', // @translate
+                    'info' => 'Base name of the suggester component in Solr. If empty, will be auto-generated. When multiple fields are selected, a suffix is added for each field.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'solr_suggester_name',
@@ -282,18 +288,19 @@ class Module extends AbstractModule
                 ],
             ])
             ->add([
-                'name' => 'solr_field',
+                'name' => 'solr_fields',
                 'type' => \Common\Form\Element\OptionalSelect::class,
                 'options' => [
-                    'label' => 'Solr field for suggestions', // @translate
-                    'info' => 'The Solr field to use as source for suggestions. Should be a text field with appropriate analysis.', // @translate
-                    'value_options' => $solrFields,
-                    'empty_option' => 'Select a field…', // @translate
+                    'label' => 'Solr fields for suggestions', // @translate
+                    'info' => 'Select "All fields" to use the _text_ copy field (must be created first), or choose specific indexed fields. Multiple fields will create multiple suggesters that are queried together.', // @translate
+                    'value_options' => $fieldOptions,
+                    'empty_option' => '',
                 ],
                 'attributes' => [
-                    'id' => 'solr_field',
-                    'required' => true,
+                    'id' => 'solr_fields',
                     'class' => 'chosen-select',
+                    'multiple' => true,
+                    'data-placeholder' => 'Select fields…', // @translate
                 ],
             ])
             ->add([
@@ -349,12 +356,23 @@ class Module extends AbstractModule
         $messenger = $event->getParam('messenger');
 
         $settings = $suggester->settings();
-        $solrField = $settings['solr_field'] ?? null;
-        if (!$solrField) {
+
+        // Handle both old single field (solr_field) and new multi-field (solr_fields).
+        $solrFields = $settings['solr_fields'] ?? [];
+        if (empty($solrFields) && !empty($settings['solr_field'])) {
+            // Backward compatibility with single field.
+            $solrFields = [$settings['solr_field']];
+        }
+        if (empty($solrFields)) {
             $messenger->addWarning(new PsrMessage(
-                'No Solr field configured for suggestions.' // @translate
+                'No Solr fields configured for suggestions.' // @translate
             ));
             return;
+        }
+
+        // If _text_ is selected, use only _text_ (it already contains all fields).
+        if (in_array('_text_', $solrFields)) {
+            $solrFields = ['_text_'];
         }
 
         $solrCore = $engineAdapter->getSolrCore();
@@ -365,46 +383,64 @@ class Module extends AbstractModule
             return;
         }
 
-        // Generate suggester name if not provided.
-        $suggesterName = $settings['solr_suggester_name'] ?? '';
-        if (empty($suggesterName)) {
+        // Generate base suggester name if not provided.
+        $baseSuggesterName = $settings['solr_suggester_name'] ?? '';
+        if (empty($baseSuggesterName)) {
             // Create a safe name from the suggester name.
-            $suggesterName = 'omeka_' . preg_replace('/[^a-z0-9_]/i', '_', strtolower($suggester->name()));
+            $baseSuggesterName = 'omeka_' . preg_replace('/[^a-z0-9_]/i', '_', strtolower($suggester->name()));
         }
 
-        // Check if suggester already exists.
-        if ($solrCore->hasSuggester($suggesterName)) {
-            $messenger->addNotice(new PsrMessage(
-                'Solr suggester "{name}" already exists.', // @translate
-                ['name' => $suggesterName]
-            ));
-            return;
-        }
-
-        // Create the suggester.
         $options = [
             'lookupImpl' => $settings['solr_lookup_impl'] ?? 'AnalyzingInfixLookupFactory',
             'buildOnCommit' => !empty($settings['solr_build_on_commit']),
         ];
 
-        $result = $solrCore->createSuggester($suggesterName, $solrField, $options);
-        if ($result === true) {
-            $messenger->addSuccess(new PsrMessage(
-                'Solr suggester "{name}" created on field "{field}".', // @translate
-                ['name' => $suggesterName, 'field' => $solrField]
-            ));
+        $createdSuggesters = [];
+        foreach ($solrFields as $solrField) {
+            // For multiple fields, append field name to suggester name.
+            $suggesterName = count($solrFields) === 1
+                ? $baseSuggesterName
+                : $baseSuggesterName . '_' . preg_replace('/[^a-z0-9_]/i', '_', $solrField);
 
-            // Build the suggester dictionary.
-            if ($solrCore->buildSuggester($suggesterName)) {
+            // Check if suggester already exists.
+            if ($solrCore->hasSuggester($suggesterName)) {
+                $messenger->addNotice(new PsrMessage(
+                    'Solr suggester "{name}" already exists.', // @translate
+                    ['name' => $suggesterName]
+                ));
+                $createdSuggesters[] = $suggesterName;
+                continue;
+            }
+
+            // Create the suggester.
+            $result = $solrCore->createSuggester($suggesterName, $solrField, $options);
+            if ($result === true) {
                 $messenger->addSuccess(new PsrMessage(
-                    'Suggester dictionary built successfully.' // @translate
+                    'Solr suggester "{name}" created on field "{field}".', // @translate
+                    ['name' => $suggesterName, 'field' => $solrField]
+                ));
+                $createdSuggesters[] = $suggesterName;
+
+                // Build the suggester dictionary.
+                if ($solrCore->buildSuggester($suggesterName)) {
+                    $messenger->addSuccess(new PsrMessage(
+                        'Suggester dictionary for "{name}" built successfully.', // @translate
+                        ['name' => $suggesterName]
+                    ));
+                }
+            } else {
+                $messenger->addError(new PsrMessage(
+                    'Failed to create Solr suggester "{name}": {error}', // @translate
+                    ['name' => $suggesterName, 'error' => $result]
                 ));
             }
-        } else {
-            $messenger->addError(new PsrMessage(
-                'Failed to create Solr suggester: {error}', // @translate
-                ['error' => $result]
-            ));
+        }
+
+        // Store the created suggester names for querying.
+        // Note: This info is stored in the event for potential use by other handlers,
+        // but the actual suggester names are derived from settings at query time.
+        if ($createdSuggesters) {
+            $event->setParam('solr_suggester_names', $createdSuggesters);
         }
     }
 
