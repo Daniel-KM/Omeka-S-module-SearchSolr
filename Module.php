@@ -170,6 +170,20 @@ class Module extends AbstractModule
             [$this, 'appendBrowseCores']
         );
 
+        // Handle suggester form for Solr engines.
+        $sharedEventManager->attach(
+            \AdvancedSearch\Form\Admin\SearchSuggesterForm::class,
+            'form.add_elements',
+            [$this, 'handleSuggesterFormAddElements']
+        );
+
+        // Handle suggester save for Solr engines.
+        $sharedEventManager->attach(
+            \AdvancedSearch\Controller\Admin\SearchSuggesterController::class,
+            'advancedsearch.suggester.save',
+            [$this, 'handleSuggesterSave']
+        );
+
         $sharedEventManager->attach(
             Api\Adapter\SolrCoreAdapter::class,
             'api.delete.post',
@@ -235,6 +249,190 @@ class Module extends AbstractModule
         echo $view->partial('search-solr/admin/core/browse-table', [
             'solrCores' => $solrCores,
         ]);
+    }
+
+    /**
+     * Add Solr-specific fields to the suggester form.
+     */
+    public function handleSuggesterFormAddElements(Event $event): void
+    {
+        /** @var \AdvancedSearch\EngineAdapter\EngineAdapterInterface $engineAdapter */
+        $engineAdapter = $event->getParam('engine_adapter');
+        if (!$engineAdapter instanceof \SearchSolr\EngineAdapter\Solarium) {
+            return;
+        }
+
+        /** @var \Laminas\Form\Fieldset $fieldset */
+        $fieldset = $event->getParam('fieldset');
+
+        $solrCore = $engineAdapter->getSolrCore();
+        $solrFields = $this->getSolrFieldsForSuggester($solrCore);
+
+        $fieldset
+            ->add([
+                'name' => 'solr_suggester_name',
+                'type' => \Laminas\Form\Element\Text::class,
+                'options' => [
+                    'label' => 'Solr suggester name', // @translate
+                    'info' => 'Name of the suggester component in Solr. If empty, will be auto-generated from the suggester name. The suggester will be created automatically via Solr Config API.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'solr_suggester_name',
+                    'placeholder' => 'omeka_suggester', // @translate
+                ],
+            ])
+            ->add([
+                'name' => 'solr_field',
+                'type' => \Common\Form\Element\OptionalSelect::class,
+                'options' => [
+                    'label' => 'Solr field for suggestions', // @translate
+                    'info' => 'The Solr field to use as source for suggestions. Should be a text field with appropriate analysis.', // @translate
+                    'value_options' => $solrFields,
+                    'empty_option' => 'Select a field…', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'solr_field',
+                    'required' => true,
+                    'class' => 'chosen-select',
+                ],
+            ])
+            ->add([
+                'name' => 'solr_lookup_impl',
+                'type' => \Common\Form\Element\OptionalSelect::class,
+                'options' => [
+                    'label' => 'Lookup implementation', // @translate
+                    'info' => 'Algorithm used for suggestions. AnalyzingInfixLookup finds matches anywhere in the text. BlendedInfixLookup weights prefix matches higher.', // @translate
+                    'value_options' => [
+                        'AnalyzingInfixLookupFactory' => 'AnalyzingInfixLookup (matches anywhere)', // @translate
+                        'BlendedInfixLookupFactory' => 'BlendedInfixLookup (prefix weighted)', // @translate
+                        'AnalyzingLookupFactory' => 'AnalyzingLookup (prefix only)', // @translate
+                        'FuzzyLookupFactory' => 'FuzzyLookup (fuzzy matching)', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'solr_lookup_impl',
+                    'value' => 'AnalyzingInfixLookupFactory',
+                ],
+            ])
+            ->add([
+                'name' => 'solr_build_on_commit',
+                'type' => \Laminas\Form\Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Build on commit', // @translate
+                    'info' => 'Automatically rebuild the suggester dictionary when documents are committed.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'solr_build_on_commit',
+                    'value' => true,
+                ],
+            ])
+        ;
+
+        // Mark the form as handled so AdvancedSearch doesn't show the "no settings" message.
+        $event->setParam('handled', true);
+    }
+
+    /**
+     * Handle suggester save for Solr engines - create Solr suggester via Config API.
+     */
+    public function handleSuggesterSave(Event $event): void
+    {
+        /** @var \AdvancedSearch\EngineAdapter\EngineAdapterInterface $engineAdapter */
+        $engineAdapter = $event->getParam('engine_adapter');
+        if (!$engineAdapter instanceof \SearchSolr\EngineAdapter\Solarium) {
+            return;
+        }
+
+        /** @var \AdvancedSearch\Api\Representation\SearchSuggesterRepresentation $suggester */
+        $suggester = $event->getParam('suggester');
+        /** @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger */
+        $messenger = $event->getParam('messenger');
+
+        $settings = $suggester->settings();
+        $solrField = $settings['solr_field'] ?? null;
+        if (!$solrField) {
+            $messenger->addWarning(new PsrMessage(
+                'No Solr field configured for suggestions.' // @translate
+            ));
+            return;
+        }
+
+        $solrCore = $engineAdapter->getSolrCore();
+        if (!$solrCore) {
+            $messenger->addError(new PsrMessage(
+                'Solr core not found.' // @translate
+            ));
+            return;
+        }
+
+        // Generate suggester name if not provided.
+        $suggesterName = $settings['solr_suggester_name'] ?? '';
+        if (empty($suggesterName)) {
+            // Create a safe name from the suggester name.
+            $suggesterName = 'omeka_' . preg_replace('/[^a-z0-9_]/i', '_', strtolower($suggester->name()));
+        }
+
+        // Check if suggester already exists.
+        if ($solrCore->hasSuggester($suggesterName)) {
+            $messenger->addNotice(new PsrMessage(
+                'Solr suggester "{name}" already exists.', // @translate
+                ['name' => $suggesterName]
+            ));
+            return;
+        }
+
+        // Create the suggester.
+        $options = [
+            'lookupImpl' => $settings['solr_lookup_impl'] ?? 'AnalyzingInfixLookupFactory',
+            'buildOnCommit' => !empty($settings['solr_build_on_commit']),
+        ];
+
+        $result = $solrCore->createSuggester($suggesterName, $solrField, $options);
+        if ($result === true) {
+            $messenger->addSuccess(new PsrMessage(
+                'Solr suggester "{name}" created on field "{field}".', // @translate
+                ['name' => $suggesterName, 'field' => $solrField]
+            ));
+
+            // Build the suggester dictionary.
+            if ($solrCore->buildSuggester($suggesterName)) {
+                $messenger->addSuccess(new PsrMessage(
+                    'Suggester dictionary built successfully.' // @translate
+                ));
+            }
+        } else {
+            $messenger->addError(new PsrMessage(
+                'Failed to create Solr suggester: {error}', // @translate
+                ['error' => $result]
+            ));
+        }
+    }
+
+    /**
+     * Get Solr fields suitable for suggestions.
+     */
+    protected function getSolrFieldsForSuggester(?Api\Representation\SolrCoreRepresentation $solrCore): array
+    {
+        if (!$solrCore) {
+            return [];
+        }
+
+        $fields = [];
+        $schema = $solrCore->schema();
+
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
+            $fieldName = $map->fieldName();
+            $schemaField = $schema->getField($fieldName);
+            if (!$schemaField) {
+                continue;
+            }
+            $fieldLabel = $map->setting('label', '');
+            $fields[$fieldName] = $fieldLabel
+                ? sprintf('%s (%s)', $fieldLabel, $fieldName)
+                : $fieldName;
+        }
+
+        return $fields;
     }
 
     public function deletePostSolrCore(Event $event): void
