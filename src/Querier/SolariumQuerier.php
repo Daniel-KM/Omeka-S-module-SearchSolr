@@ -1055,41 +1055,36 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
-        // Skip if using _text_ catchall - no need for additional fields.
-        $dismax = $this->select->getDisMax();
-        $existing = trim((string) $dismax->getQueryFields());
-        if ($existing === '_text_') {
-            return $this;
-        }
-
         // DisMax is the only querier for now (not standard, not eDisMax).
         // Boosts from the index and from the query.
         // In practice, solr manage boost only at search time, so the difference
         // is only for configuration by the user.
         // Important: when used, the full list of fields should be set.
-        // Note: field_boost is stored as array [field => boost] for solarium,
-        // that matches solr string format "field1 field2^2".
-        $coreBoosts = $this->solrCore->setting('field_boost', []);
+        $coreBoosts = (array) $this->solrCore->setting('field_boost');
         $queryBoosts = (array) $this->query->getFieldBoosts();
         $merged = array_merge($coreBoosts, $queryBoosts);
 
         if ($merged) {
             $qf = [];
             foreach ($merged as $field => $boost) {
-                $boost = (float) $boost;
-                // Skip ^1 boost (default) - it's useless and lengthens query.
-                if ($boost === 1.0) {
-                    $qf[] = $field;
-                } elseif ($boost > 0) {
-                    $qf[] = "$field^$boost";
-                } else {
-                    $qf[] = $field;
+                // Skip numeric keys or empty field names: when field_boost setting
+                // returns a plain indexed array, casting with (array) gives integer
+                // keys (e.g. 0 => '0.5'), which would produce "0" as a field name
+                // and cause a Solr eDisMax SyntaxError.
+                if (!is_string($field) || $field === '') {
+                    continue;
                 }
+                $boost = (float) $boost;
+                $qf[] = $boost > 0 ? "$field^$boost" : $field;
             }
-            $final = $existing
-                ? "$existing " . implode(' ', $qf)
-                : implode(' ', $qf);
-            $dismax->setQueryFields($final);
+            if ($qf) {
+                $dismax = $this->select->getDisMax();
+                $existing = trim((string) $dismax->getQueryFields());
+                $final = $existing
+                    ? "$existing " . implode(' ', $qf)
+                    : implode(' ', $qf);
+                $dismax->setQueryFields($final);
+            }
         }
 
         return $this;
