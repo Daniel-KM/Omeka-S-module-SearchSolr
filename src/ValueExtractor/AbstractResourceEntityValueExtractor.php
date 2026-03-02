@@ -1035,7 +1035,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         try {
             $xmlContent = file_get_contents($filePath);
-            $xml = @simplexml_load_string($xmlContent);
+            $xml = @simplexml_load_string($xmlContent, null, LIBXML_NONET);
         } catch (\Exception $e) {
             // No log.
             return '';
