@@ -178,19 +178,31 @@ class SolariumQuerier extends AbstractQuerier
             $solrFields = [$suggestOptions['solr_field']];
         }
 
-        // Resolve "auto": all stored text and string fields.
+        // Resolve "auto": stored text and string fields, preferring _txt.
         if (empty($solrFields) || in_array('auto', $solrFields)) {
             $allowedSuffixes = ['_txt', '_ss', '_s'];
             $solrCore = $this->getSolrCore();
-            $solrFields = [];
+            $txtPrefixes = [];
+            $candidates = [];
             foreach ($solrCore->mapsOrderedByStructure() as $map) {
                 $fieldName = $map->fieldName();
                 foreach ($allowedSuffixes as $suffix) {
                     if (substr($fieldName, -strlen($suffix)) === $suffix) {
-                        $solrFields[] = $fieldName;
+                        $prefix = substr($fieldName, 0, -strlen($suffix));
+                        $candidates[] = ['name' => $fieldName, 'suffix' => $suffix, 'prefix' => $prefix];
+                        if ($suffix === '_txt') {
+                            $txtPrefixes[$prefix] = true;
+                        }
                         break;
                     }
                 }
+            }
+            $solrFields = [];
+            foreach ($candidates as $c) {
+                if ($c['suffix'] !== '_txt' && isset($txtPrefixes[$c['prefix']])) {
+                    continue;
+                }
+                $solrFields[] = $c['name'];
             }
         }
 

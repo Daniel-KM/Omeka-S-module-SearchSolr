@@ -367,7 +367,7 @@ class Module extends AbstractModule
 
         // Resolve "auto": use all stored text and string fields.
         if (empty($solrFields) || in_array('auto', $solrFields)) {
-            $solrFields = array_keys($this->getSolrFieldsForSuggester($solrCore));
+            $solrFields = array_keys($this->getSolrFieldsForSuggester($solrCore, true));
         }
 
         if (empty($solrFields)) {
@@ -436,41 +436,60 @@ class Module extends AbstractModule
      *
      * Only stored fields with human-readable values are returned:
      * - `*_txt` (text_general, stored): full text, word-level matching
-     * - `*_ss` (strings, stored): exact values
+     * - `*_ss` (strings, stored): exact values (only if no _txt exists
+     *   for the same property)
+     * - `*_s` (string, stored): idem
      * Fields like `_text_` (not stored) or `*_str` (not stored) are excluded.
      */
-    protected function getSolrFieldsForSuggester(?Api\Representation\SolrCoreRepresentation $solrCore): array
-    {
+    protected function getSolrFieldsForSuggester(
+        ?Api\Representation\SolrCoreRepresentation $solrCore,
+        bool $deduplicate = false
+    ): array {
         if (!$solrCore) {
             return [];
         }
 
-        // Suffixes of stored fields suitable for suggestions.
         $allowedSuffixes = ['_txt', '_ss', '_s'];
-
-        $fields = [];
         $schema = $solrCore->schema();
 
+        // Collect all matching stored fields.
+        $allFields = [];
+        $txtPrefixes = [];
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $fieldName = $map->fieldName();
-            $hasSuffix = false;
             foreach ($allowedSuffixes as $suffix) {
                 if (substr($fieldName, -strlen($suffix)) === $suffix) {
-                    $hasSuffix = true;
+                    if (!$schema->getField($fieldName)) {
+                        break;
+                    }
+                    $prefix = substr($fieldName, 0, -strlen($suffix));
+                    $allFields[] = [
+                        'name' => $fieldName,
+                        'suffix' => $suffix,
+                        'prefix' => $prefix,
+                        'label' => $map->setting('label', ''),
+                    ];
+                    if ($suffix === '_txt') {
+                        $txtPrefixes[$prefix] = true;
+                    }
                     break;
                 }
             }
-            if (!$hasSuffix) {
+        }
+
+        // When deduplicating, skip _ss/_s when _txt exists for the same
+        // property prefix (used for "auto" resolution, not for the form).
+        $fields = [];
+        foreach ($allFields as $field) {
+            if ($deduplicate
+                && $field['suffix'] !== '_txt'
+                && isset($txtPrefixes[$field['prefix']])
+            ) {
                 continue;
             }
-            $schemaField = $schema->getField($fieldName);
-            if (!$schemaField) {
-                continue;
-            }
-            $fieldLabel = $map->setting('label', '');
-            $fields[$fieldName] = $fieldLabel
-                ? sprintf('%s (%s)', $fieldLabel, $fieldName)
-                : $fieldName;
+            $fields[$field['name']] = $field['label']
+                ? sprintf('%s (%s)', $field['label'], $field['name'])
+                : $field['name'];
         }
 
         return $fields;

@@ -902,7 +902,33 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             }
         }
 
-        // 2. Add the request handler.
+        // 2. Update the /suggest handler (skip when caller handles it).
+        if (empty($options['skipHandler'])) {
+            $this->updateSuggestHandler([$suggesterName]);
+        }
+
+        $logger->info('SearchSolr: Created suggester "{name}" on field "{field}".', [
+            'name' => $suggesterName,
+            'field' => $field,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Update the /suggest request handler with the given component names.
+     *
+     * All component names are merged with any existing ones. For multi-field
+     * suggesters, call this once after creating all components.
+     *
+     * @return bool|string True on success, error message on failure.
+     */
+    public function updateSuggestHandler(array $componentNames)
+    {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $configUrl = $this->clientUrl() . '/config';
+
         // Note: Solr Config API requires booleans and numbers as strings.
         $handler = [
             'name' => '/suggest',
@@ -911,27 +937,20 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             'defaults' => [
                 'suggest' => 'true',
                 'suggest.count' => '10',
-                'suggest.dictionary' => $suggesterName,
             ],
-            'components' => [$suggesterName],
+            'components' => array_values($componentNames),
         ];
 
         $handlerPayload = json_encode(['add-requesthandler' => $handler]);
         $result = $this->postToSolrConfig($configUrl, $handlerPayload);
         if ($result !== true) {
-            // Try to update existing handler instead.
             $handlerPayload = json_encode(['update-requesthandler' => $handler]);
             $result = $this->postToSolrConfig($configUrl, $handlerPayload);
             if ($result !== true) {
                 $logger->warn('SearchSolr: Failed to create/update suggest handler: ' . $result);
-                // Not a fatal error, component was created.
+                return $result;
             }
         }
-
-        $logger->info('SearchSolr: Created suggester "{name}" on field "{field}".', [
-            'name' => $suggesterName,
-            'field' => $field,
-        ]);
 
         return true;
     }
