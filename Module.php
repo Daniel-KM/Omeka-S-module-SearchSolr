@@ -61,7 +61,7 @@ class Module extends AbstractModule
 
     protected $dependencies = [
         'AdvancedSearch',
-     ];
+    ];
 
     public function init(ModuleManager $moduleManager): void
     {

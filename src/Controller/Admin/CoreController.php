@@ -399,7 +399,7 @@ class CoreController extends AbstractActionController
             $delimiter = $data['delimiter'] ?? ',';
             $delimiter = $delimiter === 'tabulation' ? "\t" : $delimiter;
             $enclosure = $data['enclosure'] ?? '"';
-            $enclosure = $enclosure === 'empty' ? chr(0) : $enclosure;
+            $enclosure = $enclosure === 'empty' ? "\0" : $enclosure;
             $result = $this->importSolrMapping($solrCore, $file['tmp_name'], [
                 'type' => $file['type'],
                 'delimiter' => $delimiter,
@@ -723,7 +723,7 @@ class CoreController extends AbstractActionController
 
     protected function appendTsvRow($stream, array $fields): void
     {
-        fputcsv($stream, $fields, "\t", chr(0), chr(0));
+        fputcsv($stream, $fields, "\t", "\0", "\0");
     }
 
     protected function extractRows(string $filepath, array $options = []): array
