@@ -144,17 +144,32 @@ class SolariumQuerier extends AbstractQuerier
 
             $result = $client->suggester($suggesterQuery);
 
+            $limit = $this->query ? $this->query->getLimit() : 10;
+            $seen = [];
             $suggestions = [];
             foreach ($result as $dictionary) {
                 foreach ($dictionary as $term) {
                     foreach ($term->getSuggestions() as $suggestion) {
+                        $value = trim(strip_tags($suggestion['term']));
+                        if ($value === '') {
+                            continue;
+                        }
+                        $key = mb_strtolower($value);
+                        if (isset($seen[$key])) {
+                            continue;
+                        }
+                        $seen[$key] = true;
                         $suggestions[] = [
-                            'value' => $suggestion['term'],
+                            'value' => $value,
                             'data' => $suggestion['weight'] ?? 1,
                         ];
                     }
                 }
             }
+
+            // Sort by weight descending, keep top results.
+            usort($suggestions, fn($a, $b) => $b['data'] <=> $a['data']);
+            $suggestions = array_slice($suggestions, 0, $limit);
 
             return $this->response
                 ->setSuggestions($suggestions)
