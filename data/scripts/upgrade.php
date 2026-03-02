@@ -44,10 +44,10 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
     throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.57')) {
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.58')) {
     $message = new PsrMessage(
         $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.57']
+        ['module' => 'Advanced Search', 'version' => '3.4.58']
     );
     $messenger->addError($message);
     throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
@@ -1250,6 +1250,75 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
                 'Note: The suggester uses the catchall copy field "_text_". If it does not exist, create it via the Solr core admin page or change the suggester field. Reindex your Solr core and build the suggester dictionary.' // @translate
             );
             $messenger->addWarning($message);
+        }
+    }
+}
+
+if (version_compare($oldVersion, '3.5.65', '<')) {
+    // Rename suggester settings:
+    // - "solr_lookup_impl" to "solr_lookup_implementation"
+    // - "solr_build_on_commit" to "solr_skip_build_on_commit" (inverted).
+    // Replace "_text_" (not stored, EdgeNGram) with "auto" (all stored fields)
+    // when the suggester is not used in any search config.
+
+    // Get suggester ids used in search configs.
+    $sql = <<<'SQL'
+        SELECT `id`, `settings` FROM `search_config`
+        SQL;
+    $usedSuggesterIds = [];
+    foreach ($connection->executeQuery($sql)->fetchAllAssociative() as $config) {
+        $configSettings = json_decode($config['settings'], true) ?: [];
+        $suggesterId = $configSettings['q']['suggester'] ?? null;
+        if ($suggesterId) {
+            $usedSuggesterIds[(int) $suggesterId] = (int) $config['id'];
+        }
+    }
+
+    $sql = <<<'SQL'
+        SELECT `id`, `settings` FROM `search_suggester`
+        WHERE `settings` LIKE '%solr_%'
+        SQL;
+    foreach ($connection->executeQuery($sql)->fetchAllAssociative() as $suggester) {
+        $settings = json_decode($suggester['settings'], true) ?: [];
+        $updated = false;
+
+        if (isset($settings['solr_lookup_impl'])) {
+            $settings['solr_lookup_implementation'] = $settings['solr_lookup_impl'];
+            unset($settings['solr_lookup_impl']);
+            $updated = true;
+        }
+
+        if (isset($settings['solr_build_on_commit'])) {
+            $settings['solr_skip_build_on_commit'] = !$settings['solr_build_on_commit'];
+            unset($settings['solr_build_on_commit']);
+            $updated = true;
+        }
+
+        // Replace _text_ with stored fields.
+        $solrFields = $settings['solr_fields'] ?? [];
+        if (in_array('_text_', $solrFields)) {
+            $id = (int) $suggester['id'];
+            if (isset($usedSuggesterIds[$id])) {
+                $messenger->addWarning(new PsrMessage(
+                    'Solr suggester #{suggester_id} uses "_text_" (not stored), which produces character-level suggestions. Update it to use stored fields (words). It is used in search config #{config_id}.', // @translate
+                    ['suggester_id' => $id, 'config_id' => $usedSuggesterIds[$id]]
+                ));
+            } else {
+                $settings['solr_fields'] = ['auto'];
+                $settings['solr_lookup_implementation'] = 'AnalyzingInfixLookupFactory';
+                $updated = true;
+                $messenger->addNotice(new PsrMessage(
+                    'Solr suggester #{suggester_id}: "_text_" replaced with "auto" (all stored fields). You should rebuild the suggester dictionary.', // @translate
+                    ['suggester_id' => $id]
+                ));
+            }
+        }
+
+        if ($updated) {
+            $connection->executeStatement(
+                'UPDATE `search_suggester` SET `settings` = ? WHERE `id` = ?',
+                [json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $suggester['id']]
+            );
         }
     }
 }

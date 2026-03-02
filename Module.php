@@ -31,7 +31,9 @@
 namespace SearchSolr;
 
 if (!class_exists('Common\TraitModule', false)) {
-    require_once dirname(__DIR__) . '/Common/TraitModule.php';
+    require_once file_exists(dirname(__DIR__) . '/Common/src/TraitModule.php')
+        ? dirname(__DIR__) . '/Common/src/TraitModule.php'
+        : dirname(__DIR__) . '/Common/TraitModule.php';
 }
 
 use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
@@ -92,13 +94,6 @@ class Module extends AbstractModule
     {
         parent::onBootstrap($event);
 
-        // Manage the dependency upon Search, in particular when upgrading.
-        // Once disabled, this current method and other ones are no more called.
-        if (!$this->isModuleActive('AdvancedSearch')) {
-            $this->disableModule(__NAMESPACE__);
-            return;
-        }
-
         /** @var \Omeka\Permissions\Acl $acl */
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $acl
@@ -131,10 +126,10 @@ class Module extends AbstractModule
             throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
         }
 
-        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.57')) {
+        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.58')) {
             $message = new PsrMessage(
                 $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-                ['module' => 'Advanced Search', 'version' => '3.4.57']
+                ['module' => 'Advanced Search', 'version' => '3.4.58']
             );
             throw new ModuleCannotInstallException((string) $message);
         }
