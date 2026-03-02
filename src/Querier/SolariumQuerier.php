@@ -587,12 +587,14 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Configure EDisMax per-request and keep only foldable query fields.
      *
-     * Also disable SOW to avoid splitting tokens like "949.0252" into too
-     * many clauses.
+     * Also disable SOW to avoid splitting tokens like "949.0252" into
+     * too many clauses.
      *
      * The number of query fields is limited to avoid exceeding Solr's
-     * maxClauseCount (default 1024). With many fields, each search term
-     * creates a clause per field, quickly hitting the limit.
+     * maxClauseCount (default 1024). With many fields, each search
+     * term creates a clause per field, and each clause is expanded by
+     * the analyzer (lowercasing, ASCII folding, synonyms…), quickly
+     * hitting the limit.
      *
      * If the catchall field `_text_` exists, use it instead of listing
      * all fields individually.
@@ -618,6 +620,8 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
+        $maxFields = $this->maxQueryFields();
+
         $existing = trim((string) $dismax->getQueryFields());
 
         if ($existing !== '') {
@@ -628,7 +632,7 @@ class SolariumQuerier extends AbstractQuerier
                 fn ($p) => isset($allowed[preg_replace('~\^.*$~', '', $p)])
             );
             if ($kept) {
-                $kept = array_slice($kept, 0, 100);
+                $kept = array_slice($kept, 0, $maxFields);
                 $dismax->setQueryFields(implode(' ', $kept));
             }
             return $this;
@@ -648,7 +652,7 @@ class SolariumQuerier extends AbstractQuerier
                 }
             }
             $foldable = array_merge($priority, $rest);
-            $foldable = array_slice($foldable, 0, 100);
+            $foldable = array_slice($foldable, 0, $maxFields);
             $dismax->setQueryFields(implode(' ', $foldable));
         }
 
@@ -695,9 +699,13 @@ class SolariumQuerier extends AbstractQuerier
             );
             $allowedFields = array_diff($allFields, $excludedFields);
             if ($allowedFields) {
-                // Limit fields to avoid clause explosion. Use DisMax with
-                // restricted qf for efficient multi-field search.
-                $allowedFields = array_slice($allowedFields, 0, 400);
+                // Limit fields to avoid clause explosion. Use DisMax
+                // with restricted qf for efficient multi-field search.
+                $allowedFields = array_slice(
+                    array_values($allowedFields),
+                    0,
+                    $this->maxQueryFields()
+                );
                 $dismax = $this->select->getDisMax();
                 $dismax->setQueryFields(implode(' ', $allowedFields));
             }
@@ -1070,6 +1078,26 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
+     * Estimate the max number of query fields (qf) to stay under
+     * Solr's maxClauseCount (1024).
+     *
+     * Each query term generates one clause per qf field, and the
+     * analyzer may expand each clause (lowercase, ASCII folding,
+     * synonyms…). A conservative expansion factor of 5 is used.
+     */
+    protected function maxQueryFields(): int
+    {
+        $q = trim($this->query->getQuery()
+            . ' ' . $this->query->getQueryRefine());
+        // Count whitespace-separated tokens as a rough term estimate.
+        $terms = max(1, preg_match_all('/\S+/', $q));
+        // expansion ≈ 5 (lowercase + folding + synonyms + variants).
+        $max = (int) floor(1024 / ($terms * 5));
+        // At least 10 fields, at most 100.
+        return max(10, min(100, $max));
+    }
+
+    /**
      * Get fields with custom boosts (different from default 1).
      *
      * @return string[] Array of "field^boost" strings
@@ -1077,7 +1105,7 @@ class SolariumQuerier extends AbstractQuerier
     protected function getCustomBoostedFields(): array
     {
         $coreBoosts = $this->solrCore->setting('field_boost') ?: [];
-        $queryBoosts = (array) $this->query->getFieldBoosts();
+        $queryBoosts = $this->query->getFieldBoosts();
         $merged = array_merge($coreBoosts, $queryBoosts);
 
         $result = [];
@@ -1098,37 +1126,49 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
-        // DisMax is the only querier for now (not standard, not eDisMax).
         // Boosts from the index and from the query.
-        // In practice, solr manage boost only at search time, so the difference
-        // is only for configuration by the user.
-        // Important: when used, the full list of fields should be set.
-        $coreBoosts = (array) $this->solrCore->setting('field_boost');
-        $queryBoosts = (array) $this->query->getFieldBoosts();
+        $coreBoosts = $this->solrCore->setting('field_boost', []);
+        $queryBoosts = $this->query->getFieldBoosts();
         $merged = array_merge($coreBoosts, $queryBoosts);
 
-        if ($merged) {
-            $qf = [];
-            foreach ($merged as $field => $boost) {
-                // Skip numeric keys or empty field names: when field_boost setting
-                // returns a plain indexed array, casting with (array) gives integer
-                // keys (e.g. 0 => '0.5'), which would produce "0" as a field name
-                // and cause a Solr eDisMax SyntaxError.
-                if (!is_string($field) || $field === '') {
-                    continue;
-                }
-                $boost = (float) $boost;
-                $qf[] = $boost > 0 ? "$field^$boost" : $field;
-            }
-            if ($qf) {
-                $dismax = $this->select->getDisMax();
-                $existing = trim((string) $dismax->getQueryFields());
-                $final = $existing
-                    ? "$existing " . implode(' ', $qf)
-                    : implode(' ', $qf);
-                $dismax->setQueryFields($final);
-            }
+        if (!$merged) {
+            return $this;
         }
+
+        $dismax = $this->select->getDisMax();
+        $existing = trim((string) $dismax->getQueryFields());
+
+        // Parse existing qf into field => entry map.
+        $existingParts = $existing !== ''
+            ? preg_split('/\s+/', $existing) ?: []
+            : [];
+        $qfMap = [];
+        foreach ($existingParts as $part) {
+            $name = preg_replace('~\^.*$~', '', $part);
+            $qfMap[$name] = $part;
+        }
+
+        // Apply boosts: update existing fields or add new ones.
+        foreach ($merged as $field => $boost) {
+            if (!is_string($field) || $field === '') {
+                continue;
+            }
+            $boost = (float) $boost;
+            if ($boost <= 0) {
+                continue;
+            }
+            $qfMap[$field] = $boost !== 1.0
+                ? "$field^$boost"
+                : $field;
+        }
+
+        // Respect the clause limit for the total qf.
+        $maxFields = $this->maxQueryFields();
+        if (count($qfMap) > $maxFields) {
+            $qfMap = array_slice($qfMap, 0, $maxFields, true);
+        }
+
+        $dismax->setQueryFields(implode(' ', $qfMap));
 
         return $this;
     }
