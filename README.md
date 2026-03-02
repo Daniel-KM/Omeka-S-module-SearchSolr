@@ -51,7 +51,7 @@ the module to `SearchSolr`, go to the root of the module, and run:
 composer install --no-dev
 ```
 
-- For test
+* For test
 
 The module includes a comprehensive test suite with unit and functional tests.
 Run them from the root of Omeka:
@@ -770,6 +770,18 @@ curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-f
 The response status should be 0. Of course, you need to reindex resources after
 this modification of the schema.
 
+### Suggester (autocompletion)
+
+For best performance, use a single suggester on a dedicated stored field rather
+than one suggester per field. Using more than some dozens of index for the same
+suggesters causes lock conflicts, slow builds in Solr and slow suggestions.
+
+The mode "auto" uses all indexes: even if it is filtered to avoid duplicate, it
+may be too much in some database with many various properties.
+
+The recommended approach is copy all the wanted index with `_txt` in a single
+field, like the one used for the main search.
+
 ### Optimizing search for prefix matching (Google-like search)
 
 By default, Solr uses the `text_general` field type for `_text_`, which only
@@ -901,6 +913,9 @@ TODO
 - [ ] Rename "resource_name" by "resource_type" anywhere.
 - [x] Fix indexing of boolean values with "*_b".
 - [ ] Find a better way to exclude fields than searching in other ones (not supported by solr anyway).
+- [ ] Disable `buildOnCommit` for suggester during batch reindexation to avoid costly intermediate rebuilds, then re-enable and rebuild once at the end.
+- [ ] Create suggest_txt to regroup all suggesters into a single index for performance.
+- [ ] Create a single suggest field approach automatically.
 
 
 Warning
