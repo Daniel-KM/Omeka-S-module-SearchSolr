@@ -304,11 +304,10 @@ class Module extends AbstractModule
                 ],
             ])
             ->add([
-                'name' => 'solr_lookup_impl',
+                'name' => 'solr_lookup_implementation',
                 'type' => \Common\Form\Element\OptionalSelect::class,
                 'options' => [
-                    'label' => 'Lookup implementation', // @translate
-                    'info' => 'Algorithm used for suggestions. AnalyzingInfixLookup finds matches anywhere in the text. BlendedInfixLookup weights prefix matches higher.', // @translate
+                    'label' => 'Algorithm for suggestions', // @translate
                     'value_options' => [
                         'AnalyzingInfixLookupFactory' => 'AnalyzingInfixLookup (matches anywhere)', // @translate
                         'BlendedInfixLookupFactory' => 'BlendedInfixLookup (prefix weighted)', // @translate
@@ -317,20 +316,19 @@ class Module extends AbstractModule
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'solr_lookup_impl',
+                    'id' => 'solr_lookup_implementation',
                     'value' => 'AnalyzingInfixLookupFactory',
                 ],
             ])
             ->add([
-                'name' => 'solr_build_on_commit',
+                'name' => 'solr_skip_build_on_commit',
                 'type' => \Laminas\Form\Element\Checkbox::class,
                 'options' => [
-                    'label' => 'Build on commit', // @translate
-                    'info' => 'Automatically rebuild the suggester dictionary when documents are committed.', // @translate
+                    'label' => 'Skip automatic reindex on resource save', // @translate
+                    'info' => 'By default, the suggester dictionary is rebuilt each time documents are committed. Check to disable this on very large indexes.', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'solr_build_on_commit',
-                    'value' => true,
+                    'id' => 'solr_skip_build_on_commit',
                 ],
             ])
         ;
@@ -391,8 +389,8 @@ class Module extends AbstractModule
         }
 
         $options = [
-            'lookupImpl' => $settings['solr_lookup_impl'] ?? 'AnalyzingInfixLookupFactory',
-            'buildOnCommit' => !empty($settings['solr_build_on_commit']),
+            'lookupImpl' => $settings['solr_lookup_implementation'] ?? 'AnalyzingInfixLookupFactory',
+            'buildOnCommit' => empty($settings['solr_skip_build_on_commit']),
         ];
 
         $createdSuggesters = [];

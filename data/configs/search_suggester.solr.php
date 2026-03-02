@@ -24,7 +24,7 @@ return [
         // Use _text_ catchall copy field (standard Solr field).
         // Can be an array for multiple fields: ['dcterms_title_txt', 'dcterms_creator_txt']
         'solr_fields' => ['_text_'],
-        'solr_lookup_impl' => 'AnalyzingInfixLookupFactory',
-        'solr_build_on_commit' => true,
+        'solr_lookup_implementation' => 'AnalyzingInfixLookupFactory',
+        'solr_skip_build_on_commit' => false,
     ],
 ];

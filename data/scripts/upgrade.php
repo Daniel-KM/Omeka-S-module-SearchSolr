@@ -1176,8 +1176,8 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
             $suggesterSettings = [
                 'solr_suggester_name' => 'omeka_suggester',
                 'solr_fields' => ['_text_'],
-                'solr_lookup_impl' => 'AnalyzingInfixLookupFactory',
-                'solr_build_on_commit' => true,
+                'solr_lookup_implementation' => 'AnalyzingInfixLookupFactory',
+                'solr_skip_build_on_commit' => false,
             ];
 
             $sql = <<<'SQL'
