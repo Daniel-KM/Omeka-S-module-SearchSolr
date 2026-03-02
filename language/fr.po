@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-16 00:00+0000\n"
-"PO-Revision-Date: 2026-02-16 00:00+0000\n"
+"POT-Creation-Date: 2026-02-28 11:51+0100\n"
+"PO-Revision-Date: 2026-02-28 12:09+0100\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -13,16 +13,22 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: Poedit 3.6\n"
 
-#: data/scripts/upgrade.php:40 data/scripts/upgrade.php:751 Module.php:120
+#: data/scripts/upgrade.php:40 data/scripts/upgrade.php:756 Module.php:115
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr "Le module %1$s doit être mis à niveau à la version %2$s ou supérieure."
 
-#: data/scripts/upgrade.php:48 Module.php:136
+#: data/scripts/upgrade.php:44 data/scripts/upgrade.php:53
+#: data/scripts/upgrade.php:193 data/scripts/upgrade.php:212
+#: data/scripts/upgrade.php:236 data/scripts/upgrade.php:760
+msgid "Missing requirement. Unable to upgrade."
+msgstr "Pré-requis absent. Impossible de mettre à jour."
+
+#: data/scripts/upgrade.php:49 Module.php:131
 msgid "This module requires module \"{module}\" version \"{version}\" or greater."
 msgstr "Ce module requiert le module « {module} », version {version} ou supérieure."
 
-#: Module.php:611
+#: Module.php:629
 msgid "Solr"
 msgstr "Solr"
 
@@ -504,266 +510,270 @@ msgstr "Alias"
 msgid "Adapt the metadata"
 msgstr "Adapter les métadonnées"
 
-#: data/scripts/upgrade.php:71 data/scripts/upgrade.php:636
-#: data/scripts/upgrade.php:1142
+#: data/scripts/upgrade.php:73 data/scripts/upgrade.php:641
+#: data/scripts/upgrade.php:1148
 msgid "You should reindex your Solr cores."
 msgstr "Vous devez réindexer vos cœurs Solr."
 
-#: data/scripts/upgrade.php:94
+#: data/scripts/upgrade.php:96
 msgid "Now, values can be indexed differently for each data type, if wanted."
 msgstr "Désormais, les valeurs peuvent être indexées différemment pour chaque type de données, si on le souhaite."
 
-#: data/scripts/upgrade.php:95
+#: data/scripts/upgrade.php:97
 msgid "Use the new import/export tool to simplify config."
 msgstr "Utilisez le nouvel outil d’import/export pour simplifier la configuration."
 
-#: data/scripts/upgrade.php:187 data/scripts/upgrade.php:205
-#: data/scripts/upgrade.php:228 data/scripts/upgrade.php:423
-#: data/scripts/upgrade.php:434 data/scripts/upgrade.php:446
-#: data/scripts/upgrade.php:514 data/scripts/upgrade.php:526
-#: data/scripts/upgrade.php:552 data/scripts/upgrade.php:564
+#: data/scripts/upgrade.php:189 data/scripts/upgrade.php:208
+#: data/scripts/upgrade.php:232 data/scripts/upgrade.php:428
+#: data/scripts/upgrade.php:439 data/scripts/upgrade.php:451
+#: data/scripts/upgrade.php:519 data/scripts/upgrade.php:531
+#: data/scripts/upgrade.php:557 data/scripts/upgrade.php:569
 msgid "This module requires the module \"{module}\", version {version} or above."
 msgstr "Ce module requiert le module « {module} », version {version} ou supérieure."
 
-#: data/scripts/upgrade.php:194
+#: data/scripts/upgrade.php:197
 msgid "The auto-suggestion requires a specific url for now."
 msgstr "L’auto-suggestion nécessite une url spécifique pour l’instant."
 
-#: data/scripts/upgrade.php:400
+#: data/scripts/upgrade.php:405
 msgid "The resource types are now structured to simplify config: \"generic\" and \"resource\" allow to set mapping for any resource."
 msgstr "Les types de ressources sont désormais structurés pour simplifier la configuration : « générique » et « ressource » permettent de définir les correspondances pour toutes les ressource."
 
-#: data/scripts/upgrade.php:404
+#: data/scripts/upgrade.php:409
 msgid "All mapping for items and item sets have been copied to resources."
 msgstr "Toutes les correspondances pour les éléments et les ensembles d’éléments ont été copiées dans les ressources."
 
-#: data/scripts/upgrade.php:408
+#: data/scripts/upgrade.php:413
 msgid "It is recommended to check mappings, to remove the useless and duplicate ones, and to run a full reindexation."
 msgstr "Il est recommandé de vérifier les correspondances, de supprimer celles inutiles ou en double et de lancer une réindexation complète."
 
-#: data/scripts/upgrade.php:415
+#: data/scripts/upgrade.php:420
 msgid "It is now possible to index original and thumbnails urls."
 msgstr "Il est désormais possible d’indexer les urls des fichiers originaux et des vignettes."
 
-#: data/scripts/upgrade.php:467
+#: data/scripts/upgrade.php:472
 msgid "It is now possible to filter values to index via a regex, a list of languages or a visibility."
 msgstr "Il est désormais possible de filtrer les valeurs à indexer via une expression rationnelle, une liste de langues ou une visibilité."
 
-#: data/scripts/upgrade.php:472
+#: data/scripts/upgrade.php:477
 msgid "It is now possible to filter resources to index, for example an item set, a template, an owner, a visibility, etc."
 msgstr "Il est désormais possible de filtrer les ressources à indexer, par exemple une collection, un modèle, un propriétaire, une visibilité, etc."
 
-#: data/scripts/upgrade.php:477
+#: data/scripts/upgrade.php:482
 msgid "It is now possible to use module Table to manage tables for normalization of indexation."
 msgstr "Il est désormais possible d’utiliser le module Table pour gérer les tables de normalisation de l’indexation."
 
-#: data/scripts/upgrade.php:482
+#: data/scripts/upgrade.php:487
 msgid "The table used for indexation has been converted into a standard {link}table{link_end}. It is recommended to remove the old one from the config."
 msgstr "La table utilisée pour l’indexation a été convertie en une {link}table{link_end} standard. Il est recommandé de supprimer l’ancienne table de la configuration."
 
-#: data/scripts/upgrade.php:501
+#: data/scripts/upgrade.php:506
 msgid "The support of module Access Resource has been removed. Support of module Access has been added."
 msgstr "La prise en charge du module Access Resource a été supprimée. Le module Access est désormais pris en charge."
 
-#: data/scripts/upgrade.php:506 data/scripts/upgrade.php:873
+#: data/scripts/upgrade.php:511 data/scripts/upgrade.php:879
 msgid "A reindexing is needed."
 msgstr "Une réindexation est nécessaire."
 
-#: data/scripts/upgrade.php:535
+#: data/scripts/upgrade.php:540
 msgid "You should remove key \"table\" from the file config/local.config.php before upgrading."
 msgstr "Vous devez supprimer la clé « table » du fichier config/local.config.php avant la mise à jour."
 
-#: data/scripts/upgrade.php:630
+#: data/scripts/upgrade.php:635
 msgid "It is now possible to list {link}all resources and values indexed by a core{link_end}."
 msgstr "Il est désormais possible de lister {link}toutes les ressources et valeurs indexés dans un cœur{link_end}."
 
-#: data/scripts/upgrade.php:726
+#: data/scripts/upgrade.php:731
 msgid "The list of formats was simplified."
 msgstr "La liste des formats a été simplifiée."
 
-#: data/scripts/upgrade.php:731
+#: data/scripts/upgrade.php:736
 msgid "It is now possible to do exact search with query wrapped with double quotes."
 msgstr "Il est désormais possible de faire une recherche exacte avec une requête entre guillemets droits."
 
-#: data/scripts/upgrade.php:736
+#: data/scripts/upgrade.php:741
 msgid "The management of indices has been merged in a {link}single page{link_end}."
 msgstr "La gestion des index a été fusionnée dans une {link}page simple{link_end}."
 
-#: data/scripts/upgrade.php:811
+#: data/scripts/upgrade.php:817
 msgid "Some solr map fields were renamed: {json}."
 msgstr "Certains champs solr on été renommés : {json}."
 
-#: data/scripts/upgrade.php:863
+#: data/scripts/upgrade.php:869
 msgid "It is now possible to set a default alias for each omeka/solr map. Common aliases were added, for example \"id\" for \"o:id\" and \"item_set_id\" for \"item_set_id_is\"."
 msgstr "Il est désormais possible de définir un alias par défaut pour chaque correspondance omeka/solr. Les alias courants ont été ajoutés, par exemple « id » pour « o:id » et « item_set_id » pour « item_set_id_is »."
 
-#: data/scripts/upgrade.php:868
+#: data/scripts/upgrade.php:874
 msgid "Property terms can be used as dynamic aliases when an index exists for them."
 msgstr "Les termes de propriété peuvent être utilisés comme alias dynamiques quand un index existe."
 
-#: data/scripts/upgrade.php:880
+#: data/scripts/upgrade.php:886
 msgid "A {link}config form{link_end} was added to specify the use of php-curl if wanted and the solarium timeout."
 msgstr "La {link}configuration{link_end} permet désormais d’indiquer si php-curl doit être utilisé ainsi que la durée de connexion via solarium."
 
-#: data/scripts/upgrade.php:890
+#: data/scripts/upgrade.php:896
 msgid "The button {link}Map all{link_end} creates new indexes for languages."
 msgstr "Le bouton {link}Tout aligner{link_end} crée de nouveaux index par langue."
 
-#: data/scripts/upgrade.php:953
+#: data/scripts/upgrade.php:959
 msgid "The default option \"auto\" for format of indexed values was replaced by \"main\". A new option \"full\" now include the uri and the linked resource id. You should check your indices, filters and facets."
 msgstr "L’option par défaut \"auto\" pour le format des valeurs indexées a été remplacée par \"main\" (principal). Une nouvelle option \"Tout\" inclue désormais l’uri et l’id de la ressource liée. Vous devez vérifier vos index, filtres et facettes."
 
-#: data/scripts/upgrade.php:958
+#: data/scripts/upgrade.php:964
 msgid "It is now possible to index the label of uri and linked resource."
 msgstr "Il est désormais possible d’indexer les libellés des uris et des ressources liées."
 
-#: data/scripts/upgrade.php:963
+#: data/scripts/upgrade.php:969
 msgid "It is now possible to specify a boost for selected indexes."
 msgstr "Il est désormais possible de définir une pondération pour chaque index."
 
-#: data/scripts/upgrade.php:970
+#: data/scripts/upgrade.php:976
 msgid "The statistics about index were moved to a specific page."
 msgstr "Les statistiques pour les index ont été déplacées sur une nouvelle page."
 
-#: data/scripts/upgrade.php:975
+#: data/scripts/upgrade.php:981
 msgid "The performance was improved for indexing and querying. Warning: It is no more possible to query with any diacritics on static fields like _ss."
 msgstr "La performance a été améliorée pour l’indexation et l’interrogation. Attention : il n’est plus possible de faire une recherche avec des diacritiques sur les champs statiques comme _ss."
 
-#: data/scripts/upgrade.php:1040
+#: data/scripts/upgrade.php:1046
 msgid "{count} invalid data in solr maps were fixed."
 msgstr "{count} données invalides dans les alignements solr ont été corrigées."
 
-#: data/scripts/upgrade.php:1080
+#: data/scripts/upgrade.php:1086
 msgid "{count} solr maps with normalization \"table\" referencing an empty table were cleaned."
-msgstr "{count] alignements solr avec  la normalisation \"table\" référençant une table vide ont été nettoyés."
+msgstr "{count} alignements solr avec la normalisation \"table\" référençant une table vide ont été supprimés."
 
-#: data/scripts/upgrade.php:1138
+#: data/scripts/upgrade.php:1144
 msgid "{count} required maps were created for existing solr cores."
 msgstr "{count} required maps were created for existing solr cores."
 
-#: data/scripts/upgrade.php:1229
+#: data/scripts/upgrade.php:1235
 msgid "A default Solr suggester has been created. You can configure it in the {link}search manager{link_end}."
 msgstr "Un suggéreur Solr par défaut a été créé. Vous pouvez le configurer dans les {link}moteurs de recherche{link_end}."
 
-#: data/scripts/upgrade.php:1237
+#: data/scripts/upgrade.php:1243
 msgid "{count} search configuration(s) have been updated to use the new Solr suggester."
 msgstr "Les configurations de recherche {count} ont été mises à jour pour utiliser le nouveau suggéreur Solr."
 
-#: data/scripts/upgrade.php:1244
+#: data/scripts/upgrade.php:1250
 msgid "Note: The suggester uses the catchall copy field \"_text_\". If it does not exist, create it via the Solr core admin page or change the suggester field. Reindex your Solr core and build the suggester dictionary."
 msgstr "Note : Le suggéreur utilise le champ de copie fourre-tout \"_text_\". S’il n’existe pas, créez-le via la page d’administration du noyau Solr ou modifiez le champ suggester. Réindexez votre noyau Solr et construisez le dictionnaire de suggestions."
 
-#: Module.php:128 src/Api/Representation/SolrCoreRepresentation.php:217
+#: data/scripts/upgrade.php:1303
+msgid "Solr suggester #{suggester_id} uses \"_text_\" (not stored), which produces character-level suggestions. Update it to use stored fields (words). It is used in search config #{config_id}."
+msgstr "Le suggéreur Solr #{suggester_id} utilise « _text_ » (non stocké), qui produit des suggestions au niveau des caractères. Mettez-le à jour pour utiliser les champs stockés (mots). Il est utilisé dans la configuration de recherche #{config_id}."
+
+#: data/scripts/upgrade.php:1311
+msgid "Solr suggester #{suggester_id}: \"_text_\" replaced with \"auto\" (all stored fields). You should rebuild the suggester dictionary."
+msgstr "Suggéreur Solr #{suggester_id} : « _text_ » remplacé par « auto » (tous les champs stockés). Vous devez reconstruire le dictionnaire du suggéreur."
+
+#: Module.php:123 src/Api/Representation/SolrCoreRepresentation.php:217
 msgid "The composer library \"{library}\" is not installed. See readme."
 msgstr "La bibliothèque composer « {library} » n’est pas installée. Voir le lisez-moi."
 
-#: Module.php:273
-msgid "All fields (_text_ copy field)"
-msgstr "Tous les champs (_text_ copy field)"
+#: Module.php:265
+msgid "Auto (all stored text and string fields)"
+msgstr "Auto (tous les champs texte et chaîne)"
 
-#: Module.php:282
+#: Module.php:273
 msgid "Solr suggester name"
 msgstr "Nom du suggéreur Solr"
 
-#: Module.php:283
+#: Module.php:274
 msgid "Base name of the suggester component in Solr. If empty, will be auto-generated. When multiple fields are selected, a suffix is added for each field."
 msgstr "Nom de base du composant suggéreur dans Solr. S’il est vide, il sera généré automatiquement. Lorsque plusieurs champs sont sélectionnés, un suffixe est ajouté pour chaque champ."
 
-#: Module.php:287
+#: Module.php:278
 msgid "omeka_suggester"
 msgstr "omeka_suggester"
 
-#: Module.php:294
+#: Module.php:285
 msgid "Solr fields for suggestions"
 msgstr "Champs Solr pour les suggestions"
 
-#: Module.php:295
-msgid "Select \"All fields\" to use the _text_ copy field (must be created first), or choose specific indexed fields. Multiple fields will create multiple suggesters that are queried together."
-msgstr "Sélectionnez \"Tous les champs\" pour utiliser le champ de copie _text_ (qui doit être créé au préalable), ou choisissez des champs indexés spécifiques. Plusieurs champs créeront plusieurs suggéreurs qui seront interrogés ensemble."
+#: Module.php:286
+msgid "\"Auto\" uses all stored text and string fields. Or select specific fields; multiple fields create multiple suggesters that are queried together."
+msgstr "\"Auto\" utilise tous les champs texte et chaîne. Ou sélectionner des champs spécifiques. Plusieurs champs créeront plusieurs suggéreurs qui seront interrogés ensemble."
 
-#: Module.php:303
+#: Module.php:294
 msgid "Select fields…"
 msgstr "Choisir des champs…"
 
-#: Module.php:310
-msgid "Lookup implementation"
-msgstr "Mise en œuvre de la recherche"
+#: Module.php:301
+msgid "Algorithm for suggestions"
+msgstr "Algorithme pour les suggestions"
 
-#: Module.php:311
-msgid "Algorithm used for suggestions. AnalyzingInfixLookup finds matches anywhere in the text. BlendedInfixLookup weights prefix matches higher."
-msgstr "Algorithme utilisé pour les suggestions. AnalyzingInfixLookup trouve des correspondances n’importe où dans le texte. BlendedInfixLookup accorde plus d’importance aux préfixes."
-
-#: Module.php:313
+#: Module.php:303
 msgid "AnalyzingInfixLookup (matches anywhere)"
 msgstr "AnalyzingInfixLookup (correspond à n’importe quel endroit)"
 
-#: Module.php:314
+#: Module.php:304
 msgid "BlendedInfixLookup (prefix weighted)"
 msgstr "BlendedInfixLookup (préfixe pondéré)"
 
-#: Module.php:315
+#: Module.php:305
 msgid "AnalyzingLookup (prefix only)"
 msgstr "AnalyzingLookup (préfixe uniquement)"
 
-#: Module.php:316
+#: Module.php:306
 msgid "FuzzyLookup (fuzzy matching)"
 msgstr "FuzzyLookup (recherche floue)"
 
-#: Module.php:328
-msgid "Build on commit"
-msgstr "S’appuyer sur l’engagement"
+#: Module.php:318
+msgid "Skip automatic reindex on resource save"
+msgstr "Ignorer la réindexation automatique lors de l'enregistrement des ressources"
 
-#: Module.php:329
-msgid "Automatically rebuild the suggester dictionary when documents are committed."
-msgstr "Reconstruire automatiquement le dictionnaire de suggestions lorsque les documents sont validés."
+#: Module.php:319
+msgid "By default, the suggester dictionary is rebuilt each time documents are committed. Check to disable this on very large indexes."
+msgstr "Par défaut, le dictionnaire du suggéreur est reconstruit chaque fois que des documents sont validés. Cochez cette case pour désactiver cette option sur les index très volumineux."
 
-#: Module.php:368
-msgid "No Solr fields configured for suggestions."
-msgstr "Aucun champ Solr n’est configuré pour les suggestions."
-
-#: Module.php:381
+#: Module.php:352
 msgid "Solr core not found."
 msgstr "Cœur Solr non trouvé."
 
-#: Module.php:408
-msgid "Solr suggester \"{name}\" already exists."
-msgstr "Le suggéreur Solr \"{name}\" existe déjà."
+#: Module.php:370
+msgid "No Solr fields available for suggestions."
+msgstr "Aucun champ Solr disponible pour les suggestions."
 
-#: Module.php:419
+#: Module.php:394
 msgid "Solr suggester \"{name}\" created on field \"{field}\"."
 msgstr "Le suggéreur Solr \"{name}\" a été créé sur le champ \"{field}\"."
 
-#: Module.php:427
+#: Module.php:399
 msgid "Suggester dictionary for \"{name}\" built successfully."
 msgstr "Le dictionnaire de suggestion pour \"{name}\" a été construit avec succès."
 
-#: Module.php:433
+#: Module.php:405
 msgid "Failed to create Solr suggester \"{name}\": {error}"
 msgstr "Impossible de créer le suggéreur Solr \"{name} : {error}"
 
-#: Module.php:826
+#: Module.php:419
+msgid "Creating {count} Solr suggesters in background job #{job_id}."
+msgstr "Création de {count} suggéreurs Solr dans la tâche en arrière-plan #{job_id}."
+
+#: Module.php:844
 #, php-format
 msgid "The default core can be configured in the %1$ssearch manager%2$s."
 msgstr "Le cœur par défaut peut être configuré dans les %1$smoteurs de recherche%2$s."
 
-#: Module.php:883
+#: Module.php:901
 #, php-format
 msgid "A default Solr search engine has been created. Configure it in the %1$ssearch manager%2$s."
 msgstr "Le cœur par défaut a été créé. Il peut être configuré dans les %1$smoteurs de recherche%2$s."
 
-#: Module.php:927
+#: Module.php:945
 msgid "A default Solr suggester has been created."
 msgstr "Un suggéreur Solr par défaut a été créé."
 
-#: src/ValueFormatter/AbstractValueFormatter.php:276
+#: src/ValueFormatter/AbstractValueFormatter.php:277
 msgid "The value \"{value}\" cannot be included in a path. The \"/\" is replaced by \" - \"."
 msgstr "La valeur « {value} » ne peut pas être inclue dans un chemin. La « / » est remplacé par un « - »."
 
-#: src/ValueFormatter/AbstractValueFormatter.php:313
+#: src/ValueFormatter/AbstractValueFormatter.php:314
 msgid "For formatter \"Table\", the table is not set."
 msgstr "Pour le formateur « Table », la table n’est pas définie."
 
-#: src/ValueFormatter/AbstractValueFormatter.php:327
+#: src/ValueFormatter/AbstractValueFormatter.php:328
 msgid "For formatter \"Table\", the table #{table_id} does not exist and values are not normalized."
 msgstr "Pour le formateur « Table », la table #{table_id} n’existe pas et les valeurs ne seront pas normalisées."
 
@@ -1703,7 +1713,7 @@ msgstr "Impossible de configurer le champ attrape-tout : {error}"
 msgid "Error configuring search: {error}"
 msgstr "Erreur lors de la configuration de la recherche : {error}"
 
-#: src/Controller/Admin/CoreController.php:1057
+#: src/Controller/Admin/CoreController.php:1056
 msgid "Solr issue: {msg}"
 msgstr "Problème Solr :  {msg}"
 
@@ -1864,7 +1874,7 @@ msgstr "Erreur de requête Solr {url} : {message}"
 msgid "Solr suggester not configured."
 msgstr "Le suggéreur Solr n’est pas configuré."
 
-#: src/Querier/SolariumQuerier.php:461 src/Querier/SolariumQuerier.php:1216
+#: src/Querier/SolariumQuerier.php:484 src/Querier/SolariumQuerier.php:1239
 msgid "Could not fetch all resource ids: {message}"
 msgstr "Impossible de récupérer tous les ids des ressources : {message}"
 
@@ -1887,6 +1897,24 @@ msgstr "Choisir un champ…"
 #: config/module.config.php:231
 msgid "Dynamic field"
 msgstr "Champ dynamique"
+
+#~ msgid "All fields (_text_ copy field)"
+#~ msgstr "Tous les champs (_text_ copy field)"
+
+#~ msgid "Lookup implementation"
+#~ msgstr "Type de suggestion"
+
+#~ msgid "Algorithm used for suggestions. AnalyzingInfixLookup finds matches anywhere in the text. BlendedInfixLookup weights prefix matches higher."
+#~ msgstr "Algorithme utilisé pour les suggestions. AnalyzingInfixLookup trouve des correspondances n’importe où dans le texte. BlendedInfixLookup accorde plus d’importance aux préfixes."
+
+#~ msgid "Build on commit"
+#~ msgstr "S’appuyer sur l’engagement"
+
+#~ msgid "Automatically rebuild the suggester dictionary when documents are committed."
+#~ msgstr "Reconstruire automatiquement le dictionnaire de suggestions lorsque les documents sont validés."
+
+#~ msgid "Solr suggester \"{name}\" already exists."
+#~ msgstr "Le suggéreur Solr \"{name}\" existe déjà."
 
 #~ msgid "Suggestions not implemented. Use direct URL."
 #~ msgstr "Les suggestions ne sont pas implémentées ici. Utilisez une url directe."

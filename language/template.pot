@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-16 00:00+0000\n"
+"POT-Creation-Date: 2026-02-28 11:51+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,17 +17,23 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: data/scripts/upgrade.php:40 data/scripts/upgrade.php:751 Module.php:120
+#: data/scripts/upgrade.php:40 data/scripts/upgrade.php:756 Module.php:115
 #, php-format
 msgid "The module %1$s should be upgraded to version %2$s or later."
 msgstr ""
 
-#: data/scripts/upgrade.php:48 Module.php:136
+#: data/scripts/upgrade.php:44 data/scripts/upgrade.php:53
+#: data/scripts/upgrade.php:193 data/scripts/upgrade.php:212
+#: data/scripts/upgrade.php:236 data/scripts/upgrade.php:760
+msgid "Missing requirement. Unable to upgrade."
+msgstr ""
+
+#: data/scripts/upgrade.php:49 Module.php:131
 msgid ""
 "This module requires module \"{module}\" version \"{version}\" or greater."
 msgstr ""
 
-#: Module.php:611
+#: Module.php:629
 msgid "Solr"
 msgstr ""
 
@@ -543,320 +549,327 @@ msgstr ""
 msgid "Adapt the metadata"
 msgstr ""
 
-#: data/scripts/upgrade.php:71 data/scripts/upgrade.php:636
-#: data/scripts/upgrade.php:1142
+#: data/scripts/upgrade.php:73 data/scripts/upgrade.php:641
+#: data/scripts/upgrade.php:1148
 msgid "You should reindex your Solr cores."
 msgstr ""
 
-#: data/scripts/upgrade.php:94
+#: data/scripts/upgrade.php:96
 msgid "Now, values can be indexed differently for each data type, if wanted."
 msgstr ""
 
-#: data/scripts/upgrade.php:95
+#: data/scripts/upgrade.php:97
 msgid "Use the new import/export tool to simplify config."
 msgstr ""
 
-#: data/scripts/upgrade.php:187 data/scripts/upgrade.php:205
-#: data/scripts/upgrade.php:228 data/scripts/upgrade.php:423
-#: data/scripts/upgrade.php:434 data/scripts/upgrade.php:446
-#: data/scripts/upgrade.php:514 data/scripts/upgrade.php:526
-#: data/scripts/upgrade.php:552 data/scripts/upgrade.php:564
+#: data/scripts/upgrade.php:189 data/scripts/upgrade.php:208
+#: data/scripts/upgrade.php:232 data/scripts/upgrade.php:428
+#: data/scripts/upgrade.php:439 data/scripts/upgrade.php:451
+#: data/scripts/upgrade.php:519 data/scripts/upgrade.php:531
+#: data/scripts/upgrade.php:557 data/scripts/upgrade.php:569
 msgid ""
 "This module requires the module \"{module}\", version {version} or above."
 msgstr ""
 
-#: data/scripts/upgrade.php:194
+#: data/scripts/upgrade.php:197
 msgid "The auto-suggestion requires a specific url for now."
 msgstr ""
 
-#: data/scripts/upgrade.php:400
+#: data/scripts/upgrade.php:405
 msgid ""
 "The resource types are now structured to simplify config: \"generic\" and "
 "\"resource\" allow to set mapping for any resource."
 msgstr ""
 
-#: data/scripts/upgrade.php:404
+#: data/scripts/upgrade.php:409
 msgid "All mapping for items and item sets have been copied to resources."
 msgstr ""
 
-#: data/scripts/upgrade.php:408
+#: data/scripts/upgrade.php:413
 msgid ""
 "It is recommended to check mappings, to remove the useless and duplicate "
 "ones, and to run a full reindexation."
 msgstr ""
 
-#: data/scripts/upgrade.php:415
+#: data/scripts/upgrade.php:420
 msgid "It is now possible to index original and thumbnails urls."
 msgstr ""
 
-#: data/scripts/upgrade.php:467
+#: data/scripts/upgrade.php:472
 msgid ""
 "It is now possible to filter values to index via a regex, a list of "
 "languages or a visibility."
 msgstr ""
 
-#: data/scripts/upgrade.php:472
+#: data/scripts/upgrade.php:477
 msgid ""
 "It is now possible to filter resources to index, for example an item set, a "
 "template, an owner, a visibility, etc."
 msgstr ""
 
-#: data/scripts/upgrade.php:477
+#: data/scripts/upgrade.php:482
 msgid ""
 "It is now possible to use module Table to manage tables for normalization of "
 "indexation."
 msgstr ""
 
-#: data/scripts/upgrade.php:482
+#: data/scripts/upgrade.php:487
 msgid ""
 "The table used for indexation has been converted into a standard {link}"
 "table{link_end}. It is recommended to remove the old one from the config."
 msgstr ""
 
-#: data/scripts/upgrade.php:501
+#: data/scripts/upgrade.php:506
 msgid ""
 "The support of module Access Resource has been removed. Support of module "
 "Access has been added."
 msgstr ""
 
-#: data/scripts/upgrade.php:506 data/scripts/upgrade.php:873
+#: data/scripts/upgrade.php:511 data/scripts/upgrade.php:879
 msgid "A reindexing is needed."
 msgstr ""
 
-#: data/scripts/upgrade.php:535
+#: data/scripts/upgrade.php:540
 msgid ""
 "You should remove key \"table\" from the file config/local.config.php before "
 "upgrading."
 msgstr ""
 
-#: data/scripts/upgrade.php:630
+#: data/scripts/upgrade.php:635
 msgid ""
 "It is now possible to list {link}all resources and values indexed by a "
 "core{link_end}."
 msgstr ""
 
-#: data/scripts/upgrade.php:726
-msgid "The list of formats was simplified."
-msgstr ""
-
 #: data/scripts/upgrade.php:731
-msgid ""
-"It is now possible to do exact search with query wrapped with double quotes."
+msgid "The list of formats was simplified."
 msgstr ""
 
 #: data/scripts/upgrade.php:736
 msgid ""
+"It is now possible to do exact search with query wrapped with double quotes."
+msgstr ""
+
+#: data/scripts/upgrade.php:741
+msgid ""
 "The management of indices has been merged in a {link}single page{link_end}."
 msgstr ""
 
-#: data/scripts/upgrade.php:811
+#: data/scripts/upgrade.php:817
 msgid "Some solr map fields were renamed: {json}."
 msgstr ""
 
-#: data/scripts/upgrade.php:863
+#: data/scripts/upgrade.php:869
 msgid ""
 "It is now possible to set a default alias for each omeka/solr map. Common "
 "aliases were added, for example \"id\" for \"o:id\" and \"item_set_id\" for "
 "\"item_set_id_is\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:868
+#: data/scripts/upgrade.php:874
 msgid ""
 "Property terms can be used as dynamic aliases when an index exists for them."
 msgstr ""
 
-#: data/scripts/upgrade.php:880
+#: data/scripts/upgrade.php:886
 msgid ""
 "A {link}config form{link_end} was added to specify the use of php-curl if "
 "wanted and the solarium timeout."
 msgstr ""
 
-#: data/scripts/upgrade.php:890
+#: data/scripts/upgrade.php:896
 msgid "The button {link}Map all{link_end} creates new indexes for languages."
 msgstr ""
 
-#: data/scripts/upgrade.php:953
+#: data/scripts/upgrade.php:959
 msgid ""
 "The default option \"auto\" for format of indexed values was replaced by "
 "\"main\". A new option \"full\" now include the uri and the linked resource "
 "id. You should check your indices, filters and facets."
 msgstr ""
 
-#: data/scripts/upgrade.php:958
+#: data/scripts/upgrade.php:964
 msgid "It is now possible to index the label of uri and linked resource."
 msgstr ""
 
-#: data/scripts/upgrade.php:963
+#: data/scripts/upgrade.php:969
 msgid "It is now possible to specify a boost for selected indexes."
 msgstr ""
 
-#: data/scripts/upgrade.php:970
+#: data/scripts/upgrade.php:976
 msgid "The statistics about index were moved to a specific page."
 msgstr ""
 
-#: data/scripts/upgrade.php:975
+#: data/scripts/upgrade.php:981
 msgid ""
 "The performance was improved for indexing and querying. Warning: It is no "
 "more possible to query with any diacritics on static fields like _ss."
 msgstr ""
 
-#: data/scripts/upgrade.php:1040
+#: data/scripts/upgrade.php:1046
 msgid "{count} invalid data in solr maps were fixed."
 msgstr ""
 
-#: data/scripts/upgrade.php:1080
+#: data/scripts/upgrade.php:1086
 msgid ""
 "{count} solr maps with normalization \"table\" referencing an empty table "
 "were cleaned."
 msgstr ""
 
-#: data/scripts/upgrade.php:1138
+#: data/scripts/upgrade.php:1144
 msgid "{count} required maps were created for existing solr cores."
 msgstr ""
 
-#: data/scripts/upgrade.php:1229
+#: data/scripts/upgrade.php:1235
 msgid ""
 "A default Solr suggester has been created. You can configure it in the {link}"
 "search manager{link_end}."
 msgstr ""
 
-#: data/scripts/upgrade.php:1237
+#: data/scripts/upgrade.php:1243
 msgid ""
 "{count} search configuration(s) have been updated to use the new Solr "
 "suggester."
 msgstr ""
 
-#: data/scripts/upgrade.php:1244
+#: data/scripts/upgrade.php:1250
 msgid ""
 "Note: The suggester uses the catchall copy field \"_text_\". If it does not "
 "exist, create it via the Solr core admin page or change the suggester field. "
 "Reindex your Solr core and build the suggester dictionary."
 msgstr ""
 
-#: Module.php:128 src/Api/Representation/SolrCoreRepresentation.php:217
+#: data/scripts/upgrade.php:1303
+msgid ""
+"Solr suggester #{suggester_id} uses \"_text_\" (not stored), which produces "
+"character-level suggestions. Update it to use stored fields (words). It is "
+"used in search config #{config_id}."
+msgstr ""
+
+#: data/scripts/upgrade.php:1311
+msgid ""
+"Solr suggester #{suggester_id}: \"_text_\" replaced with \"auto\" (all "
+"stored fields). You should rebuild the suggester dictionary."
+msgstr ""
+
+#: Module.php:123 src/Api/Representation/SolrCoreRepresentation.php:217
 msgid "The composer library \"{library}\" is not installed. See readme."
 msgstr ""
 
-#: Module.php:273
-msgid "All fields (_text_ copy field)"
+#: Module.php:265
+msgid "Auto (all stored text and string fields)"
 msgstr ""
 
-#: Module.php:282
+#: Module.php:273
 msgid "Solr suggester name"
 msgstr ""
 
-#: Module.php:283
+#: Module.php:274
 msgid ""
 "Base name of the suggester component in Solr. If empty, will be auto-"
 "generated. When multiple fields are selected, a suffix is added for each "
 "field."
 msgstr ""
 
-#: Module.php:287
+#: Module.php:278
 msgid "omeka_suggester"
 msgstr ""
 
-#: Module.php:294
+#: Module.php:285
 msgid "Solr fields for suggestions"
 msgstr ""
 
-#: Module.php:295
+#: Module.php:286
 msgid ""
-"Select \"All fields\" to use the _text_ copy field (must be created first), "
-"or choose specific indexed fields. Multiple fields will create multiple "
-"suggesters that are queried together."
+"\"Auto\" uses all stored text and string fields. Or select specific fields; "
+"multiple fields create multiple suggesters that are queried together."
 msgstr ""
 
-#: Module.php:303
+#: Module.php:294
 msgid "Select fields…"
 msgstr ""
 
-#: Module.php:310
-msgid "Lookup implementation"
+#: Module.php:301
+msgid "Algorithm for suggestions"
 msgstr ""
 
-#: Module.php:311
-msgid ""
-"Algorithm used for suggestions. AnalyzingInfixLookup finds matches anywhere "
-"in the text. BlendedInfixLookup weights prefix matches higher."
-msgstr ""
-
-#: Module.php:313
+#: Module.php:303
 msgid "AnalyzingInfixLookup (matches anywhere)"
 msgstr ""
 
-#: Module.php:314
+#: Module.php:304
 msgid "BlendedInfixLookup (prefix weighted)"
 msgstr ""
 
-#: Module.php:315
+#: Module.php:305
 msgid "AnalyzingLookup (prefix only)"
 msgstr ""
 
-#: Module.php:316
+#: Module.php:306
 msgid "FuzzyLookup (fuzzy matching)"
 msgstr ""
 
-#: Module.php:328
-msgid "Build on commit"
+#: Module.php:318
+msgid "Skip automatic reindex on resource save"
 msgstr ""
 
-#: Module.php:329
+#: Module.php:319
 msgid ""
-"Automatically rebuild the suggester dictionary when documents are committed."
+"By default, the suggester dictionary is rebuilt each time documents are "
+"committed. Check to disable this on very large indexes."
 msgstr ""
 
-#: Module.php:368
-msgid "No Solr fields configured for suggestions."
-msgstr ""
-
-#: Module.php:381
+#: Module.php:352
 msgid "Solr core not found."
 msgstr ""
 
-#: Module.php:408
-msgid "Solr suggester \"{name}\" already exists."
+#: Module.php:370
+msgid "No Solr fields available for suggestions."
 msgstr ""
 
-#: Module.php:419
+#: Module.php:394
 msgid "Solr suggester \"{name}\" created on field \"{field}\"."
 msgstr ""
 
-#: Module.php:427
+#: Module.php:399
 msgid "Suggester dictionary for \"{name}\" built successfully."
 msgstr ""
 
-#: Module.php:433
+#: Module.php:405
 msgid "Failed to create Solr suggester \"{name}\": {error}"
 msgstr ""
 
-#: Module.php:826
+#: Module.php:419
+msgid "Creating {count} Solr suggesters in background job #{job_id}."
+msgstr ""
+
+#: Module.php:844
 #, php-format
 msgid "The default core can be configured in the %1$ssearch manager%2$s."
 msgstr ""
 
-#: Module.php:883
+#: Module.php:901
 #, php-format
 msgid ""
 "A default Solr search engine has been created. Configure it in the "
 "%1$ssearch manager%2$s."
 msgstr ""
 
-#: Module.php:927
+#: Module.php:945
 msgid "A default Solr suggester has been created."
 msgstr ""
 
-#: src/ValueFormatter/AbstractValueFormatter.php:276
+#: src/ValueFormatter/AbstractValueFormatter.php:277
 msgid ""
 "The value \"{value}\" cannot be included in a path. The \"/\" is replaced by "
 "\" - \"."
 msgstr ""
 
-#: src/ValueFormatter/AbstractValueFormatter.php:313
+#: src/ValueFormatter/AbstractValueFormatter.php:314
 msgid "For formatter \"Table\", the table is not set."
 msgstr ""
 
-#: src/ValueFormatter/AbstractValueFormatter.php:327
+#: src/ValueFormatter/AbstractValueFormatter.php:328
 msgid ""
 "For formatter \"Table\", the table #{table_id} does not exist and values are "
 "not normalized."
@@ -1884,7 +1897,7 @@ msgstr ""
 msgid "Error configuring search: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1057
+#: src/Controller/Admin/CoreController.php:1056
 msgid "Solr issue: {msg}"
 msgstr ""
 
@@ -2047,7 +2060,7 @@ msgstr ""
 msgid "Solr suggester not configured."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:461 src/Querier/SolariumQuerier.php:1216
+#: src/Querier/SolariumQuerier.php:484 src/Querier/SolariumQuerier.php:1239
 msgid "Could not fetch all resource ids: {message}"
 msgstr ""
 
