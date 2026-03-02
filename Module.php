@@ -266,13 +266,7 @@ class Module extends AbstractModule
         $fieldset = $event->getParam('fieldset');
 
         $solrCore = $engineAdapter->getSolrCore();
-        $solrFields = $this->getSolrFieldsForSuggester($solrCore);
-
-        // Add _text_ as first option (catchall copy field).
-        $fieldOptions = [
-            '_text_' => 'All fields (_text_ copy field)', // @translate
-        ];
-        $fieldOptions += $solrFields;
+        $fieldOptions = $this->getSolrFieldsForSuggester($solrCore);
 
         $fieldset
             ->add([
@@ -292,7 +286,7 @@ class Module extends AbstractModule
                 'type' => \Common\Form\Element\OptionalSelect::class,
                 'options' => [
                     'label' => 'Solr fields for suggestions', // @translate
-                    'info' => 'Select "All fields" to use the _text_ copy field (must be created first), or choose specific indexed fields. Multiple fields will create multiple suggesters that are queried together.', // @translate
+                    'info' => 'Select stored fields for suggestions. Multiple fields create multiple suggesters that are queried together.', // @translate
                     'value_options' => $fieldOptions,
                     'empty_option' => '',
                 ],
@@ -400,17 +394,7 @@ class Module extends AbstractModule
                 ? $baseSuggesterName
                 : $baseSuggesterName . '_' . preg_replace('/[^a-z0-9_]/i', '_', $solrField);
 
-            // Check if suggester already exists.
-            if ($solrCore->hasSuggester($suggesterName)) {
-                $messenger->addNotice(new PsrMessage(
-                    'Solr suggester "{name}" already exists.', // @translate
-                    ['name' => $suggesterName]
-                ));
-                $createdSuggesters[] = $suggesterName;
-                continue;
-            }
-
-            // Create the suggester.
+            // Create or update the suggester.
             $result = $solrCore->createSuggester($suggesterName, $solrField, $options);
             if ($result === true) {
                 $messenger->addSuccess(new PsrMessage(
@@ -445,17 +429,38 @@ class Module extends AbstractModule
     /**
      * Get Solr fields suitable for suggestions.
      */
+    /**
+     * Get stored Solr fields suitable for suggestions.
+     *
+     * Only stored fields with human-readable values are returned:
+     * - `*_txt` (text_general, stored): full text, word-level matching
+     * - `*_ss` (strings, stored): exact values
+     * Fields like `_text_` (not stored) or `*_str` (not stored) are excluded.
+     */
     protected function getSolrFieldsForSuggester(?Api\Representation\SolrCoreRepresentation $solrCore): array
     {
         if (!$solrCore) {
             return [];
         }
 
+        // Suffixes of stored fields suitable for suggestions.
+        $allowedSuffixes = ['_txt', '_ss', '_s'];
+
         $fields = [];
         $schema = $solrCore->schema();
 
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $fieldName = $map->fieldName();
+            $hasSuffix = false;
+            foreach ($allowedSuffixes as $suffix) {
+                if (substr($fieldName, -strlen($suffix)) === $suffix) {
+                    $hasSuffix = true;
+                    break;
+                }
+            }
+            if (!$hasSuffix) {
+                continue;
+            }
             $schemaField = $schema->getField($fieldName);
             if (!$schemaField) {
                 continue;
