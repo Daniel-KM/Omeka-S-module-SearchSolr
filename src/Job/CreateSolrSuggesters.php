@@ -7,8 +7,9 @@ use Omeka\Job\AbstractJob;
 /**
  * Create Solr suggester components and build their dictionaries.
  *
- * This job handles the heavy async work of creating one Solr searchComponent
- * per field, updating the /suggest handler, and rebuilding each dictionary.
+ * This job resolves the Solr fields from the suggester settings, creates one
+ * searchComponent per field, updates the /suggest handler, and rebuilds each
+ * dictionary.
  */
 class CreateSolrSuggesters extends AbstractJob
 {
@@ -61,14 +62,34 @@ class CreateSolrSuggesters extends AbstractJob
             return;
         }
 
-        $solrFields = $this->getArg('solr_fields', []);
-        $baseSuggesterName = $this->getArg('base_suggester_name', 'omeka_suggester');
-        $options = $this->getArg('options', []);
+        // Resolve fields and options from suggester settings.
+        $settings = $suggester->settings();
+
+        $solrFields = $settings['solr_fields'] ?? [];
+        if (empty($solrFields) && !empty($settings['solr_field'])) {
+            $solrFields = [$settings['solr_field']];
+        }
+
+        // Resolve "auto": all stored text and string fields, with dedup.
+        if (empty($solrFields) || in_array('auto', $solrFields)) {
+            $solrFields = array_keys($this->getSolrFieldsForSuggester($solrCore));
+        }
 
         if (empty($solrFields)) {
-            $this->logger->warn('No Solr fields provided.'); // @translate
+            $this->logger->warn('No solr fields provided.'); // @translate
             return;
         }
+
+        $baseSuggesterName = $settings['solr_suggester_name'] ?? '';
+        if (empty($baseSuggesterName)) {
+            $baseSuggesterName = 'omeka_' . preg_replace('/[^a-z0-9_]/i', '_', strtolower($suggester->name()));
+        }
+
+        $options = [
+            'lookupImpl' => $settings['solr_lookup_implementation'] ?? 'AnalyzingInfixLookupFactory',
+            'buildOnCommit' => empty($settings['solr_skip_build_on_commit']),
+            'skipHandler' => true,
+        ];
 
         $timeStart = microtime(true);
         $totalFields = count($solrFields);
@@ -77,8 +98,7 @@ class CreateSolrSuggesters extends AbstractJob
             ['total' => $totalFields, 'name' => $baseSuggesterName]
         );
 
-        // 1. Create all searchComponents (skip handler update per field).
-        $options['skipHandler'] = true;
+        // 1. Create all searchComponents.
         $createdNames = [];
         $errors = 0;
         foreach (array_values($solrFields) as $index => $solrField) {
@@ -105,7 +125,6 @@ class CreateSolrSuggesters extends AbstractJob
                 );
             }
 
-            // Log progress every 50 fields.
             if (($index + 1) % 50 === 0) {
                 $this->logger->info(
                     '{count}/{total} components created.', // @translate
@@ -168,7 +187,7 @@ class CreateSolrSuggesters extends AbstractJob
 
         $timeTotal = (int) (microtime(true) - $timeStart);
         $this->logger->notice(
-            'Process ended. {created} created, {built} built, {errors} errors. Duration: {duration}.', // @translate
+            'Process ended: {created} created, {built} built, {errors} errors. Duration: {duration}.', // @translate
             [
                 'created' => count($createdNames),
                 'built' => $built,
@@ -176,5 +195,54 @@ class CreateSolrSuggesters extends AbstractJob
                 'duration' => $timeTotal,
             ]
         );
+    }
+
+    /**
+     * Get stored Solr fields suitable for suggestions, with dedup.
+     *
+     * Skips _ss/_s when _txt exists for the same property prefix.
+     *
+     * @return array Field names as keys, labels as values.
+     */
+    protected function getSolrFieldsForSuggester(
+        \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+    ): array {
+        $allowedSuffixes = ['_txt', '_ss', '_s'];
+        $schema = $solrCore->schema();
+
+        $allFields = [];
+        $txtPrefixes = [];
+        foreach ($solrCore->mapsOrderedByStructure() as $map) {
+            $fieldName = $map->fieldName();
+            foreach ($allowedSuffixes as $suffix) {
+                if (substr($fieldName, -strlen($suffix)) === $suffix) {
+                    if (!$schema->getField($fieldName)) {
+                        break;
+                    }
+                    $prefix = substr($fieldName, 0, -strlen($suffix));
+                    $allFields[] = [
+                        'name' => $fieldName,
+                        'suffix' => $suffix,
+                        'prefix' => $prefix,
+                    ];
+                    if ($suffix === '_txt') {
+                        $txtPrefixes[$prefix] = true;
+                    }
+                    break;
+                }
+            }
+        }
+
+        $fields = [];
+        foreach ($allFields as $field) {
+            if ($field['suffix'] !== '_txt'
+                && isset($txtPrefixes[$field['prefix']])
+            ) {
+                continue;
+            }
+            $fields[$field['name']] = $field['name'];
+        }
+
+        return $fields;
     }
 }

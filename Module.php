@@ -184,6 +184,13 @@ class Module extends AbstractModule
             [$this, 'handleSuggesterSave']
         );
 
+        // Handle suggester reindex for Solr engines.
+        $sharedEventManager->attach(
+            \AdvancedSearch\Controller\Admin\SearchSuggesterController::class,
+            'advancedsearch.suggester.index',
+            [$this, 'handleSuggesterIndex']
+        );
+
         $sharedEventManager->attach(
             Api\Adapter\SolrCoreAdapter::class,
             'api.delete.post',
@@ -334,7 +341,10 @@ class Module extends AbstractModule
     }
 
     /**
-     * Handle suggester save for Solr engines - create Solr suggester via Config API.
+     * Handle suggester save/reindex for Solr engines.
+     *
+     * Dispatches a background job to create Solr suggesters and build
+     * dictionaries. Field resolution ("auto") is done inside the job.
      */
     public function handleSuggesterSave(Event $event): void
     {
@@ -349,103 +359,36 @@ class Module extends AbstractModule
         /** @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger */
         $messenger = $event->getParam('messenger');
 
-        $settings = $suggester->settings();
+        $services = $this->getServiceLocator();
+        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+        $job = $dispatcher->dispatch(\SearchSolr\Job\CreateSolrSuggesters::class, [
+            'search_suggester_id' => $suggester->id(),
+        ]);
 
-        $solrCore = $engineAdapter->getSolrCore();
-        if (!$solrCore) {
-            $messenger->addError(new PsrMessage(
-                'Solr core not found.' // @translate
-            ));
-            return;
-        }
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+        $message = new PsrMessage(
+            'Processing indexation of Solr suggestions in background (job {link_job}#{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+            [
+                'link_job' => sprintf('<a href="%s">',
+                    htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                ),
+                'job_id' => $job->getId(),
+                'link_end' => '</a>',
+                'link_log' => class_exists('Log\Module', false)
+                    ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
+                    : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
+            ]
+        );
+        $message->setEscapeHtml(false);
+        $messenger->addSuccess($message);
+    }
 
-        // Handle both old single field (solr_field) and new multi-field (solr_fields).
-        $solrFields = $settings['solr_fields'] ?? [];
-        if (empty($solrFields) && !empty($settings['solr_field'])) {
-            $solrFields = [$settings['solr_field']];
-        }
-
-        // Resolve "auto": use all stored text and string fields.
-        if (empty($solrFields) || in_array('auto', $solrFields)) {
-            $solrFields = array_keys($this->getSolrFieldsForSuggester($solrCore, true));
-        }
-
-        if (empty($solrFields)) {
-            $messenger->addWarning(new PsrMessage(
-                'No Solr fields available for suggestions.' // @translate
-            ));
-            return;
-        }
-
-        // Generate base suggester name if not provided.
-        $baseSuggesterName = $settings['solr_suggester_name'] ?? '';
-        if (empty($baseSuggesterName)) {
-            // Create a safe name from the suggester name.
-            $baseSuggesterName = 'omeka_' . preg_replace('/[^a-z0-9_]/i', '_', strtolower($suggester->name()));
-        }
-
-        $options = [
-            'lookupImpl' => $settings['solr_lookup_implementation'] ?? 'AnalyzingInfixLookupFactory',
-            'buildOnCommit' => empty($settings['solr_skip_build_on_commit']),
-        ];
-
-        // For single field, create synchronously (fast).
-        // For multiple fields, dispatch a background job.
-        if (count($solrFields) === 1) {
-            $solrField = reset($solrFields);
-            $result = $solrCore->createSuggester($baseSuggesterName, $solrField, $options);
-            if ($result === true) {
-                $messenger->addSuccess(new PsrMessage(
-                    'Solr suggester "{name}" created on field "{field}".', // @translate
-                    ['name' => $baseSuggesterName, 'field' => $solrField]
-                ));
-                if ($solrCore->buildSuggester($baseSuggesterName)) {
-                    $messenger->addSuccess(new PsrMessage(
-                        'Suggester dictionary for "{name}" built successfully.', // @translate
-                        ['name' => $baseSuggesterName]
-                    ));
-                }
-            } else {
-                $messenger->addError(new PsrMessage(
-                    'Failed to create Solr suggester "{name}": {error}', // @translate
-                    ['name' => $baseSuggesterName, 'error' => $result]
-                ));
-            }
-        } else {
-            /**
-             * @var \Laminas\ServiceManager\ServiceLocatorInterface $services
-             * @var \Omeka\View\Helper\Url $urlHelper
-             * @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger
-             */
-            $services = $this->getServiceLocator();
-            $plugins = $services->get('ControllerPluginManager');
-            $urlHelper = $services->get('ViewHelperManager')->get('url');
-            $messenger = $plugins->get('messenger');
-
-            $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
-            $job = $dispatcher->dispatch(\SearchSolr\Job\CreateSolrSuggesters::class, [
-                'search_suggester_id' => $suggester->id(),
-                'solr_fields' => array_values($solrFields),
-                'base_suggester_name' => $baseSuggesterName,
-                'options' => $options,
-            ]);
-
-            $message = new PsrMessage(
-                'Processing indexation of suggestions in background (job {link_job}#{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
-                [
-                    'link_job' => sprintf('<a href="%s">',
-                        htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
-                    ),
-                    'job_id' => $job->getId(),
-                    'link_end' => '</a>',
-                    'link_log' => class_exists('Log\Module', false)
-                        ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
-                        : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
-                ]
-            );
-            $message->setEscapeHtml(false);
-            $messenger->addSuccess($message);
-        }
+    /**
+     * Handle suggester reindex for Solr engines.
+     */
+    public function handleSuggesterIndex(Event $event): void
+    {
+        $this->handleSuggesterSave($event);
     }
 
     /**
