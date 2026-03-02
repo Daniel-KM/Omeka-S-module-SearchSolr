@@ -21,14 +21,10 @@ return [
     'o:settings' => [
         // Solr-specific settings.
         'solr_suggester_name' => 'omeka_suggester',
-        // Use specific stored fields for meaningful suggestions.
+        // "auto" uses all stored text and string fields (_txt, _ss, _s).
+        // Or specify fields: ['dcterms_title_txt', 'dcterms_creator_txt'].
         // One Solr suggester is created per field; results are merged.
-        'solr_fields' => [
-            'dcterms_title_txt',
-            'dcterms_creator_txt',
-            'dcterms_subject_txt',
-            'dcterms_spatial_txt',
-        ],
+        'solr_fields' => ['auto'],
         'solr_lookup_implementation' => 'AnalyzingInfixLookupFactory',
         'solr_skip_build_on_commit' => false,
     ],

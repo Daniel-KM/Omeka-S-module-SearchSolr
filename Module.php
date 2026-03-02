@@ -267,6 +267,8 @@ class Module extends AbstractModule
 
         $solrCore = $engineAdapter->getSolrCore();
         $fieldOptions = $this->getSolrFieldsForSuggester($solrCore);
+        $fieldOptions = ['auto' => 'Auto (all stored text and string fields)'] // @translate
+            + $fieldOptions;
 
         $fieldset
             ->add([
@@ -286,7 +288,7 @@ class Module extends AbstractModule
                 'type' => \Common\Form\Element\OptionalSelect::class,
                 'options' => [
                     'label' => 'Solr fields for suggestions', // @translate
-                    'info' => 'Select stored fields for suggestions. Multiple fields create multiple suggesters that are queried together.', // @translate
+                    'info' => '"Auto" uses all stored text and string fields. Or select specific fields; multiple fields create multiple suggesters that are queried together.', // @translate
                     'value_options' => $fieldOptions,
                     'empty_option' => '',
                 ],
@@ -349,28 +351,28 @@ class Module extends AbstractModule
 
         $settings = $suggester->settings();
 
-        // Handle both old single field (solr_field) and new multi-field (solr_fields).
-        $solrFields = $settings['solr_fields'] ?? [];
-        if (empty($solrFields) && !empty($settings['solr_field'])) {
-            // Backward compatibility with single field.
-            $solrFields = [$settings['solr_field']];
-        }
-        if (empty($solrFields)) {
-            $messenger->addWarning(new PsrMessage(
-                'No Solr fields configured for suggestions.' // @translate
-            ));
-            return;
-        }
-
-        // If _text_ is selected, use only _text_ (it already contains all fields).
-        if (in_array('_text_', $solrFields)) {
-            $solrFields = ['_text_'];
-        }
-
         $solrCore = $engineAdapter->getSolrCore();
         if (!$solrCore) {
             $messenger->addError(new PsrMessage(
                 'Solr core not found.' // @translate
+            ));
+            return;
+        }
+
+        // Handle both old single field (solr_field) and new multi-field (solr_fields).
+        $solrFields = $settings['solr_fields'] ?? [];
+        if (empty($solrFields) && !empty($settings['solr_field'])) {
+            $solrFields = [$settings['solr_field']];
+        }
+
+        // Resolve "auto": use all stored text and string fields.
+        if (empty($solrFields) || in_array('auto', $solrFields)) {
+            $solrFields = array_keys($this->getSolrFieldsForSuggester($solrCore));
+        }
+
+        if (empty($solrFields)) {
+            $messenger->addWarning(new PsrMessage(
+                'No Solr fields available for suggestions.' // @translate
             ));
             return;
         }
