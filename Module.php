@@ -360,6 +360,25 @@ class Module extends AbstractModule
         $messenger = $event->getParam('messenger');
 
         $services = $this->getServiceLocator();
+
+        // Skip if a suggester build job is already running.
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $connection = $services->get('Omeka\Connection');
+        $runningJob = $connection->fetchOne(
+            'SELECT id FROM job WHERE class = ? AND status IN (?, ?)',
+            [
+                \SearchSolr\Job\CreateSolrSuggesters::class,
+                \Omeka\Entity\Job::STATUS_STARTING,
+                \Omeka\Entity\Job::STATUS_IN_PROGRESS,
+            ]
+        );
+        if ($runningJob) {
+            $messenger->addWarning(
+                'A suggester build job is already running (job #{job_id}). Skipping.' // @translate
+            );
+            return;
+        }
+
         $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
         $job = $dispatcher->dispatch(\SearchSolr\Job\CreateSolrSuggesters::class, [
             'search_suggester_id' => $suggester->id(),

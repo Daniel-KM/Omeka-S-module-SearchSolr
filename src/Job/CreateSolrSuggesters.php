@@ -177,6 +177,12 @@ class CreateSolrSuggesters extends AbstractJob
                 );
             }
 
+            // Let Solr release the internal write lock between builds
+            // to avoid LockObtainFailedException.
+            if ($index < count($suggesterDefs) - 1) {
+                sleep(1);
+            }
+
             if (($index + 1) % 50 === 0) {
                 $this->logger->info(
                     '{count}/{total} dictionaries built.', // @translate

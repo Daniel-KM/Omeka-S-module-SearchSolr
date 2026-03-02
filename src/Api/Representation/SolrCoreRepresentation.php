@@ -958,26 +958,49 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Build/rebuild the suggester dictionary.
      */
-    public function buildSuggester(string $suggesterName): bool
+    public function buildSuggester(string $suggesterName, int $maxRetries = 3): bool
     {
         $client = $this->solariumClient();
         if (!$client) {
             return false;
         }
 
-        try {
-            $suggesterQuery = $client->createSuggester();
-            $suggesterQuery->setDictionary($suggesterName);
-            $suggesterQuery->setBuild(true);
-            $suggesterQuery->setQuery('_'); // Dummy query, just to trigger build.
-            $client->suggester($suggesterQuery);
-            return true;
-        } catch (\Exception $e) {
-            $services = $this->getServiceLocator();
-            $logger = $services->get('Omeka\Logger');
-            $logger->err('SearchSolr: Failed to build suggester: ' . $e->getMessage());
-            return false;
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                $suggesterQuery = $client->createSuggester();
+                $suggesterQuery->setDictionary($suggesterName);
+                $suggesterQuery->setBuild(true);
+                // Dummy query, just to trigger build.
+                $suggesterQuery->setQuery('_');
+                $client->suggester($suggesterQuery);
+                return true;
+            } catch (\Exception $e) {
+                $isLock = stripos($e->getMessage(), 'Lock') !== false;
+                if ($isLock && $attempt < $maxRetries) {
+                    $logger->info(
+                        'SearchSolr: Lock on suggester "{name}", '
+                            . 'retry {attempt}/{max}.',
+                        [
+                            'name' => $suggesterName,
+                            'attempt' => $attempt,
+                            'max' => $maxRetries,
+                        ]
+                    );
+                    sleep($attempt * 2);
+                    continue;
+                }
+                $logger->err(
+                    'SearchSolr: Failed to build suggester: '
+                        . $e->getMessage()
+                );
+                return false;
+            }
         }
+
+        return false;
     }
 
     /**
