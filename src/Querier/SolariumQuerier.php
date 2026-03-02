@@ -71,7 +71,7 @@ class SolariumQuerier extends AbstractQuerier
 
     public function setQuery(Query $query): self
     {
-        $this->query = $query;
+        parent::setQuery($query);
         $this->appendCoreAliasesToQuery();
         return $this;
     }
@@ -457,13 +457,18 @@ class SolariumQuerier extends AbstractQuerier
             $allQuery = clone $this->select;
             $allQuery
                 ->setFields(['id'])
-                ->setRows(null)
-                ->setStart(null);
+                ->setStart(0);
 
             if ($allQuery->getGrouping()->getFields()) {
-                $allQuery->getGrouping()
-                    ->setLimit(null)
-                    ->setOffset(null);
+                // Solr default group.limit is 1, so set it
+                // explicitly to get all documents per group.
+                $allQuery
+                    ->setRows(100)
+                    ->getGrouping()
+                    ->setLimit(1000000)
+                    ->setOffset(0);
+            } else {
+                $allQuery->setRows(1000000);
             }
 
             $resultSetAll = $this->solariumClient->execute($allQuery);
@@ -1224,11 +1229,11 @@ class SolariumQuerier extends AbstractQuerier
             $allQuery = clone $this->select;
             $allQuery
                 ->setFields(['id'])
-                ->setRows(null)
-                ->setStart(null);
+                ->setRows(100)
+                ->setStart(0);
             $allQuery->getGrouping()
-                ->setLimit(null)
-                ->setOffset(null);
+                ->setLimit(1000000)
+                ->setOffset(0);
 
             $resultSetAll = $this->solariumClient->execute($allQuery);
 
