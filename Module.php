@@ -389,48 +389,65 @@ class Module extends AbstractModule
             'buildOnCommit' => empty($settings['solr_skip_build_on_commit']),
         ];
 
-        $createdSuggesters = [];
-        foreach ($solrFields as $solrField) {
-            // For multiple fields, append field name to suggester name.
-            $suggesterName = count($solrFields) === 1
-                ? $baseSuggesterName
-                : $baseSuggesterName . '_' . preg_replace('/[^a-z0-9_]/i', '_', $solrField);
-
-            // Create or update the suggester.
-            $result = $solrCore->createSuggester($suggesterName, $solrField, $options);
+        // For single field, create synchronously (fast).
+        // For multiple fields, dispatch a background job.
+        if (count($solrFields) === 1) {
+            $solrField = reset($solrFields);
+            $result = $solrCore->createSuggester($baseSuggesterName, $solrField, $options);
             if ($result === true) {
                 $messenger->addSuccess(new PsrMessage(
                     'Solr suggester "{name}" created on field "{field}".', // @translate
-                    ['name' => $suggesterName, 'field' => $solrField]
+                    ['name' => $baseSuggesterName, 'field' => $solrField]
                 ));
-                $createdSuggesters[] = $suggesterName;
-
-                // Build the suggester dictionary.
-                if ($solrCore->buildSuggester($suggesterName)) {
+                if ($solrCore->buildSuggester($baseSuggesterName)) {
                     $messenger->addSuccess(new PsrMessage(
                         'Suggester dictionary for "{name}" built successfully.', // @translate
-                        ['name' => $suggesterName]
+                        ['name' => $baseSuggesterName]
                     ));
                 }
             } else {
                 $messenger->addError(new PsrMessage(
                     'Failed to create Solr suggester "{name}": {error}', // @translate
-                    ['name' => $suggesterName, 'error' => $result]
+                    ['name' => $baseSuggesterName, 'error' => $result]
                 ));
             }
-        }
+        } else {
+            /**
+             * @var \Laminas\ServiceManager\ServiceLocatorInterface $services
+             * @var \Omeka\View\Helper\Url $urlHelper
+             * @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger
+             */
+            $services = $this->getServiceLocator();
+            $plugins = $services->get('ControllerPluginManager');
+            $urlHelper = $services->get('ViewHelperManager')->get('url');
+            $messenger = $plugins->get('messenger');
 
-        // Store the created suggester names for querying.
-        // Note: This info is stored in the event for potential use by other handlers,
-        // but the actual suggester names are derived from settings at query time.
-        if ($createdSuggesters) {
-            $event->setParam('solr_suggester_names', $createdSuggesters);
+            $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+            $job = $dispatcher->dispatch(\SearchSolr\Job\CreateSolrSuggesters::class, [
+                'search_suggester_id' => $suggester->id(),
+                'solr_fields' => array_values($solrFields),
+                'base_suggester_name' => $baseSuggesterName,
+                'options' => $options,
+            ]);
+
+            $message = new PsrMessage(
+                'Processing indexation of suggestions in background (job {link_job}#{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+                [
+                    'link_job' => sprintf('<a href="%s">',
+                        htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))
+                    ),
+                    'job_id' => $job->getId(),
+                    'link_end' => '</a>',
+                    'link_log' => class_exists('Log\Module', false)
+                        ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
+                        : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
+                ]
+            );
+            $message->setEscapeHtml(false);
+            $messenger->addSuccess($message);
         }
     }
 
-    /**
-     * Get Solr fields suitable for suggestions.
-     */
     /**
      * Get stored Solr fields suitable for suggestions.
      *
