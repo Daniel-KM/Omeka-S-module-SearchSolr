@@ -863,62 +863,64 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         // Default options.
         $lookupImpl = $options['lookupImpl'] ?? 'AnalyzingInfixLookupFactory';
-        $dictionaryImpl = $options['dictionaryImpl'] ?? 'DocumentDictionaryFactory';
         $analyzerFieldType = $options['suggestAnalyzerFieldType'] ?? 'text_general';
+        // Note: Solr Config API requires booleans as strings to avoid
+        // ClassCastException (Boolean cannot be cast to String).
+        $buildOnCommit = !empty($options['buildOnCommit']) ? 'true' : 'false';
 
         // 1. Add the searchComponent.
+        $suggester = [
+            'name' => $suggesterName,
+            'lookupImpl' => $lookupImpl,
+            'field' => $field,
+            'suggestAnalyzerFieldType' => $analyzerFieldType,
+            'buildOnCommit' => $buildOnCommit,
+        ];
+
         $componentPayload = json_encode([
             'add-searchcomponent' => [
                 'name' => $suggesterName,
                 'class' => 'solr.SuggestComponent',
-                'suggester' => [
-                    'name' => $suggesterName,
-                    'lookupImpl' => $lookupImpl,
-                    'dictionaryImpl' => $dictionaryImpl,
-                    'field' => $field,
-                    'suggestAnalyzerFieldType' => $analyzerFieldType,
-                    'buildOnCommit' => true,
-                ],
+                'suggester' => $suggester,
             ],
         ]);
 
         $result = $this->postToSolrConfig($configUrl, $componentPayload);
         if ($result !== true) {
-            $logger->err('SearchSolr: Failed to create suggester component: ' . $result);
-            return $result;
+            // Component may already exist, try to update it.
+            $componentPayload = json_encode([
+                'update-searchcomponent' => [
+                    'name' => $suggesterName,
+                    'class' => 'solr.SuggestComponent',
+                    'suggester' => $suggester,
+                ],
+            ]);
+            $result = $this->postToSolrConfig($configUrl, $componentPayload);
+            if ($result !== true) {
+                $logger->err('SearchSolr: Failed to create suggester component: ' . $result);
+                return $result;
+            }
         }
 
         // 2. Add the request handler.
-        $handlerPayload = json_encode([
-            'add-requesthandler' => [
-                'name' => '/suggest',
-                'class' => 'solr.SearchHandler',
-                'startup' => 'lazy',
-                'defaults' => [
-                    'suggest' => true,
-                    'suggest.count' => 10,
-                    'suggest.dictionary' => $suggesterName,
-                ],
-                'components' => [$suggesterName],
+        // Note: Solr Config API requires booleans and numbers as strings.
+        $handler = [
+            'name' => '/suggest',
+            'class' => 'solr.SearchHandler',
+            'startup' => 'lazy',
+            'defaults' => [
+                'suggest' => 'true',
+                'suggest.count' => '10',
+                'suggest.dictionary' => $suggesterName,
             ],
-        ]);
+            'components' => [$suggesterName],
+        ];
 
+        $handlerPayload = json_encode(['add-requesthandler' => $handler]);
         $result = $this->postToSolrConfig($configUrl, $handlerPayload);
         if ($result !== true) {
             // Try to update existing handler instead.
-            $handlerPayload = json_encode([
-                'update-requesthandler' => [
-                    'name' => '/suggest',
-                    'class' => 'solr.SearchHandler',
-                    'startup' => 'lazy',
-                    'defaults' => [
-                        'suggest' => true,
-                        'suggest.count' => 10,
-                        'suggest.dictionary' => $suggesterName,
-                    ],
-                    'components' => [$suggesterName],
-                ],
-            ]);
+            $handlerPayload = json_encode(['update-requesthandler' => $handler]);
             $result = $this->postToSolrConfig($configUrl, $handlerPayload);
             if ($result !== true) {
                 $logger->warn('SearchSolr: Failed to create/update suggest handler: ' . $result);
@@ -995,6 +997,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 'header' => 'Content-Type: application/json',
                 'content' => $payload,
                 'timeout' => 30,
+                // Allow reading response body on HTTP errors (4xx, 5xx).
+                'ignore_errors' => true,
             ],
         ]);
 
