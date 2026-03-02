@@ -2175,8 +2175,22 @@ class SolariumQuerier extends AbstractQuerier
             // "+" to require all terms (like refine behavior).
             $words = preg_split('/\s+/', $string, -1, PREG_SPLIT_NO_EMPTY);
             if (count($words) > 1) {
-                $escaped = array_map(fn ($w) => '+' . $this->select->getHelper()->escapeTerm($w), $words);
+                $escaped = array_map(function ($w) {
+                    // Structured identifiers (ark, doi, url…) with ":" or "/"
+                    // must be treated as phrases, not escaped terms, because
+                    // edismax + copyField analyzers strip these separators,
+                    // making backslash-escaped terms unmatchable.
+                    // Other characters like "." have no issue.
+                    if (strpbrk($w, ':/') !== false) {
+                        return '+' . $this->escapePhrase($w);
+                    }
+                    return '+' . $this->select->getHelper()->escapeTerm($w);
+                }, $words);
                 return implode(' ', $escaped);
+            }
+            // Single word with structured separators: use phrase.
+            if (strpbrk($string, ':/') !== false) {
+                return $this->escapePhrase($string);
             }
             return $this->select->getHelper()->escapeTerm($string);
         }
