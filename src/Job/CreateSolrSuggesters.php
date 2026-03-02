@@ -5,11 +5,11 @@ namespace SearchSolr\Job;
 use Omeka\Job\AbstractJob;
 
 /**
- * Create Solr suggester components and build their dictionaries.
+ * Create Solr suggesters and build their dictionaries.
  *
- * This job resolves the Solr fields from the suggester settings, creates one
- * searchComponent per field, updates the /suggest handler, and rebuilds each
- * dictionary.
+ * This job resolves the Solr fields from the suggester settings, creates a
+ * single SuggestComponent with all suggesters, updates the /suggest handler,
+ * and rebuilds each dictionary.
  */
 class CreateSolrSuggesters extends AbstractJob
 {
@@ -85,11 +85,8 @@ class CreateSolrSuggesters extends AbstractJob
             $baseSuggesterName = 'omeka_' . preg_replace('/[^a-z0-9_]/i', '_', strtolower($suggester->name()));
         }
 
-        $options = [
-            'lookupImpl' => $settings['solr_lookup_implementation'] ?? 'AnalyzingInfixLookupFactory',
-            'buildOnCommit' => empty($settings['solr_skip_build_on_commit']),
-            'skipHandler' => true,
-        ];
+        $lookupImpl = $settings['solr_lookup_implementation'] ?? 'AnalyzingInfixLookupFactory';
+        $buildOnCommit = empty($settings['solr_skip_build_on_commit']);
 
         $timeStart = microtime(true);
         $totalFields = count($solrFields);
@@ -98,52 +95,42 @@ class CreateSolrSuggesters extends AbstractJob
             ['total' => $totalFields, 'name' => $baseSuggesterName]
         );
 
-        // 1. Create all searchComponents.
-        $createdNames = [];
-        $errors = 0;
-        foreach (array_values($solrFields) as $index => $solrField) {
-            if ($this->shouldStop()) {
-                $this->logger->warn(
-                    'Stopped by user after {count}/{total} components.', // @translate
-                    ['count' => count($createdNames), 'total' => $totalFields]
-                );
-                break;
-            }
-
+        // 1. Collect all suggester definitions.
+        $suggesterDefs = [];
+        foreach (array_values($solrFields) as $solrField) {
             $suggesterName = $totalFields === 1
                 ? $baseSuggesterName
                 : $baseSuggesterName . '_' . preg_replace('/[^a-z0-9_]/i', '_', $solrField);
-
-            $result = $solrCore->createSuggester($suggesterName, $solrField, $options);
-            if ($result === true) {
-                $createdNames[] = $suggesterName;
-            } else {
-                ++$errors;
-                $this->logger->err(
-                    'Failed to create "{name}": {error}', // @translate
-                    ['name' => $suggesterName, 'error' => $result]
-                );
-            }
-
-            if (($index + 1) % 50 === 0) {
-                $this->logger->info(
-                    '{count}/{total} components created.', // @translate
-                    ['count' => $index + 1, 'total' => $totalFields]
-                );
-            }
+            $suggesterDefs[] = [
+                'name' => $suggesterName,
+                'field' => $solrField,
+                'lookupImpl' => $lookupImpl,
+                'buildOnCommit' => $buildOnCommit,
+            ];
         }
 
-        if (empty($createdNames)) {
-            $this->logger->err('No suggesters were created.'); // @translate
+        // The component name groups all suggesters.
+        $componentName = $baseSuggesterName . '_suggest';
+
+        // 2. Create/update a single searchComponent with all suggesters.
+        $this->logger->info(
+            'Sending {count} suggesters to Solr component "{component}".', // @translate
+            ['count' => count($suggesterDefs), 'component' => $componentName]
+        );
+        $result = $solrCore->updateSuggestComponent(
+            $suggesterDefs,
+            $componentName
+        );
+        if ($result !== true) {
+            $this->logger->err(
+                'Failed to create suggest component: {error}', // @translate
+                ['error' => is_string($result) ? $result : 'unknown']
+            );
             return;
         }
 
-        // 2. Update the /suggest handler with all component names.
-        $this->logger->info(
-            'Updating /suggest handler with {count} components…', // @translate
-            ['count' => count($createdNames)]
-        );
-        $result = $solrCore->updateSuggestHandler($createdNames);
+        // 3. Update the /suggest handler to reference this component.
+        $result = $solrCore->updateSuggestHandler($componentName);
         if ($result !== true) {
             $this->logger->err(
                 'Failed to update suggest handler: {error}', // @translate
@@ -151,56 +138,37 @@ class CreateSolrSuggesters extends AbstractJob
             );
         }
 
-        // 3. Build each dictionary.
+        // 4. Build all dictionaries in a single Solr request.
+        // Solr builds them sequentially in one thread, avoiding
+        // lock conflicts between suggesters.
         if ($this->shouldStop()) {
             $this->logger->warn('Stopped before build phase.'); // @translate
             return;
         }
 
-        $built = 0;
-        $this->logger->info('Starting building dictionaries.'); // @translate
-        foreach ($createdNames as $index => $suggesterName) {
-            if ($this->shouldStop()) {
-                $this->logger->warn(
-                    'Stopped during build after {count}/{total}.', // @translate
-                    ['count' => $built, 'total' => count($createdNames)]
-                );
-                break;
-            }
+        $this->logger->info(
+            'Building all {total} dictionaries.', // @translate
+            ['total' => count($suggesterDefs)]
+        );
 
-            if ($solrCore->buildSuggester($suggesterName)) {
-                ++$built;
-            } else {
-                $this->logger->warn(
-                    'Failed to build "{name}".', // @translate
-                    ['name' => $suggesterName]
-                );
-            }
-
-            // Let Solr release the internal write lock between builds
-            // to avoid LockObtainFailedException.
-            if ($index < count($suggesterDefs) - 1) {
-                sleep(1);
-            }
-
-            if (($index + 1) % 50 === 0) {
-                $this->logger->info(
-                    '{count}/{total} dictionaries built.', // @translate
-                    ['count' => $index + 1, 'total' => count($createdNames)]
-                );
-            }
-        }
+        $names = array_column($suggesterDefs, 'name');
+        $success = $solrCore->buildSuggester($names);
 
         $timeTotal = (int) (microtime(true) - $timeStart);
-        $this->logger->notice(
-            'Process ended: {created} created, {built} built, {errors} errors. Duration: {duration}.', // @translate
-            [
-                'created' => count($createdNames),
-                'built' => $built,
-                'errors' => $errors,
-                'duration' => $timeTotal,
-            ]
-        );
+        if ($success) {
+            $this->logger->notice(
+                'All {total} dictionaries built. Duration: {duration} seconds.', // @translate
+                [
+                    'total' => count($suggesterDefs),
+                    'duration' => $timeTotal,
+                ]
+            );
+        } else {
+            $this->logger->err(
+                'Failed to build dictionaries. Duration: {duration} seconds.', // @translate
+                ['duration' => $timeTotal]
+            );
+        }
     }
 
     /**
