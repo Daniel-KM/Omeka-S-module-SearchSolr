@@ -21,10 +21,11 @@ return [
     'o:settings' => [
         // Solr-specific settings.
         'solr_suggester_name' => 'omeka_suggester',
-        // "auto" uses all stored text and string fields (_txt, _ss, _s).
+        // "suggest_txt" is a unified field aggregating all short-value
+        // _txt fields via copyField (created via admin action).
+        // "auto" uses all stored text and string fields individually.
         // Or specify fields: ['dcterms_title_txt', 'dcterms_creator_txt'].
-        // One Solr suggester is created per field; results are merged.
-        'solr_fields' => ['auto'],
+        'solr_fields' => ['suggest_txt'],
         'solr_lookup_implementation' => 'AnalyzingInfixLookupFactory',
         'solr_skip_build_on_commit' => false,
     ],

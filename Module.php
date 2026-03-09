@@ -268,9 +268,21 @@ class Module extends AbstractModule
         $fieldset = $event->getParam('fieldset');
 
         $solrCore = $engineAdapter->getSolrCore();
-        $fieldOptions = $this->getSolrFieldsForSuggester($solrCore);
-        $fieldOptions = ['auto' => 'Auto (all stored text and string fields)'] // @translate
-            + $fieldOptions;
+        $indexFields = $this->getSolrFieldsForSuggester($solrCore);
+
+        // Build optgroups: recommended single indexes first,
+        // then individual indexes to group into one suggester.
+        $hasSuggestTxt = $solrCore
+            && $solrCore->schema()->getField('suggest_txt');
+        $recommended = [];
+        if ($hasSuggestTxt) {
+            $recommended['suggest_txt'] = 'suggest_txt (unified field, recommended)'; // @translate
+        }
+        $recommended['auto'] = 'All text and string fields'; // @translate
+        $fieldOptions = [
+            'Recommended' => ['label' => 'Recommended', 'options' => $recommended], // @translate
+            'Individual fields' => ['label' => 'Individual fields', 'options' => $indexFields], // @translate
+        ];
 
         $fieldset
             ->add([
@@ -290,9 +302,8 @@ class Module extends AbstractModule
                 'type' => \Common\Form\Element\OptionalSelect::class,
                 'options' => [
                     'label' => 'Solr fields for suggestions', // @translate
-                    'info' => '"Auto" uses all stored text and string fields. Or select specific fields; multiple fields create multiple suggesters that are queried together.', // @translate
+                    'info' => 'The unified field "suggest_txt" is the most efficient option: single suggester, short-value fields only. "All fields" creates one suggester per text/string field (including long values). Individual indexes can be grouped.', // @translate
                     'value_options' => $fieldOptions,
-                    'empty_option' => '',
                 ],
                 'attributes' => [
                     'id' => 'solr_fields',
