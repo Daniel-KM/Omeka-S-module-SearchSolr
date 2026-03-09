@@ -136,6 +136,7 @@ class CreateSolrSuggesters extends AbstractJob
                 'Failed to update suggest handler: {error}', // @translate
                 ['error' => is_string($result) ? $result : 'unknown']
             );
+            return;
         }
 
         // 4. Build all dictionaries in a single Solr request.

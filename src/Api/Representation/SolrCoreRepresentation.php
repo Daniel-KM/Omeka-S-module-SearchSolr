@@ -882,9 +882,6 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 'field' => $suggester['field'],
                 'suggestAnalyzerFieldType' => $suggester['suggestAnalyzerFieldType']
                     ?? 'text_general',
-                // Unique dir per suggester to avoid shared write lock:
-                // AnalyzingInfixSuggester keeps its IndexWriter open after build.
-                'storeDir' => 'suggester_' . $name,
                 // Solr Config API requires booleans as strings.
                 'buildOnCommit' => !empty($suggester['buildOnCommit'])
                     ? 'true' : 'false',
@@ -899,23 +896,21 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 : $suggesterDefs,
         ];
 
-        // Delete the old component first so Solr fully releases in-memory
-        // suggesters and their write locks.
-        $this->postToSolrConfig(
-            $configUrl,
-            json_encode(['delete-searchcomponent' => $componentName])
-        );
+        // Delete ALL old suggest components (current name + any
+        // orphan omeka_suggester_* components from previous runs).
+        $this->deleteAllSuggestComponents($componentName);
 
-        // Restart core (UNLOAD + CREATE) to fully release
-        // IndexWriter locks from old suggesters.
-        $restarted = $this->restartCore();
-        if (!$restarted) {
-            $logger->warn('SearchSolr: Core restart failed after deleting component, continuing anyway.'); // @translate
+        // Reload core to release old IndexWriter locks held by
+        // AnalyzingInfixSuggesters on the default directory.
+        $this->reloadCore();
+        if (!$this->waitForCoreReady()) {
+            $logger->warn('SearchSolr: Core not ready after reload, continuing anyway.'); // @translate
         }
-        // Wait for Solr to fully reinitialize after restart.
-        sleep(3);
 
-        // Create the component fresh with storeDir per suggester.
+        // Create the component fresh.
+        // Note: storeDir is NOT persisted by the Config API, so
+        // all suggesters share the default directory. Only one
+        // suggest component should be active at a time.
         $payload = json_encode(['add-searchcomponent' => $component]);
         $result = $this->postToSolrConfig($configUrl, $payload);
         if ($result !== true) {
@@ -926,15 +921,68 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             return $result;
         }
 
-        // Reload again so Solr initializes the new suggesters with their
-        // individual storeDir directories.
-        $reloaded = $this->reloadCore();
-        if (!$reloaded) {
-            $logger->warn('SearchSolr: Core reload failed after creating component.'); // @translate
+        // Wait for core to be ready after component creation.
+        if (!$this->waitForCoreReady()) {
+            $logger->warn('SearchSolr: Core not ready after creating component.'); // @translate
         }
-        sleep(3);
 
         return true;
+    }
+
+    /**
+     * Delete all suggest-related searchComponents from the config
+     * overlay. This cleans up orphan components from previous runs
+     * that may hold write.lock on the default suggester directory.
+     *
+     * Uses a single HTTP request with duplicate JSON keys (Solr's
+     * Noggit parser supports this) to avoid one reload per delete.
+     */
+    protected function deleteAllSuggestComponents(
+        string $currentComponentName
+    ): void {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $configUrl = $this->clientUrl() . '/config';
+
+        $config = $this->getSolrConfig();
+        if (!$config) {
+            $this->postToSolrConfig(
+                $configUrl,
+                json_encode(['delete-searchcomponent' => $currentComponentName])
+            );
+            return;
+        }
+
+        // Collect all SuggestComponent names from the overlay.
+        $overlay = $config['config'] ?? [];
+        $components = $overlay['searchComponent'] ?? [];
+        $toDelete = [];
+        foreach ($components as $name => $comp) {
+            $class = $comp['class'] ?? '';
+            if ($class === 'solr.SuggestComponent') {
+                $toDelete[] = $name;
+            }
+        }
+
+        if (!in_array($currentComponentName, $toDelete)) {
+            $toDelete[] = $currentComponentName;
+        }
+
+        $logger->info(
+            'SearchSolr: Deleting {count} old suggest components.', // @translate
+            ['count' => count($toDelete)]
+        );
+
+        // Build a single JSON payload with duplicate keys.
+        // Solr's Noggit parser handles this: one HTTP request,
+        // one internal reload instead of one per component.
+        $parts = [];
+        foreach ($toDelete as $name) {
+            $parts[] = '"delete-searchcomponent":'
+                . json_encode($name);
+        }
+        $payload = '{' . implode(',', $parts) . '}';
+        $this->postToSolrConfig($configUrl, $payload);
     }
 
     /**
@@ -967,8 +1015,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             $result = $this->postToSolrConfig($configUrl, $payload);
             if ($result !== true) {
                 $logger->warn(
-                    'SearchSolr: Failed to create/update suggest handler: '
-                        . $result
+                    'SearchSolr: Failed to create/update suggest handler: {error}', // @translate
+                    ['error' => is_string($result) ? $result : 'unknown']
                 );
                 return $result;
             }
@@ -977,9 +1025,6 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return true;
     }
 
-    /**
-     * Build/rebuild the suggester dictionary.
-     */
     /**
      * Build/rebuild suggester dictionaries.
      *
@@ -1016,14 +1061,14 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $response = @file_get_contents($url, false, $context);
         if ($response === false) {
             $logger->err(
-                'SearchSolr: No response from suggest handler.'
+                'SearchSolr: No response from suggest handler.' // @translate
             );
             return false;
         }
         $result = json_decode($response, true);
         if (isset($result['error'])) {
             $logger->err(
-                'SearchSolr: Failed to build suggester: {error}',
+                'SearchSolr: Failed to build suggester: {error}', // @translate
                 ['error' => $result['error']['msg'] ?? 'unknown']
             );
             return false;
@@ -1255,13 +1300,48 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * Poll the core until it responds to a ping or a timeout is reached.
+     *
+     * Used after reload or config changes to ensure the core is fully
+     * initialized before the next operation.
+     *
+     * @param int $maxWait Maximum seconds to wait.
+     * @param int $interval Seconds between polls.
+     * @return bool True if the core is ready, false on timeout.
+     */
+    public function waitForCoreReady(
+        int $maxWait = 300,
+        int $interval = 3
+    ): bool {
+        $client = $this->solariumClient();
+        if (!$client) {
+            return false;
+        }
+        $ping = $client->createPing();
+
+        $deadline = time() + $maxWait;
+        while (time() < $deadline) {
+            try {
+                $client->ping($ping);
+                return true;
+            } catch (\Exception $e) {
+                // Core not ready yet.
+            }
+            sleep($interval);
+        }
+
+        return false;
+    }
+
+    /**
      * Post to Solr Config API.
      *
      * @return bool|string True on success, error message on failure.
      */
     protected function postToSolrConfig(string $url, string $payload)
     {
-        // Large payloads (many suggesters) may take time to process.
+        // The Config API triggers an internal core reload after each
+        // change. Use waitForCoreReady() afterwards for readiness.
         $timeout = strlen($payload) > 100000 ? 120 : 30;
         $context = stream_context_create([
             'http' => [
