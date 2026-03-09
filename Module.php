@@ -272,13 +272,10 @@ class Module extends AbstractModule
 
         // Build optgroups: recommended single indexes first,
         // then individual indexes to group into one suggester.
-        $hasSuggestTxt = $solrCore
-            && $solrCore->schema()->getField('suggest_txt');
-        $recommended = [];
-        if ($hasSuggestTxt) {
-            $recommended['suggest_txt'] = 'suggest_txt (unified field, recommended)'; // @translate
-        }
-        $recommended['auto'] = 'All text and string fields'; // @translate
+        $recommended = [
+            'suggest_txt' => 'suggest_txt (unified field, recommended)', // @translate
+            'auto' => 'All text and string fields', // @translate
+        ];
         $fieldOptions = [
             'Recommended' => ['label' => 'Recommended', 'options' => $recommended], // @translate
             'Individual fields' => ['label' => 'Individual fields', 'options' => $indexFields], // @translate

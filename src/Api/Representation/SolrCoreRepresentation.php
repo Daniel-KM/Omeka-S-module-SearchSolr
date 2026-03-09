@@ -1366,4 +1366,76 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         return true;
     }
+
+    /**
+     * Ensure the "suggest_txt" field exists in the Solr schema.
+     *
+     * Creates the field and copyField directives from all short-value _txt
+     * mapped fields (excluding metadata_text.php properties).
+     *
+     * @return bool|string True if already present or created, error
+     *   message on failure.
+     */
+    public function ensureSuggestField()
+    {
+        $schema = $this->schema();
+        if ($schema->getField('suggest_txt')) {
+            return true;
+        }
+
+        $skipTermTexts = include dirname(__DIR__, 3)
+            . '/config/metadata_text.php';
+
+        $sourceFields = [];
+        foreach ($this->maps() as $map) {
+            $fieldName = $map->fieldName();
+            if (!str_ends_with($fieldName, '_txt')) {
+                continue;
+            }
+            if (in_array($map->source(), $skipTermTexts)) {
+                continue;
+            }
+            $sourceFields[] = $fieldName;
+        }
+        $sourceFields = array_unique($sourceFields);
+
+        if (empty($sourceFields)) {
+            return 'No _txt maps found (excluding long-value properties).';
+        }
+
+        $schemaUrl = $this->clientUrl() . '/schema';
+
+        // Create the field.
+        $result = $this->postToSolrConfig($schemaUrl, json_encode([
+            'add-field' => [
+                'name' => 'suggest_txt',
+                'type' => 'text_general',
+                'stored' => true,
+                'indexed' => true,
+                'multiValued' => true,
+            ],
+        ]));
+        if ($result !== true) {
+            return 'Failed to create suggest_txt field: '
+                . (is_string($result) ? $result : 'unknown');
+        }
+
+        // Create copyFields from each source _txt field.
+        $copyFields = [];
+        foreach ($sourceFields as $field) {
+            $copyFields[] = [
+                'source' => $field,
+                'dest' => 'suggest_txt',
+            ];
+        }
+        $result = $this->postToSolrConfig($schemaUrl, json_encode([
+            'add-copy-field' => $copyFields,
+        ]));
+        if ($result !== true) {
+            return 'Field created but copyFields failed: '
+                . (is_string($result) ? $result : 'unknown');
+        }
+
+        return true;
+    }
 }

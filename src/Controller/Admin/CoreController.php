@@ -937,119 +937,22 @@ class CoreController extends AbstractActionController
         $id = $this->params('id');
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
-        $schema = $solrCore->schema();
-
-        // Check if suggest_txt already exists (static or dynamic).
-        if ($schema->getField('suggest_txt')) {
-            $this->messenger()->addWarning(
-                'The field "suggest_txt" already exists in this core.' // @translate
-            );
-            return $this->redirect()->toRoute(
-                'admin/search/solr/core-id',
-                ['id' => $id, 'action' => 'show']
-            );
-        }
-
-        // Collect _txt field names from maps, excluding long-value
-        // properties listed in metadata_text.php.
-        $skipTermTexts = include dirname(__DIR__, 3)
-            . '/config/metadata_text.php';
-
-        $sourceFields = [];
-        foreach ($solrCore->maps() as $map) {
-            $fieldName = $map->fieldName();
-            if (!str_ends_with($fieldName, '_txt')) {
-                continue;
-            }
-            if (in_array($map->source(), $skipTermTexts)) {
-                continue;
-            }
-            $sourceFields[] = $fieldName;
-        }
-        $sourceFields = array_unique($sourceFields);
-
-        if (empty($sourceFields)) {
-            $this->messenger()->addWarning(
-                'No _txt maps found (excluding long-value properties). Create maps first via "Recommended maps" or "Map all".' // @translate
-            );
-            return $this->redirect()->toRoute(
-                'admin/search/solr/core-id',
-                ['id' => $id, 'action' => 'show']
-            );
-        }
-
-        try {
-            $solariumClient = $solrCore->solariumClient();
-            $endpoint = $solariumClient->getEndpoint();
-            $url = $endpoint->getBaseUri() . 'schema';
-
-            $httpClient = new \Laminas\Http\Client($url, [
-                'timeout' => 30,
-            ]);
-            $httpClient->setMethod('POST');
-            $httpClient->setHeaders([
-                'Content-Type' => 'application/json',
-            ]);
-
-            // 1. Create the suggest_txt field (stored, multivalued,
-            // text_general).
-            $httpClient->setRawBody(json_encode([
-                'add-field' => [
-                    'name' => 'suggest_txt',
-                    'type' => 'text_general',
-                    'stored' => true,
-                    'indexed' => true,
-                    'multiValued' => true,
-                ],
-            ]));
-            $response = $httpClient->send();
-
-            if (!$response->isSuccess()) {
-                $body = json_decode($response->getBody(), true);
-                $error = $body['error']['msg']
-                    ?? $response->getReasonPhrase();
-                $this->messenger()->addError(new PsrMessage(
-                    'Failed to create suggest_txt field: {error}', // @translate
-                    ['error' => $error]
-                ));
-                return $this->redirect()->toRoute(
-                    'admin/search/solr/core-id',
-                    ['id' => $id, 'action' => 'show']
+        $alreadyExists = (bool) $solrCore->schema()->getField('suggest_txt');
+        $result = $solrCore->ensureSuggestField();
+        if ($result === true) {
+            if ($alreadyExists) {
+                $this->messenger()->addWarning(
+                    'The field "suggest_txt" already exists in this core.' // @translate
+                );
+            } else {
+                $this->messenger()->addSuccess(
+                    'Field "suggest_txt" created. Reindex required.' // @translate
                 );
             }
-
-            // 2. Create copyFields from each source field.
-            $copyFields = [];
-            foreach ($sourceFields as $field) {
-                $copyFields[] = [
-                    'source' => $field,
-                    'dest' => 'suggest_txt',
-                ];
-            }
-
-            $httpClient->setRawBody(json_encode([
-                'add-copy-field' => $copyFields,
-            ]));
-            $response = $httpClient->send();
-
-            if ($response->isSuccess()) {
-                $this->messenger()->addSuccess(new PsrMessage(
-                    'Field "suggest_txt" created with {count} copyFields. Reindex required.', // @translate
-                    ['count' => count($copyFields)]
-                ));
-            } else {
-                $body = json_decode($response->getBody(), true);
-                $error = $body['error']['msg']
-                    ?? $response->getReasonPhrase();
-                $this->messenger()->addError(new PsrMessage(
-                    'Field created but copyFields failed: {error}', // @translate
-                    ['error' => $error]
-                ));
-            }
-        } catch (\Exception $e) {
+        } else {
             $this->messenger()->addError(new PsrMessage(
                 'Error creating suggest field: {error}', // @translate
-                ['error' => $e->getMessage()]
+                ['error' => is_string($result) ? $result : 'unknown']
             ));
         }
 

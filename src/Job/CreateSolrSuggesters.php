@@ -70,6 +70,18 @@ class CreateSolrSuggesters extends AbstractJob
             $solrFields = [$settings['solr_field']];
         }
 
+        // Auto-create suggest_txt field if selected but missing.
+        if (in_array('suggest_txt', $solrFields)) {
+            $result = $solrCore->ensureSuggestField();
+            if ($result !== true) {
+                $this->logger->err(
+                    'Cannot create suggest_txt: {error}', // @translate
+                    ['error' => is_string($result) ? $result : 'unknown']
+                );
+                return;
+            }
+        }
+
         // Resolve "auto": all stored text and string fields, with dedup.
         if (empty($solrFields) || in_array('auto', $solrFields)) {
             $solrFields = array_keys($this->getSolrFieldsForSuggester($solrCore));
