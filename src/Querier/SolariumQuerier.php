@@ -1183,40 +1183,33 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
-        $dismax = $this->select->getDisMax();
-        $existing = trim((string) $dismax->getQueryFields());
-
-        // Parse existing qf into field => entry map.
-        $existingParts = $existing !== ''
-            ? preg_split('/\s+/', $existing) ?: []
-            : [];
-        $qfMap = [];
-        foreach ($existingParts as $part) {
-            $name = preg_replace('~\^.*$~', '', $part);
-            $qfMap[$name] = $part;
-        }
-
-        // Apply boosts: update existing fields or add new ones.
+        // Keep only fields with a real boost (≠ 1): boost=1 is the
+        // default and just adds fields to qf without benefit, which
+        // can cause maxClauseCount overflow with many fields.
+        $boosted = [];
         foreach ($merged as $field => $boost) {
             if (!is_string($field) || $field === '') {
                 continue;
             }
             $boost = (float) $boost;
-            if ($boost <= 0) {
-                continue;
+            if ($boost > 0 && $boost !== 1.0) {
+                $boosted[$field] = "$field^$boost";
             }
-            $qfMap[$field] = $boost !== 1.0
-                ? "$field^$boost"
-                : $field;
         }
 
-        // Respect the clause limit for the total qf.
-        $maxFields = $this->maxQueryFields();
-        if (count($qfMap) > $maxFields) {
-            $qfMap = array_slice($qfMap, 0, $maxFields, true);
+        if (!$boosted) {
+            return $this;
         }
 
-        $dismax->setQueryFields(implode(' ', $qfMap));
+        $dismax = $this->select->getDisMax();
+        $existing = trim((string) $dismax->getQueryFields());
+
+        // Append only the truly boosted fields to the existing qf.
+        $dismax->setQueryFields(
+            $existing !== ''
+                ? $existing . ' ' . implode(' ', $boosted)
+                : implode(' ', $boosted)
+        );
 
         return $this;
     }
