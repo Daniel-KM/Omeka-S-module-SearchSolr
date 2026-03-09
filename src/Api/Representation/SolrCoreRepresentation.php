@@ -881,7 +881,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                     ?? 'AnalyzingInfixLookupFactory',
                 'field' => $suggester['field'],
                 'suggestAnalyzerFieldType' => $suggester['suggestAnalyzerFieldType']
-                    ?? 'text_general',
+                    ?? 'text_suggest',
                 // Solr Config API requires booleans as strings.
                 'buildOnCommit' => !empty($suggester['buildOnCommit'])
                     ? 'true' : 'false',
@@ -895,6 +895,9 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
                 ? reset($suggesterDefs)
                 : $suggesterDefs,
         ];
+
+        // Ensure the text_suggest field type exists in schema.
+        $this->ensureSuggestFieldType();
 
         // Delete ALL old suggest components (current name + any
         // orphan omeka_suggester_* components from previous runs).
@@ -1365,6 +1368,51 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         }
 
         return true;
+    }
+
+    /**
+     * Ensure the "text_suggest" field type exists in the Solr schema.
+     *
+     * Replaces apostrophes (straight and curly) with spaces so that StandardTokenizer
+     * splits "l'exception" into [l, exception], making "exception" matchable by
+     * AnalyzingInfixLookupFactory. Identifiers like "123.4567.890" are still
+     * preserved.
+     */
+    public function ensureSuggestFieldType(): bool
+    {
+        $schema = $this->schema();
+        $types = $schema->getSchema()['fieldTypes'] ?? [];
+        foreach ($types as $type) {
+            if (($type['name'] ?? '') === 'text_suggest') {
+                return true;
+            }
+        }
+
+        $schemaUrl = $this->clientUrl() . '/schema';
+        $analyzer = [
+            'charFilters' => [
+                [
+                    'name' => 'patternReplace',
+                    'pattern' => "['\u2019\u2018]",
+                    'replacement' => ' ',
+                ],
+            ],
+            'tokenizer' => ['name' => 'standard'],
+            'filters' => [
+                ['name' => 'lowercase'],
+            ],
+        ];
+        $result = $this->postToSolrConfig($schemaUrl, json_encode([
+            'add-field-type' => [
+                'name' => 'text_suggest',
+                'class' => 'solr.TextField',
+                'positionIncrementGap' => '100',
+                'indexAnalyzer' => $analyzer,
+                'queryAnalyzer' => $analyzer,
+            ],
+        ]));
+
+        return $result === true;
     }
 
     /**
