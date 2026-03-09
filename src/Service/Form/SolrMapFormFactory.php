@@ -8,7 +8,7 @@ use SearchSolr\Form\Admin\SolrMapForm;
 
 class SolrMapFormFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         $valueExtractorManager = $services->get('SearchSolr\ValueExtractorManager');
         $valueFormatterManager = $services->get('SearchSolr\ValueFormatterManager');

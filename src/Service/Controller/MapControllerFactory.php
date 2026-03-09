@@ -36,7 +36,7 @@ use SearchSolr\Controller\Admin\MapController;
 
 class MapControllerFactory implements FactoryInterface
 {
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         return new MapController(
             $services->get('Omeka\Connection'),
