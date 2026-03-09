@@ -58,9 +58,12 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Map all'), $solrCore->resourceMapUrl('items', 'complete'), [
                     'class' => 'link',
                     'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?></li>
-                <li><?= $hyperlink($translate('Remove unused'), $solrCore->resourceMapUrl('items', 'clean'), [
+                <li><?= $hyperlink($translate('Remove unused properties'), $solrCore->resourceMapUrl('items', 'clean'), [
                     'class' => 'link',
                     'title' => $translate('Remove maps of properties that are not used.')]) ?></li>
+                <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->resourceMapUrl('items', 'reduce-fields'), [
+                    'class' => 'link',
+                    'title' => $translate('Remove unused properties then remove extra maps to stay within solr maxFields limit.')]) ?></li>
             </ul>
         </div>
         <?php endif; ?>

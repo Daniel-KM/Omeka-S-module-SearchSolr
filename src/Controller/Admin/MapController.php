@@ -396,6 +396,49 @@ class MapController extends AbstractActionController
         return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCoreId]);
     }
 
+    /**
+     * Dispatch a background job to reduce Solr fields to the maxFields limit.
+     */
+    public function reduceFieldsAction()
+    {
+        $solrCoreId = $this->params('core-id');
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()
+            ->read('solr_cores', $solrCoreId)->getContent();
+
+        $fieldStatus = $solrCore->fieldLimitStatus();
+        if (!$fieldStatus || !$fieldStatus['maxFields']) {
+            $this->messenger()->addError(
+                'Unable to determine the Solr maxFields limit.' // @translate
+            );
+            return $this->redirect()->toRoute(
+                'admin/search/solr/core-id',
+                ['id' => $solrCoreId]
+            );
+        }
+
+        $this->jobDispatcher()->dispatch(
+            \SearchSolr\Job\ReduceSolrFields::class,
+            ['solr_core_id' => $solrCoreId]
+        );
+
+        $this->messenger()->addSuccess(
+            'Reduction job started. Check the logs for progress.' // @translate
+        );
+        $this->messenger()->addWarning(
+            'This job should only be run when the database contains a representative set of items. Results may be inaccurate on an incomplete database.' // @translate
+        );
+        $this->messenger()->addWarning(
+            'After completion, reindex the search engine with "Clear index" checked to actually remove orphaned Solr fields.' // @translate
+        );
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id',
+            ['id' => $solrCoreId]
+        );
+    }
+
     public function addAction()
     {
         $solrCoreId = $this->params('core-id');
