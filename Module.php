@@ -118,6 +118,13 @@ class Module extends AbstractModule
             throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
         }
 
+        if (PHP_VERSION_ID < 80100) {
+            $message = new PsrMessage(
+                'The version of php should be ≥ 8.1.' // @translate
+            );
+            throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
+        }
+
         if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
             $message = new PsrMessage(
                 'The composer library "{library}" is not installed. See readme.', // @translate
