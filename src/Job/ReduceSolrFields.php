@@ -67,6 +67,10 @@ class ReduceSolrFields extends AbstractJob
             return;
         }
 
+        $this->logger->warn(
+            'This job should only be run when the database contains a representative set of items. Results may be inaccurate on an incomplete database.' // @translate
+        );
+
         $maxFields = $fieldStatus['maxFields'];
         $numFields = $fieldStatus['numFields'];
         $toRemove = $numFields - $maxFields;
