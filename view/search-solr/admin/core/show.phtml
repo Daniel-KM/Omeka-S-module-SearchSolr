@@ -67,6 +67,11 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->resourceMapUrl('items', 'reduce-fields'), [
                     'class' => 'link',
                     'title' => $translate('Remove unused properties then remove extra maps to stay within solr maxFields limit.')]) ?></li>
+                <?php if (!$solrCore->schema()->getField('suggest_txt')): ?>
+                <li><?= $hyperlink($translate('Create suggest_txt'), $solrCore->adminUrl('create-suggest-field'), [
+                    'class' => 'link',
+                    'title' => $translate('Create the "suggest_txt" field with copyFields from short-value _txt fields for fast autocompletion.')]) ?></li>
+                <?php endif; ?>
             </ul>
         </div>
         <?php endif; ?>
