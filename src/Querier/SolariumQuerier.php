@@ -291,8 +291,11 @@ class SolariumQuerier extends AbstractQuerier
      * {@inheritDoc}
      * @see \AdvancedSearch\Querier\AbstractQuerier::queryValues()
      */
-    public function queryValues(string $field): array
-    {
+    public function queryValues(
+        string $field,
+        ?string $prefix = null,
+        int $limit = 0
+    ): array {
         if (!$field) {
             return [];
         }
@@ -306,55 +309,92 @@ class SolariumQuerier extends AbstractQuerier
             $fields = $aliases[$field]['fields'] ?? [$field];
             $fields = is_array($fields) ? $fields : [$fields];
 
-            // The terms query in solarium does not support filtering by field,
-            // so it is not possible to filter by is_public or by site.
-            // So either index values by is_public and site or use a standard
-            // query.
+            // For full values (autocomplete), use _ss fields
+            // instead of _txt: Solr terms and facets on _txt
+            // return individual tokens, not complete values.
+            $schema = $this->solrCore->schema();
+            $fields = array_map(function ($f) use ($schema) {
+                if (str_ends_with($f, '_txt')
+                    || str_ends_with($f, '_t')
+                ) {
+                    $base = preg_replace(
+                        '/(_txt|_t)$/', '', $f
+                    );
+                    $ssField = $base . '_ss';
+                    if ($schema->getField($ssField)) {
+                        return $ssField;
+                    }
+                }
+                return $f;
+            }, $fields);
+
             $isPublicField = $this->solrCoreField('is_public');
             $sitesField = $this->solrCoreField('site/o:id');
 
-            if (($this->query->getIsPublic() && $isPublicField)
+            // Use facets when prefix is set (case-insensitive)
+            // or when filtering by public/site is needed.
+            // Terms don't support case-insensitive prefix.
+            if ($prefix !== null
+                || ($this->query->getIsPublic() && $isPublicField)
                 || ($this->query->getSiteId() && $sitesField)
-                // "Terms" cannot be used for numeric fields (date, integer, float).
                 || $this->fieldIsNumeric(reset($fields))
             ) {
-                $result = $this->queryValuesWithFacets($fields, $isPublicField, $sitesField);
+                $result = $this->queryValuesWithFacets(
+                    $fields, $isPublicField, $sitesField,
+                    $prefix, $limit
+                );
             } else {
-                $result = $this->queryValuesWithTerms($fields);
+                $result = $this->queryValuesWithTerms(
+                    $fields, null, $limit
+                );
             }
 
             $list = array_merge(...array_values($result));
             natcasesort($list);
-            $list = array_keys(array_flip(array_filter($list, 'strlen')));
+            $list = array_keys(
+                array_flip(array_filter($list, 'strlen'))
+            );
             return array_combine($list, $list);
         } catch (\Throwable $e) {
-            // Return empty array if Solr is not available.
             return [];
         }
     }
 
-    protected function queryValuesWithFacets(array $fields, ?string $isPublicField, ?string $sitesField): array
-    {
+    protected function queryValuesWithFacets(
+        array $fields,
+        ?string $isPublicField,
+        ?string $sitesField,
+        ?string $prefix = null,
+        int $limit = 0
+    ): array {
+        // Solr uses -1 for unlimited.
+        $limit = $limit ?: -1;
         $query = $this->solariumClient->createSelect();
 
         if ($this->query->getIsPublic() && $isPublicField) {
-            // The field may be a boolean or an integer.
-            $val = $this->fieldIsBool($isPublicField) ? 'true' : 1;
-            $query->createFilterQuery('pub')->setQuery("$isPublicField:$val");
+            $val = $this->fieldIsBool($isPublicField)
+                ? 'true' : 1;
+            $query->createFilterQuery('pub')
+                ->setQuery("$isPublicField:$val");
         }
 
         if ($siteId = $this->query->getSiteId()) {
-            $query->createFilterQuery('site')->setQuery("$sitesField:$siteId");
+            $query->createFilterQuery('site')
+                ->setQuery("$sitesField:$siteId");
         }
 
         $facetSet = $query->getFacetSet();
         foreach ($fields as $i => $field) {
-            $facetSet->createFacetField("f$i")
+            $facet = $facetSet->createFacetField("f$i")
                 ->setField($field)
-                ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
-                ->setLimit(-1)
-                // Only used values in the current site.
-            ->setMinCount(1);
+                ->setSort('index')
+                ->setLimit($limit)
+                ->setMinCount(1);
+            if ($prefix !== null && $prefix !== '') {
+                $facet
+                    ->setContains($prefix)
+                    ->setContainsIgnoreCase(true);
+            }
         }
 
         $resultSet = $this->solariumClient->select($query);
@@ -365,19 +405,27 @@ class SolariumQuerier extends AbstractQuerier
         return $result;
     }
 
-    protected function queryValuesWithTerms(array $fields): array
-    {
-        // In Sort, a query value is a terms query.
+    protected function queryValuesWithTerms(
+        array $fields,
+        ?string $prefix = null,
+        int $limit = 0
+    ): array {
+        // Solr uses -1 for unlimited.
+        $limit = $limit ?: -1;
         $query = $this->solariumClient->createTerms();
         $query->setFields($fields)
-            ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
-            ->setLimit(-1)
-            // Only used values. Anyway, by default there is no predefined list.
+            ->setSort('index')
+            ->setLimit($limit)
             ->setMinCount(1);
+        if ($prefix !== null && $prefix !== '') {
+            $query->setPrefix($prefix);
+        }
 
         $resultSet = $this->solariumClient->terms($query);
-        // Results are structured by field and term/count.
-        return array_map(fn ($v) => array_keys($v), $resultSet->getResults());
+        return array_map(
+            fn ($v) => array_keys($v),
+            $resultSet->getResults()
+        );
     }
 
     /**
