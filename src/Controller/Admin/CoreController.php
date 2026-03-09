@@ -275,6 +275,28 @@ class CoreController extends AbstractActionController
             ));
         }
 
+        $fieldStatus = $solrCore->fieldLimitStatus();
+        if ($fieldStatus && $fieldStatus['maxFields']) {
+            if ($fieldStatus['exceeded']) {
+                $this->messenger()->addError(new PsrMessage(
+                    'The Solr core has {numFields} fields, exceeding the configured limit of {maxFields}. Indexing will be refused. To fix, either reduce or group field maps, or increase "maxFields" in solrconfig.xml and restart Solr.', // @translate
+                    [
+                        'numFields' => $fieldStatus['numFields'],
+                        'maxFields' => $fieldStatus['maxFields'],
+                    ]
+                ));
+            } elseif ($fieldStatus['numFields'] > $fieldStatus['maxFields'] * 0.9) {
+                $this->messenger()->addWarning(new PsrMessage(
+                    'The Solr core has {numFields} fields, approaching the configured limit of {maxFields} ({percentage}%). It is recommended either to reduce or to group field maps, or to increase "maxFields" in solrconfig.xml and restart Solr.', // @translate
+                    [
+                        'numFields' => $fieldStatus['numFields'],
+                        'maxFields' => $fieldStatus['maxFields'],
+                        'percentage' => round($fieldStatus['numFields'] / $fieldStatus['maxFields'] * 100),
+                    ]
+                ));
+            }
+        }
+
         return new ViewModel([
             'solrCore' => $solrCore,
             'resource' => $solrCore,

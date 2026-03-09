@@ -352,6 +352,32 @@ class SolariumIndexer extends AbstractIndexer
 
         $this->mainLocale = $services->get('Omeka\Settings')->get('locale');
 
+        // Check Solr field count against maxFields limit.
+        $fieldStatus = $this->getSolrCore()->fieldLimitStatus();
+        if ($fieldStatus) {
+            if ($fieldStatus['exceeded']) {
+                $this->getLogger()->err(
+                    'The Solr core has {numFields} fields, exceeding the configured limit of {maxFields}. Indexing is stopped. To fix, either reduce or group field maps, or increase "maxFields" in solrconfig.xml and restart Solr.', // @translate
+                    [
+                        'numFields' => $fieldStatus['numFields'],
+                        'maxFields' => $fieldStatus['maxFields'],
+                    ]
+                );
+                return null;
+            } elseif ($fieldStatus['maxFields']
+                && $fieldStatus['numFields'] > $fieldStatus['maxFields'] * 0.9
+            ) {
+                $this->getLogger()->warn(
+                    'The Solr core has {numFields} fields, approaching the configured limit of {maxFields} ({percentage}%). It is recommended either to reduce or to group field maps, or to increase "maxFields" in solrconfig.xml and restart Solr.', // @translate
+                    [
+                        'numFields' => $fieldStatus['numFields'],
+                        'maxFields' => $fieldStatus['maxFields'],
+                        'percentage' => round($fieldStatus['numFields'] / $fieldStatus['maxFields'] * 100),
+                    ]
+                );
+            }
+        }
+
         return $this;
     }
 

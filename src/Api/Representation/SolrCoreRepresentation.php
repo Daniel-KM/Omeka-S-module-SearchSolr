@@ -1186,6 +1186,52 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * Check number of fields in core against the configured maxFields limit.
+     *
+     * @return array Associative array with keys "numFields", "maxFields" and
+     * "exceeded" (bool), or null if unavailable.
+     */
+    public function fieldLimitStatus(): ?array
+    {
+        $url = $this->clientUrl();
+
+        // Get current field count via luke api.
+        $lukeUrl = $url . '/admin/luke?numTerms=0';
+        $lukeResponse = @file_get_contents($lukeUrl, false,
+            stream_context_create(['http' => ['timeout' => 10]]));
+        if ($lukeResponse === false) {
+            return null;
+        }
+        $luke = json_decode($lukeResponse, true);
+        $numFields = is_array($luke) && isset($luke['fields'])
+            ? count($luke['fields'])
+            : null;
+        if ($numFields === null) {
+            return null;
+        }
+
+        // Get maxFields from solr config api.
+        $maxFields = null;
+        $config = $this->getSolrConfig();
+        if ($config) {
+            $processors = $config['config']['updateProcessor'] ?? [];
+            foreach ($processors as $proc) {
+                if (($proc['class'] ?? '') === 'solr.NumFieldLimitingUpdateRequestProcessorFactory') {
+                    $maxFields = (int) ($proc['maxFields'] ?? 0) ?: null;
+                    break;
+                }
+            }
+        }
+
+        return [
+            'numFields' => $numFields,
+            'maxFields' => $maxFields,
+            'exceeded' => $maxFields !== null
+                && $numFields > $maxFields,
+        ];
+    }
+
+    /**
      * Get Solr config via API.
      */
     protected function getSolrConfig(): ?array
