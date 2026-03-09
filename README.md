@@ -163,6 +163,36 @@ specific property, or a group of metadata, with pattern, and even combine them
 together with various joiners (and, or, not, near…). In that particular case, it
 will be required to create multiple indexes in details.
 
+### Type of indices
+
+The indices of the default Solr configuration work with names and suffixes
+matching type:
+
+- "_t" and "_txt" are used to store words individually.
+- "_s" and "_ss" are used to store whole string.
+- "_i" and "_is" are used to store integers.
+- "_dt" and "_dts" are used to store dates.
+- "_ancestor_path" and "_descendent_path" are used to store structures.
+
+The choice of type depends on what you need for a metadata:
+
+- For global searches, indices should be "_t" and "_txt".
+- For simple filters and facets, indices should be a multiple whole values
+  ("_ss", "_is" and "_dts").
+- For sort, it should be a single value ("_s", "_i" and "_dt").
+- For bounce links, it should be multiple values formatted for linking ("_link_ss").
+- For main autocompletion ("à-la-google search"), "_txt" should be used. There
+  is a default field "suggest_txt" that groups "_txt" fields.
+- For autocompletion in filters, you may use "_ss" for short values and "_txt"
+  for long ones. Here, autocompletion in filters is generally useless for long
+  values.
+- "_ancestor_path" and "_descendent_path" are generally used for search and
+  facets, generally with a thesaurus, a classification scheme, or geographic
+  names.
+
+Other indices are available for complex cases. Solr should be configured first
+if more types are needed.
+
 ### Bounce links
 
 When indexing linked resources (local resource with another item, for example
