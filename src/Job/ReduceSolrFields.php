@@ -25,6 +25,12 @@ class ReduceSolrFields extends AbstractJob
      */
     protected $logger;
 
+    /**
+     *
+     * List of fields, adapted:
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::missingRequiredMaps()
+     * @see \SearchSolr\Job\ReduceSolrFields::perform()
+     */
     public function perform(): void
     {
         $services = $this->getServiceLocator();
@@ -214,11 +220,51 @@ class ReduceSolrFields extends AbstractJob
             ]
         ));
 
+        // Default fields that should never be removed.
         $requiredSources = [
-            'resource_name', 'id', 'is_public',
-            'owner/o:id', 'site/o:id', 'search_index',
+            'resource_name',
+            'o:id',
+            'is_public',
+            'o:title',
+            'owner/o:id',
+            'site/o:id',
+            'resource_class/o:term',
+            'resource_template/o:label',
+            'item_set/o:id',
+            'item_set/o:title',
+            // TODO Still needed?
+            'property_values',
+            // To manage multiple indexes (drupal).
+            'search_index',
         ];
-        $requiredFields = ['name_s', 'ss_name'];
+        $requiredFields = [
+            // Solr dynamic fields naming convention.
+            'resource_name_s',
+            'id_i',
+            'is_public_i',
+            'name_s',
+            'owner_id_i',
+            'site_id_is',
+            'resource_class_s',
+            'resource_template_s',
+            'title_s',
+            'item_set_id_is',
+            'item_set_title_ss',
+            'property_values_txt',
+            // Drupal naming convention.
+            'ss_resource_name',
+            'is_id',
+            'is_public',
+            'ss_name',
+            'is_owner_id',
+            'im_site_id',
+            'ss_resource_class',
+            'ss_resource_template',
+            'ss_title',
+            'im_item_set_id',
+            'sm_item_set_title',
+            'twm_property_values',
+        ];
 
         // Reload core after step 2.
         $solrCore = $api->read('solr_cores', $solrCoreId)

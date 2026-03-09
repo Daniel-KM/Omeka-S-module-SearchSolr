@@ -767,6 +767,10 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
     /**
      * Check if all required maps are managed by the core.
+     *
+     * List of fields, adapted:
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::missingRequiredMaps()
+     * @see \SearchSolr\Job\ReduceSolrFields::perform()
      */
     public function missingRequiredMaps(): ?array
     {
