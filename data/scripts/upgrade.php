@@ -35,22 +35,37 @@ $messenger = $plugins->get('messenger');
 $siteSettings = $services->get('Omeka\Settings\Site');
 $entityManager = $services->get('Omeka\EntityManager');
 
-if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.80')) {
+if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.81')) {
     $message = new \Omeka\Stdlib\Message(
         $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
-        'Common', '3.4.80'
+        'Common', '3.4.81'
     );
     $messenger->addError($message);
-    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
+    throw new ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.58')) {
+$hasError = false;
+
+if (PHP_VERSION_ID < 80100) {
     $message = new PsrMessage(
-        $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.58']
+        'This version of module {module} requires a version of php ≥ {version}.', // @translate
+        ['module' => 'SearchSolr', 'version' => '8.1']
     );
     $messenger->addError($message);
-    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
+    $hasError = true;
+}
+
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.59')) {
+    $message = new PsrMessage(
+        $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
+        ['module' => 'Advanced Search', 'version' => '3.4.59']
+    );
+    $messenger->addError($message);
+    $hasError = true;
+}
+
+if ($hasError) {
+    throw new ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
 if (version_compare($oldVersion, '3.5.15.2', '<')) {
@@ -1321,4 +1336,10 @@ if (version_compare($oldVersion, '3.5.65', '<')) {
             );
         }
     }
+}
+
+if (version_compare($oldVersion, '3.5.66', '<')) {
+    $messenger->addSuccess(new PsrMessage(
+        'The suggester now uses an optimized unified field "suggest_txt" by default. You can select it in the suggester settings.' // @translate
+    ));
 }

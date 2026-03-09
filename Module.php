@@ -110,35 +110,39 @@ class Module extends AbstractModule
         $translate = $services->get('ControllerPluginManager')->get('translate');
         $translator = $services->get('MvcTranslator');
 
-        if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.80')) {
+        if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.81')) {
             $message = new \Omeka\Stdlib\Message(
                 $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
-                'Common', '3.4.80'
+                'Common', '3.4.81'
             );
             throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
         }
 
+        $errors = [];
+
         if (PHP_VERSION_ID < 80100) {
-            $message = new PsrMessage(
-                'The version of php should be ≥ 8.1.' // @translate
-            );
-            throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
+            $errors[] = (string) (new PsrMessage(
+                'This version of module {module} requires a version of php ≥ {version}.', // @translate
+                ['module' => 'SearchSolr', 'version' => '8.1']
+            ))->setTranslator($translator);
         }
 
         if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
-            $message = new PsrMessage(
+            $errors[] = (string) (new PsrMessage(
                 'The composer library "{library}" is not installed. See readme.', // @translate
                 ['library' => 'Solarium']
-            );
-            throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
+            ))->setTranslator($translator);
         }
 
-        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.58')) {
-            $message = new PsrMessage(
-                $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-                ['module' => 'Advanced Search', 'version' => '3.4.58']
-            );
-            throw new ModuleCannotInstallException((string) $message);
+        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.59')) {
+            $errors[] = (string) (new PsrMessage(
+                'This module requires module "{module}" version "{version}" or greater.', // @translate
+                ['module' => 'Advanced Search', 'version' => '3.4.59']
+            ))->setTranslator($translator);
+        }
+
+        if ($errors) {
+            throw new ModuleCannotInstallException(implode("\n", $errors));
         }
     }
 
