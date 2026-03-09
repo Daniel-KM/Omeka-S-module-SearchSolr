@@ -548,7 +548,7 @@ class SolariumQuerier extends AbstractQuerier
             }
             return $grouped ? array_merge(...array_values($grouped)) : [];
         } catch (\Throwable $e) {
-            $this->getLogger()->warn(
+            $this->getLogger()->err(
                 'Could not fetch all resource ids: {message}', // @translate
                 ['message' => $e->getMessage()]
             );
@@ -635,17 +635,16 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Configure EDisMax per-request and keep only foldable query fields.
      *
-     * Also disable SOW to avoid splitting tokens like "949.0252" into
-     * too many clauses.
+     * Also disable SOW to avoid splitting tokens like "949.0252" into too many
+     * clauses.
      *
-     * The number of query fields is limited to avoid exceeding Solr's
-     * maxClauseCount (default 1024). With many fields, each search
-     * term creates a clause per field, and each clause is expanded by
-     * the analyzer (lowercasing, ASCII folding, synonyms…), quickly
-     * hitting the limit.
+     * The number of query fields is limited to avoid exceeding Solr maxClauseCount
+     * (default 1024). With many fields, each search term creates a clause per
+     * field, and each clause is expanded by the analyzer (lowercasing, ascii
+     * folding, synonyms…), quickly hitting the limit.
      *
-     * If the catchall field `_text_` exists, use it instead of listing
-     * all fields individually.
+     * If the catchall field `_text_` exists, use it instead of listing all
+     * fields individually.
      */
     protected function configureEDisMax(): self
     {
@@ -738,7 +737,7 @@ class SolariumQuerier extends AbstractQuerier
 
         // When there are excluded fields, we need to search only in allowed
         // fields. Use the same field selection as before but limit count to
-        // stay under Solr's maxClauseCount of 1024.
+        // stay under Solr maxClauseCount of 1024.
         if (($mainQuery !== '' || $refineQuery !== '') && $excludedFields) {
             $allFields = $this->usedSolrFields(
                 ['t_', 'txt_', 'ss_', 'sm_', 'ws_'],
@@ -747,8 +746,8 @@ class SolariumQuerier extends AbstractQuerier
             );
             $allowedFields = array_diff($allFields, $excludedFields);
             if ($allowedFields) {
-                // Limit fields to avoid clause explosion. Use DisMax
-                // with restricted qf for efficient multi-field search.
+                // Limit fields to avoid clause explosion. Use DisMax with
+                // restricted qf for efficient multi-field search.
                 $allowedFields = array_slice(
                     array_values($allowedFields),
                     0,
@@ -926,8 +925,8 @@ class SolariumQuerier extends AbstractQuerier
                 ;
             } else {
                 // Term facets.
-                // The domain option is used to exclude the tagged search
-                // filter related to the facet.
+                // The domain option is used to exclude the tagged search filter
+                // related to the facet.
                 // see: https://yonik.com/multi-select-faceting/
                 /** @var \Solarium\Component\Facet\FieldValueParametersInterface $facet */
                 $excludeTag = strtoupper($name . '-facet');
@@ -1183,9 +1182,9 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
-        // Keep only fields with a real boost (≠ 1): boost=1 is the
-        // default and just adds fields to qf without benefit, which
-        // can cause maxClauseCount overflow with many fields.
+        // Keep only fields with a real boost (≠ 1): boost=1 is the default and
+        // just adds fields to qf without benefit, which can cause maxClauseCount
+        // overflow with many fields.
         $boosted = [];
         foreach ($merged as $field => $boost) {
             if (!is_string($field) || $field === '') {
@@ -1343,7 +1342,8 @@ class SolariumQuerier extends AbstractQuerier
         // Fetch all ids grouped by resource type (computed on demand).
         $allResourceIdsByType = $this->queryAllResourceIds(null, true);
 
-        // Aggregate only when not grouped by resource type and there are multiple types.
+        // Aggregate only when not grouped by resource type and there are
+        // multiple types.
         if (!$this->byResourceType && $this->resourceTypes && count($this->resourceTypes) > 1) {
             // Aggregate ids
             if (isset($allResourceIdsByType['resources'])) {
@@ -1658,10 +1658,10 @@ class SolariumQuerier extends AbstractQuerier
      * Build advanced search filter like omeka api.
      *
      * Regex requires string (_s), not text or anything else.
-     * So if the field is not a string, use a simple "+", that
-     * will be enough in most of the cases.
-     * Furthermore, unlike sql, solr regex doesn't manage
-     * insensitive search, neither flag "i".
+     * So if the field is not a string, use a simple "+", that will be enough
+     * in most of the cases.
+     * Furthermore, unlike sql, solr regex doesn't manage insensitive search,
+     * neither flag "i".
      * The pattern is limited to 1000 characters by default.
      *
      * @todo Check the size of the pattern.
@@ -1723,9 +1723,9 @@ class SolariumQuerier extends AbstractQuerier
             // Matches.
             case 'nma':
             case 'ma':
-                // Matches is already an regular expression, so just set
-                // it. Note that Solr can manage only a small part of
-                // regex and anchors are added by default.
+                // Matches is already an regular expression, so just set it.
+                // Note that Solr can manage only a small part of regex and
+                // anchors are added by default.
                 // TODO Add // or not?
                 // TODO Escape regex for regexes…
                 $val = $this->fieldIsString($field) ? $val : $this->escapePhraseValue($val, 'OR');
@@ -1736,10 +1736,10 @@ class SolariumQuerier extends AbstractQuerier
             case 'lte':
             case 'gte':
             case 'gt':
-                // With a list of lt/lte/gte/gt, get the right value first in order
-                // to avoid multiple sql conditions.
-                // But the language cannot be determined: language of the site? of
-                // the data? of the user who does query?
+                // With a list of lt/lte/gte/gt, get the right value first in
+                // order to avoid multiple sql conditions.
+                // But the language cannot be determined: language of the site?
+                // of the data? of the user who does query?
                 // Practically, mysql/mariadb sort with generic unicode rules by
                 // default, so use a generic sort.
                 /* @see https://www.unicode.org/reports/tr10/ */

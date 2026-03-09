@@ -346,7 +346,8 @@ class Module extends AbstractModule
             ])
         ;
 
-        // Mark the form as handled so AdvancedSearch doesn't show the "no settings" message.
+        // Mark the form as handled so AdvancedSearch doesn't show
+        // the "no settings" message.
         $event->setParam('handled', true);
     }
 
@@ -797,7 +798,8 @@ class Module extends AbstractModule
             return;
         }
 
-        // Set the default server id, used in some cases (shared core with Drupal).
+        // Set the default server id, used in some cases (shared
+        // core with Drupal).
         $settings = $services->get('Omeka\Settings');
         $serverId = strtolower(substr(strtr(base64_encode(random_bytes(128)), ['+' => '', '/' => '', '=' => '']), 0, 6));
         $settings->set('searchsolr_server_id', $serverId);
@@ -835,7 +837,8 @@ class Module extends AbstractModule
 
         $message = new \Omeka\Stdlib\Message(
             'The default core can be configured in the %1$ssearch manager%2$s.', // @translate
-            // Don't use the url helper, the route is not available during install.
+            // Don't use the url helper, the route is not available
+            // during install.
             sprintf('<a href="%s">', $urlHelper('admin') . '/search-manager/solr/core/' . $solrCoreId . '/edit'),
             '</a>'
         );

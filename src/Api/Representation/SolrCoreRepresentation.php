@@ -1431,7 +1431,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     public function ensureSuggestField()
     {
         $schema = $this->schema();
-        if ($schema->getField('suggest_txt')) {
+        // Check only explicit fields, not dynamic field matches.
+        if (isset($schema->getFieldsByName()['suggest_txt'])) {
             return true;
         }
 

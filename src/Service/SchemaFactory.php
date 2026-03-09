@@ -38,7 +38,7 @@ class SchemaFactory implements FactoryInterface
 {
     protected $schemas = [];
 
-    public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
+    public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
         $solrCore = $options['solr_core'];

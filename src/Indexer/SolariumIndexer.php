@@ -160,8 +160,7 @@ class SolariumIndexer extends AbstractIndexer
     protected $documentCount = 0;
 
     /**
-     * Hard commit every N documents for durability during bulk
-     * indexing.
+     * Hard commit every N documents for durability during bulk indexing.
      *
      * @var int
      */
@@ -211,8 +210,8 @@ class SolariumIndexer extends AbstractIndexer
 
         $client = $this->getClient();
 
-        // Delete + commit may be slow on large indexes or when
-        // Solr is busy. On timeout, poll until completion.
+        // Delete + commit may be slow on large indexes or when Solr is busy. On
+        // timeout, poll until completion.
         try {
             $update = $client->createUpdate()
                 ->addDeleteQuery($query)
@@ -330,10 +329,10 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
-        // Flush buffer to send docs to Solr without committing.
-        // Commits are expensive (segment merge, searcher warming)
-        // especially with many fields. Only hard commit periodically
-        // for durability, and once at the end via commit().
+        // Flush buffer to send docs to Solr without committing. Commits are
+        // expensive (segment merge, searcher warming) especially with many
+        // fields. Only hard commit periodically for durability, and once at the
+        // end via commit().
         try {
             $this->buffer->flush();
         } catch (Exception $e) {
@@ -366,10 +365,9 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
-        // No periodic commit: Solr's transaction log ensures
-        // durability for flushed data. Commits are done only at the
-        // end via commit() to avoid costly segment merges during
-        // bulk indexing.
+        // No periodic commit: Solr's transaction log ensures durability for
+        // flushed data. Commits are done only at the end via commit() to avoid
+        // costly segment merges during bulk indexing.
 
         return $this;
     }
@@ -377,8 +375,8 @@ class SolariumIndexer extends AbstractIndexer
     /**
      * Force a hard commit to Solr (call after indexing is complete).
      *
-     * Uses a long timeout because commits can trigger expensive
-     * segment merges, especially with many fields.
+     * Uses a long timeout because commits can trigger expensive segment merges,
+     * especially with many fields.
      */
     public function commit(): IndexerInterface
     {
@@ -396,8 +394,8 @@ class SolariumIndexer extends AbstractIndexer
             $this->buffer->clear();
         }
 
-        // Send commit with extended timeout (10 min) to
-        // handle large segment merges.
+        // Send commit with extended timeout (10 min) to handle large segment
+        // merges.
         $adapter = $this->solariumClient->getAdapter();
         $previousTimeout = $adapter->getTimeout();
         $adapter->setTimeout(600);
@@ -529,10 +527,11 @@ class SolariumIndexer extends AbstractIndexer
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->getValueExtractor($resourceName);
 
-        // This shortcut is not working on some databases: the representation is
-        // not fully loaded, so when getting resource values ($representation->values()),
-        // an error occurs when getting the property term: the vocabulary is not
-        // loaded and the prefix cannot be get.
+        // This shortcut is not working on some databases: the representation
+        // is not fully loaded, so when getting resource values
+        // ($representation->values()), an error occurs when getting the
+        // property term: the vocabulary is not loaded and the prefix cannot
+        // be get.
         // TODO Is it still true with representation not created via adapter but api in AdvancedSearch?
         /** @see \Omeka\Api\Representation\AbstractResourceEntityRepresentation::values() */
 
@@ -594,9 +593,9 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            // Check if the value is a single valued field already filled.
-            // Is a single field value the first one or the last one? Most of
-            // the time, the first one.
+            // Check if the value is a single valued field already filled. Is a
+            // single field value the first one or the last one? Most of the
+            // time, the first one.
             if (!empty($isSingleFieldFilled[$solrField])) {
                 continue;
             }
@@ -638,9 +637,8 @@ class SolariumIndexer extends AbstractIndexer
         $this->appendSupportedFields($resource, $document);
 
         // Remove the duplicates in the multiple indexes: this is generally an
-        // unintentional issue (or related to a drupal field).
-        // It's recommended to use Solr boost mechanisms to boost a property or
-        // a document.
+        // unintentional issue (or related to a drupal field). It's recommended
+        // to use Solr boost mechanisms to boost a property or a document.
         foreach ($document->getFields() as $field => $values) {
             if (empty($this->isSingleValuedFields[$field]) && is_array($values) && count($values) > 1) {
                 $deduplicatedValues = array_unique($values);
@@ -749,8 +747,8 @@ class SolariumIndexer extends AbstractIndexer
     /**
      * Prepare the commit message error for log.
      *
-     * To get a better message: get the data ($request->getRawData()) and post it
-     * in Solr admin board.
+     * To get a better message: get the data ($request->getRawData()) and post
+     * it in Solr admin board.
      * @see \Solarium\Core\Client\Adapter\Http::createContext()
      */
     protected function solrError(
@@ -862,8 +860,8 @@ class SolariumIndexer extends AbstractIndexer
      * multiple values to a single valued field.
      *
      * Because the multivalued quality is defined by the schema, it is not
-     * related to the resource name, so a single list is created.
-     * It avoids complexity with generic/resources/specific resources names too.
+     * related to the resource name, so a single list is created. It avoids
+     * complexity with generic/resources/specific resources names too.
      *
      * @todo Move the single valued check inside Solr core settings to do it one time.
      */
@@ -907,7 +905,8 @@ class SolariumIndexer extends AbstractIndexer
                     $value = $this->serverId;
                     break;
                 case 'timestamp':
-                    // If this is It should be the same timestamp for all documents that are being indexed.
+                    // If this is It should be the same timestamp for all
+                    // documents that are being indexed.
                     $value = gmdate('Y-m-d\TH:i:s\Z');
                     break;
                 case 'boost_document':
@@ -985,7 +984,8 @@ class SolariumIndexer extends AbstractIndexer
 
         // In Drupal, the same value is copied in each language field for sort…
         // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/src/Plugin/search_api/backend/SearchApiSolrBackend.php#L1130-1172
-        // For example, field is "ss_title", so sort field is "sort_X3b_fr_title".
+        // For example, field is "ss_title", so sort field is
+        // "sort_X3b_fr_title".
         // This is slighly different from Drupal process.
         $prefix = $this->vars['solr_maps'][$resourceName][$solrField]['prefix'];
         $matches = [];
@@ -1084,9 +1084,9 @@ class SolariumIndexer extends AbstractIndexer
             // Use BufferedAdd plugin to reduce memory issue.
             $this->solariumClient->getPlugin('bufferedadd');
         }
-        // Indexing is heavier than querying, so use a longer
-        // timeout. Check every call: getSolrCore() may have
-        // initialized the client with a shorter timeout.
+        // Indexing is heavier than querying, so use a longer timeout. Check
+        // every call: getSolrCore() may have initialized the client with a
+        // shorter timeout.
         $adapter = $this->solariumClient->getAdapter();
         if ($adapter->getTimeout() < 120) {
             $adapter->setTimeout(120);
