@@ -906,15 +906,13 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             json_encode(['delete-searchcomponent' => $componentName])
         );
 
-        // Reload to clear in-memory state from old component.
-        $reloaded = $this->reloadCore();
-        if (!$reloaded) {
-            $logger->warn(
-                'SearchSolr: Core reload failed after deleting'
-                    . ' component, continuing anyway.'
-            );
+        // Restart core (UNLOAD + CREATE) to fully release
+        // IndexWriter locks from old suggesters.
+        $restarted = $this->restartCore();
+        if (!$restarted) {
+            $logger->warn('SearchSolr: Core restart failed after deleting component, continuing anyway.'); // @translate
         }
-        // Wait for Solr to fully reinitialize after reload.
+        // Wait for Solr to fully reinitialize after restart.
         sleep(3);
 
         // Create the component fresh with storeDir per suggester.
@@ -922,8 +920,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $result = $this->postToSolrConfig($configUrl, $payload);
         if ($result !== true) {
             $logger->err(
-                'SearchSolr: Failed to create suggest component: '
-                    . $result
+                'SearchSolr: Failed to create suggest component: {error}', // @translate
+                ['error' => is_string($result) ? $result : 'unknown']
             );
             return $result;
         }
@@ -932,10 +930,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         // individual storeDir directories.
         $reloaded = $this->reloadCore();
         if (!$reloaded) {
-            $logger->warn(
-                'SearchSolr: Core reload failed after creating'
-                    . ' component.'
-            );
+            $logger->warn('SearchSolr: Core reload failed after creating component.'); // @translate
         }
         sleep(3);
 
@@ -1050,7 +1045,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $settings = $this->clientSettings();
         $coreName = $settings['core'] ?? null;
         if (!$coreName) {
-            $logger->err('SearchSolr: Cannot reload: no core name.');
+            $logger->err('SearchSolr: Cannot reload: no core name.'); // @translate
             return false;
         }
         $adminUrl = $settings['scheme'] . '://'
@@ -1070,7 +1065,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $response = @file_get_contents($adminUrl, false, $context);
         if ($response === false) {
             $logger->err(
-                'SearchSolr: Core reload failed: no response from {url}.',
+                'SearchSolr: Core reload failed: no response from {url}.', // @translate
                 ['url' => preg_replace('~://[^@]+@~', '://***@', $adminUrl)]
             );
             return false;
@@ -1078,13 +1073,113 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $result = json_decode($response, true);
         if (!empty($result['error'])) {
             $logger->err(
-                'SearchSolr: Core reload error: {error}',
+                'SearchSolr: Core reload error: {error}', // @translate
                 ['error' => $result['error']['msg'] ?? 'unknown']
             );
             return false;
         }
         $logger->info(
-            'SearchSolr: Core "{core}" reloaded successfully.',
+            'SearchSolr: Core "{core}" reloaded successfully.', // @translate
+            ['core' => $coreName]
+        );
+        return true;
+    }
+
+    /**
+     * Restart the core via UNLOAD + CREATE (Core Admin API).
+     *
+     * More thorough than reloadCore(): fully closes the core,
+     * releasing all IndexWriter locks (e.g. from AnalyzingInfix-
+     * Suggester), before re-registering it. Falls back to
+     * reloadCore() on error.
+     */
+    public function restartCore(): bool
+    {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
+        $settings = $this->clientSettings();
+        $coreName = $settings['core'] ?? null;
+        if (!$coreName) {
+            $logger->err('SearchSolr: Cannot restart: no core name.'); // @translate
+            return false;
+        }
+
+        $baseAdminUrl = $settings['scheme'] . '://'
+            . (empty($settings['username']) ? '' : $settings['username']
+                . (empty($settings['password']) ? '' : ':' . $settings['password'])
+                . '@')
+            . $settings['host'] . ':' . $settings['port']
+            . '/solr/admin/cores';
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'timeout' => 60,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        // Get core status to find instanceDir.
+        $statusUrl = $baseAdminUrl
+            . '?action=STATUS&core=' . urlencode($coreName);
+        $response = @file_get_contents(
+            $statusUrl, false, $context
+        );
+        if ($response === false) {
+            $logger->warn('SearchSolr: Cannot get core status, falling back to reload.'); // @translate
+            return $this->reloadCore();
+        }
+        $result = json_decode($response, true);
+        $instanceDir = $result['status'][$coreName]['instanceDir']
+            ?? null;
+        if (!$instanceDir) {
+            $logger->warn('SearchSolr: Cannot find instanceDir, falling back to reload.'); // @translate
+            return $this->reloadCore();
+        }
+
+        // UNLOAD the core (releases all IndexWriter locks).
+        $unloadUrl = $baseAdminUrl
+            . '?action=UNLOAD&core=' . urlencode($coreName);
+        $response = @file_get_contents(
+            $unloadUrl, false, $context
+        );
+        if ($response === false
+            || !empty(json_decode($response, true)['error'])
+        ) {
+            $logger->warn('SearchSolr: Core unload failed, falling back to reload.'); // @translate
+            return $this->reloadCore();
+        }
+        $logger->info(
+            'SearchSolr: Core "{core}" unloaded.', // @translate
+            ['core' => $coreName]
+        );
+
+        // Recreate the core from its instanceDir.
+        $createUrl = $baseAdminUrl
+            . '?action=CREATE&name=' . urlencode($coreName)
+            . '&instanceDir=' . urlencode($instanceDir);
+        $response = @file_get_contents(
+            $createUrl, false, $context
+        );
+        if ($response === false
+            || !empty(json_decode($response, true)['error'])
+        ) {
+            // Retry once after a short wait.
+            sleep(2);
+            $response = @file_get_contents(
+                $createUrl, false, $context
+            );
+            if ($response === false
+                || !empty(json_decode($response, true)['error'])
+            ) {
+                $logger->err('SearchSolr: Core recreate failed after unload. Manual recovery may be needed.'); // @translate
+                return false;
+            }
+        }
+
+        $logger->info(
+            'SearchSolr: Core "{core}" restarted successfully.', // @translate
             ['core' => $coreName]
         );
         return true;
