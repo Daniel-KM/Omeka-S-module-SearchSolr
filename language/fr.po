@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-28 11:51+0100\n"
-"PO-Revision-Date: 2026-02-28 12:09+0100\n"
+"POT-Creation-Date: 2026-03-09 00:00+0000\n"
+"PO-Revision-Date: 2026-03-09 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -324,7 +324,7 @@ msgstr "Configuration de la recherche"
 
 #: view/search-solr/admin/core/show.phtml:86
 msgid "Configure the analyzer for the catchall field \"_text_\". This affects how search queries match indexed content."
-msgstr "Configurer l’analyser pour le champ attrape-tout \"_text\". Cela modifie comment les recherches trouvent le contenu indexé."
+msgstr "Configurer l’analyser pour le champ attrape-tout \"_text_\". Cela modifie comment les recherches trouvent le contenu indexé."
 
 #: view/search-solr/admin/core/show.phtml:92
 msgid "optimized (Google-like search via EdgeNGram)"
@@ -1523,7 +1523,7 @@ msgstr "Vérifier toutes les nouvelles correspondances et supprimer les correspo
 #: src/Controller/Admin/MapController.php:324
 #: src/Controller/Admin/MapController.php:391
 msgid "Don’t forget to run the indexation of the core."
-msgstr "N’oubliez pas de lancer l’indexation du cœur."
+msgstr "N’oubliez pas de relancer l’indexation du cœur."
 
 #: src/Controller/Admin/MapController.php:326
 msgid "No new maps added."
