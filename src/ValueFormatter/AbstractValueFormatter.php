@@ -241,6 +241,27 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
             }
         }
 
+        if (in_array('truncate', $normalizations)) {
+            $rawSeparators = $this->settings['truncate_at'] ?? '';
+            if (strlen($rawSeparators)) {
+                $separators = array_filter(
+                    array_map('trim', explode('|', $rawSeparators)),
+                    'strlen'
+                );
+                if ($separators) {
+                    $str = (string) $value;
+                    $pos = strlen($str);
+                    foreach ($separators as $sep) {
+                        $p = strpos($str, $sep);
+                        if ($p !== false && $p < $pos) {
+                            $pos = $p;
+                        }
+                    }
+                    $value = trim(substr($str, 0, $pos));
+                }
+            }
+        }
+
         if (in_array('integer', $normalizations)) {
             $value = (int) $value;
         }

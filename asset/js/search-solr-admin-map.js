@@ -388,13 +388,16 @@
         // Display the specific settings of each normalization.
 
         function toggleSettingsNormalization() {
-            // Hide all settings unchecked, then display the ones checked.
-            $('input[type=checkbox][name="o:settings[normalization]"]:not(checked)').closest('.field').hide();
-            const checkeds = $('input[type=checkbox][name="o:settings[normalization]"]:checked').closest('.field').show();
+            // Hide all fields linked to a normalization, then show those
+            // whose normalization checkbox is checked.
+            $('[data-normalization]').closest('.field').hide();
+            $('input[name="o:settings[normalization][]"]:checked').each(function () {
+                $('[data-normalization="' + $(this).val() + '"]').closest('.field').show();
+            });
         }
 
-        $('input[type=checkbox][name="o:settings[normalization]"]')
-            .on('change',toggleSettingsNormalization);
+        $('input[name="o:settings[normalization][]"]')
+            .on('change', toggleSettingsNormalization);
 
         toggleSettingsNormalization();
 

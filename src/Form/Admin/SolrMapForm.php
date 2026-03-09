@@ -393,6 +393,7 @@ class SolrMapForm extends Form
                         'max_length' => 'Max length', // @translate
                         'integer' => 'Number', // @translate
                         'year' => 'Year', // @translate
+                        'truncate' => 'Truncate at separator', // @translate
                         'table' => 'Map value to a code or code to a value (module Table)', // @translate
                         // Table may be first post normalization or finalization too.
                         // TODO Allow to specify order of normalizations.
@@ -416,6 +417,20 @@ class SolrMapForm extends Form
                     'id' => 'max_length',
                     // Setting for normalization "max_length" only.
                     'data-normalization' => 'max_length',
+                ],
+            ])
+            ->add([
+                'name' => 'truncate_at',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Truncate at separators', // @translate
+                    'info' => 'List of separators, pipe-separated. The value is truncated at the first occurrence. Example: " (| - " truncates before " (" or " - ".', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'truncate_at',
+                    'required' => false,
+                    'placeholder' => ' (| - ',
+                    'data-normalization' => 'truncate',
                 ],
             ])
 
@@ -618,6 +633,10 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'max_length',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'truncate_at',
                 'required' => false,
             ])
             ->add([
