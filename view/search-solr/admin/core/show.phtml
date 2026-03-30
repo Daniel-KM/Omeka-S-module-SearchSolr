@@ -70,7 +70,10 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <?php if (!$solrCore->schema()->getField('suggest_txt')): ?>
                 <li><?= $hyperlink($translate('Create suggest_txt'), $solrCore->adminUrl('create-suggest-field'), [
                     'class' => 'link',
-                    'title' => $translate('Create the "suggest_txt" field with copyFields from short-value _txt fields for fast autocompletion.')]) ?></li>
+                    'title' => $translate('Create the "suggest_txt" field with copyFields from short-value _txt fields for autocompletion.')]) ?></li>
+                <li><?= $hyperlink($translate('Create suggest_txt (with long texts)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1', [
+                    'class' => 'link',
+                    'title' => $translate('Create "suggest_txt" including long-value properties (OCR, descriptions, etc.).')]) ?></li>
                 <?php endif; ?>
             </ul>
         </div>

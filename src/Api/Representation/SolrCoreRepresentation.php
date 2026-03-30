@@ -1422,22 +1422,27 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Ensure the "suggest_txt" field exists in the Solr schema.
      *
-     * Creates the field and copyField directives from all short-value _txt
-     * mapped fields (excluding metadata_text.php properties).
+     * Creates the field and copyField directives from _txt mapped fields.
+     * By default, long-value properties listed in metadata_text.php
+     * (descriptions, OCR, etc.) are excluded.
      *
-     * @return bool|string True if already present or created, error
-     *   message on failure.
+     * @param bool $includeLongTexts Include long-value properties (OCR,
+     *   descriptions, etc.) in the suggest field.
+     * @return bool|string True if already present or created, error message on
+     *   failure.
      */
-    public function ensureSuggestField()
-    {
+    public function ensureSuggestField(
+        bool $includeLongTexts = false
+    ) {
         $schema = $this->schema();
         // Check only explicit fields, not dynamic field matches.
         if (isset($schema->getFieldsByName()['suggest_txt'])) {
             return true;
         }
 
-        $skipTermTexts = include dirname(__DIR__, 3)
-            . '/config/metadata_text.php';
+        $skipTermTexts = $includeLongTexts
+            ? []
+            : (include dirname(__DIR__, 3) . '/config/metadata_text.php');
 
         $sourceFields = [];
         foreach ($this->maps() as $map) {
@@ -1445,7 +1450,9 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             if (!str_ends_with($fieldName, '_txt')) {
                 continue;
             }
-            if (in_array($map->source(), $skipTermTexts)) {
+            if ($skipTermTexts
+                && in_array($map->source(), $skipTermTexts)
+            ) {
                 continue;
             }
             $sourceFields[] = $fieldName;
@@ -1453,7 +1460,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $sourceFields = array_unique($sourceFields);
 
         if (empty($sourceFields)) {
-            return 'No _txt maps found (excluding long-value properties).';
+            return 'No _txt maps found.';
         }
 
         $schemaUrl = $this->clientUrl() . '/schema';

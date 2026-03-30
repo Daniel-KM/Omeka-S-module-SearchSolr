@@ -929,17 +929,20 @@ class CoreController extends AbstractActionController
     }
 
     /**
-     * Create the "suggest_txt" field and selective copyFields for
-     * autocompletion. Only short-value _txt fields are included
-     * (metadata_text.php properties are excluded).
+     * Create the "suggest_txt" field and selective copyFields
+     * for autocompletion.
      */
     public function createSuggestFieldAction()
     {
         $id = $this->params('id');
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
-        $alreadyExists = (bool) $solrCore->schema()->getField('suggest_txt');
-        $result = $solrCore->ensureSuggestField();
+        $includeLongTexts = (bool) $this->params()
+            ->fromQuery('include_long_texts');
+        $alreadyExists = (bool) $solrCore->schema()
+            ->getField('suggest_txt');
+        $result = $solrCore
+            ->ensureSuggestField($includeLongTexts);
         if ($result === true) {
             if ($alreadyExists) {
                 $this->messenger()->addWarning(
