@@ -901,24 +901,29 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         ];
 
         // Ensure the text_suggest field type exists in schema.
-        $this->ensureSuggestFieldType();
+        if (!$this->ensureSuggestFieldType()) {
+            $logger->err(
+                'SearchSolr: Failed to create text_suggest field type.' // @translate
+            );
+            return 'Failed to create text_suggest field type';
+        }
 
-        // Delete ALL old suggest components (current name + any
-        // orphan omeka_suggester_* components from previous runs).
-        $this->deleteAllSuggestComponents($componentName);
+        // Delete old suggest components from the overlay.
+        $this->deleteOverlaySuggestComponents($componentName);
 
         // Reload core to release old IndexWriter locks held by
         // AnalyzingInfixSuggesters on the default directory.
         $this->reloadCore();
         if (!$this->waitForCoreReady()) {
-            $logger->warn('SearchSolr: Core not ready after reload, continuing anyway.'); // @translate
+            $logger->warn(
+                'SearchSolr: Core not ready after reload, continuing anyway.' // @translate
+            );
         }
 
         // Create the component fresh.
-        // Note: storeDir is NOT persisted by the Config API, so
-        // all suggesters share the default directory. Only one
-        // suggest component should be active at a time.
-        $payload = json_encode(['add-searchcomponent' => $component]);
+        $payload = json_encode([
+            'add-searchcomponent' => $component,
+        ]);
         $result = $this->postToSolrConfig($configUrl, $payload);
         if ($result !== true) {
             $logger->err(
@@ -928,40 +933,31 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             return $result;
         }
 
-        // Wait for core to be ready after component creation.
         if (!$this->waitForCoreReady()) {
-            $logger->warn('SearchSolr: Core not ready after creating component.'); // @translate
+            $logger->warn(
+                'SearchSolr: Core not ready after creating component.' // @translate
+            );
         }
 
         return true;
     }
 
     /**
-     * Delete all suggest-related searchComponents from the config
-     * overlay. This cleans up orphan components from previous runs
-     * that may hold write.lock on the default suggester directory.
+     * Delete all suggest-related searchComponents from the config overlay.
      *
-     * Uses a single HTTP request with duplicate JSON keys (Solr's
-     * Noggit parser supports this) to avoid one reload per delete.
+     * Use a single http request with duplicate json keys (Solr's Noggit parser
+     * supports this).
      */
-    protected function deleteAllSuggestComponents(
+    protected function deleteOverlaySuggestComponents(
         string $currentComponentName
     ): void {
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
         $configUrl = $this->clientUrl() . '/config';
 
-        $config = $this->getSolrConfig();
-        if (!$config) {
-            $this->postToSolrConfig(
-                $configUrl,
-                json_encode(['delete-searchcomponent' => $currentComponentName])
-            );
-            return;
-        }
-
-        // Collect all SuggestComponent names from the overlay.
-        $overlay = $config['config'] ?? [];
+        // Read only the overlay to avoid trying to delete
+        // components defined in solrconfig.xml.
+        $overlay = $this->getSolrConfigOverlay();
         $components = $overlay['searchComponent'] ?? [];
         $toDelete = [];
         foreach ($components as $name => $comp) {
@@ -971,8 +967,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             }
         }
 
-        if (!in_array($currentComponentName, $toDelete)) {
-            $toDelete[] = $currentComponentName;
+        if (empty($toDelete)) {
+            return;
         }
 
         $logger->info(
@@ -980,9 +976,6 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             ['count' => count($toDelete)]
         );
 
-        // Build a single JSON payload with duplicate keys.
-        // Solr's Noggit parser handles this: one HTTP request,
-        // one internal reload instead of one per component.
         $parts = [];
         foreach ($toDelete as $name) {
             $parts[] = '"delete-searchcomponent":'
@@ -1035,12 +1028,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Build/rebuild suggester dictionaries.
      *
-     * Uses a direct HTTP POST to the /suggest handler. Solr
-     * builds all specified dictionaries sequentially in a single
-     * request (no lock conflicts between suggesters).
+     * Uses a direct http post to the /suggest handler. Solr builds all
+     * specified dictionaries sequentially in a single request (no lock
+     * conflicts between suggesters).
      *
-     * @param array $names Dictionary names to build. If empty,
-     *   builds the "default" dictionary only.
+     * @param array $names Dictionary names to build. If empty, builds the
+     *   "default" dictionary only.
      */
     public function buildSuggester(array $names = []): bool
     {
@@ -1054,11 +1047,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         }
 
         $url = $this->clientUrl() . '/suggest';
+        $headers = 'Content-Type: application/x-www-form-urlencoded';
+        $headers .= $this->basicAuthHeader();
         $context = stream_context_create([
             'http' => [
                 'method' => 'POST',
-                'header' => 'Content-Type:'
-                    . ' application/x-www-form-urlencoded',
+                'header' => $headers,
                 'content' => $params,
                 // Building many dictionaries may take a long time.
                 'timeout' => 3600,
@@ -1086,8 +1080,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Reload the Solr core to release orphaned locks.
      *
-     * Uses the CoreAdmin API which releases internal write locks
-     * left by crashed or interrupted processes.
+     * Uses the CoreAdmin API which releases internal write locks left by
+     * crashed or interrupted processes.
      */
     public function reloadCore(): bool
     {
@@ -1101,15 +1095,14 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             return false;
         }
         $adminUrl = $settings['scheme'] . '://'
-            . (empty($settings['username']) ? '' : $settings['username']
-                . (empty($settings['password']) ? '' : ':' . $settings['password'])
-                . '@')
             . $settings['host'] . ':' . $settings['port']
             . '/solr/admin/cores?action=RELOAD&core='
             . urlencode($coreName);
+        $authHeader = $this->basicAuthHeader();
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
+                'header' => $authHeader ? trim($authHeader) : null,
                 'timeout' => 60,
                 'ignore_errors' => true,
             ],
@@ -1140,10 +1133,9 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     /**
      * Restart the core via UNLOAD + CREATE (Core Admin API).
      *
-     * More thorough than reloadCore(): fully closes the core,
-     * releasing all IndexWriter locks (e.g. from AnalyzingInfix-
-     * Suggester), before re-registering it. Falls back to
-     * reloadCore() on error.
+     * More thorough than reloadCore(): fully closes the core, releasing all
+     * IndexWriter locks (e.g. from AnalyzingInfix-Suggester), before
+     * re-registering it. Falls back to reloadCore() on error.
      */
     public function restartCore(): bool
     {
@@ -1158,15 +1150,14 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         }
 
         $baseAdminUrl = $settings['scheme'] . '://'
-            . (empty($settings['username']) ? '' : $settings['username']
-                . (empty($settings['password']) ? '' : ':' . $settings['password'])
-                . '@')
             . $settings['host'] . ':' . $settings['port']
             . '/solr/admin/cores';
 
+        $authHeader = $this->basicAuthHeader();
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
+                'header' => $authHeader ? trim($authHeader) : null,
                 'timeout' => 60,
                 'ignore_errors' => true,
             ],
@@ -1249,8 +1240,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
         // Get current field count via luke api.
         $lukeUrl = $url . '/admin/luke?numTerms=0';
+        $authHeader = $this->basicAuthHeader();
         $lukeResponse = @file_get_contents($lukeUrl, false,
-            stream_context_create(['http' => ['timeout' => 10]]));
+            stream_context_create(['http' => [
+                'timeout' => 10,
+                'header' => $authHeader ? trim($authHeader) : null,
+            ]]));
         if ($lukeResponse === false) {
             return null;
         }
@@ -1288,17 +1283,33 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     protected function getSolrConfig(): ?array
     {
-        $configUrl = $this->clientUrl() . '/config';
+        return $this->getSolrConfigEndpoint('/config');
+    }
 
+    /**
+     * Get Solr config overlay (only user-added entries).
+     */
+    protected function getSolrConfigOverlay(): array
+    {
+        $data = $this->getSolrConfigEndpoint('/config/overlay');
+        return $data['overlay'] ?? [];
+    }
+
+    protected function getSolrConfigEndpoint(string $path): ?array
+    {
+        $url = $this->clientUrl() . $path;
+
+        $headers = 'Content-Type: application/json';
+        $headers .= $this->basicAuthHeader();
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
-                'header' => 'Content-Type: application/json',
+                'header' => $headers,
                 'timeout' => 10,
             ],
         ]);
 
-        $response = @file_get_contents($configUrl, false, $context);
+        $response = @file_get_contents($url, false, $context);
         if ($response === false) {
             return null;
         }
@@ -1341,6 +1352,25 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * Build an Authorization header for Solr BasicAuth, if configured.
+     *
+     * Returns an empty string when no credentials are set, or a string like
+     * "\r\nAuthorization: Basic ..." ready to append to an existing header
+     * value.
+     */
+    protected function basicAuthHeader(): string
+    {
+        $settings = $this->clientSettings();
+        if (empty($settings['username'])) {
+            return '';
+        }
+        $credentials = $settings['username']
+            . ':' . ($settings['password'] ?? '');
+        return "\r\nAuthorization: Basic "
+            . base64_encode($credentials);
+    }
+
+    /**
      * Post to Solr Config API.
      *
      * @return bool|string True on success, error message on failure.
@@ -1350,10 +1380,12 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         // The Config API triggers an internal core reload after each
         // change. Use waitForCoreReady() afterwards for readiness.
         $timeout = strlen($payload) > 100000 ? 120 : 30;
+        $headers = 'Content-Type: application/json';
+        $headers .= $this->basicAuthHeader();
         $context = stream_context_create([
             'http' => [
                 'method' => 'POST',
-                'header' => 'Content-Type: application/json',
+                'header' => $headers,
                 'content' => $payload,
                 'timeout' => $timeout,
                 // Allow reading response body on HTTP errors (4xx, 5xx).
@@ -1384,39 +1416,67 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     public function ensureSuggestFieldType(): bool
     {
-        $schema = $this->schema();
-        $types = $schema->getSchema()['fieldTypes'] ?? [];
-        foreach ($types as $type) {
-            if (($type['name'] ?? '') === 'text_suggest') {
-                return true;
+        try {
+            $schema = $this->schema();
+            $types = $schema->getSchema()['fieldTypes'] ?? [];
+            foreach ($types as $type) {
+                if (($type['name'] ?? '') === 'text_suggest') {
+                    return true;
+                }
             }
+        } catch (\Exception $e) {
+            // Schema not readable; try to create the type anyway.
         }
 
         $schemaUrl = $this->clientUrl() . '/schema';
         $analyzer = [
             'charFilters' => [
                 [
-                    'name' => 'patternReplace',
+                    'class' => 'solr.PatternReplaceCharFilterFactory',
                     'pattern' => "['\u2019\u2018]",
                     'replacement' => ' ',
                 ],
             ],
-            'tokenizer' => ['name' => 'standard'],
+            'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
             'filters' => [
-                ['name' => 'lowercase'],
+                ['class' => 'solr.LowerCaseFilterFactory'],
             ],
         ];
-        $result = $this->postToSolrConfig($schemaUrl, json_encode([
-            'add-field-type' => [
-                'name' => 'text_suggest',
-                'class' => 'solr.TextField',
-                'positionIncrementGap' => '100',
-                'indexAnalyzer' => $analyzer,
-                'queryAnalyzer' => $analyzer,
-            ],
-        ]));
 
-        return $result === true;
+        // Try add first; if it already exists, try replace.
+        $fieldTypeDef = [
+            'name' => 'text_suggest',
+            'class' => 'solr.TextField',
+            'positionIncrementGap' => '100',
+            'indexAnalyzer' => $analyzer,
+            'queryAnalyzer' => $analyzer,
+        ];
+        $result = $this->postToSolrConfig(
+            $schemaUrl,
+            json_encode(['add-field-type' => $fieldTypeDef])
+        );
+        if ($result === true) {
+            return true;
+        }
+
+        // "already exists" → try replace.
+        if (is_string($result)
+            && stripos($result, 'already exists') !== false
+        ) {
+            $result = $this->postToSolrConfig(
+                $schemaUrl,
+                json_encode(['replace-field-type' => $fieldTypeDef])
+            );
+            return $result === true;
+        }
+
+        $logger = $this->getServiceLocator()
+            ->get('Omeka\Logger');
+        $logger->err(
+            'SearchSolr: Cannot create text_suggest: {error}', // @translate
+            ['error' => $result]
+        );
+        return false;
     }
 
     /**
@@ -1459,9 +1519,24 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $schemaUrl = $this->clientUrl() . '/schema';
         $schema = $this->schema();
 
-        // Remove existing field if recreating. Solr automatically removes
-        // copyFields targeting a deleted field.
+        // Remove existing field and its copyFields if recreating.
         if (isset($schema->getFieldsByName()['suggest_txt'])) {
+            // Delete copyFields targeting suggest_txt first.
+            $copyFields = $schema->getSchema()['copyFields'] ?? [];
+            $deletes = [];
+            foreach ($copyFields as $cf) {
+                if (($cf['dest'] ?? '') === 'suggest_txt') {
+                    $deletes[] = [
+                        'source' => $cf['source'],
+                        'dest' => 'suggest_txt',
+                    ];
+                }
+            }
+            if ($deletes) {
+                $this->postToSolrConfig($schemaUrl, json_encode([
+                    'delete-copy-field' => $deletes,
+                ]));
+            }
             $result = $this->postToSolrConfig(
                 $schemaUrl,
                 json_encode([
