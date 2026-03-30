@@ -1227,18 +1227,18 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
 
             $updatedConfigs = 0;
             foreach ($searchConfigs as $configId => $configSettings) {
-                $settings = json_decode($configSettings, true) ?: [];
+                $configData = json_decode($configSettings, true) ?: [];
                 // Check if suggester is not set or is empty/null.
-                $currentSuggester = $settings['q']['suggester'] ?? null;
+                $currentSuggester = $configData['q']['suggester'] ?? null;
                 if (empty($currentSuggester)) {
-                    $settings['q']['suggester'] = $suggesterId;
+                    $configData['q']['suggester'] = $suggesterId;
                     $sql = <<<'SQL'
                         UPDATE `search_config`
                         SET `settings` = ?
                         WHERE `id` = ?
                         SQL;
                     $connection->executeStatement($sql, [
-                        json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                        json_encode($configData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                         $configId,
                     ]);
                     $updatedConfigs++;
@@ -1294,23 +1294,23 @@ if (version_compare($oldVersion, '3.5.65', '<')) {
         WHERE `settings` LIKE '%solr_%'
         SQL;
     foreach ($connection->executeQuery($sql)->fetchAllAssociative() as $suggester) {
-        $settings = json_decode($suggester['settings'], true) ?: [];
+        $suggesterData = json_decode($suggester['settings'], true) ?: [];
         $updated = false;
 
-        if (isset($settings['solr_lookup_impl'])) {
-            $settings['solr_lookup_implementation'] = $settings['solr_lookup_impl'];
-            unset($settings['solr_lookup_impl']);
+        if (isset($suggesterData['solr_lookup_impl'])) {
+            $suggesterData['solr_lookup_implementation'] = $suggesterData['solr_lookup_impl'];
+            unset($suggesterData['solr_lookup_impl']);
             $updated = true;
         }
 
-        if (isset($settings['solr_build_on_commit'])) {
-            $settings['solr_skip_build_on_commit'] = !$settings['solr_build_on_commit'];
-            unset($settings['solr_build_on_commit']);
+        if (isset($suggesterData['solr_build_on_commit'])) {
+            $suggesterData['solr_skip_build_on_commit'] = !$suggesterData['solr_build_on_commit'];
+            unset($suggesterData['solr_build_on_commit']);
             $updated = true;
         }
 
         // Replace _text_ with stored fields.
-        $solrFields = $settings['solr_fields'] ?? [];
+        $solrFields = $suggesterData['solr_fields'] ?? [];
         if (in_array('_text_', $solrFields)) {
             $id = (int) $suggester['id'];
             if (isset($usedSuggesterIds[$id])) {
@@ -1319,8 +1319,8 @@ if (version_compare($oldVersion, '3.5.65', '<')) {
                     ['suggester_id' => $id, 'config_id' => $usedSuggesterIds[$id]]
                 ));
             } else {
-                $settings['solr_fields'] = ['auto'];
-                $settings['solr_lookup_implementation'] = 'AnalyzingInfixLookupFactory';
+                $suggesterData['solr_fields'] = ['auto'];
+                $suggesterData['solr_lookup_implementation'] = 'AnalyzingInfixLookupFactory';
                 $updated = true;
                 $messenger->addNotice(new PsrMessage(
                     'Solr suggester #{suggester_id}: "_text_" replaced with "auto" (all stored fields). You should rebuild the suggester dictionary.', // @translate
@@ -1332,7 +1332,7 @@ if (version_compare($oldVersion, '3.5.65', '<')) {
         if ($updated) {
             $connection->executeStatement(
                 'UPDATE `search_suggester` SET `settings` = ? WHERE `id` = ?',
-                [json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $suggester['id']]
+                [json_encode($suggesterData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $suggester['id']]
             );
         }
     }
