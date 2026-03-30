@@ -969,7 +969,8 @@ class CoreController extends AbstractActionController
      * Options:
      * - keep: Do nothing
      * - default: Use text_general (strict matching)
-     * - optimized: Use text_search with EdgeNGram (Google-like search)
+     * - optimized: Use text_search with EdgeNGram (Google-like)
+     * - linguistic:{lang}: Language-specific stemmer + stopwords
      */
     public function configureSearchAction()
     {
@@ -977,6 +978,12 @@ class CoreController extends AbstractActionController
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
         $searchConfig = $this->params()->fromPost('search_config', 'keep');
+
+        // Combine linguistic + language into one value.
+        if ($searchConfig === 'linguistic') {
+            $lang = $this->params()->fromPost('search_language', '');
+            $searchConfig = $lang ? 'linguistic:' . $lang : 'keep';
+        }
 
         // Option "keep": do nothing.
         if ($searchConfig === 'keep') {
@@ -1000,53 +1007,101 @@ class CoreController extends AbstractActionController
             $httpClient->setMethod('POST');
             $httpClient->setHeaders(['Content-Type' => 'application/json']);
 
-            // For "optimized" option, create text_search field type first.
+            $fieldType = 'text_general';
+
             if ($searchConfig === 'optimized') {
-                $fieldTypeData = json_encode([
-                    'add-field-type' => [
-                        'name' => 'text_search',
-                        'class' => 'solr.TextField',
-                        'indexAnalyzer' => [
-                            'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
-                            'filters' => [
-                                ['class' => 'solr.LowerCaseFilterFactory'],
-                                ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],
-                                ['class' => 'solr.EdgeNGramFilterFactory', 'minGramSize' => 2, 'maxGramSize' => 20],
-                            ],
-                        ],
-                        'queryAnalyzer' => [
-                            'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
-                            'filters' => [
-                                ['class' => 'solr.LowerCaseFilterFactory'],
-                                ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],
-                            ],
+                $fieldType = 'text_search';
+                $fieldTypeDef = [
+                    'name' => 'text_search',
+                    'class' => 'solr.TextField',
+                    'indexAnalyzer' => [
+                        'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+                        'filters' => [
+                            ['class' => 'solr.LowerCaseFilterFactory'],
+                            ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],
+                            ['class' => 'solr.EdgeNGramFilterFactory', 'minGramSize' => 2, 'maxGramSize' => 20],
                         ],
                     ],
-                ]);
-
-                $httpClient->setRawBody($fieldTypeData);
-                $response = $httpClient->send();
-
-                // Ignore "already exists" error for field type.
-                $body = json_decode($response->getBody(), true);
-                $alreadyExists = isset($body['error']['details'][0]['errorMessages'][0])
-                    && strpos($body['error']['details'][0]['errorMessages'][0], 'already exists') !== false;
-
-                if (!$response->isSuccess() && !$alreadyExists) {
-                    $error = $body['error']['msg'] ?? $response->getReasonPhrase();
+                    'queryAnalyzer' => [
+                        'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+                        'filters' => [
+                            ['class' => 'solr.LowerCaseFilterFactory'],
+                            ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],
+                        ],
+                    ],
+                ];
+            } elseif (strpos($searchConfig, 'linguistic:') === 0) {
+                $lang = substr($searchConfig, 11);
+                $languages = include dirname(__DIR__, 3)
+                    . '/config/solr_languages.php';
+                if (!isset($languages[$lang])) {
                     $this->messenger()->addError(new PsrMessage(
-                        'Failed to create text_search field type: {error}', // @translate
-                        ['error' => $error]
+                        'Unsupported language: {lang}', // @translate
+                        ['lang' => $lang]
                     ));
-                    return $this->redirect()->toRoute('admin/search/solr/core-id', [
-                        'id' => $id,
-                        'action' => 'show',
-                    ]);
+                    return $this->redirect()->toRoute(
+                        'admin/search/solr/core-id',
+                        ['id' => $id, 'action' => 'show']
+                    );
                 }
+
+                $fieldType = 'text_search_' . $lang;
+                $langFilters = $languages[$lang]['filters'];
+
+                // Base filters: lowercase + ASCII folding,
+                // then language-specific filters.
+                $baseFilters = [
+                    ['class' => 'solr.LowerCaseFilterFactory'],
+                    ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],
+                ];
+                $allFilters = array_merge(
+                    $baseFilters,
+                    $langFilters
+                );
+
+                $fieldTypeDef = [
+                    'name' => $fieldType,
+                    'class' => 'solr.TextField',
+                    'indexAnalyzer' => [
+                        'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+                        'filters' => $allFilters,
+                    ],
+                    'queryAnalyzer' => [
+                        'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+                        'filters' => $allFilters,
+                    ],
+                ];
             }
 
-            // Determine the field type to use.
-            $fieldType = $searchConfig === 'optimized' ? 'text_search' : 'text_general';
+            // Create or replace the custom field type.
+            if (isset($fieldTypeDef)) {
+                $httpClient->setRawBody(json_encode([
+                    'replace-field-type' => $fieldTypeDef,
+                ]));
+                $response = $httpClient->send();
+                if (!$response->isSuccess()) {
+                    // Field type may not exist yet: try add.
+                    $httpClient->setRawBody(json_encode([
+                        'add-field-type' => $fieldTypeDef,
+                    ]));
+                    $response = $httpClient->send();
+                    if (!$response->isSuccess()) {
+                        $body = json_decode(
+                            $response->getBody(), true
+                        );
+                        $error = $body['error']['msg']
+                            ?? $response->getReasonPhrase();
+                        $this->messenger()->addError(new PsrMessage(
+                            'Failed to create field type: {error}', // @translate
+                            ['error' => $error]
+                        ));
+                        return $this->redirect()->toRoute(
+                            'admin/search/solr/core-id',
+                            ['id' => $id, 'action' => 'show']
+                        );
+                    }
+                }
+            }
 
             // Apply the field type to _text_.
             $replaceFieldData = json_encode([
@@ -1063,12 +1118,16 @@ class CoreController extends AbstractActionController
             $response = $httpClient->send();
 
             if ($response->isSuccess()) {
-                $message = $searchConfig === 'optimized'
-                    ? 'Field "_text_" configured for Google-like search in core "{solr_core_name}". Reindex required.' // @translate
-                    : 'Field "_text_" configured for strict matching in core "{solr_core_name}". Reindex required.'; // @translate
+                if ($searchConfig === 'optimized') {
+                    $message = 'Field "_text_" configured for Google-like search in core "{solr_core_name}". Reindex required.'; // @translate
+                } elseif (strpos($searchConfig, 'linguistic:') === 0) {
+                    $message = 'Field "_text_" configured for linguistic search ({type}) in core "{solr_core_name}". Reindex required.'; // @translate
+                } else {
+                    $message = 'Field "_text_" configured for strict matching in core "{solr_core_name}". Reindex required.'; // @translate
+                }
                 $this->messenger()->addSuccess(new PsrMessage(
                     $message,
-                    ['solr_core_name' => $solrCore->name()]
+                    ['type' => $fieldType, 'solr_core_name' => $solrCore->name()]
                 ));
             } else {
                 $body = json_decode($response->getBody(), true);
