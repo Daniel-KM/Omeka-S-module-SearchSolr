@@ -67,14 +67,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->resourceMapUrl('items', 'reduce-fields'), [
                     'class' => 'link',
                     'title' => $translate('Remove unused properties then remove extra maps to stay within solr maxFields limit.')]) ?></li>
-                <?php if (!$solrCore->schema()->getField('suggest_txt')): ?>
-                <li><?= $hyperlink($translate('Create suggest_txt'), $solrCore->adminUrl('create-suggest-field'), [
-                    'class' => 'link',
-                    'title' => $translate('Create the "suggest_txt" field with copyFields from short-value _txt fields for autocompletion.')]) ?></li>
-                <li><?= $hyperlink($translate('Create suggest_txt (with long texts)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1', [
-                    'class' => 'link',
-                    'title' => $translate('Create "suggest_txt" including long-value properties (OCR, descriptions, etc.).')]) ?></li>
-                <?php endif; ?>
             </ul>
         </div>
         <?php endif; ?>
@@ -157,6 +149,27 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         </div>
         <button type="submit"><?= $translate('Apply') ?></button>
     </form>
+</details>
+<?php endif; ?>
+
+<?php if ($solrCore->userIsAllowed('update')): ?>
+<?php $hasSuggestTxt = (bool) $solrCore->schema()->getField('suggest_txt'); ?>
+<details id="suggest-config">
+    <summary><?= $translate('Suggest configuration') ?></summary>
+    <p class="explanation"><?= $translate('Configure the "suggest_txt" field used for autocompletion. This field aggregates copyFields from _txt mapped fields.') ?></p>
+    <?php if ($hasSuggestTxt): ?>
+    <p class="explanation"><strong><?= $translate('Current status: suggest_txt exists.') ?></strong></p>
+    <?php else: ?>
+    <p class="explanation"><strong><?= $translate('Current status: suggest_txt does not exist.') ?></strong></p>
+    <?php endif; ?>
+    <ul>
+        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt' : 'Create suggest_txt'), $solrCore->adminUrl('create-suggest-field'), [
+            'class' => 'button',
+            'title' => $translate('Create the "suggest_txt" field with copyFields from short-value _txt fields for autocompletion.')]) ?></li>
+        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (with long texts)' : 'Create suggest_txt (with long texts)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1', [
+            'class' => 'button',
+            'title' => $translate('Create "suggest_txt" including long-value properties (OCR, descriptions, etc.).')]) ?></li>
+    </ul>
 </details>
 <?php endif; ?>
 

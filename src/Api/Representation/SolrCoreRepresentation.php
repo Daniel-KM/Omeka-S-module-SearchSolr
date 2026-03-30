@@ -1428,18 +1428,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      *
      * @param bool $includeLongTexts Include long-value properties (OCR,
      *   descriptions, etc.) in the suggest field.
-     * @return bool|string True if already present or created, error message on
-     *   failure.
+     * @return bool|string True on success, error message on failure.
      */
     public function ensureSuggestField(
         bool $includeLongTexts = false
     ) {
-        $schema = $this->schema();
-        // Check only explicit fields, not dynamic field matches.
-        if (isset($schema->getFieldsByName()['suggest_txt'])) {
-            return true;
-        }
-
         $skipTermTexts = $includeLongTexts
             ? []
             : (include dirname(__DIR__, 3) . '/config/metadata_text.php');
@@ -1464,6 +1457,22 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         }
 
         $schemaUrl = $this->clientUrl() . '/schema';
+        $schema = $this->schema();
+
+        // Remove existing field if recreating. Solr automatically removes
+        // copyFields targeting a deleted field.
+        if (isset($schema->getFieldsByName()['suggest_txt'])) {
+            $result = $this->postToSolrConfig(
+                $schemaUrl,
+                json_encode([
+                    'delete-field' => ['name' => 'suggest_txt'],
+                ])
+            );
+            if ($result !== true) {
+                return 'Failed to delete existing suggest_txt: '
+                    . (is_string($result) ? $result : 'unknown');
+            }
+        }
 
         // Create the field.
         $result = $this->postToSolrConfig($schemaUrl, json_encode([

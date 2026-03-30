@@ -944,15 +944,10 @@ class CoreController extends AbstractActionController
         $result = $solrCore
             ->ensureSuggestField($includeLongTexts);
         if ($result === true) {
-            if ($alreadyExists) {
-                $this->messenger()->addWarning(
-                    'The field "suggest_txt" already exists in this core.' // @translate
-                );
-            } else {
-                $this->messenger()->addSuccess(
-                    'Field "suggest_txt" created. Reindex required.' // @translate
-                );
-            }
+            $this->messenger()->addSuccess($alreadyExists
+                ? 'Field "suggest_txt" recreated. Reindex required.' // @translate
+                : 'Field "suggest_txt" created. Reindex required.' // @translate
+            );
         } else {
             $this->messenger()->addError(new PsrMessage(
                 'Error creating suggest field: {error}', // @translate
