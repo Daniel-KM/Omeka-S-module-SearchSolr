@@ -133,6 +133,9 @@ class SolariumQuerier extends AbstractQuerier
                 ->setIsSuccess(true);
         }
 
+        // Max length for suggestions (in characters).
+        $maxLength = (int) ($suggestOptions['length'] ?? 20);
+
         try {
             $client = $this->getClient();
             $suggesterQuery = $client->createSuggester();
@@ -151,6 +154,18 @@ class SolariumQuerier extends AbstractQuerier
                 foreach ($dictionary as $term) {
                     foreach ($term->getSuggestions() as $suggestion) {
                         $value = trim(strip_tags($suggestion['term']));
+                        if ($value === '') {
+                            continue;
+                        }
+                        // Truncate long suggestions at word boundary.
+                        if ($maxLength && mb_strlen($value) > $maxLength) {
+                            $value = mb_substr($value, 0, $maxLength);
+                            $lastSpace = mb_strrpos($value, ' ');
+                            if ($lastSpace) {
+                                $value = mb_substr($value, 0, $lastSpace);
+                            }
+                            $value = rtrim($value, ' ,;:.-');
+                        }
                         if ($value === '') {
                             continue;
                         }
