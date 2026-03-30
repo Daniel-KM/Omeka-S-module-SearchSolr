@@ -1991,12 +1991,19 @@ class SolariumQuerier extends AbstractQuerier
             return $this->getSelectionIdFieldName($field);
         }
 
+        // Try to convert terms into standard field.
         $term = $this->easyMeta->propertyTerm($field);
         if (!$term) {
             return null;
         }
 
-        $indices = $this->usedSolrFields([], [], [strtr($term, ':', '_')]);
+        // Match standard fields (prefix_prop_suffix) and Drupal-style fields (suffix_prefix_prop).
+        $base = strtr($term, ':', '_');
+        $indices = $this->usedSolrFields(
+            [$base . '_'],
+            ['_' . $base],
+            []
+        );
         if (!$indices) {
             return null;
         }
@@ -2044,8 +2051,13 @@ class SolariumQuerier extends AbstractQuerier
             return null;
         }
 
-        // Check if a standard index exists.
-        $indices = $this->usedSolrFields([], [], [strtr($term, ':', '_')]);
+        // Match standard fields (prefix_prop_suffix) and Drupal-style fields (suffix_prefix_prop).
+        $base = strtr($term, ':', '_');
+        $indices = $this->usedSolrFields(
+            [$base . '_'],
+            ['_' . $base],
+            []
+        );
         if (!$indices) {
             return null;
         }
