@@ -712,7 +712,7 @@ class Module extends AbstractModule
         $api = $services->get('Omeka\ApiManager');
         try {
             return $api->read('search_configs', [is_numeric($searchConfig) ? 'id' : 'slug' => $searchConfig])->getContent();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

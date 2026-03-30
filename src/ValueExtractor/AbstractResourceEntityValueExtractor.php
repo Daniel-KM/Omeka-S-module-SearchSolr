@@ -418,7 +418,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             }
             try {
                 $result = $resource->{$specialMetadata[$field]}();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $result = null;
             }
             return $result === null || $result === '' || $result === []
@@ -1036,7 +1036,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         try {
             $xmlContent = file_get_contents($filePath);
             $xml = @simplexml_load_string($xmlContent, null, LIBXML_NONET);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // No log.
             return '';
         }

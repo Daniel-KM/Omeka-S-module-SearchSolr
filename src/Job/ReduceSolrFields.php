@@ -57,7 +57,7 @@ class ReduceSolrFields extends AbstractJob
             /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
             $solrCore = $api->read('solr_cores', $solrCoreId)
                 ->getContent();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->err(
                 'Solr core #{id} not found.', // @translate
                 ['id' => $solrCoreId]

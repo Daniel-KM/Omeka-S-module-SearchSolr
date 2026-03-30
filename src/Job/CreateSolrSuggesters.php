@@ -37,7 +37,7 @@ class CreateSolrSuggesters extends AbstractJob
         /** @var \AdvancedSearch\Api\Representation\SearchSuggesterRepresentation $suggester */
         try {
             $suggester = $api->read('search_suggesters', $suggesterId)->getContent();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->err(
                 'Suggester #{id} not found.', // @translate
                 ['id' => $suggesterId]

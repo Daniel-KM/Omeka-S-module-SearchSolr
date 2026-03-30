@@ -174,7 +174,7 @@ class SolariumQuerier extends AbstractQuerier
             return $this->response
                 ->setSuggestions($suggestions)
                 ->setIsSuccess(true);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->getLogger()->err('Solr suggester error: ' . $e->getMessage());
             return $this->response->setMessage('Solr suggester error: ' . $e->getMessage());
         }
@@ -1329,7 +1329,7 @@ class SolariumQuerier extends AbstractQuerier
                     $this->response->setAllResourceIdsForResourceType($type, $result);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->getLogger()->warn(
                 'Could not fetch all resource ids: {message}', // @translate
                 ['message' => $e->getMessage()]
@@ -1885,7 +1885,7 @@ class SolariumQuerier extends AbstractQuerier
         }
         try {
             return (new \DateTime($date))->format('Y-m-d\TH:i:s\Z');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return '*';
         }
     }

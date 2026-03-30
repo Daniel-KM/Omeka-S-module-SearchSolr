@@ -255,7 +255,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             );
             $logger->err($message->getMessage(), $message->getContext());
             return $returnMessage ? $e->getMessage() : false;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $message = new PsrMessage(
                 'Solr core #{solr_core_id}: {message}', // @translate
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
@@ -275,7 +275,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             );
             $logger->err($message->getMessage(), $message->getContext());
             return $returnMessage ? $message->setTranslator($translator) : false;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $message = new PsrMessage(
                 'Solr core #{solr_core_id}: {message}', // @translate
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
@@ -1331,7 +1331,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             try {
                 $client->ping($ping);
                 return true;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // Core not ready yet.
             }
             sleep($interval);

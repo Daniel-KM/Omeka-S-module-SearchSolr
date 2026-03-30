@@ -260,7 +260,7 @@ class Solarium extends AbstractEngineAdapter
 
         try {
             return $this->api->read('solr_cores', $solrCoreId)->getContent();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }

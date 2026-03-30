@@ -167,7 +167,7 @@ class CoreController extends AbstractActionController
                     'field_type' => null,
                 ];
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Schema not accessible.
         }
 
@@ -854,7 +854,7 @@ class CoreController extends AbstractActionController
 
         try {
             return $this->api()->read('search_configs', [is_numeric($searchConfig) ? 'id' : 'slug' => $searchConfig])->getContent();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }
@@ -915,7 +915,7 @@ class CoreController extends AbstractActionController
                     ['error' => $error]
                 ));
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->messenger()->addError(new PsrMessage(
                 'Error creating catchall field: {error}', // @translate
                 ['error' => $e->getMessage()]
@@ -1135,7 +1135,7 @@ class CoreController extends AbstractActionController
                     ['error' => $error]
                 ));
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->messenger()->addError(new PsrMessage(
                 'Error configuring search: {error}', // @translate
                 ['error' => $e->getMessage()]
@@ -1165,7 +1165,7 @@ class CoreController extends AbstractActionController
             $counts = $resourceTypeField
                 ? $solrCore->queryValuesCount($resourceTypeField)
                 : [];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $counts = [];
             $this->messenger()->addError(new PsrMessage(
                 'Solr issue: {msg}', // @translate

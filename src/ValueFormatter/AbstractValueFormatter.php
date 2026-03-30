@@ -343,7 +343,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
             $api = $this->services->get('Omeka\ApiManager');
             try {
                 $tables[$tableId] = $api->read('tables', is_numeric($tableId) ? ['id' => $tableId] : ['slug' => $tableId])->getContent();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $tables[$tableId] = null;
                 $this->services->get('Omeka\Logger')->err(
                     'For formatter "Table", the table #{table_id} does not exist and values are not normalized.', // @translate

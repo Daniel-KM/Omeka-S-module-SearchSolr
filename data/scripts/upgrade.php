@@ -137,7 +137,7 @@ if (version_compare($oldVersion, '3.5.16.3', '<')) {
             WHERE `source` LIKE "%item_set%";
             SQL;
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
     }
 
     $sql = <<<'SQL'
@@ -183,7 +183,7 @@ if (version_compare($oldVersion, '3.5.18.3', '<')) {
         SQL;
     try {
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
     }
 }
 
@@ -236,7 +236,7 @@ if (version_compare($oldVersion, '3.5.31.3', '<')) {
         SQL;
     try {
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
     }
 
     $moduleManager = $services->get('Omeka\ModuleManager');
@@ -781,7 +781,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
         SQL;
     try {
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         // Already added.
     }
 
@@ -821,7 +821,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
             if ($result) {
                 $updateds[$oldIndex] = $newIndex;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Nothing to do.
             $messenger->addError($e->getMessage());
         }
@@ -859,7 +859,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
     foreach ($aliasesFromSource as $source => $alias) {
         try {
             $connection->update('solr_map', ['alias' => $alias], ['source' => $source]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Nothing to do.
             $messenger->addError($e->getMessage());
         }
@@ -874,7 +874,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
     foreach ($aliasesFromFieldName as $fieldName => $alias) {
         try {
             $connection->update('solr_map', ['alias' => $alias], ['field_name' => $fieldName]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Nothing to do.
             $messenger->addError($e->getMessage());
         }
