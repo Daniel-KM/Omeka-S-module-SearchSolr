@@ -1464,7 +1464,14 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
-            $name = $this->fieldToIndex($fieldName) ?? $fieldName;
+            $name = $this->fieldToIndex($fieldName);
+            if (!$name) {
+                $this->services->get('Omeka\Logger')
+                    ->warn('Solr: skipped filter on unmapped field "{field}".', ['field' => $fieldName]); // @translate
+                $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
+                    ->setQuery('-*:*');
+                return;
+            }
 
             if ($name === 'id') {
                 $value = [];
@@ -1680,11 +1687,19 @@ class SolariumQuerier extends AbstractQuerier
 
                 $requireInteger = in_array($type, SearchResources::FIELD_QUERY['value_integer']);
                 if ($requireInteger) {
-                    $nameInteger ??= $this->fieldToIndexNumeric($field) ?? $nameAny ?? ($nameAny = ($this->fieldToIndex($field) ?? $field));
+                    $nameInteger ??= $this->fieldToIndexNumeric($field) ?? $nameAny ?? ($nameAny = $this->fieldToIndex($field));
                     $name = $nameInteger;
                 } else {
-                    $nameAny ??= $this->fieldToIndex($field) ?? $field;
+                    $nameAny ??= $this->fieldToIndex($field);
                     $name = $nameAny;
+                }
+                // Skip filter when property is not indexed.
+                if (!$name) {
+                    $this->services->get('Omeka\Logger')
+                        ->warn('Solr: skipped filter on unmapped field "{field}".', ['field' => $field]); // @translate
+                    $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
+                        ->setQuery('-*:*');
+                    return;
                 }
 
                 // "AND/NOT" cannot be used as first.
