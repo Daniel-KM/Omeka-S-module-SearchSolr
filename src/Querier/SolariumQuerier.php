@@ -1535,8 +1535,8 @@ class SolariumQuerier extends AbstractQuerier
                     continue;
                 }
 
-                $from = $range['from'] ?? '*';
-                $to = $range['to'] ?? '*';
+                $from = isset($range['from']) && $range['from'] !== '' ? $range['from'] : '*';
+                $to = isset($range['to']) && $range['to'] !== '' ? $range['to'] : '*';
 
                 if ($isDate && $from !== '*') {
                     $from = $this->normalizeDate($from);
