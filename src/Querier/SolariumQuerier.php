@@ -975,6 +975,7 @@ class SolariumQuerier extends AbstractQuerier
         // Active facets.
         /** @link https://petericebear.github.io/php-solarium-multi-select-facets-20160720/ */
         $activeFacets = $this->query->getActiveFacets();
+        $facetsConfig = $this->query->getFacets();
         foreach ($activeFacets as $fname => $values) {
             if (!is_array($values) || !count($values)) {
                 continue;
@@ -986,7 +987,28 @@ class SolariumQuerier extends AbstractQuerier
                 $hasFrom = isset($values['from']) && $values['from'] !== '';
                 $hasTo = isset($values['to']) && $values['to'] !== '';
 
-                if ($hasFrom && $hasTo) {
+                $facetData = $facetsConfig[$fname] ?? [];
+                $startField = $facetData['field'] ?? $fname;
+                $endField = !empty($facetData['field_end']) ? $facetData['field_end'] : null;
+
+                if ($endField) {
+                    // Interval overlap on uncertain dates: start ≤ to AND end ≥
+                    // from.
+                    $clauses = [];
+                    if ($hasTo) {
+                        $clauses[] = "$startField:[* TO " . $this->escapePhrase($values['to']) . ']';
+                    }
+                    if ($hasFrom) {
+                        $clauses[] = "$endField:[" . $this->escapePhrase($values['from']) . ' TO *]';
+                    }
+                    if ($clauses) {
+                        $this->select->addFilterQuery([
+                            'key' => $fname . '-facet',
+                            'query' => implode(' AND ', $clauses),
+                            'tag' => 'exclude',
+                        ]);
+                    }
+                } elseif ($hasFrom && $hasTo) {
                     $from = $this->escapePhrase($values['from']);
                     $to = $this->escapePhrase($values['to']);
                     $this->select->addFilterQuery([
@@ -1030,8 +1052,9 @@ class SolariumQuerier extends AbstractQuerier
     protected function prepareRangeFacetBounds(array $facets): array
     {
         $fieldRanges = [];
-        // Map facet name to Solr field name.
+        // Map facet name to Solr field name (start) and optional end field.
         $nameToField = [];
+        $nameToFieldEnd = [];
 
         foreach ($facets as $name => $data) {
             if (in_array($data['type'] ?? '', ['Range', 'RangeDouble', 'SelectRange'])) {
@@ -1040,6 +1063,9 @@ class SolariumQuerier extends AbstractQuerier
                     if ($field) {
                         $fieldRanges[$name] = [];
                         $nameToField[$name] = $field;
+                        if (!empty($data['field_end'])) {
+                            $nameToFieldEnd[$name] = $data['field_end'];
+                        }
                     }
                 }
             }
@@ -1047,16 +1073,26 @@ class SolariumQuerier extends AbstractQuerier
 
         if ($fieldRanges && $nameToField) {
             // Use the actual Solr field names for the query.
-            $solrFields = array_unique(array_values($nameToField));
+            $solrFields = array_unique(array_merge(
+                array_values($nameToField),
+                array_values($nameToFieldEnd)
+            ));
             $all = $this->queryValuesCount($solrFields);
 
-            // Map results back to facet names.
+            // Map results back to facet names. For interval mode, min comes
+            // from the start field and max from the end field.
             foreach ($fieldRanges as $name => &$range) {
                 $field = $nameToField[$name] ?? null;
+                $fieldEnd = $nameToFieldEnd[$name] ?? null;
                 if ($field && isset($all[$field])) {
-                    $values = array_keys(array_filter($all[$field]));
-                    $range['min'] = $values ? min($values) : 0;
-                    $range['max'] = $values ? max($values) : 0;
+                    $startValues = array_keys(array_filter($all[$field]));
+                    $range['min'] = $startValues ? min($startValues) : 0;
+                    if ($fieldEnd && isset($all[$fieldEnd])) {
+                        $endValues = array_keys(array_filter($all[$fieldEnd]));
+                        $range['max'] = $endValues ? max($endValues) : 0;
+                    } else {
+                        $range['max'] = $startValues ? max($startValues) : 0;
+                    }
                 } else {
                     $range['min'] = 0;
                     $range['max'] = 0;
