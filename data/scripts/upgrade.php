@@ -55,10 +55,10 @@ if (PHP_VERSION_ID < 80100) {
     $hasError = true;
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.59')) {
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.61')) {
     $message = new PsrMessage(
         $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.59']
+        ['module' => 'Advanced Search', 'version' => '3.4.61']
     );
     $messenger->addError($message);
     $hasError = true;
@@ -1341,5 +1341,64 @@ if (version_compare($oldVersion, '3.5.65', '<')) {
 if (version_compare($oldVersion, '3.5.66', '<')) {
     $messenger->addSuccess(new PsrMessage(
         'The suggester now uses an optimized unified field "suggest_txt" by default. You can select it in the suggester settings.' // @translate
+    ));
+}
+
+if (version_compare($oldVersion, '3.5.68', '<')) {
+    // Check if any engine uses visibility = public.
+    $sql = 'SELECT id, name, settings FROM search_engine';
+    $engines = $connection->executeQuery($sql)->fetchAllAssociative();
+    $hasPublicEngine = false;
+    foreach ($engines as $engine) {
+        $engineSettings = json_decode($engine['settings'], true) ?: [];
+        if (($engineSettings['visibility'] ?? null) === 'public') {
+            $hasPublicEngine = true;
+            break;
+        }
+    }
+
+    if ($hasPublicEngine) {
+        $messenger->addWarning(new PsrMessage(
+            'The visibility filter for Solr maps now defaults to "follow engine setting" instead of "all". Since at least one search engine is configured as "public", maps without an explicit visibility filter will now exclude private values. To keep the previous behavior (index all values), use the new maintenance action "Set all maps to index all values" on the Solr core page, or set individual maps to "All values".' // @translate
+        ));
+
+        // Set all existing maps to "all" to preserve current behavior.
+        $sql = <<<'SQL'
+            UPDATE solr_map
+            SET settings = JSON_SET(
+                COALESCE(settings, '{}'),
+                '$.pool.filter_visibility', 'all'
+            )
+            WHERE settings IS NULL
+               OR JSON_EXTRACT(settings, '$.pool.filter_visibility') IS NULL
+               OR JSON_EXTRACT(settings, '$.pool.filter_visibility') = ''
+            SQL;
+        $connection->executeStatement($sql);
+
+        $messenger->addSuccess(new PsrMessage(
+            'All existing Solr maps have been set to "All values" to preserve the current indexing behavior. Use the maintenance action "Remove private values from maps" to switch to the secure default.' // @translate
+        ));
+    } else {
+        $messenger->addSuccess(new PsrMessage(
+            'The visibility filter for Solr maps now defaults to "follow engine setting". Since no engine is configured as "public", this does not change the current behavior.' // @translate
+        ));
+    }
+
+    $messenger->addSuccess(new PsrMessage(
+        'A new maintenance action "Sync maps from search configs" is available on each Solr core page. It automatically creates the Solr maps needed by your search configurations (facets, filters, sorts, suggesters, boosts, bounce links) and removes unused property maps. It is recommended to run it now. A reindex is required after sync.' // @translate
+    ));
+
+    $sql = <<<'SQL'
+        ALTER TABLE `solr_core`
+            ADD `backup_maps` LONGTEXT DEFAULT NULL COMMENT '(DC2Type:json)' AFTER `settings`
+        SQL;
+    try {
+        $connection->executeStatement($sql);
+    } catch (\Throwable $e) {
+        // Column already exists.
+    }
+
+    $messenger->addSuccess(new PsrMessage(
+        'The maintenance action "Sync maps from search configs" now stores a backup of the previous map configuration on each run. The last 3 snapshots are kept on each Solr core and can be restored from the core page.' // @translate
     ));
 }

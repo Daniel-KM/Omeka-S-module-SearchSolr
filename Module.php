@@ -134,10 +134,10 @@ class Module extends AbstractModule
             ))->setTranslator($translator);
         }
 
-        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.59')) {
+        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.61')) {
             $errors[] = (string) (new PsrMessage(
                 'This module requires module "{module}" version "{version}" or greater.', // @translate
-                ['module' => 'Advanced Search', 'version' => '3.4.59']
+                ['module' => 'Advanced Search', 'version' => '3.4.61']
             ))->setTranslator($translator);
         }
 
