@@ -523,8 +523,8 @@ class SolariumQuerier extends AbstractQuerier
                 ->setStart(0);
 
             if ($allQuery->getGrouping()->getFields()) {
-                // Solr default group.limit is 1, so set it
-                // explicitly to get all documents per group.
+                // Solr default group.limit is 1, so set it explicitly to get
+                // all documents per group.
                 $allQuery
                     ->setRows(100)
                     ->getGrouping()
@@ -1140,12 +1140,13 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
-     * Estimate the max number of query fields (qf) to stay under
-     * Solr's maxClauseCount (1024).
+     * Estimate max number of query fields (qf) to stay under Solr max clauses.
      *
-     * Each query term generates one clause per qf field, and the
-     * analyzer may expand each clause (lowercase, ASCII folding,
-     * synonyms…). A conservative expansion factor of 5 is used.
+     * The maxClauseCount is 1024.
+     *
+     * Each query term generates one clause per qf field, and the analyzer may
+     * expand each clause (lowercase, ASCII folding, synonyms…). A conservative
+     * expansion factor of 5 is used.
      */
     protected function maxQueryFields(): int
     {
@@ -1751,6 +1752,18 @@ class SolariumQuerier extends AbstractQuerier
             case 'lte':
             case 'gte':
             case 'gt':
+                // For date fields (e.g. EDTF indexed via ValueFormatter\Edtf),
+                // normalize input (EDTF or partial date) to ISO 8601 bounds
+                // supported by Solr date fields, including BCE years.
+                if ($this->fieldIsDate($field)) {
+                    $val = $this->edtfValuesToIso(
+                        $val,
+                        $type === 'lt' || $type === 'lte'
+                    );
+                    if (empty($val)) {
+                        return '';
+                    }
+                }
                 // With a list of lt/lte/gte/gt, get the right value first in
                 // order to avoid multiple sql conditions.
                 // But the language cannot be determined: language of the site?
@@ -1789,6 +1802,17 @@ class SolariumQuerier extends AbstractQuerier
             case '≤':
             case '≥':
             case '>':
+                // Normalize EDTF/partial dates to ISO 8601 for Solr date
+                // fields (BCE included).
+                if ($this->fieldIsDate($field)) {
+                    $val = $this->edtfValuesToIso(
+                        is_array($val) ? $val : [$val],
+                        $type === '<' || $type === '≤'
+                    );
+                    if (empty($val)) {
+                        return '';
+                    }
+                }
                 // The values are already cleaned.
                 $first = reset($val);
                 if (count($val) > 1) {
@@ -2382,6 +2406,49 @@ class SolariumQuerier extends AbstractQuerier
     protected function escapePhrase(string $s): string
     {
         return $this->select->getHelper()->escapePhrase($s);
+    }
+
+    /**
+     * Normalize a list of user-typed date values to ISO 8601 strings
+     * compatible with Solr date fields, including BCE.
+     *
+     * Accepts EDTF strings, ISO dates, partial dates (year, year-month), and
+     * already-ISO values. For "lower bound" queries ($useMin=true), values are
+     * expanded to the earliest moment; for "upper bound", to the latest.
+     * Invalid values are dropped.
+     */
+    protected function edtfValuesToIso(
+        array $values,
+        bool $useMin
+    ): array {
+        $hasEdtf = class_exists(\EDTF\EdtfFactory::class);
+        if (!$hasEdtf) {
+            // Fallback: return values untouched, Solr will parse what it can
+            // (standard ISO only).
+            return array_filter(
+                array_map(fn ($v) => trim((string) $v), $values),
+                'strlen'
+            );
+        }
+        static $formatter;
+        if ($formatter === null) {
+            $formatter = new \SearchSolr\ValueFormatter\Edtf();
+        }
+        $formatter->setSettings([
+            'part' => $useMin ? 'min' : 'max',
+        ]);
+        $result = [];
+        foreach ($values as $v) {
+            $s = trim((string) $v);
+            if ($s === '') {
+                continue;
+            }
+            $iso = $formatter->format($s);
+            if ($iso) {
+                $result[] = reset($iso);
+            }
+        }
+        return $result;
     }
 
     /**
