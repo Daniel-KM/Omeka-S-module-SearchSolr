@@ -1438,7 +1438,8 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             'charFilters' => [
                 [
                     'class' => 'solr.PatternReplaceCharFilterFactory',
-                    'pattern' => "['\u2019\u2018]",
+                    // Single quote, standard apostrophe, inverted.
+                    'pattern' => "['’‘]",
                     'replacement' => ' ',
                 ],
             ],

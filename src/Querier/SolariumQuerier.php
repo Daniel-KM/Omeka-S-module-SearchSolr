@@ -183,7 +183,7 @@ class SolariumQuerier extends AbstractQuerier
             }
 
             // Sort by weight descending, keep top results.
-            usort($suggestions, fn($a, $b) => $b['data'] <=> $a['data']);
+            usort($suggestions, fn ($a, $b) => $b['data'] <=> $a['data']);
             $suggestions = array_slice($suggestions, 0, $limit);
 
             return $this->response

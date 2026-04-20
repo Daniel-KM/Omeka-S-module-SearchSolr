@@ -26,7 +26,6 @@ class ReduceSolrFields extends AbstractJob
     protected $logger;
 
     /**
-     *
      * List of fields, adapted:
      * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::missingRequiredMaps()
      * @see \SearchSolr\Job\ReduceSolrFields::perform()
@@ -285,10 +284,8 @@ class ReduceSolrFields extends AbstractJob
             $removable[] = $map;
         }
 
-        usort($removable, function ($a, $b) {
-            return $this->fieldRemovalPriority($a->fieldName())
-                <=> $this->fieldRemovalPriority($b->fieldName());
-        });
+        usort($removable, fn ($a, $b) => $this->fieldRemovalPriority($a->fieldName())
+                <=> $this->fieldRemovalPriority($b->fieldName()));
 
         $removedStep3 = [];
         foreach ($removable as $map) {
