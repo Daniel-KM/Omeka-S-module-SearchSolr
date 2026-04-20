@@ -1464,10 +1464,13 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
-            $name = $this->fieldToIndex($fieldName);
-            if (!$name) {
+            $name = $this->fieldToIndex($fieldName) ?? $fieldName;
+
+            // A property term (with ":") that was not resolved to
+            // a Solr field means the field is not indexed.
+            if (strpos($name, ':') !== false) {
                 $this->services->get('Omeka\Logger')
-                    ->warn('Solr: skipped filter on unmapped field "{field}".', ['field' => $fieldName]); // @translate
+                    ->err('Solr: skipped filter on unmapped field "{field}".', ['field' => $fieldName]); // @translate
                 $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
                     ->setQuery('-*:*');
                 return;
@@ -1687,16 +1690,17 @@ class SolariumQuerier extends AbstractQuerier
 
                 $requireInteger = in_array($type, SearchResources::FIELD_QUERY['value_integer']);
                 if ($requireInteger) {
-                    $nameInteger ??= $this->fieldToIndexNumeric($field) ?? $nameAny ?? ($nameAny = $this->fieldToIndex($field));
+                    $nameInteger ??= $this->fieldToIndexNumeric($field) ?? $nameAny ?? ($nameAny = ($this->fieldToIndex($field) ?? $field));
                     $name = $nameInteger;
                 } else {
-                    $nameAny ??= $this->fieldToIndex($field);
+                    $nameAny ??= $this->fieldToIndex($field) ?? $field;
                     $name = $nameAny;
                 }
-                // Skip filter when property is not indexed.
-                if (!$name) {
+                // A property term (with ":") not resolved to a
+                // Solr field means the field is not indexed.
+                if (strpos($name, ':') !== false) {
                     $this->services->get('Omeka\Logger')
-                        ->warn('Solr: skipped filter on unmapped field "{field}".', ['field' => $field]); // @translate
+                        ->err('Solr: skipped filter on unmapped field "{field}".', ['field' => $field]); // @translate
                     $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
                         ->setQuery('-*:*');
                     return;
