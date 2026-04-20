@@ -738,7 +738,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
             // Handle annotation extraction (path: property/annotation[/property]).
             if ($extractAnnotation) {
-                $annotation = $value->valueAnnotation();
+                try {
+                    $annotation = $value->valueAnnotation();
+                } catch (\Throwable $e) {
+                    $annotation = null;
+                }
                 if ($annotation) {
                     $annotationSubMap = $solrSubMap->subMap();
                     $annotationFirstSource = $annotationSubMap->firstSource();
@@ -831,7 +835,11 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 ) {
                     continue;
                 }
-                $annotation = $value->valueAnnotation();
+                try {
+                    $annotation = $value->valueAnnotation();
+                } catch (\Throwable $e) {
+                    continue;
+                }
                 if (!$annotation) {
                     continue;
                 }
