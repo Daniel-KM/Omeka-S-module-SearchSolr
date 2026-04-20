@@ -459,8 +459,7 @@ class CoreController extends AbstractActionController
             // This is the strlen as bytes, not as character.
             ->addHeaderLine('Content-length: ' . strlen($content))
             // When forcing the download of a file over SSL, IE8 and lower
-            // browsers fail if the Cache-Control and Pragma headers
-            // are not set.
+            // browsers fail if the Cache-Control and Pragma headers aren't set.
             // @see http://support.microsoft.com/KB/323308
             ->addHeaderLine('Cache-Control: max-age=0')
             ->addHeaderLine('Expires: 0')
@@ -929,8 +928,49 @@ class CoreController extends AbstractActionController
     }
 
     /**
-     * Create the "suggest_txt" field and selective copyFields
-     * for autocompletion.
+     * Reset all maps of this core to "follow engine" visibility.
+     *
+     * This process removes any explicit "all" override set during upgrade.
+     */
+    public function resetMapsVisibilityAction()
+    {
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        $connection = $this->getEvent()->getApplication()->getServiceManager()
+            ->get('Omeka\Connection');
+        $sql = <<<'SQL'
+            UPDATE solr_map
+            SET settings = JSON_SET(
+                COALESCE(settings, '{}'),
+                '$.pool.filter_visibility', ''
+            )
+            WHERE solr_core_id = :core_id
+              AND JSON_EXTRACT(settings, '$.pool.filter_visibility') = 'all'
+            SQL;
+        $count = $connection->executeStatement(
+            $sql, ['core_id' => $solrCore->id()]
+        );
+
+        if ($count) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} maps reset to "follow engine" visibility. Reindex required.', // @translate
+                ['count' => $count]
+            ));
+        } else {
+            $this->messenger()->addSuccess(
+                'All maps already follow the engine visibility.' // @translate
+            );
+        }
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id',
+            ['id' => $id, 'action' => 'show']
+        );
+    }
+
+    /**
+     * Create "suggest_txt" field and selective copyFields for autocompletion.
      */
     public function createSuggestFieldAction()
     {
@@ -1046,8 +1086,8 @@ class CoreController extends AbstractActionController
                 $fieldType = 'text_search_' . $lang;
                 $langFilters = $languages[$lang]['filters'];
 
-                // Base filters: lowercase + ASCII folding,
-                // then language-specific filters.
+                // Base filters: lowercase + ASCII folding, then append the
+                // language-specific filters.
                 $baseFilters = [
                     ['class' => 'solr.LowerCaseFilterFactory'],
                     ['class' => 'solr.ASCIIFoldingFilterFactory', 'preserveOriginal' => true],

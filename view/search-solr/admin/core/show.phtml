@@ -70,6 +70,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->resourceMapUrl('items', 'add-annotation-maps'), [
                     'class' => 'link',
                     'title' => $translate('Create maps for value annotations: fulltext, and specific fields for each annotation property used in the database (dates, places, roles, etc.).')]) ?></li>
+                <li><?= $hyperlink($translate('Set value visibility to follow engine'), $solrCore->adminUrl('reset-maps-visibility'), [
+                    'class' => 'link',
+                    'title' => $translate('Reset all maps to "follow engine" visibility. Maps on a public engine will stop indexing private values.')]) ?></li>
             </ul>
         </div>
         <?php endif; ?>
