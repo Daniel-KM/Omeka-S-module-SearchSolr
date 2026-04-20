@@ -248,11 +248,12 @@ class SolrMapForm extends Form
                 'name' => 'filter_visibility',
                 'type' => Element\Radio::class,
                 'options' => [
-                    'label' => 'Only visibility', // @translate
+                    'label' => 'Values visibility', // @translate
                     'value_options' => [
-                        '' => 'All', // @translate
-                        'public' => 'Public', // @translate
-                        'private' => 'Private', // @translate
+                        '' => 'Follow engine setting (recommended)', // @translate
+                        'all' => 'All values (override engine)', // @translate
+                        'public' => 'Public only', // @translate
+                        'private' => 'Private only', // @translate
                     ],
                 ],
                 'attributes' => [

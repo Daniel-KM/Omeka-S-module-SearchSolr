@@ -527,11 +527,10 @@ class SolariumIndexer extends AbstractIndexer
         /** @var \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor */
         $valueExtractor = $this->getValueExtractor($resourceName);
 
-        // This shortcut is not working on some databases: the representation
-        // is not fully loaded, so when getting resource values
-        // ($representation->values()), an error occurs when getting the
-        // property term: the vocabulary is not loaded and the prefix cannot
-        // be get.
+        // This shortcut is not working on some databases: the representation is
+        // not fully loaded, so when getting resource values ($representation->values()),
+        // an error occurs when getting the property term: the vocabulary is not
+        // loaded and the prefix cannot be get.
         // TODO Is it still true with representation not created via adapter but api in AdvancedSearch?
         /** @see \Omeka\Api\Representation\AbstractResourceEntityRepresentation::values() */
 
@@ -1050,7 +1049,7 @@ class SolariumIndexer extends AbstractIndexer
 
         $query['id'] = array_unique(array_merge($query['id'] ?? [], $resourceIds));
 
-        // TODO Search api is currently unavailable for resources (wait v4.1)
+        // TODO Search api is currently unavailable for resources (wait v4.1).
         // For now, use the first resource.
         $first = reset($resources);
         $resourceName = $first->resourceName();
@@ -1101,8 +1100,16 @@ class SolariumIndexer extends AbstractIndexer
         string $resourceName
     ): \SearchSolr\ValueExtractor\ValueExtractorInterface {
         if (!isset($this->valueExtractorCache[$resourceName])) {
-            $this->valueExtractorCache[$resourceName] = $this->valueExtractorManager
+            $extractor = $this->valueExtractorManager
                 ->get($resourceName);
+            // Propagate the engine's visibility setting so that maps with empty
+            // filter_visibility inherit the engine default.
+            if (method_exists($extractor, 'setEngineVisibility')) {
+                $extractor->setEngineVisibility(
+                    $this->searchEngine->setting('visibility')
+                );
+            }
+            $this->valueExtractorCache[$resourceName] = $extractor;
         }
         return $this->valueExtractorCache[$resourceName];
     }

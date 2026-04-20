@@ -63,11 +63,30 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
     protected $label;
 
+    /**
+     * Default visibility filter inherited from the search engine.
+     * Null means no filter (index all values). "public" or "private"
+     * restricts values when a map has no explicit filter_visibility.
+     */
+    protected ?string $engineVisibility = null;
+
     public function __construct(ApiManager $api, LoggerInterface $logger, $baseFilepath)
     {
         $this->api = $api;
         $this->logger = $logger;
         $this->baseFilepath = $baseFilepath;
+    }
+
+    /**
+     * Set the default visibility inherited from the search engine.
+     *
+     * Maps with an empty filter_visibility will use this value.
+     * Maps with "all", "public" or "private" override it.
+     */
+    public function setEngineVisibility(?string $visibility): self
+    {
+        $this->engineVisibility = $visibility;
+        return $this;
     }
 
     public function getLabel(): string
@@ -673,7 +692,14 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $filterValuesPattern = $solrMap->pool('filter_values') ?: null;
         $filterUrisPattern = $solrMap->pool('filter_uris') ?: null;
 
-        $filterVisibility = $solrMap->pool('filter_visibility') ?: null;
+        // Resolve visibility: map setting overrides engine default.
+        // "all" = explicit override to index everything.
+        // "" (empty) = follow engine setting.
+        // "public"/"private" = explicit override.
+        $mapVisibility = $solrMap->pool('filter_visibility') ?: null;
+        $filterVisibility = $mapVisibility === 'all'
+            ? null
+            : ($mapVisibility ?: $this->engineVisibility);
         $publicOnly = $filterVisibility === 'public';
         $privateOnly = $filterVisibility === 'private';
 
@@ -788,9 +814,23 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $subMap = $solrMap->subMap();
         $annotationTerm = $subMap->firstSource();
 
+        // Apply the same visibility filter as property values.
+        $mapVisibility = $solrMap->pool('filter_visibility') ?: null;
+        $filterVisibility = $mapVisibility === 'all'
+            ? null
+            : ($mapVisibility ?: $this->engineVisibility);
+        $publicOnly = $filterVisibility === 'public';
+        $privateOnly = $filterVisibility === 'private';
+
         $extractedValues = [];
         foreach ($resource->values() as $term => $propertyData) {
             foreach ($propertyData['values'] as $value) {
+                if ($filterVisibility
+                    && (($privateOnly && $value->isPublic())
+                        || ($publicOnly && !$value->isPublic()))
+                ) {
+                    continue;
+                }
                 $annotation = $value->valueAnnotation();
                 if (!$annotation) {
                     continue;
