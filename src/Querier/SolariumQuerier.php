@@ -1530,6 +1530,15 @@ class SolariumQuerier extends AbstractQuerier
             $name = $this->fieldToIndex($field) ?? $field;
             $isDate = substr($name, -3) === '_dt' || substr($name, -4) === '_dts' || substr($name, -4) === '_pdt' || substr($name, -4) === '_tdt' || substr($name, -5) === '_pdts' || substr($name, -5) === '_tdts';
 
+            // Two-field interval overlap: use start field for the upper bound
+            // and end field for the lower bound. Triggered when the form filter
+            // declares a "field_end" option.
+            $formFilter = $this->query->getFormFilter($field);
+            $endField = null;
+            if ($formFilter && !empty($formFilter['field_end'])) {
+                $endField = $this->fieldToIndex($formFilter['field_end']) ?? $formFilter['field_end'];
+            }
+
             foreach ($ranges as $range) {
                 if (!is_array($range)) {
                     continue;
@@ -1545,7 +1554,21 @@ class SolariumQuerier extends AbstractQuerier
                     $to = $this->normalizeDate($to);
                 }
 
-                if ($from !== '*' || $to !== '*') {
+                if ($from === '*' && $to === '*') {
+                    continue;
+                }
+
+                if ($endField) {
+                    $clauses = [];
+                    if ($to !== '*') {
+                        $clauses[] = "$name:[* TO $to]";
+                    }
+                    if ($from !== '*') {
+                        $clauses[] = "$endField:[$from TO *]";
+                    }
+                    $this->select->createFilterQuery($name . '_' . ++$this->appendToKey)
+                        ->setQuery(implode(' AND ', $clauses));
+                } else {
                     $this->select->createFilterQuery($name . '_' . ++$this->appendToKey)
                         ->setQuery("$name:[$from TO $to]");
                 }

@@ -1270,8 +1270,11 @@ class CoreController extends AbstractActionController
             ) {
                 continue;
             }
-            // Facets need _ss (or _i for ranges). Range facets with an interval
-            // end ("field_end") need _i for both the start and end properties.
+            // Facets need _ss (or _i for ranges). For range facets with an
+            // interval end ("field_end"), the field names already carry the
+            // bound suffix (_min_i / _max_i): the regex in
+            // collectFieldAsProperty extracts the suffix from the field name,
+            // so passing an empty $suffixes is enough.
             foreach ($config->subSetting('facet', 'facets', []) as $f) {
                 $v = $f['field'] ?? null;
                 if (!$v) {
@@ -1279,18 +1282,19 @@ class CoreController extends AbstractActionController
                 }
                 $type = $f['type'] ?? '';
                 $isRange = in_array($type, ['RangeDouble', 'SelectRange']);
-                $suffix = $isRange ? '_i' : '_ss';
-                $this->collectFieldAsProperty(
-                    $v, $usedFields, [$suffix]
-                );
-                if ($isRange && !empty($f['field_end'])) {
+                $hasEnd = $isRange && !empty($f['field_end']);
+                if ($hasEnd) {
+                    $this->collectFieldAsProperty($v, $usedFields, []);
+                    $this->collectFieldAsProperty($f['field_end'], $usedFields, []);
+                } else {
                     $this->collectFieldAsProperty(
-                        $f['field_end'], $usedFields, ['_i']
+                        $v, $usedFields, [$isRange ? '_i' : '_ss']
                     );
                 }
             }
             // Filters need _ss. Range filters with an interval end
-            // ("field_end") need _i for both the start and end properties.
+            // ("field_end") use the suffix carried by the field name (_min_i /
+            // _max_i).
             foreach ($config->subSetting('form', 'filters', []) as $f) {
                 $v = $f['field'] ?? null;
                 if (!$v) {
@@ -1299,12 +1303,12 @@ class CoreController extends AbstractActionController
                 $type = $f['type'] ?? '';
                 $isRange = in_array($type, ['Range', 'RangeDouble']);
                 $hasEnd = $isRange && !empty($f['field_end']);
-                $this->collectFieldAsProperty(
-                    $v, $usedFields, $hasEnd ? ['_i'] : ['_ss']
-                );
                 if ($hasEnd) {
+                    $this->collectFieldAsProperty($v, $usedFields, []);
+                    $this->collectFieldAsProperty($f['field_end'], $usedFields, []);
+                } else {
                     $this->collectFieldAsProperty(
-                        $f['field_end'], $usedFields, ['_i']
+                        $v, $usedFields, [$isRange ? '_i' : '_ss']
                     );
                 }
             }
@@ -1438,6 +1442,35 @@ class CoreController extends AbstractActionController
                 'index_for_link' => true,
                 'parts' => ['link'],
                 'formatter' => '',
+            ],
+            // Interval lower bound: extract the smallest year from each EDTF
+            // value, then aggregate to the smallest year across multivalued
+            // sources (e.g. several value annotations).
+            '_min_i' => [
+                'formatter' => 'edtf_year',
+                'parts' => ['main'],
+                'part' => 'min',
+                'aggregate' => 'min',
+            ],
+            // Interval upper bound: largest year per value, then largest across
+            // multivalued sources.
+            '_max_i' => [
+                'formatter' => 'edtf_year',
+                'parts' => ['main'],
+                'part' => 'max',
+                'aggregate' => 'max',
+            ],
+            '_min_l' => [
+                'formatter' => 'edtf_year',
+                'parts' => ['main'],
+                'part' => 'min',
+                'aggregate' => 'min',
+            ],
+            '_max_l' => [
+                'formatter' => 'edtf_year',
+                'parts' => ['main'],
+                'part' => 'max',
+                'aggregate' => 'max',
             ],
         ];
 
@@ -1675,7 +1708,10 @@ class CoreController extends AbstractActionController
         if (strpos($value, ':') !== false) {
             $term = $value;
         } elseif (preg_match(
-            '/^([a-z]+)_(.+?)_(txt|ss|s|link_ss|dt|i|l|is|b|ls)$/',
+            // Compound interval suffixes (_min_i / _max_i / _min_l / _max_l)
+            // are matched before the simple suffixes thanks to the alternation
+            // order: longest alternatives first.
+            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|txt|ss|s|dt|is|ls|i|l|b)$/',
             $value,
             $m
         )) {

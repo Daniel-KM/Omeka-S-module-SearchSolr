@@ -353,7 +353,27 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         unset($value);
 
         // Don't use array_unique early, because objects may not be stringable.
-        return array_values(array_unique($values));
+        $values = array_values(array_unique($values));
+
+        // Aggregate the array of values to a single scalar. Used for interval
+        // bound fields (min / max) on multivalued sources, e.g. value
+        // annotations holding several dates: keep only the smallest start and
+        // the largest end on the document.
+        $aggregate = $this->settings['aggregate'] ?? null;
+        if ($aggregate === 'min' || $aggregate === 'max') {
+            $numerics = array_values(array_filter(
+                $values,
+                fn ($v) => is_numeric($v)
+            ));
+            if ($numerics) {
+                return [(string) ($aggregate === 'min' ? min($numerics) : max($numerics))];
+            }
+            // Lexicographic fallback for non-numeric values.
+            sort($values);
+            return [$aggregate === 'min' ? reset($values) : end($values)];
+        }
+
+        return $values;
     }
 
     public function formatTable($value): array
