@@ -1392,9 +1392,9 @@ class CoreController extends AbstractActionController
 
         // 5. Delete property maps not referenced by any config.
         // Keep maps with custom settings (formatter, pool filters,
-        // normalization, boost, etc.) — they were configured manually and
-        // should not be removed automatically.
+        // normalization, boost, etc.).
         $deleted = [];
+        $kept = [];
         foreach ($existingBySource as $source => $maps) {
             if (in_array($source, $systemSources)
                 || strpos($source, '/') !== false
@@ -1405,6 +1405,7 @@ class CoreController extends AbstractActionController
             }
             foreach ($maps as $map) {
                 if ($this->isCustomizedMap($map)) {
+                    $kept[] = $map->fieldName();
                     continue;
                 }
                 $api->delete('solr_maps', $map->id());
@@ -1553,22 +1554,36 @@ class CoreController extends AbstractActionController
         if ($deleted) {
             $this->updateFieldsBoost($solrCore);
         }
+
+        // Summary line.
+        $totalExisting = count($existingMaps);
+        $this->messenger()->addSuccess(new PsrMessage(
+            'Sync complete. Properties collected from configs: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
+            [
+                'props' => count($usedFields),
+                'before' => $totalExisting,
+                'deleted' => count($deleted),
+                'kept' => count($kept),
+                'created' => count($created),
+            ]
+        ));
+
         if ($deleted) {
-            $this->messenger()->addSuccess(new PsrMessage(
-                '{count} unused maps deleted: {list}.', // @translate
-                [
-                    'count' => count($deleted),
-                    'list' => implode(', ', $deleted),
-                ]
+            $this->messenger()->addWarning(new PsrMessage(
+                'Deleted: {list}.', // @translate
+                ['list' => implode(', ', $deleted)]
+            ));
+        }
+        if ($kept) {
+            $this->messenger()->addNotice(new PsrMessage(
+                'Kept (customized, not in config): {list}.', // @translate
+                ['list' => implode(', ', $kept)]
             ));
         }
         if ($created) {
             $this->messenger()->addSuccess(new PsrMessage(
-                '{count} maps created: {list}.', // @translate
-                [
-                    'count' => count($created),
-                    'list' => implode(', ', $created),
-                ]
+                'Created: {list}.', // @translate
+                ['list' => implode(', ', $created)]
             ));
         }
         if (!$deleted && !$created) {
