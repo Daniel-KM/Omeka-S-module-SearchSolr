@@ -98,6 +98,22 @@ return [
         'pool' => [],
         'settings' => ['label' => 'Title'],
     ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'created_dt',
+        'alias' => 'created',
+        'source' => 'created',
+        'pool' => [],
+        'settings' => ['label' => 'Created'],
+    ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'modified_dt',
+        'alias' => 'modified',
+        'source' => 'modified',
+        'pool' => [],
+        'settings' => ['label' => 'Modified'],
+    ],
 
     // Properties.
     // Text general of Dublin Core elements + spatial and temporal coverages.

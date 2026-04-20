@@ -656,7 +656,7 @@ class CoreController extends AbstractActionController
         $maps = $solrCore->maps();
         if (count($maps)) {
             $api->batchDelete('solr_maps', array_keys($maps));
-            $this->messenger()->addNotice(new PsrMessage(
+            $this->messenger()->addSuccess(new PsrMessage(
                 'The existing mapping of core "{solr_core_name}" (#{solr_core_id}) has been deleted.', // @translate
                 ['solr_core_name' => $solrCore->name(), 'solr_core_id' => $solrCore->id()]
             ));
@@ -1163,7 +1163,7 @@ class CoreController extends AbstractActionController
                 ]
             ));
         } else {
-            $this->messenger()->addNotice(
+            $this->messenger()->addSuccess(
                 'All annotation maps already exist.' // @translate
             );
         }
@@ -1177,14 +1177,34 @@ class CoreController extends AbstractActionController
      * Sync Solr maps with search configs.
      *
      * Create missing maps for properties used in facets, filters, sorts,
-     * suggesters and bounce links; remove property maps not referenced by any
-     * config. System maps and value_annotations are kept.
+     * boosts, suggesters, bounce links, etc; remove property maps not
+     * referenced by any config. System maps and value_annotations are kept.
+     *
+     * TODO Optionally collect properties from resource templates to create _txt maps for fulltext/boost/suggest, even when the property is not yet in a search config. This would complement property_values_txt with per-field granularity.
      */
     public function syncMapsAction()
     {
         $api = $this->api();
         $id = (int) $this->params('id');
         $solrCore = $api->read('solr_cores', $id)->getContent();
+
+        // Check for shared engine (index_name).
+        // Sync cannot work reliably when multiple Omeka instances share a core.
+        $searchEngines = $api->search('search_engines')
+            ->getContent();
+        foreach ($searchEngines as $engine) {
+            $coreId = $engine->settingEngineAdapter('solr_core_id');
+            if ((int) $coreId === $id
+                && $engine->settingEngineAdapter('index_name')
+            ) {
+                $this->messenger()->addError(
+                    'This core is used by a shared engine (index_name is set). Sync is not supported for shared engines.' // @translate
+                );
+                return $this->redirect()->toRoute(
+                    'admin/search/solr/core-id', ['id' => $id]
+                );
+            }
+        }
 
         // Sources that must never be deleted.
         $systemSources = [
@@ -1250,48 +1270,66 @@ class CoreController extends AbstractActionController
             ) {
                 continue;
             }
+            // Facets need _ss (or _i for ranges).
             foreach ($config->subSetting('facet', 'facets', []) as $f) {
                 $v = $f['field'] ?? null;
-                if ($v) {
-                    $this->collectFieldAsProperty($v, $usedFields);
-                }
-            }
-            foreach ($config->subSetting('form', 'filters', []) as $f) {
-                $v = $f['field'] ?? null;
-                if ($v) {
-                    $this->collectFieldAsProperty($v, $usedFields);
-                }
-            }
-            foreach ($config->subSetting('results', 'sort_list', []) as $f) {
-                $v = strtok($f['name'] ?? '', ' ');
-                if ($v) {
-                    $this->collectFieldAsProperty($v, $usedFields);
-                }
-            }
-            foreach ($config->subSetting('index', 'field_boosts', []) as $fieldName => $boost) {
-                $this->collectFieldAsProperty($fieldName, $usedFields);
-            }
-            // Aliases aggregate multiple properties under one
-            // name. Each listed property needs a map.
-            foreach ($config->subSetting('index', 'aliases', []) as $alias) {
-                foreach ($alias['fields'] ?? [] as $v) {
-                    if (strpos($v, ':') !== false) {
-                        $usedFields[$v] = true;
-                    }
-                }
-            }
-            // Advanced filter fields (the property select in
-            // the advanced search form). Values can be property
-            // terms, Solr field names, or alias names.
-            foreach ($config->subSetting('form', 'advanced', [])['fields'] ?? [] as $f) {
-                $v = $f['value'] ?? ($f['field'] ?? null);
                 if (!$v) {
                     continue;
                 }
-                $this->collectFieldAsProperty($v, $usedFields);
+                $type = $f['type'] ?? '';
+                $suffix = in_array($type, ['RangeDouble', 'SelectRange'])
+                    ? '_i' : '_ss';
+                $this->collectFieldAsProperty(
+                    $v, $usedFields, [$suffix]
+                );
+            }
+            // Filters need _ss.
+            foreach ($config->subSetting('form', 'filters', []) as $f) {
+                $v = $f['field'] ?? null;
+                if ($v) {
+                    $this->collectFieldAsProperty(
+                        $v, $usedFields, ['_ss']
+                    );
+                }
+            }
+            // Sorts need _s.
+            foreach ($config->subSetting('results', 'sort_list', []) as $f) {
+                $v = strtok($f['name'] ?? '', ' ');
+                if ($v) {
+                    $this->collectFieldAsProperty(
+                        $v, $usedFields, ['_s']
+                    );
+                }
+            }
+            // Boosts: the suffix is already in the field name;
+            // just ensure the property is known.
+            foreach ($config->subSetting('index', 'field_boosts', []) as $fieldName => $boost) {
+                $this->collectFieldAsProperty(
+                    $fieldName, $usedFields, []
+                );
+            }
+            // Aliases need _txt (fulltext search).
+            foreach ($config->subSetting('index', 'aliases', []) as $alias) {
+                foreach ($alias['fields'] ?? [] as $v) {
+                    if (strpos($v, ':') !== false) {
+                        $usedFields[$v]['_txt'] = true;
+                    }
+                }
+            }
+            // Advanced filter fields need _txt + _ss.
+            $advancedFields = $config
+                ->subSetting('form', 'advanced', []);
+            foreach ($advancedFields['fields'] ?? [] as $f) {
+                $v = $f['value'] ?? ($f['field'] ?? null);
+                if ($v) {
+                    $this->collectFieldAsProperty(
+                        $v, $usedFields, ['_txt', '_ss']
+                    );
+                }
             }
         }
 
+        // Suggesters need _txt.
         $suggesters = $api->search('search_suggesters')
             ->getContent();
         foreach ($suggesters as $suggester) {
@@ -1301,7 +1339,7 @@ class CoreController extends AbstractActionController
             }
             foreach ($suggester->settings()['fields'] ?? [] as $v) {
                 if (strpos($v, ':') !== false) {
-                    $usedFields[$v] = true;
+                    $usedFields[$v]['_txt'] = true;
                 }
             }
         }
@@ -1312,7 +1350,10 @@ class CoreController extends AbstractActionController
             $settings, $siteSettings, $connection
         );
         foreach ($linkFields as $term) {
-            $usedFields[$term] = true;
+            if (!isset($usedFields[$term])) {
+                $usedFields[$term] = [];
+            }
+            $usedFields[$term]['_link_ss'] = true;
         }
 
         // 4. Get existing maps for this core.
@@ -1323,6 +1364,9 @@ class CoreController extends AbstractActionController
         }
 
         // 5. Delete property maps not referenced by any config.
+        // Keep maps with custom settings (formatter, pool filters,
+        // normalization, boost, etc.) — they were configured manually and
+        // should not be removed automatically.
         $deleted = [];
         foreach ($existingBySource as $source => $maps) {
             if (in_array($source, $systemSources)
@@ -1333,6 +1377,9 @@ class CoreController extends AbstractActionController
                 continue;
             }
             foreach ($maps as $map) {
+                if ($this->isCustomizedMap($map)) {
+                    continue;
+                }
                 $api->delete('solr_maps', $map->id());
                 $deleted[] = $map->fieldName();
             }
@@ -1349,44 +1396,46 @@ class CoreController extends AbstractActionController
         }
 
         // 6. Create missing maps for used properties.
-        // Long-value properties (descriptions, OCR, etc.) only get _txt, not
-        // _ss/_s (useless for facets/sort).
+        // Long-value properties should not get _ss/_s.
         $longValueProperties = include dirname(__DIR__, 3)
             . '/config/metadata_text.php';
 
+        // Settings templates per suffix.
+        $suffixSettings = [
+            '_txt' => ['formatter' => ''],
+            '_ss' => ['formatter' => '', 'parts' => ['main']],
+            '_s' => ['formatter' => '', 'parts' => ['main']],
+            '_i' => ['formatter' => 'integer'],
+            '_link_ss' => [
+                'index_for_link' => true,
+                'parts' => ['link'],
+                'formatter' => '',
+            ],
+        ];
+
         $created = [];
-        foreach (array_keys($usedFields) as $term) {
-            $base = strtr($term, ':', '_');
-            $prefix = $base . '_';
-            $hasMap = false;
-            foreach ($existingFieldNames as $fn) {
-                if (strpos($fn, $prefix) === 0) {
-                    $hasMap = true;
-                    break;
-                }
-            }
-            if ($hasMap) {
+        foreach ($usedFields as $term => $requiredSuffixes) {
+            if (!is_array($requiredSuffixes)
+                || empty($requiredSuffixes)
+            ) {
                 continue;
             }
+            $base = strtr($term, ':', '_');
             $isLong = in_array($term, $longValueProperties);
-            $suffixes = $isLong
-                ? ['_txt' => ['formatter' => '']]
-                : [
-                    '_txt' => ['formatter' => ''],
-                    '_ss' => [
-                        'formatter' => '',
-                        'parts' => ['main'],
-                    ],
-                    '_s' => [
-                        'formatter' => '',
-                        'parts' => ['main'],
-                    ],
-                ];
-            foreach ($suffixes as $suffix => $mapSettings) {
+
+            foreach (array_keys($requiredSuffixes) as $suffix) {
+                // Skip _ss/_s for long-value properties.
+                if ($isLong
+                    && in_array($suffix, ['_ss', '_s', '_i'])
+                ) {
+                    continue;
+                }
                 $fieldName = $base . $suffix;
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
                 }
+                $mapSettings = $suffixSettings[$suffix]
+                    ?? ['formatter' => ''];
                 $api->create('solr_maps', [
                     'o:solr_core' => ['o:id' => $id],
                     'o:resource_name' => 'resources',
@@ -1400,63 +1449,66 @@ class CoreController extends AbstractActionController
             }
         }
 
-        // 7. Create missing _link_ss maps for bounce links.
-        foreach ($linkFields as $term) {
-            $fieldName = strtr($term, ':', '_') . '_link_ss';
-            if (in_array($fieldName, $existingFieldNames)) {
-                continue;
-            }
-            $api->create('solr_maps', [
-                'o:solr_core' => ['o:id' => $id],
-                'o:resource_name' => 'resources',
-                'o:field_name' => $fieldName,
-                'o:source' => $term,
-                'o:settings' => [
-                    'index_for_link' => true,
-                    'parts' => ['link'],
-                    'formatter' => '',
-                    'label' => $term,
-                ],
-            ]);
-            $created[] = $fieldName;
-            $existingFieldNames[] = $fieldName;
-        }
+        // 8. Ensure required system maps exist.
+        // These are the maps needed for Solr to function.
+        $requiredMaps = [
+            // Generic (all resource types).
+            ['generic', 'resource_name_s', 'resource_name', ['label' => 'Resource type']],
+            ['generic', 'id_i', 'o:id', ['label' => 'Internal id']],
+            ['generic', 'is_public_i', 'is_public', ['parts' => ['main'], 'formatter' => 'boolean', 'label' => 'Public']],
+            ['generic', 'name_s', 'o:title', ['label' => 'Name']],
+            ['generic', 'owner_id_i', 'owner/o:id', ['label' => 'Owner']],
+            ['generic', 'site_id_is', 'site/o:id', ['label' => 'Site']],
+            // Resources.
+            ['resources', 'resource_class_s', 'resource_class/o:term', ['label' => 'Resource class']],
+            ['resources', 'resource_template_s', 'resource_template/o:label', ['label' => 'Resource template']],
+            ['resources', 'title_s', 'o:title', ['label' => 'Title']],
+            ['resources', 'created_dt', 'created', ['label' => 'Created']],
+            ['resources', 'modified_dt', 'modified', ['label' => 'Modified']],
+            ['resources', 'property_values_txt', 'property_values', ['label' => 'All property values']],
+            ['resources', 'value_annotations_txt', 'value_annotations', ['label' => 'Value annotations (all)']],
+            // Items.
+            ['items', 'item_set_id_is', 'item_set/o:id', ['label' => 'Item set id']],
+            ['items', 'item_set_dcterms_title_ss', 'item_set/dcterms:title', ['label' => 'Item set']],
+            ['items', 'has_media_b', 'has_media', ['formatter' => 'boolean', 'label' => 'Has media']],
+        ];
 
-        // 8. Ensure global fulltext maps exist.
-        if (!in_array('property_values_txt', $existingFieldNames)) {
-            $api->create('solr_maps', [
-                'o:solr_core' => ['o:id' => $id],
-                'o:resource_name' => 'resources',
-                'o:field_name' => 'property_values_txt',
-                'o:source' => 'property_values',
-                'o:settings' => [
-                    'formatter' => '',
-                    'label' => 'All property values',
-                ],
-            ]);
-            $created[] = 'property_values_txt';
-            $existingFieldNames[] = 'property_values_txt';
+        $existingMapsByField = [];
+        foreach ($existingMaps as $map) {
+            $existingMapsByField[$map->fieldName()] = $map;
         }
-        if (!in_array('value_annotations_txt', $existingFieldNames)) {
-            $api->create('solr_maps', [
-                'o:solr_core' => ['o:id' => $id],
-                'o:resource_name' => 'resources',
-                'o:field_name' => 'value_annotations_txt',
-                'o:source' => 'value_annotations',
-                'o:settings' => [
-                    'formatter' => '',
-                    'label' => 'Value annotations (all)',
-                ],
-            ]);
-            $created[] = 'value_annotations_txt';
-            $existingFieldNames[] = 'value_annotations_txt';
+        foreach ($requiredMaps as [$scope, $fieldName, $source, $mapSettings]) {
+            if (isset($existingMapsByField[$fieldName])) {
+                $existing = $existingMapsByField[$fieldName];
+                if ($existing->resourceName() !== $scope) {
+                    $api->update(
+                        'solr_maps',
+                        $existing->id(),
+                        ['o:resource_name' => $scope],
+                        [],
+                        ['isPartial' => true]
+                    );
+                    $created[] = $fieldName . ' (fixed scope)';
+                }
+            } else {
+                $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $id],
+                    'o:resource_name' => $scope,
+                    'o:field_name' => $fieldName,
+                    'o:source' => $source,
+                    'o:settings' => $mapSettings,
+                ]);
+                $created[] = $fieldName;
+                $existingFieldNames[] = $fieldName;
+            }
         }
 
         // 9. Ensure selection map if module Selection is active.
         $moduleManager = $services->get('Omeka\ModuleManager');
         $selectionModule = $moduleManager->getModule('Selection');
         if ($selectionModule
-            && $selectionModule->getState() === \Omeka\Module\Manager::STATE_ACTIVE
+            && $selectionModule->getState()
+                === \Omeka\Module\Manager::STATE_ACTIVE
             && !in_array('selection_public_is', $existingFieldNames)
         ) {
             $api->create('solr_maps', [
@@ -1464,9 +1516,7 @@ class CoreController extends AbstractActionController
                 'o:resource_name' => 'resources',
                 'o:field_name' => 'selection_public_is',
                 'o:source' => 'selection_public_id',
-                'o:settings' => [
-                    'label' => 'Public selections',
-                ],
+                'o:settings' => ['label' => 'Public selections'],
             ]);
             $created[] = 'selection_public_is';
             $existingFieldNames[] = 'selection_public_is';
@@ -1495,7 +1545,7 @@ class CoreController extends AbstractActionController
             ));
         }
         if (!$deleted && !$created) {
-            $this->messenger()->addNotice(
+            $this->messenger()->addSuccess(
                 'All maps are in sync with search configs.' // @translate
             );
         }
@@ -1511,42 +1561,99 @@ class CoreController extends AbstractActionController
     }
 
     /**
-     * Collect property terms that need _link_ss maps for bounce links.
+     * Check if a map has custom settings that indicate manual configuration.
      *
-     * Reads whitelist/blacklist from main settings and all site settings from
-     * module AdvancedResourceTemplate.
+     * Manual configuration are formatter, pool filters, normalization, boost,
+     * etc.: such maps should not be deleted by sync.
      *
-     * @return string[] Property terms.
+     * Indices with specific names are kept too.
      */
+    protected function isCustomizedMap(
+        \SearchSolr\Api\Representation\SolrMapRepresentation $map
+    ): bool {
+        $settings = $map->settings();
+        $pool = $map->pool() ?? [];
+        // Non-empty formatter (other than default empty).
+        if (!empty($settings['formatter'])) {
+            return true;
+        }
+        // Any normalization.
+        if (!empty($settings['normalization'])) {
+            return true;
+        }
+        // Boost other than default.
+        if (!empty($settings['boost']) && (float) $settings['boost'] !== 1.0) {
+            return true;
+        }
+        // Any pool filter.
+        if (!empty($pool['filter_values'])
+            || !empty($pool['filter_uris'])
+            || !empty($pool['filter_resources'])
+            || !empty($pool['filter_value_resources'])
+            || !empty($pool['data_types'])
+            || !empty($pool['data_types_exclude'])
+            || !empty($pool['filter_languages'])
+        ) {
+            return true;
+        }
+        // Explicit visibility override.
+        $vis = $pool['filter_visibility'] ?? '';
+        if ($vis !== '' && $vis !== 'default') {
+            return true;
+        }
+        // Non-standard field name: if the field name does not follow the
+        // pattern derived from the source, it was renamed manually.
+        $source = $map->source();
+        if (strpos($source, ':') !== false) {
+            $expectedPrefix = strtr($source, ':', '_') . '_';
+            if (strpos($map->fieldName(), $expectedPrefix) !== 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
-     * Add a field reference to the used fields list, resolving
-     * property terms, Solr field names, and alias names.
+     * Add a field reference to the used fields list with its required suffixes.
      *
-     * - "dcterms:rights" → added directly
-     * - "dcterms_rights_ss" → resolved to "dcterms:rights"
-     * - "author" (alias) → ignored (aliases are collected
-     *   separately via their fields list)
+     * Resolves property terms, Solr field names, and alias names.
+     *
+     * @param string $value Property term, Solr field name, or alias.
+     * @param array $usedFields Accumulator: [term => [suffix => true]].
+     * @param string[] $suffixes Required suffixes (e.g. ['_ss', '_s']).
+     *   Empty array means just register the term without specific suffix: the
+     *   suffix is already in the field name for boosts.
      */
     protected function collectFieldAsProperty(
         string $value,
-        array &$usedFields
+        array &$usedFields,
+        array $suffixes = []
     ): void {
-        // Property term (contains ":").
+        $term = null;
         if (strpos($value, ':') !== false) {
-            $usedFields[$value] = true;
-            return;
-        }
-        // Solr field name: extract property term from the name.
-        if (preg_match(
-            '/^([a-z]+)_(.+?)_(?:txt|ss|s|link_ss|dt|i|l|is|b|ls)$/',
+            $term = $value;
+        } elseif (preg_match(
+            '/^([a-z]+)_(.+?)_(txt|ss|s|link_ss|dt|i|l|is|b|ls)$/',
             $value,
             $m
         )) {
             $term = $m[1] . ':' . $m[2];
-            $usedFields[$term] = true;
+            // The suffix is already known from the field name.
+            if (empty($suffixes)) {
+                $suffixes = ['_' . $m[3]];
+            }
         }
-        // Alias names are ignored here: they are resolved via
-        // the aliases config which lists their constituent fields.
+        // Alias names are ignored here: they are resolved via the aliases
+        // config which lists their constituent fields.
+        if ($term === null) {
+            return;
+        }
+        if (!isset($usedFields[$term])) {
+            $usedFields[$term] = [];
+        }
+        foreach ($suffixes as $suffix) {
+            $usedFields[$term][$suffix] = true;
+        }
     }
 
     protected function collectBounceProperties(
@@ -1717,7 +1824,7 @@ class CoreController extends AbstractActionController
 
         // Option "keep": do nothing.
         if ($searchConfig === 'keep') {
-            $this->messenger()->addNotice(new PsrMessage(
+            $this->messenger()->addSuccess(new PsrMessage(
                 'Search configuration unchanged.' // @translate
             ));
             return $this->redirect()->toRoute('admin/search/solr/core-id', [
