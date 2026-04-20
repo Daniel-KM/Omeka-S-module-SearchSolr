@@ -169,22 +169,28 @@ class Solarium extends AbstractEngineAdapter
             return [];
         }
 
-        // TODO Add support of input field for id (from o:id).
-
-        $fields = [];
+        $indexed = [];
+        $mappedTerms = [];
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $name = $map->fieldName();
             $fieldLabel = $map->setting('label', '');
-            $fields[$name] = [
-                'name' => $name,
-                'label' => sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel, $name),
-            ];
+            $label = $fieldLabel
+                ? sprintf(
+                    $this->translator->translate('%1$s (%2$s)'),
+                    $fieldLabel, $name
+                )
+                : $name;
+            $indexed[$name] = $label;
+            $source = $map->source();
+            if (strpos($source, ':') !== false
+                && strpos($source, '/') === false
+            ) {
+                $mappedTerms[$source] = true;
+            }
         }
 
-        // Manage the case when there is no label.
-        return array_replace(
-            array_column($fields, 'name', 'name'),
-            array_filter(array_column($fields, 'label', 'name'))
+        return $this->appendUnmappedProperties(
+            $indexed, $mappedTerms
         );
     }
 
@@ -197,7 +203,7 @@ class Solarium extends AbstractEngineAdapter
 
         $schema = $solrCore->schema();
 
-        $sortFields = [
+        $indexed = [
             'relevance desc' => $this->translator->translate('Relevance'),
         ];
 
@@ -206,6 +212,7 @@ class Solarium extends AbstractEngineAdapter
             'desc' => $this->translator->translate('Desc'),
         ];
 
+        $mappedTerms = [];
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $fieldName = $map->fieldName();
             $schemaField = $schema->getField($fieldName);
@@ -215,13 +222,42 @@ class Solarium extends AbstractEngineAdapter
             $fieldLabel = $map->setting('label', '');
             foreach ($directionLabel as $direction => $labelDirection) {
                 $name = $fieldName . ' ' . $direction;
-                $sortFields[$name] = $fieldLabel
-                    ? sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel . ' ' . $labelDirection, $name)
+                $indexed[$name] = $fieldLabel
+                    ? sprintf(
+                        $this->translator->translate('%1$s (%2$s)'),
+                        $fieldLabel . ' ' . $labelDirection, $name
+                    )
                     : $name;
+            }
+            $source = $map->source();
+            if (strpos($source, ':') !== false
+                && strpos($source, '/') === false
+            ) {
+                $mappedTerms[$source] = true;
             }
         }
 
-        return $sortFields;
+        // For sort, unmapped properties use the term with
+        // direction. The map will be created on sync.
+        $unmapped = $this->getUnmappedPropertyTerms($mappedTerms);
+        if ($unmapped) {
+            $groupLabel = $this->translator->translate(
+                'Properties (index auto-created on sync)'
+            );
+            $options = [];
+            foreach ($unmapped as $term => $label) {
+                foreach ($directionLabel as $dir => $dirLabel) {
+                    $options[$term . ' ' . $dir] = $label
+                        . ' ' . $dirLabel;
+                }
+            }
+            $indexed[$groupLabel] = [
+                'label' => $groupLabel,
+                'options' => $options,
+            ];
+        }
+
+        return $indexed;
     }
 
     public function getAvailableFacetFieldsForSelect(): array
@@ -233,7 +269,8 @@ class Solarium extends AbstractEngineAdapter
 
         $schema = $solrCore->schema();
 
-        $fields = [];
+        $indexed = [];
+        $mappedTerms = [];
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $name = $map->fieldName();
             $schemaField = $schema->getField($name);
@@ -241,10 +278,66 @@ class Solarium extends AbstractEngineAdapter
                 continue;
             }
             $fieldLabel = $map->setting('label', '');
-            $fields[$name] = sprintf($this->translator->translate('%1$s (%2$s)'), $fieldLabel, $name);
+            $indexed[$name] = sprintf(
+                $this->translator->translate('%1$s (%2$s)'),
+                $fieldLabel, $name
+            );
+            $source = $map->source();
+            if (strpos($source, ':') !== false
+                && strpos($source, '/') === false
+            ) {
+                $mappedTerms[$source] = true;
+            }
         }
 
-        return $fields;
+        return $this->appendUnmappedProperties(
+            $indexed, $mappedTerms
+        );
+    }
+
+    /**
+     * Get property terms not yet mapped in the Solr core.
+     *
+     * @param array $mappedTerms [term => true] of already-mapped terms.
+     * @return array [term => label] of unmapped properties.
+     */
+    protected function getUnmappedPropertyTerms(
+        array $mappedTerms
+    ): array {
+        $properties = $this->api->search('properties')
+            ->getContent();
+        $unmapped = [];
+        foreach ($properties as $property) {
+            $term = $property->term();
+            if (!isset($mappedTerms[$term])) {
+                $unmapped[$term] = $property->label()
+                    ? $property->label() . ' (' . $term . ')'
+                    : $term;
+            }
+        }
+        return $unmapped;
+    }
+
+    /**
+     * Append unmapped properties as a grouped optgroup to the
+     * indexed fields list, for use in select elements.
+     */
+    protected function appendUnmappedProperties(
+        array $indexed,
+        array $mappedTerms
+    ): array {
+        $unmapped = $this->getUnmappedPropertyTerms($mappedTerms);
+        if (!$unmapped) {
+            return $indexed;
+        }
+        $groupLabel = $this->translator->translate(
+            'Properties (index auto-created on sync)'
+        );
+        $indexed[$groupLabel] = [
+            'label' => $groupLabel,
+            'options' => $unmapped,
+        ];
+        return $indexed;
     }
 
     public function getSolrCore(): ?SolrCoreRepresentation
