@@ -69,6 +69,17 @@ class SolrCore extends AbstractEntity
     protected $settings = [];
 
     /**
+     * @var array|null
+     *
+     * @Column(
+     *     name="backup_maps",
+     *     type="json",
+     *     nullable=true
+     * )
+     */
+    protected $backupMaps;
+
+    /**
      * @OneToMany(
      *     targetEntity="SearchSolr\Entity\SolrMap",
      *     mappedBy="solrCore",
@@ -118,5 +129,16 @@ class SolrCore extends AbstractEntity
     public function getMaps(): Collection
     {
         return $this->maps;
+    }
+
+    public function setBackupMaps(?array $backupMaps): self
+    {
+        $this->backupMaps = $backupMaps;
+        return $this;
+    }
+
+    public function getBackupMaps(): ?array
+    {
+        return $this->backupMaps;
     }
 }

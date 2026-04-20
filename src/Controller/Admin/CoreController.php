@@ -1394,6 +1394,11 @@ class CoreController extends AbstractActionController
             $existingBySource[$map->source()][] = $map;
         }
 
+        // 4b. Snapshot the current configuration before any modification, so
+        // that it can be restored from the core page if the sync produces an
+        // unwanted result. The last 3 snapshots are kept per core.
+        $this->snapshotMaps($solrCore, $existingMaps);
+
         // 5. Delete property maps not referenced by any config.
         // Keep maps with custom settings (formatter, pool filters,
         // normalization, boost, etc.).
@@ -2091,5 +2096,189 @@ class CoreController extends AbstractActionController
         }
 
         return $counts;
+    }
+
+    /**
+     * Store a snapshot of the current Solr maps on the core entity. Keeps the
+     * last 3 snapshots in column `solr_core.backup_maps`.
+     *
+     * @param \SearchSolr\Api\Representation\SolrMapRepresentation[] $existingMaps
+     */
+    protected function snapshotMaps(
+        \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore,
+        array $existingMaps
+    ): void {
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+        $entityManager = $services->get('Omeka\EntityManager');
+        $authService = $services->get('Omeka\AuthenticationService');
+
+        $userId = null;
+        $userName = null;
+        if ($authService->hasIdentity()) {
+            $identity = $authService->getIdentity();
+            $userId = $identity->getId();
+            $userName = $identity->getName();
+        }
+
+        $maps = [];
+        foreach ($existingMaps as $map) {
+            $maps[] = [
+                'resource_name' => $map->resourceName(),
+                'field_name' => $map->fieldName(),
+                'source' => $map->source(),
+                'alias' => $map->alias(),
+                'pool' => $map->pool() ?? [],
+                'settings' => $map->settings() ?? [],
+            ];
+        }
+
+        $snapshot = [
+            'datetime' => (new \DateTime())->format('c'),
+            'user_id' => $userId,
+            'user_name' => $userName,
+            'count' => count($maps),
+            'maps' => $maps,
+        ];
+
+        /** @var \SearchSolr\Entity\SolrCore $core */
+        $core = $entityManager->find(
+            \SearchSolr\Entity\SolrCore::class,
+            $solrCore->id()
+        );
+        if (!$core) {
+            return;
+        }
+        $backups = $core->getBackupMaps() ?? ['snapshots' => []];
+        if (!isset($backups['snapshots']) || !is_array($backups['snapshots'])) {
+            $backups['snapshots'] = [];
+        }
+        array_unshift($backups['snapshots'], $snapshot);
+        $backups['snapshots'] = array_slice($backups['snapshots'], 0, 3);
+
+        $core->setBackupMaps($backups);
+        $entityManager->flush();
+    }
+
+    /**
+     * Restore Solr maps from a stored snapshot on the core. Existing maps are
+     * deleted and recreated from the snapshot. The current state is itself
+     * snapshotted before restore so the operation is reversible.
+     */
+    public function restoreBackupAction()
+    {
+        $api = $this->api();
+        $id = (int) $this->params('id');
+        $index = (int) $this->params()->fromQuery('index', 0);
+
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+        $entityManager = $services->get('Omeka\EntityManager');
+        /** @var \SearchSolr\Entity\SolrCore $core */
+        $core = $entityManager->find(\SearchSolr\Entity\SolrCore::class, $id);
+        if (!$core) {
+            $this->messenger()->addError('Solr core not found.'); // @translate
+            return $this->redirect()->toRoute('admin/search/solr');
+        }
+
+        $backups = $core->getBackupMaps() ?? [];
+        $snapshots = $backups['snapshots'] ?? [];
+        if (!isset($snapshots[$index])) {
+            $this->messenger()->addError(
+                'Snapshot not found.' // @translate
+            );
+            return $this->redirect()->toRoute(
+                'admin/search/solr/core-id', ['id' => $id]
+            );
+        }
+
+        $solrCore = $api->read('solr_cores', $id)->getContent();
+
+        // Snapshot the current state before restoring.
+        $this->snapshotMaps($solrCore, $solrCore->maps());
+
+        // Delete current maps. Use the API to trigger any related logic.
+        foreach ($solrCore->maps() as $map) {
+            $api->delete('solr_maps', $map->id());
+        }
+
+        // Recreate maps from the snapshot.
+        $snapshot = $snapshots[$index];
+        $created = 0;
+        foreach ($snapshot['maps'] ?? [] as $m) {
+            $data = [
+                'o:solr_core' => ['o:id' => $id],
+                'o:resource_name' => $m['resource_name'] ?? 'resources',
+                'o:field_name' => $m['field_name'] ?? '',
+                'o:source' => $m['source'] ?? '',
+                'o:settings' => $m['settings'] ?? [],
+            ];
+            if (!empty($m['alias'])) {
+                $data['o:alias'] = $m['alias'];
+            }
+            if (!empty($m['pool'])) {
+                $data['o:pool'] = $m['pool'];
+            }
+            if ($data['o:field_name'] === '' || $data['o:source'] === '') {
+                continue;
+            }
+            $api->create('solr_maps', $data);
+            ++$created;
+        }
+
+        // Refresh boost configuration.
+        $solrCore = $api->read('solr_cores', $id)->getContent();
+        $this->updateFieldsBoost($solrCore);
+
+        $this->messenger()->addSuccess(new PsrMessage(
+            'Restored {count} maps from snapshot of {datetime}.', // @translate
+            [
+                'count' => $created,
+                'datetime' => $snapshot['datetime'] ?? '',
+            ]
+        ));
+        $this->messenger()->addWarning(
+            'Reindex required.' // @translate
+        );
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id', ['id' => $id]
+        );
+    }
+
+    /**
+     * Delete a stored snapshot from the Solr core.
+     */
+    public function deleteBackupAction()
+    {
+        $id = (int) $this->params('id');
+        $index = (int) $this->params()->fromQuery('index', -1);
+
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+        $entityManager = $services->get('Omeka\EntityManager');
+        /** @var \SearchSolr\Entity\SolrCore $core */
+        $core = $entityManager->find(\SearchSolr\Entity\SolrCore::class, $id);
+        if (!$core) {
+            $this->messenger()->addError('Solr core not found.'); // @translate
+            return $this->redirect()->toRoute('admin/search/solr');
+        }
+
+        $backups = $core->getBackupMaps() ?? ['snapshots' => []];
+        $snapshots = $backups['snapshots'] ?? [];
+        if (!isset($snapshots[$index])) {
+            $this->messenger()->addError(
+                'Snapshot not found.' // @translate
+            );
+        } else {
+            array_splice($snapshots, $index, 1);
+            $backups['snapshots'] = $snapshots;
+            $core->setBackupMaps($snapshots ? $backups : null);
+            $entityManager->flush();
+            $this->messenger()->addSuccess(
+                'Snapshot deleted.' // @translate
+            );
+        }
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id', ['id' => $id]
+        );
     }
 }

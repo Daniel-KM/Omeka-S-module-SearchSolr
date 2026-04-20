@@ -47,7 +47,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
             <ul class="collapsible">
                 <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
                     'class' => 'link',
-                    'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. Remove property maps not referenced by any config. System maps are kept.')]) ?></li>
+                    'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. Remove property maps not referenced by any config. System maps are kept. The current configuration is automatically snapshotted before sync (3 last snapshots, restorable below).')]) ?></li>
                 <li class="separator"><span><?= $translate('Technical actions') ?></span></li>
                 <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
                     'class' => 'link',
@@ -171,6 +171,46 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
             'class' => 'button',
             'title' => $translate('Create "suggest_txt" including long-value properties (OCR, descriptions, etc.).')]) ?></li>
     </ul>
+</details>
+<?php endif; ?>
+
+<?php
+$backups = $solrCore->backupMaps();
+$snapshots = $backups['snapshots'] ?? [];
+?>
+<?php if ($solrCore->userIsAllowed('update') && $snapshots): ?>
+<details id="solr-core-backups">
+    <summary><?= sprintf($translate('Map snapshots (%d)'), count($snapshots)) ?></summary>
+    <p class="explanation"><?= $translate('A snapshot is taken before each "Sync maps from search configs". The 3 most recent snapshots are kept on this core.') ?></p>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $translate('Date') ?></th>
+                <th><?= $translate('Author') ?></th>
+                <th><?= $translate('Maps') ?></th>
+                <th><?= $translate('Actions') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($snapshots as $i => $snap): ?>
+            <tr>
+                <td><?= $escape((string) ($snap['datetime'] ?? '')) ?></td>
+                <td><?= $escape((string) ($snap['user_name'] ?? '')) ?></td>
+                <td><?= (int) ($snap['count'] ?? 0) ?></td>
+                <td>
+                    <?= $hyperlink($translate('Restore'), $solrCore->adminUrl('restore-backup') . '?index=' . $i, [
+                        'class' => 'button',
+                        'onclick' => 'return confirm("' . $escapeAttr($translate('Restore this snapshot? Current maps will be replaced. The current state is itself snapshotted before restore.')) . '");',
+                    ]) ?>
+                    <?= $hyperlink($translate('Delete'), $solrCore->adminUrl('delete-backup') . '?index=' . $i, [
+                        'class' => 'button delete',
+                        'onclick' => 'return confirm("' . $escapeAttr($translate('Delete this snapshot?')) . '");',
+                    ]) ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 </details>
 <?php endif; ?>
 

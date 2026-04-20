@@ -94,6 +94,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $this->resource->getSettings();
     }
 
+    public function backupMaps(): ?array
+    {
+        return $this->resource->getBackupMaps();
+    }
+
     /**
      * @param string $name
      * @param mixed $default
