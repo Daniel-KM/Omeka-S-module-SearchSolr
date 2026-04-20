@@ -393,6 +393,10 @@ class SolrMapForm extends Form
                         'max_length' => 'Max length', // @translate
                         'integer' => 'Number', // @translate
                         'year' => 'Year', // @translate
+                        'year_month' => 'Year-month (YYYYMM)', // @translate
+                        'decade' => 'Decade (round to 10)', // @translate
+                        'century' => 'Century (round to 100)', // @translate
+                        'millennium' => 'Millennium (round to 1000)', // @translate
                         'truncate' => 'Truncate at separator', // @translate
                         'table' => 'Map value to a code or code to a value (module Table)', // @translate
                         // Table may be first post normalization or finalization too.

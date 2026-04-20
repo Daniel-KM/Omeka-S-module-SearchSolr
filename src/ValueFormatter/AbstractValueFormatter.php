@@ -267,7 +267,46 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         }
 
         if (in_array('year', $normalizations)) {
-            $value = (int) $value ?: null;
+            $value = $this->extractYear((string) $value);
+        }
+
+        // Year-month as a packed integer YYYYMM (e.g. 197504 for April
+        // 1975). Supports negative years via the sign of the year:
+        // -450004 for April, year -4500.
+        if (in_array('year_month', $normalizations)) {
+            $parts = $this->extractYearMonth((string) $value);
+            if ($parts === null) {
+                $value = null;
+            } else {
+                [$year, $month] = $parts;
+                $value = $year >= 0
+                    ? $year * 100 + $month
+                    : $year * 100 - $month;
+            }
+        }
+
+        // Rounded year buckets. Input may be a signed integer (from
+        // EdtfYear formatter), an ISO date string, or any value
+        // starting with a year. Rounding uses floor division so that
+        // BCE years group toward the older end (e.g. -1975 → century
+        // -2000, decade -1980).
+        if (in_array('decade', $normalizations)) {
+            $year = $this->extractYear((string) $value);
+            $value = $year === null
+                ? null
+                : (int) floor($year / 10) * 10;
+        }
+        if (in_array('century', $normalizations)) {
+            $year = $this->extractYear((string) $value);
+            $value = $year === null
+                ? null
+                : (int) floor($year / 100) * 100;
+        }
+        if (in_array('millennium', $normalizations)) {
+            $year = $this->extractYear((string) $value);
+            $value = $year === null
+                ? null
+                : (int) floor($year / 1000) * 1000;
         }
 
         if (in_array('table', $normalizations)) {
@@ -391,5 +430,48 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         }
 
         return array_values(array_unique(array_filter($result, 'strlen')));
+    }
+
+    /**
+     * Extract a signed year from a string.
+     *
+     * Accepts plain integers ("1975", "-4500"), ISO 8601 dates
+     * ("1975-04-17T00:00:00Z", "-4500-01-01T00:00:00Z") and any
+     * value starting with an optional minus sign followed by digits.
+     * Returns null when no year can be extracted or the year is zero.
+     */
+    protected function extractYear(string $value): ?int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        if (preg_match('/^(-?)(\d+)/', $value, $m)) {
+            $year = (int) ($m[1] . $m[2]);
+            return $year ?: null;
+        }
+        return null;
+    }
+
+    /**
+     * Extract [year, month] from a string.
+     *
+     * Accepts ISO 8601 dates and similar formats. Returns null when
+     * month cannot be determined.
+     */
+    protected function extractYearMonth(string $value): ?array
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        if (preg_match('/^(-?)(\d+)-(\d{1,2})/', $value, $m)) {
+            $year = (int) ($m[1] . $m[2]);
+            $month = (int) $m[3];
+            if ($month >= 1 && $month <= 12) {
+                return [$year, $month];
+            }
+        }
+        return null;
     }
 }
