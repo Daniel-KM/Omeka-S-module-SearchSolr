@@ -67,6 +67,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->resourceMapUrl('items', 'reduce-fields'), [
                     'class' => 'link',
                     'title' => $translate('Remove unused properties then remove extra maps to stay within solr maxFields limit.')]) ?></li>
+                <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->resourceMapUrl('items', 'add-annotation-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Create maps for value annotations: fulltext, and specific fields for each annotation property used in the database (dates, places, roles, etc.).')]) ?></li>
             </ul>
         </div>
         <?php endif; ?>

@@ -177,8 +177,8 @@ class MapController extends AbstractActionController
     /**
      * Dispatch a background job to create recommended maps.
      *
-     * Like "Map all", but skips _s/_ss for properties with long
-     * values (> 200 chars), except title-like properties.
+     * Like "Map all", but skips _s/_ss for properties with long values
+     * (> 200 chars), except title-like properties.
      */
     public function recommendedAction()
     {
@@ -231,6 +231,116 @@ class MapController extends AbstractActionController
         );
     }
 
+    /**
+     * Create maps for value annotations (fulltext and _ss).
+     *
+     * Created: fulltext _txt map for all annotations and specific _txt/_ss maps
+     * for each annotation property found in the database.
+     */
+    public function addAnnotationMapsAction()
+    {
+        $api = $this->api();
+        $solrCoreId = (int) $this->params('core-id');
+        $resourceName = $this->params('resource-name');
+
+        $solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
+        $existingMaps = $solrCore->mapsByResourceName($resourceName);
+        $existingFields = array_map(
+            fn ($m) => $m->fieldName(), $existingMaps
+        );
+
+        $connection = $this->api()->getServiceLocator()
+            ->get('Omeka\Connection');
+
+        // Find all distinct annotation property terms used in the db.
+        $sql = <<<'SQL'
+            SELECT DISTINCT CONCAT(v.prefix, ':', p.local_name) AS term
+            FROM value_annotation va
+            JOIN value av ON av.resource_id = va.id
+            JOIN property p ON av.property_id = p.id
+            JOIN vocabulary v ON p.vocabulary_id = v.id
+            ORDER BY term
+            SQL;
+        $annotationTerms = $connection->executeQuery($sql)
+            ->fetchFirstColumn();
+
+        $newMaps = [];
+
+        // 1. Fulltext map for all annotations.
+        $fieldName = 'value_annotations_txt';
+        if (!in_array($fieldName, $existingFields)) {
+            $api->create('solr_maps', [
+                'o:solr_core' => ['o:id' => $solrCoreId],
+                'o:resource_name' => $resourceName,
+                'o:field_name' => $fieldName,
+                'o:source' => 'value_annotations',
+                'o:settings' => [
+                    'formatter' => '',
+                    'label' => 'Value annotations (all)',
+                ],
+            ]);
+            $newMaps[] = $fieldName;
+        }
+
+        // 2. Specific maps for each annotation property.
+        foreach ($annotationTerms as $term) {
+            $base = 'ann_' . strtr($term, ':', '_');
+            $source = 'value_annotations/' . $term;
+
+            // _txt for fulltext.
+            $fieldName = $base . '_txt';
+            if (!in_array($fieldName, $existingFields)) {
+                $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $solrCoreId],
+                    'o:resource_name' => $resourceName,
+                    'o:field_name' => $fieldName,
+                    'o:source' => $source,
+                    'o:settings' => [
+                        'formatter' => '',
+                        'label' => $term . ' (annotation)',
+                    ],
+                ]);
+                $newMaps[] = $fieldName;
+            }
+
+            // _ss for facets.
+            $fieldName = $base . '_ss';
+            if (!in_array($fieldName, $existingFields)) {
+                $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $solrCoreId],
+                    'o:resource_name' => $resourceName,
+                    'o:field_name' => $fieldName,
+                    'o:source' => $source,
+                    'o:settings' => [
+                        'formatter' => '',
+                        'parts' => ['main'],
+                        'label' => $term . ' (annotation)',
+                    ],
+                ]);
+                $newMaps[] = $fieldName;
+            }
+        }
+
+        if ($newMaps) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} value annotation maps created: {list}.', // @translate
+                [
+                    'count' => count($newMaps),
+                    'list' => implode(', ', $newMaps),
+                ]
+            ));
+        } else {
+            $this->messenger()->addNotice(
+                'All value annotation maps already exist.' // @translate
+            );
+        }
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id',
+            ['id' => $solrCoreId]
+        );
+    }
+
     public function cleanAction()
     {
         /**
@@ -272,8 +382,7 @@ class MapController extends AbstractActionController
                 continue;
             }
 
-            // TODO Skip map where the values are too much long for exact strings,
-            // for example ocr text should not be "_ss".
+            // TODO Skip map where the values are too much long for exact strings, for example ocr text should not be "_ss".
             // But it should be already done because a check is done on complete action.
 
             // There may be multiple maps with the same term.
