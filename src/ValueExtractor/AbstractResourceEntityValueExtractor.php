@@ -103,6 +103,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'is_open' => 'Item set: Is open', // @translate
                     'value' => 'Value itself (in particular for module Thesaurus)', // @translate
                     'annotation' => 'Value annotation appended to property', // @translate
+                    'value_annotations' => 'All value annotations flattened (for fulltext or specific annotation property)', // @translate
                     'access_level' => 'Access level (module Access)', // @translate
                     // 'o:selection/o:id' => 'Selections (module Selection)', // @translate
                     // 'o:selection[is_public=1]/o:id' => 'Public selections (module Selection)', // @translate
@@ -433,6 +434,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return $this->extractPropertyValues($resource, $solrMap);
         }
 
+        // Collect all value annotations from all properties of the resource,
+        // flattened at the item level. With sub-path (e.g. "value_annotations/dcterms:date"),
+        // only that property within the annotations is extracted.
+        if ($field === 'value_annotations') {
+            if (!($resource instanceof AbstractResourceEntityRepresentation)) {
+                return [];
+            }
+            return $this->extractAllValueAnnotations(
+                $resource, $solrMap
+            );
+        }
+
         if (strpos($field, ':')) {
             return $this->extractPropertyValue($resource, $solrMap);
         }
@@ -753,6 +766,54 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             $values = $annotation->value($term, ['all' => true]);
             foreach ($values as $value) {
                 $extractedValues[] = $value;
+            }
+        }
+        return $extractedValues;
+    }
+
+    /**
+     * Extract and flatten all value annotations from all resource properties.
+     *
+     * If the map has a sub-path (e.g. "value_annotations/dcterms:date"), only
+     * annotation values matching that property term are returned.
+     * Without sub-path, all annotation values from all properties are returned.
+     *
+     * This is useful to index annotation data (dates, roles, places) into the
+     * Solr document for search, facets and sort.
+     */
+    protected function extractAllValueAnnotations(
+        AbstractResourceEntityRepresentation $resource,
+        SolrMapRepresentation $solrMap
+    ): array {
+        $subMap = $solrMap->subMap();
+        $annotationTerm = $subMap->firstSource();
+
+        $extractedValues = [];
+        foreach ($resource->values() as $term => $propertyData) {
+            foreach ($propertyData['values'] as $value) {
+                $annotation = $value->valueAnnotation();
+                if (!$annotation) {
+                    continue;
+                }
+                if ($annotationTerm) {
+                    // Extract only the specified property from each annotation.
+                    $annValues = $annotation->value(
+                        $annotationTerm, ['all' => true]
+                    );
+                    foreach ($annValues as $annValue) {
+                        $extractedValues[] = $annValue;
+                    }
+                } else {
+                    // Extract all properties from each annotation.
+                    foreach (array_keys($annotation->values()) as $annTerm) {
+                        $annValues = $annotation->value(
+                            $annTerm, ['all' => true]
+                        );
+                        foreach ($annValues as $annValue) {
+                            $extractedValues[] = $annValue;
+                        }
+                    }
+                }
             }
         }
         return $extractedValues;
