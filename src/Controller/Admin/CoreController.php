@@ -1270,25 +1270,41 @@ class CoreController extends AbstractActionController
             ) {
                 continue;
             }
-            // Facets need _ss (or _i for ranges).
+            // Facets need _ss (or _i for ranges). Range facets with an interval
+            // end ("field_end") need _i for both the start and end properties.
             foreach ($config->subSetting('facet', 'facets', []) as $f) {
                 $v = $f['field'] ?? null;
                 if (!$v) {
                     continue;
                 }
                 $type = $f['type'] ?? '';
-                $suffix = in_array($type, ['RangeDouble', 'SelectRange'])
-                    ? '_i' : '_ss';
+                $isRange = in_array($type, ['RangeDouble', 'SelectRange']);
+                $suffix = $isRange ? '_i' : '_ss';
                 $this->collectFieldAsProperty(
                     $v, $usedFields, [$suffix]
                 );
+                if ($isRange && !empty($f['field_end'])) {
+                    $this->collectFieldAsProperty(
+                        $f['field_end'], $usedFields, ['_i']
+                    );
+                }
             }
-            // Filters need _ss.
+            // Filters need _ss. Range filters with an interval end
+            // ("field_end") need _i for both the start and end properties.
             foreach ($config->subSetting('form', 'filters', []) as $f) {
                 $v = $f['field'] ?? null;
-                if ($v) {
+                if (!$v) {
+                    continue;
+                }
+                $type = $f['type'] ?? '';
+                $isRange = in_array($type, ['Range', 'RangeDouble']);
+                $hasEnd = $isRange && !empty($f['field_end']);
+                $this->collectFieldAsProperty(
+                    $v, $usedFields, $hasEnd ? ['_i'] : ['_ss']
+                );
+                if ($hasEnd) {
                     $this->collectFieldAsProperty(
-                        $v, $usedFields, ['_ss']
+                        $f['field_end'], $usedFields, ['_i']
                     );
                 }
             }
