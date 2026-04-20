@@ -166,6 +166,7 @@
         }
 
         ul a,
+        ul span,
         ul .inactive {
             padding: 6px 12px 5px;
             display: block;
@@ -177,7 +178,11 @@
         }
 
         ul li {
-          position: relative;
+            position: relative;
+
+            &.separator span {
+                font-style: italic;
+            }
         }
 
         ul li:hover::before {

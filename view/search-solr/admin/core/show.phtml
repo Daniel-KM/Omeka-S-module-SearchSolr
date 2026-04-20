@@ -47,25 +47,27 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
             <ul class="collapsible">
                 <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
                     'class' => 'link',
-                    'title' => $translate('Create maps for properties used in facets, filters, sorts and suggesters. Remove property maps not referenced by any config. System maps are kept.')]) ?></li>
+                    'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. Remove property maps not referenced by any config. System maps are kept.')]) ?></li>
+                <li class="separator"><span><?= $translate('Technical actions') ?></span></li>
+                <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Remove extra maps to stay within Solr maxFields limit.')]) ?></li>
+                <li><?= $hyperlink($translate('Reset values visibility'), $solrCore->adminUrl('reset-maps-visibility'), [
+                    'class' => 'link',
+                    'title' => $translate('Reset all maps to "follow engine" visibility. Maps on a public engine will stop indexing private values.')]) ?></li>
+                <li class="separator"><span><?= $translate('Deprecated actions') ?></span></li>
                 <li><?= $hyperlink($translate('Recommended maps'), $solrCore->adminUrl('recommended-maps'), [
                     'class' => 'link',
-                    'title' => $translate('Add indices (_txt, _ss, _s) to used properties, skipping _s/_ss for properties with long values (> 200 chars).')]) ?></li>
+                    'title' => $translate('Add indices (_txt, _ss, _s) to used properties, skipping _s/_ss for long values.')]) ?></li>
                 <li><?= $hyperlink($translate('Map all'), $solrCore->adminUrl('complete-maps'), [
                     'class' => 'link',
                     'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?></li>
                 <li><?= $hyperlink($translate('Remove unused properties'), $solrCore->adminUrl('clean-maps'), [
                     'class' => 'link',
                     'title' => $translate('Remove maps of properties that are not used.')]) ?></li>
-                <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
-                    'class' => 'link',
-                    'title' => $translate('Remove unused properties then remove extra maps to stay within solr maxFields limit.')]) ?></li>
                 <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->adminUrl('add-annotation-maps'), [
                     'class' => 'link',
-                    'title' => $translate('Create maps for value annotations: fulltext, and specific fields for each annotation property used in the database (dates, places, roles, etc.).')]) ?></li>
-                <li><?= $hyperlink($translate('Set value visibility to follow engine'), $solrCore->adminUrl('reset-maps-visibility'), [
-                    'class' => 'link',
-                    'title' => $translate('Reset all maps to "follow engine" visibility. Maps on a public engine will stop indexing private values.')]) ?></li>
+                    'title' => $translate('Create maps for value annotations.')]) ?></li>
             </ul>
         </div>
         <?php endif; ?>
