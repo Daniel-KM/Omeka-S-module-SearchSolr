@@ -168,6 +168,16 @@ class CreateSolrSuggesters extends AbstractJob
         $success = $solrCore->buildSuggester($names);
 
         $timeTotal = (int) (microtime(true) - $timeStart);
+
+        // Reconnect to the database after long Solr operations
+        // to avoid "MySQL server has gone away" on log write.
+        $connection = $this->getServiceLocator()
+            ->get('Omeka\Connection');
+        if (!$connection->ping()) {
+            $connection->close();
+            $connection->connect();
+        }
+
         if ($success) {
             $this->logger->notice(
                 'All {total} dictionaries built. Duration: {duration} seconds.', // @translate
