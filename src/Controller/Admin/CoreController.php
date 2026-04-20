@@ -1343,6 +1343,17 @@ class CoreController extends AbstractActionController
                     );
                 }
             }
+            // Hidden query filters use Solr field names
+            // directly (_ss).
+            $hiddenFilters = $config
+                ->subSetting('request', 'hidden_query_filters', []);
+            foreach ($hiddenFilters as $fieldName => $value) {
+                if (is_string($fieldName) && $fieldName !== '') {
+                    $this->collectFieldAsProperty(
+                        $fieldName, $usedFields, ['_ss']
+                    );
+                }
+            }
         }
 
         // Suggesters need _txt.
