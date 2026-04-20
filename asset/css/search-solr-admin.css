@@ -236,6 +236,24 @@
     #search-config form .inputs {
         width: 100%;
     }
+
+    /* Sortable column indicators. */
+    th[data-sortable] {
+        cursor: pointer;
+        user-select: none;
+    }
+    th[data-sortable]::after {
+        content: ' \2195';
+        opacity: .3;
+    }
+    th[data-sortable].sort-asc::after {
+        content: ' \2191';
+        opacity: 1;
+    }
+    th[data-sortable].sort-desc::after {
+        content: ' \2193';
+        opacity: 1;
+    }
 }
 
 @media screen and (max-width: 640px) {
