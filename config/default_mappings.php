@@ -338,6 +338,14 @@ return [
         'pool' => [],
         'settings' => ['formatter' => 'alphanumeric', 'label' => 'Values'],
     ],
+    [
+        'resource_name' => 'resources',
+        'field_name' => 'value_annotations_txt',
+        'alias' => '',
+        'source' => 'value_annotations',
+        'pool' => [],
+        'settings' => ['formatter' => '', 'label' => 'Value annotations (all)'],
+    ],
 
     // Fields to sort.
     [
@@ -385,6 +393,22 @@ return [
         'source' => 'item_set/o:id',
         'pool' => [],
         'settings' => ['label' => 'Item set id'],
+    ],
+    [
+        'resource_name' => 'items',
+        'field_name' => 'item_set_dcterms_title_ss',
+        'alias' => 'item_set_title',
+        'source' => 'item_set/dcterms:title',
+        'pool' => [],
+        'settings' => ['label' => 'Item set'],
+    ],
+    [
+        'resource_name' => 'items',
+        'field_name' => 'has_media_b',
+        'alias' => 'has_media',
+        'source' => 'has_media',
+        'pool' => [],
+        'settings' => ['formatter' => 'boolean', 'label' => 'Has media'],
     ],
 
     // Item sets.
