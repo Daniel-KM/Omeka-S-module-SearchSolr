@@ -928,6 +928,452 @@ class CoreController extends AbstractActionController
     }
 
     /**
+     * Sync Solr maps with search configs.
+     *
+     * Create missing maps for properties used in facets, filters, sorts,
+     * suggesters and bounce links; remove property maps not referenced by any
+     * config. System maps and value_annotations are kept.
+     */
+    public function syncMapsAction()
+    {
+        $api = $this->api();
+        $id = (int) $this->params('id');
+        $solrCore = $api->read('solr_cores', $id)->getContent();
+
+        // Sources that must never be deleted.
+        $systemSources = [
+            'resource_name',
+            'o:id',
+            'o:title',
+            'is_public',
+            'owner',
+            'site',
+            'created',
+            'modified',
+            'resource_class',
+            'resource_template',
+            'has_media',
+            'asset',
+            'content',
+            'item_set',
+            'item_sets_tree',
+            'media',
+            'is_open',
+            'value',
+            'annotation',
+            'value_annotations',
+            'access_level',
+            'property_values',
+            'selection_id',
+            'selection_public_id',
+            'url_api',
+            'url_admin',
+            'url_site',
+            'url_asset',
+            'url_original',
+            'url_thumbnail_large',
+            'url_thumbnail_medium',
+            'url_thumbnail_square',
+        ];
+
+        $services = $this->getEvent()->getApplication()
+            ->getServiceManager();
+        $settings = $services->get('Omeka\Settings');
+        $siteSettings = $services->get('Omeka\Settings\Site');
+        $connection = $services->get('Omeka\Connection');
+
+        // 1. Find search engines that use this Solr core.
+        $engineIds = [];
+        $searchEngines = $api->search('search_engines')
+            ->getContent();
+        foreach ($searchEngines as $engine) {
+            $coreId = $engine->settingEngineAdapter('solr_core_id');
+            if ((int) $coreId === $id) {
+                $engineIds[] = $engine->id();
+            }
+        }
+
+        // 2. Collect property terms from configs and suggesters.
+        $usedFields = [];
+        $searchConfigs = $api->search('search_configs')
+            ->getContent();
+        foreach ($searchConfigs as $config) {
+            $configEngine = $config->searchEngine();
+            if (!$configEngine
+                || !in_array($configEngine->id(), $engineIds)
+            ) {
+                continue;
+            }
+            foreach ($config->subSetting('facet', 'facets', []) as $f) {
+                $v = $f['field'] ?? null;
+                if ($v) {
+                    $this->collectFieldAsProperty($v, $usedFields);
+                }
+            }
+            foreach ($config->subSetting('form', 'filters', []) as $f) {
+                $v = $f['field'] ?? null;
+                if ($v) {
+                    $this->collectFieldAsProperty($v, $usedFields);
+                }
+            }
+            foreach ($config->subSetting('results', 'sort_list', []) as $f) {
+                $v = strtok($f['name'] ?? '', ' ');
+                if ($v) {
+                    $this->collectFieldAsProperty($v, $usedFields);
+                }
+            }
+            foreach ($config->subSetting('index', 'field_boosts', []) as $fieldName => $boost) {
+                $this->collectFieldAsProperty($fieldName, $usedFields);
+            }
+            // Aliases aggregate multiple properties under one
+            // name. Each listed property needs a map.
+            foreach ($config->subSetting('index', 'aliases', []) as $alias) {
+                foreach ($alias['fields'] ?? [] as $v) {
+                    if (strpos($v, ':') !== false) {
+                        $usedFields[$v] = true;
+                    }
+                }
+            }
+            // Advanced filter fields (the property select in
+            // the advanced search form). Values can be property
+            // terms, Solr field names, or alias names.
+            foreach ($config->subSetting('form', 'advanced', [])['fields'] ?? [] as $f) {
+                $v = $f['value'] ?? ($f['field'] ?? null);
+                if (!$v) {
+                    continue;
+                }
+                $this->collectFieldAsProperty($v, $usedFields);
+            }
+        }
+
+        $suggesters = $api->search('search_suggesters')
+            ->getContent();
+        foreach ($suggesters as $suggester) {
+            $se = $suggester->searchEngine();
+            if (!in_array($se->id(), $engineIds)) {
+                continue;
+            }
+            foreach ($suggester->settings()['fields'] ?? [] as $v) {
+                if (strpos($v, ':') !== false) {
+                    $usedFields[$v] = true;
+                }
+            }
+        }
+
+        // 3. Bounce links from AdvancedResourceTemplate whitelist/blacklist
+        // (main + site settings).
+        $linkFields = $this->collectBounceProperties(
+            $settings, $siteSettings, $connection
+        );
+        foreach ($linkFields as $term) {
+            $usedFields[$term] = true;
+        }
+
+        // 4. Get existing maps for this core.
+        $existingMaps = $solrCore->maps();
+        $existingBySource = [];
+        foreach ($existingMaps as $map) {
+            $existingBySource[$map->source()][] = $map;
+        }
+
+        // 5. Delete property maps not referenced by any config.
+        $deleted = [];
+        foreach ($existingBySource as $source => $maps) {
+            if (in_array($source, $systemSources)
+                || strpos($source, '/') !== false
+                || strpos($source, ':') === false
+                || isset($usedFields[$source])
+            ) {
+                continue;
+            }
+            foreach ($maps as $map) {
+                $api->delete('solr_maps', $map->id());
+                $deleted[] = $map->fieldName();
+            }
+        }
+
+        // Refresh after deletion.
+        $existingFieldNames = [];
+        if ($deleted) {
+            $solrCore = $api->read('solr_cores', $id)
+                ->getContent();
+        }
+        foreach ($solrCore->maps() as $map) {
+            $existingFieldNames[] = $map->fieldName();
+        }
+
+        // 6. Create missing maps for used properties.
+        // Long-value properties (descriptions, OCR, etc.) only get _txt, not
+        // _ss/_s (useless for facets/sort).
+        $longValueProperties = include dirname(__DIR__, 3)
+            . '/config/metadata_text.php';
+
+        $created = [];
+        foreach (array_keys($usedFields) as $term) {
+            $base = strtr($term, ':', '_');
+            $prefix = $base . '_';
+            $hasMap = false;
+            foreach ($existingFieldNames as $fn) {
+                if (strpos($fn, $prefix) === 0) {
+                    $hasMap = true;
+                    break;
+                }
+            }
+            if ($hasMap) {
+                continue;
+            }
+            $isLong = in_array($term, $longValueProperties);
+            $suffixes = $isLong
+                ? ['_txt' => ['formatter' => '']]
+                : [
+                    '_txt' => ['formatter' => ''],
+                    '_ss' => [
+                        'formatter' => '',
+                        'parts' => ['main'],
+                    ],
+                    '_s' => [
+                        'formatter' => '',
+                        'parts' => ['main'],
+                    ],
+                ];
+            foreach ($suffixes as $suffix => $mapSettings) {
+                $fieldName = $base . $suffix;
+                if (in_array($fieldName, $existingFieldNames)) {
+                    continue;
+                }
+                $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $id],
+                    'o:resource_name' => 'items',
+                    'o:field_name' => $fieldName,
+                    'o:source' => $term,
+                    'o:settings' => $mapSettings
+                        + ['label' => $term],
+                ]);
+                $created[] = $fieldName;
+                $existingFieldNames[] = $fieldName;
+            }
+        }
+
+        // 7. Create missing _link_ss maps for bounce links.
+        foreach ($linkFields as $term) {
+            $fieldName = strtr($term, ':', '_') . '_link_ss';
+            if (in_array($fieldName, $existingFieldNames)) {
+                continue;
+            }
+            $api->create('solr_maps', [
+                'o:solr_core' => ['o:id' => $id],
+                'o:resource_name' => 'items',
+                'o:field_name' => $fieldName,
+                'o:source' => $term,
+                'o:settings' => [
+                    'index_for_link' => true,
+                    'parts' => ['link'],
+                    'formatter' => '',
+                    'label' => $term,
+                ],
+            ]);
+            $created[] = $fieldName;
+            $existingFieldNames[] = $fieldName;
+        }
+
+        // 8. Ensure global fulltext maps exist.
+        if (!in_array('property_values_txt', $existingFieldNames)) {
+            $api->create('solr_maps', [
+                'o:solr_core' => ['o:id' => $id],
+                'o:resource_name' => 'resources',
+                'o:field_name' => 'property_values_txt',
+                'o:source' => 'property_values',
+                'o:settings' => [
+                    'formatter' => '',
+                    'label' => 'All property values',
+                ],
+            ]);
+            $created[] = 'property_values_txt';
+            $existingFieldNames[] = 'property_values_txt';
+        }
+        if (!in_array('value_annotations_txt', $existingFieldNames)) {
+            $api->create('solr_maps', [
+                'o:solr_core' => ['o:id' => $id],
+                'o:resource_name' => 'items',
+                'o:field_name' => 'value_annotations_txt',
+                'o:source' => 'value_annotations',
+                'o:settings' => [
+                    'formatter' => '',
+                    'label' => 'Value annotations (all)',
+                ],
+            ]);
+            $created[] = 'value_annotations_txt';
+            $existingFieldNames[] = 'value_annotations_txt';
+        }
+
+        // 9. Ensure selection map if module Selection is active.
+        $moduleManager = $services->get('Omeka\ModuleManager');
+        $selectionModule = $moduleManager->getModule('Selection');
+        if ($selectionModule
+            && $selectionModule->getState() === \Omeka\Module\Manager::STATE_ACTIVE
+            && !in_array('selection_public_is', $existingFieldNames)
+        ) {
+            $api->create('solr_maps', [
+                'o:solr_core' => ['o:id' => $id],
+                'o:resource_name' => 'items',
+                'o:field_name' => 'selection_public_is',
+                'o:source' => 'selection_public_id',
+                'o:settings' => [
+                    'label' => 'Public selections',
+                ],
+            ]);
+            $created[] = 'selection_public_is';
+            $existingFieldNames[] = 'selection_public_is';
+        }
+
+        // 10. Report.
+        if ($deleted) {
+            $this->updateFieldsBoost($solrCore);
+        }
+        if ($deleted) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} unused maps deleted: {list}.', // @translate
+                [
+                    'count' => count($deleted),
+                    'list' => implode(', ', $deleted),
+                ]
+            ));
+        }
+        if ($created) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} maps created: {list}.', // @translate
+                [
+                    'count' => count($created),
+                    'list' => implode(', ', $created),
+                ]
+            ));
+        }
+        if (!$deleted && !$created) {
+            $this->messenger()->addNotice(
+                'All maps are in sync with search configs.' // @translate
+            );
+        }
+        if ($deleted || $created) {
+            $this->messenger()->addWarning(
+                'Reindex required.' // @translate
+            );
+        }
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id', ['id' => $id]
+        );
+    }
+
+    /**
+     * Collect property terms that need _link_ss maps for bounce links.
+     *
+     * Reads whitelist/blacklist from main settings and all site settings from
+     * module AdvancedResourceTemplate.
+     *
+     * @return string[] Property terms.
+     */
+    /**
+     * Add a field reference to the used fields list, resolving
+     * property terms, Solr field names, and alias names.
+     *
+     * - "dcterms:rights" → added directly
+     * - "dcterms_rights_ss" → resolved to "dcterms:rights"
+     * - "author" (alias) → ignored (aliases are collected
+     *   separately via their fields list)
+     */
+    protected function collectFieldAsProperty(
+        string $value,
+        array &$usedFields
+    ): void {
+        // Property term (contains ":").
+        if (strpos($value, ':') !== false) {
+            $usedFields[$value] = true;
+            return;
+        }
+        // Solr field name: extract property term from the name.
+        if (preg_match(
+            '/^([a-z]+)_(.+?)_(?:txt|ss|s|link_ss|dt|i|l|is|b|ls)$/',
+            $value,
+            $m
+        )) {
+            $term = $m[1] . ':' . $m[2];
+            $usedFields[$term] = true;
+        }
+        // Alias names are ignored here: they are resolved via
+        // the aliases config which lists their constituent fields.
+    }
+
+    protected function collectBounceProperties(
+        \Omeka\Settings\Settings $settings,
+        \Omeka\Settings\SiteSettings $siteSettings,
+        \Doctrine\DBAL\Connection $connection
+    ): array {
+        $keyWl = 'advancedresourcetemplate_properties_as_search_whitelist';
+        $keyBl = 'advancedresourcetemplate_properties_as_search_blacklist';
+
+        $whitelists = [];
+        $blacklists = [];
+
+        // Main settings.
+        $wl = $settings->get($keyWl, ['all']);
+        $bl = $settings->get($keyBl, []);
+        $whitelists[] = is_array($wl) ? $wl : [$wl];
+        $blacklists[] = is_array($bl) ? $bl : [$bl];
+
+        // All site settings.
+        $siteIds = $connection->executeQuery('SELECT id FROM site')
+            ->fetchFirstColumn();
+        foreach ($siteIds as $siteId) {
+            $siteSettings->setTargetId((int) $siteId);
+            $wl = $siteSettings->get($keyWl, ['all']);
+            $bl = $siteSettings->get($keyBl, []);
+            $whitelists[] = is_array($wl) ? $wl : [$wl];
+            $blacklists[] = is_array($bl) ? $bl : [$bl];
+        }
+
+        // If any source has "all", use all used properties.
+        $hasAll = false;
+        $specificTerms = [];
+        foreach ($whitelists as $wl) {
+            if (in_array('all', $wl)) {
+                $hasAll = true;
+            } else {
+                foreach ($wl as $term) {
+                    if (strpos($term, ':') !== false) {
+                        $specificTerms[$term] = true;
+                    }
+                }
+            }
+        }
+
+        $blackTerms = [];
+        foreach ($blacklists as $bl) {
+            foreach ($bl as $term) {
+                $blackTerms[$term] = true;
+            }
+        }
+
+        if ($hasAll) {
+            $sql = <<<'SQL'
+                SELECT DISTINCT CONCAT(v.prefix, ':', p.local_name)
+                FROM value val
+                JOIN property p ON val.property_id = p.id
+                JOIN vocabulary v ON p.vocabulary_id = v.id
+                SQL;
+            $allTerms = $connection->executeQuery($sql)
+                ->fetchFirstColumn();
+            $result = array_diff($allTerms, array_keys($blackTerms));
+        } else {
+            $result = array_diff(
+                array_keys($specificTerms),
+                array_keys($blackTerms)
+            );
+        }
+
+        return array_values($result);
+    }
+
+    /**
      * Reset all maps of this core to "follow engine" visibility.
      *
      * This process removes any explicit "all" override set during upgrade.

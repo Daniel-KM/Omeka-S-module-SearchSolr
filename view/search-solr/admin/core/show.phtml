@@ -55,6 +55,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <?= $translate('Maintenance') ?>
             </a>
             <ul class="collapsible">
+                <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Create maps for properties used in facets, filters, sorts and suggesters. Remove property maps not referenced by any config. System maps are kept.')]) ?></li>
                 <li><?= $hyperlink($translate('Recommended maps'), $solrCore->resourceMapUrl('items', 'recommended'), [
                     'class' => 'link',
                     'title' => $translate('Add indices (_txt, _ss, _s) to used properties, skipping _s/_ss for properties with long values (> 200 chars).')]) ?></li>
