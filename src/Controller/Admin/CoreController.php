@@ -927,6 +927,252 @@ class CoreController extends AbstractActionController
         ]);
     }
 
+    public function recommendedMapsAction()
+    {
+        return $this->dispatchCompleteMapsJob('recommended');
+    }
+
+    public function completeMapsAction()
+    {
+        return $this->dispatchCompleteMapsJob('complete');
+    }
+
+    protected function dispatchCompleteMapsJob(string $mode)
+    {
+        $id = $this->params('id');
+
+        $job = $this->jobDispatcher()->dispatch(
+            \SearchSolr\Job\CompleteSolrMaps::class,
+            [
+                'solr_core_id' => (int) $id,
+                'resource_name' => 'items',
+                'mode' => $mode,
+            ]
+        );
+
+        $urlPlugin = $this->url();
+        $message = new PsrMessage(
+            'Map creation in background (job {link_job}#{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+            [
+                'link_job' => sprintf(
+                    '<a href="%s">',
+                    htmlspecialchars($urlPlugin->fromRoute(
+                        'admin/id',
+                        ['controller' => 'job', 'id' => $job->getId()]
+                    ))
+                ),
+                'job_id' => $job->getId(),
+                'link_end' => '</a>',
+                'link_log' => class_exists('Log\Module', false)
+                    ? sprintf(
+                        '<a href="%1$s">',
+                        $urlPlugin->fromRoute(
+                            'admin/default',
+                            ['controller' => 'log'],
+                            ['query' => ['job_id' => $job->getId()]]
+                        )
+                    )
+                    : sprintf(
+                        '<a href="%1$s" target="_blank">',
+                        $urlPlugin->fromRoute(
+                            'admin/id',
+                            ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()]
+                        )
+                    ),
+            ]
+        );
+        $message->setEscapeHtml(false);
+        $this->messenger()->addSuccess($message);
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id',
+            ['id' => $id]
+        );
+    }
+
+    public function cleanMapsAction()
+    {
+        $api = $this->api();
+        $id = $this->params('id');
+        $solrCore = $api->read('solr_cores', $id)->getContent();
+
+        $maps = $solrCore->maps();
+        $mapList = [];
+        foreach ($maps as $map) {
+            $mapList[$map->id()] = $map->source();
+        }
+
+        $result = [];
+        $properties = $api->search('properties')->getContent();
+        $connection = $this->getEvent()->getApplication()
+            ->getServiceManager()->get('Omeka\Connection');
+        $usedPropertyIds = $connection
+            ->executeQuery(
+                'SELECT DISTINCT property_id FROM value'
+            )
+            ->fetchFirstColumn();
+
+        foreach ($properties as $property) {
+            if (in_array($property->id(), $usedPropertyIds)) {
+                continue;
+            }
+            $term = $property->term();
+            if (!in_array($term, $mapList)) {
+                continue;
+            }
+            $ids = array_keys(
+                array_filter($mapList, fn ($v) => $v === $term)
+            );
+            $api->batchDelete('solr_maps', $ids);
+            $result[] = $term;
+        }
+
+        if ($result) {
+            $this->updateFieldsBoost($solrCore);
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} maps deleted: {list}.', // @translate
+                [
+                    'count' => count($result),
+                    'list' => implode(', ', $result),
+                ]
+            ));
+        } else {
+            $this->messenger()->addWarning(
+                'No maps deleted.' // @translate
+            );
+        }
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id', ['id' => $id]
+        );
+    }
+
+    public function reduceMapsAction()
+    {
+        $id = $this->params('id');
+        $solrCore = $this->api()
+            ->read('solr_cores', $id)->getContent();
+
+        $fieldStatus = $solrCore->fieldLimitStatus();
+        if (!$fieldStatus || !$fieldStatus['maxFields']) {
+            $this->messenger()->addError(
+                'Unable to determine the Solr maxFields limit.' // @translate
+            );
+            return $this->redirect()->toRoute(
+                'admin/search/solr/core-id', ['id' => $id]
+            );
+        }
+
+        $this->jobDispatcher()->dispatch(
+            \SearchSolr\Job\ReduceSolrFields::class,
+            ['solr_core_id' => (int) $id]
+        );
+
+        $this->messenger()->addSuccess(
+            'Reduction job started. Check the logs.' // @translate
+        );
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id', ['id' => $id]
+        );
+    }
+
+    public function addAnnotationMapsAction()
+    {
+        $api = $this->api();
+        $id = (int) $this->params('id');
+        $solrCore = $api->read('solr_cores', $id)->getContent();
+
+        $existingFields = array_map(
+            fn ($m) => $m->fieldName(), $solrCore->maps()
+        );
+
+        $connection = $this->getEvent()->getApplication()
+            ->getServiceManager()->get('Omeka\Connection');
+
+        $sql = <<<'SQL'
+            SELECT DISTINCT CONCAT(v.prefix, ':', p.local_name) AS term
+            FROM value_annotation va
+            JOIN value av ON av.resource_id = va.id
+            JOIN property p ON av.property_id = p.id
+            JOIN vocabulary v ON p.vocabulary_id = v.id
+            ORDER BY term
+            SQL;
+        $annotationTerms = $connection->executeQuery($sql)
+            ->fetchFirstColumn();
+
+        $newMaps = [];
+
+        $fieldName = 'value_annotations_txt';
+        if (!in_array($fieldName, $existingFields)) {
+            $api->create('solr_maps', [
+                'o:solr_core' => ['o:id' => $id],
+                'o:resource_name' => 'resources',
+                'o:field_name' => $fieldName,
+                'o:source' => 'value_annotations',
+                'o:settings' => [
+                    'formatter' => '',
+                    'label' => 'Value annotations (all)',
+                ],
+            ]);
+            $newMaps[] = $fieldName;
+        }
+
+        foreach ($annotationTerms as $term) {
+            $base = 'ann_' . strtr($term, ':', '_');
+            $source = 'value_annotations/' . $term;
+
+            $fieldName = $base . '_txt';
+            if (!in_array($fieldName, $existingFields)) {
+                $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $id],
+                    'o:resource_name' => 'resources',
+                    'o:field_name' => $fieldName,
+                    'o:source' => $source,
+                    'o:settings' => [
+                        'formatter' => '',
+                        'label' => $term . ' (annotation)',
+                    ],
+                ]);
+                $newMaps[] = $fieldName;
+            }
+
+            $fieldName = $base . '_ss';
+            if (!in_array($fieldName, $existingFields)) {
+                $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $id],
+                    'o:resource_name' => 'resources',
+                    'o:field_name' => $fieldName,
+                    'o:source' => $source,
+                    'o:settings' => [
+                        'formatter' => '',
+                        'parts' => ['main'],
+                        'label' => $term . ' (annotation)',
+                    ],
+                ]);
+                $newMaps[] = $fieldName;
+            }
+        }
+
+        if ($newMaps) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} annotation maps created: {list}.', // @translate
+                [
+                    'count' => count($newMaps),
+                    'list' => implode(', ', $newMaps),
+                ]
+            ));
+        } else {
+            $this->messenger()->addNotice(
+                'All annotation maps already exist.' // @translate
+            );
+        }
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id', ['id' => $id]
+        );
+    }
+
     /**
      * Sync Solr maps with search configs.
      *
@@ -1143,7 +1389,7 @@ class CoreController extends AbstractActionController
                 }
                 $api->create('solr_maps', [
                     'o:solr_core' => ['o:id' => $id],
-                    'o:resource_name' => 'items',
+                    'o:resource_name' => 'resources',
                     'o:field_name' => $fieldName,
                     'o:source' => $term,
                     'o:settings' => $mapSettings
@@ -1162,7 +1408,7 @@ class CoreController extends AbstractActionController
             }
             $api->create('solr_maps', [
                 'o:solr_core' => ['o:id' => $id],
-                'o:resource_name' => 'items',
+                'o:resource_name' => 'resources',
                 'o:field_name' => $fieldName,
                 'o:source' => $term,
                 'o:settings' => [
@@ -1194,7 +1440,7 @@ class CoreController extends AbstractActionController
         if (!in_array('value_annotations_txt', $existingFieldNames)) {
             $api->create('solr_maps', [
                 'o:solr_core' => ['o:id' => $id],
-                'o:resource_name' => 'items',
+                'o:resource_name' => 'resources',
                 'o:field_name' => 'value_annotations_txt',
                 'o:source' => 'value_annotations',
                 'o:settings' => [
@@ -1215,7 +1461,7 @@ class CoreController extends AbstractActionController
         ) {
             $api->create('solr_maps', [
                 'o:solr_core' => ['o:id' => $id],
-                'o:resource_name' => 'items',
+                'o:resource_name' => 'resources',
                 'o:field_name' => 'selection_public_is',
                 'o:source' => 'selection_public_id',
                 'o:settings' => [

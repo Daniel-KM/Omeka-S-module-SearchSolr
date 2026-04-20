@@ -32,16 +32,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         <?php if ($solrCore->userIsAllowed('update')): ?>
         <div class="with-sub-menu">
             <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
-                <?= $translate('Maps') ?>
-            </a>
-            <ul class="collapsible">
-                <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
-                <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name), ['class' => 'link']) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <div class="with-sub-menu">
-            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
                 <?= $translate('Add a map') ?>
             </a>
             <ul class="collapsible">
@@ -58,19 +48,19 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
                     'class' => 'link',
                     'title' => $translate('Create maps for properties used in facets, filters, sorts and suggesters. Remove property maps not referenced by any config. System maps are kept.')]) ?></li>
-                <li><?= $hyperlink($translate('Recommended maps'), $solrCore->resourceMapUrl('items', 'recommended'), [
+                <li><?= $hyperlink($translate('Recommended maps'), $solrCore->adminUrl('recommended-maps'), [
                     'class' => 'link',
                     'title' => $translate('Add indices (_txt, _ss, _s) to used properties, skipping _s/_ss for properties with long values (> 200 chars).')]) ?></li>
-                <li><?= $hyperlink($translate('Map all'), $solrCore->resourceMapUrl('items', 'complete'), [
+                <li><?= $hyperlink($translate('Map all'), $solrCore->adminUrl('complete-maps'), [
                     'class' => 'link',
                     'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?></li>
-                <li><?= $hyperlink($translate('Remove unused properties'), $solrCore->resourceMapUrl('items', 'clean'), [
+                <li><?= $hyperlink($translate('Remove unused properties'), $solrCore->adminUrl('clean-maps'), [
                     'class' => 'link',
                     'title' => $translate('Remove maps of properties that are not used.')]) ?></li>
-                <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->resourceMapUrl('items', 'reduce-fields'), [
+                <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
                     'class' => 'link',
                     'title' => $translate('Remove unused properties then remove extra maps to stay within solr maxFields limit.')]) ?></li>
-                <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->resourceMapUrl('items', 'add-annotation-maps'), [
+                <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->adminUrl('add-annotation-maps'), [
                     'class' => 'link',
                     'title' => $translate('Create maps for value annotations: fulltext, and specific fields for each annotation property used in the database (dates, places, roles, etc.).')]) ?></li>
                 <li><?= $hyperlink($translate('Set value visibility to follow engine'), $solrCore->adminUrl('reset-maps-visibility'), [
@@ -184,10 +174,32 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 
 <?= $partial('search-solr/admin/core/help-index-names') ?>
 
-<h3><?= $translate('By index') ?></h3>
+<?php
+// Determine active resource type filter from query string.
+$activeResourceFilter = $_GET['resource_type'] ?? '';
+$maps = $solrCore->mapsByFieldName();
+// Collect all resource types used in maps.
+$usedResourceTypes = [];
+foreach ($maps as $fieldMaps) {
+    foreach ($fieldMaps as $map) {
+        $usedResourceTypes[$map->resourceName()] = true;
+    }
+}
+ksort($usedResourceTypes);
+?>
+<div class="maps-filter" style="display: flex; justify-content: flex-end; align-items: center; gap: .5em; margin-bottom: .5em;">
+    <span id="maps-count-label"><?= $translate('Number of maps:') ?></span>
+    <span id="maps-count"></span>
+    <label for="filter-resource-type"><?= $translate('Filter by resource type') ?></label>
+    <select id="filter-resource-type">
+        <option value=""><?= $translate('All') ?></option>
+        <?php foreach (array_keys($usedResourceTypes) as $rType): ?>
+        <option value="<?= $escapeAttr($rType) ?>"<?= $rType === $activeResourceFilter ? ' selected' : '' ?>><?= $escape($rType) ?></option>
+        <?php endforeach; ?>
+    </select>
+</div>
 
 <div class="by-solr-index">
-<?php $maps = $solrCore->mapsByFieldName(); ?>
 <?php if (count($maps)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>

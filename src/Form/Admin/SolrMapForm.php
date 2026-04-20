@@ -82,7 +82,7 @@ class SolrMapForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'o:resource_name',
-                    'value' => 'items',
+                    'value' => $this->getOption('resource_name') ?: 'items',
                     'required' => true,
                 ],
             ])
