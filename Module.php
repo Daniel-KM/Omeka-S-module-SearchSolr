@@ -128,7 +128,7 @@ class Module extends AbstractModule
                 'The composer library "{library}" is not installed. See readme.', // @translate
                 ['library' => 'Solarium']
             );
-            throw new ModuleCannotInstallException((string) $message->setTransalor($translator));
+            throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
         }
 
         if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.57')) {
