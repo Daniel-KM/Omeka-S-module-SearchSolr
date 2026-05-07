@@ -71,7 +71,7 @@ class SolariumQuerier extends AbstractQuerier
 
     public function setQuery(Query $query): self
     {
-        $this->query = $query;
+        parent::setQuery($query);
         $this->appendCoreAliasesToQuery();
         return $this;
     }
@@ -133,6 +133,9 @@ class SolariumQuerier extends AbstractQuerier
                 ->setIsSuccess(true);
         }
 
+        // Max length for suggestions (in characters).
+        $maxLength = (int) ($suggestOptions['length'] ?? 20);
+
         try {
             $client = $this->getClient();
             $suggesterQuery = $client->createSuggester();
@@ -144,22 +147,49 @@ class SolariumQuerier extends AbstractQuerier
 
             $result = $client->suggester($suggesterQuery);
 
+            $limit = $this->query ? $this->query->getLimit() : 10;
+            $seen = [];
             $suggestions = [];
             foreach ($result as $dictionary) {
                 foreach ($dictionary as $term) {
                     foreach ($term->getSuggestions() as $suggestion) {
+                        $value = trim(strip_tags($suggestion['term']));
+                        if ($value === '') {
+                            continue;
+                        }
+                        // Truncate long suggestions at word boundary.
+                        if ($maxLength && mb_strlen($value) > $maxLength) {
+                            $value = mb_substr($value, 0, $maxLength);
+                            $lastSpace = mb_strrpos($value, ' ');
+                            if ($lastSpace) {
+                                $value = mb_substr($value, 0, $lastSpace);
+                            }
+                            $value = rtrim($value, ' ,;:.-');
+                        }
+                        if ($value === '') {
+                            continue;
+                        }
+                        $key = mb_strtolower($value);
+                        if (isset($seen[$key])) {
+                            continue;
+                        }
+                        $seen[$key] = true;
                         $suggestions[] = [
-                            'value' => $suggestion['term'],
+                            'value' => $value,
                             'data' => $suggestion['weight'] ?? 1,
                         ];
                     }
                 }
             }
 
+            // Sort by weight descending, keep top results.
+            usort($suggestions, fn ($a, $b) => $b['data'] <=> $a['data']);
+            $suggestions = array_slice($suggestions, 0, $limit);
+
             return $this->response
                 ->setSuggestions($suggestions)
                 ->setIsSuccess(true);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->getLogger()->err('Solr suggester error: ' . $e->getMessage());
             return $this->response->setMessage('Solr suggester error: ' . $e->getMessage());
         }
@@ -178,9 +208,32 @@ class SolariumQuerier extends AbstractQuerier
             $solrFields = [$suggestOptions['solr_field']];
         }
 
-        // If _text_ is in the list, use only _text_.
-        if (in_array('_text_', $solrFields)) {
-            $solrFields = ['_text_'];
+        // Resolve "auto": stored text and string fields, preferring _txt.
+        if (empty($solrFields) || in_array('auto', $solrFields)) {
+            $allowedSuffixes = ['_txt', '_ss', '_s'];
+            $solrCore = $this->getSolrCore();
+            $txtPrefixes = [];
+            $candidates = [];
+            foreach ($solrCore->mapsOrderedByStructure() as $map) {
+                $fieldName = $map->fieldName();
+                foreach ($allowedSuffixes as $suffix) {
+                    if (substr($fieldName, -strlen($suffix)) === $suffix) {
+                        $prefix = substr($fieldName, 0, -strlen($suffix));
+                        $candidates[] = ['name' => $fieldName, 'suffix' => $suffix, 'prefix' => $prefix];
+                        if ($suffix === '_txt') {
+                            $txtPrefixes[$prefix] = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            $solrFields = [];
+            foreach ($candidates as $c) {
+                if ($c['suffix'] !== '_txt' && isset($txtPrefixes[$c['prefix']])) {
+                    continue;
+                }
+                $solrFields[] = $c['name'];
+            }
         }
 
         if (empty($solrFields)) {
@@ -253,8 +306,11 @@ class SolariumQuerier extends AbstractQuerier
      * {@inheritDoc}
      * @see \AdvancedSearch\Querier\AbstractQuerier::queryValues()
      */
-    public function queryValues(string $field): array
-    {
+    public function queryValues(
+        string $field,
+        ?string $prefix = null,
+        int $limit = 0
+    ): array {
         if (!$field) {
             return [];
         }
@@ -268,55 +324,92 @@ class SolariumQuerier extends AbstractQuerier
             $fields = $aliases[$field]['fields'] ?? [$field];
             $fields = is_array($fields) ? $fields : [$fields];
 
-            // The terms query in solarium does not support filtering by field,
-            // so it is not possible to filter by is_public or by site.
-            // So either index values by is_public and site or use a standard
-            // query.
+            // For full values (autocomplete), use _ss fields
+            // instead of _txt: Solr terms and facets on _txt
+            // return individual tokens, not complete values.
+            $schema = $this->solrCore->schema();
+            $fields = array_map(function ($f) use ($schema) {
+                if (str_ends_with($f, '_txt')
+                    || str_ends_with($f, '_t')
+                ) {
+                    $base = preg_replace(
+                        '/(_txt|_t)$/', '', $f
+                    );
+                    $ssField = $base . '_ss';
+                    if ($schema->getField($ssField)) {
+                        return $ssField;
+                    }
+                }
+                return $f;
+            }, $fields);
+
             $isPublicField = $this->solrCoreField('is_public');
             $sitesField = $this->solrCoreField('site/o:id');
 
-            if (($this->query->getIsPublic() && $isPublicField)
+            // Use facets when prefix is set (case-insensitive)
+            // or when filtering by public/site is needed.
+            // Terms don't support case-insensitive prefix.
+            if ($prefix !== null
+                || ($this->query->getIsPublic() && $isPublicField)
                 || ($this->query->getSiteId() && $sitesField)
-                // "Terms" cannot be used for numeric fields (date, integer, float).
                 || $this->fieldIsNumeric(reset($fields))
             ) {
-                $result = $this->queryValuesWithFacets($fields, $isPublicField, $sitesField);
+                $result = $this->queryValuesWithFacets(
+                    $fields, $isPublicField, $sitesField,
+                    $prefix, $limit
+                );
             } else {
-                $result = $this->queryValuesWithTerms($fields);
+                $result = $this->queryValuesWithTerms(
+                    $fields, null, $limit
+                );
             }
 
             $list = array_merge(...array_values($result));
             natcasesort($list);
-            $list = array_keys(array_flip(array_filter($list, 'strlen')));
+            $list = array_keys(
+                array_flip(array_filter($list, 'strlen'))
+            );
             return array_combine($list, $list);
         } catch (\Throwable $e) {
-            // Return empty array if Solr is not available.
             return [];
         }
     }
 
-    protected function queryValuesWithFacets(array $fields, ?string $isPublicField, ?string $sitesField): array
-    {
+    protected function queryValuesWithFacets(
+        array $fields,
+        ?string $isPublicField,
+        ?string $sitesField,
+        ?string $prefix = null,
+        int $limit = 0
+    ): array {
+        // Solr uses -1 for unlimited.
+        $limit = $limit ?: -1;
         $query = $this->solariumClient->createSelect();
 
         if ($this->query->getIsPublic() && $isPublicField) {
-            // The field may be a boolean or an integer.
-            $val = $this->fieldIsBool($isPublicField) ? 'true' : 1;
-            $query->createFilterQuery('pub')->setQuery("$isPublicField:$val");
+            $val = $this->fieldIsBool($isPublicField)
+                ? 'true' : 1;
+            $query->createFilterQuery('pub')
+                ->setQuery("$isPublicField:$val");
         }
 
         if ($siteId = $this->query->getSiteId()) {
-            $query->createFilterQuery('site')->setQuery("$sitesField:$siteId");
+            $query->createFilterQuery('site')
+                ->setQuery("$sitesField:$siteId");
         }
 
         $facetSet = $query->getFacetSet();
         foreach ($fields as $i => $field) {
-            $facetSet->createFacetField("f$i")
+            $facet = $facetSet->createFacetField("f$i")
                 ->setField($field)
-                ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
-                ->setLimit(-1)
-                // Only used values in the current site.
-            ->setMinCount(1);
+                ->setSort('index')
+                ->setLimit($limit)
+                ->setMinCount(1);
+            if ($prefix !== null && $prefix !== '') {
+                $facet
+                    ->setContains($prefix)
+                    ->setContainsIgnoreCase(true);
+            }
         }
 
         $resultSet = $this->solariumClient->select($query);
@@ -327,19 +420,27 @@ class SolariumQuerier extends AbstractQuerier
         return $result;
     }
 
-    protected function queryValuesWithTerms(array $fields): array
-    {
-        // In Sort, a query value is a terms query.
+    protected function queryValuesWithTerms(
+        array $fields,
+        ?string $prefix = null,
+        int $limit = 0
+    ): array {
+        // Solr uses -1 for unlimited.
+        $limit = $limit ?: -1;
         $query = $this->solariumClient->createTerms();
         $query->setFields($fields)
-            ->setSort(\Solarium\Component\Facet\JsonTerms::SORT_INDEX_ASC)
-            ->setLimit(-1)
-            // Only used values. Anyway, by default there is no predefined list.
+            ->setSort('index')
+            ->setLimit($limit)
             ->setMinCount(1);
+        if ($prefix !== null && $prefix !== '') {
+            $query->setPrefix($prefix);
+        }
 
         $resultSet = $this->solariumClient->terms($query);
-        // Results are structured by field and term/count.
-        return array_map(fn ($v) => array_keys($v), $resultSet->getResults());
+        return array_map(
+            fn ($v) => array_keys($v),
+            $resultSet->getResults()
+        );
     }
 
     /**
@@ -419,13 +520,18 @@ class SolariumQuerier extends AbstractQuerier
             $allQuery = clone $this->select;
             $allQuery
                 ->setFields(['id'])
-                ->setRows(null)
-                ->setStart(null);
+                ->setStart(0);
 
             if ($allQuery->getGrouping()->getFields()) {
-                $allQuery->getGrouping()
-                    ->setLimit(null)
-                    ->setOffset(null);
+                // Solr default group.limit is 1, so set it explicitly to get
+                // all documents per group.
+                $allQuery
+                    ->setRows(100)
+                    ->getGrouping()
+                    ->setLimit(1000000)
+                    ->setOffset(0);
+            } else {
+                $allQuery->setRows(1000000);
             }
 
             $resultSetAll = $this->solariumClient->execute($allQuery);
@@ -457,7 +563,7 @@ class SolariumQuerier extends AbstractQuerier
             }
             return $grouped ? array_merge(...array_values($grouped)) : [];
         } catch (\Throwable $e) {
-            $this->getLogger()->warn(
+            $this->getLogger()->err(
                 'Could not fetch all resource ids: {message}', // @translate
                 ['message' => $e->getMessage()]
             );
@@ -544,15 +650,16 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * Configure EDisMax per-request and keep only foldable query fields.
      *
-     * Also disable SOW to avoid splitting tokens like "949.0252" into too
-     * many clauses.
+     * Also disable SOW to avoid splitting tokens like "949.0252" into too many
+     * clauses.
      *
-     * The number of query fields is limited to avoid exceeding Solr's
-     * maxClauseCount (default 1024). With many fields, each search term
-     * creates a clause per field, quickly hitting the limit.
+     * The number of query fields is limited to avoid exceeding Solr maxClauseCount
+     * (default 1024). With many fields, each search term creates a clause per
+     * field, and each clause is expanded by the analyzer (lowercasing, ascii
+     * folding, synonyms…), quickly hitting the limit.
      *
-     * If the catchall field `_text_` exists, use it instead of listing
-     * all fields individually.
+     * If the catchall field `_text_` exists, use it instead of listing all
+     * fields individually.
      */
     protected function configureEDisMax(): self
     {
@@ -575,6 +682,8 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
+        $maxFields = $this->maxQueryFields();
+
         $existing = trim((string) $dismax->getQueryFields());
 
         if ($existing !== '') {
@@ -585,7 +694,7 @@ class SolariumQuerier extends AbstractQuerier
                 fn ($p) => isset($allowed[preg_replace('~\^.*$~', '', $p)])
             );
             if ($kept) {
-                $kept = array_slice($kept, 0, 100);
+                $kept = array_slice($kept, 0, $maxFields);
                 $dismax->setQueryFields(implode(' ', $kept));
             }
             return $this;
@@ -605,7 +714,7 @@ class SolariumQuerier extends AbstractQuerier
                 }
             }
             $foldable = array_merge($priority, $rest);
-            $foldable = array_slice($foldable, 0, 100);
+            $foldable = array_slice($foldable, 0, $maxFields);
             $dismax->setQueryFields(implode(' ', $foldable));
         }
 
@@ -643,7 +752,7 @@ class SolariumQuerier extends AbstractQuerier
 
         // When there are excluded fields, we need to search only in allowed
         // fields. Use the same field selection as before but limit count to
-        // stay under Solr's maxClauseCount of 1024.
+        // stay under Solr maxClauseCount of 1024.
         if (($mainQuery !== '' || $refineQuery !== '') && $excludedFields) {
             $allFields = $this->usedSolrFields(
                 ['t_', 'txt_', 'ss_', 'sm_', 'ws_'],
@@ -654,7 +763,11 @@ class SolariumQuerier extends AbstractQuerier
             if ($allowedFields) {
                 // Limit fields to avoid clause explosion. Use DisMax with
                 // restricted qf for efficient multi-field search.
-                $allowedFields = array_slice($allowedFields, 0, 400);
+                $allowedFields = array_slice(
+                    array_values($allowedFields),
+                    0,
+                    $this->maxQueryFields()
+                );
                 $dismax = $this->select->getDisMax();
                 $dismax->setQueryFields(implode(' ', $allowedFields));
             }
@@ -827,8 +940,8 @@ class SolariumQuerier extends AbstractQuerier
                 ;
             } else {
                 // Term facets.
-                // The domain option is used to exclude the tagged search
-                // filter related to the facet.
+                // The domain option is used to exclude the tagged search filter
+                // related to the facet.
                 // see: https://yonik.com/multi-select-faceting/
                 /** @var \Solarium\Component\Facet\FieldValueParametersInterface $facet */
                 $excludeTag = strtoupper($name . '-facet');
@@ -862,6 +975,7 @@ class SolariumQuerier extends AbstractQuerier
         // Active facets.
         /** @link https://petericebear.github.io/php-solarium-multi-select-facets-20160720/ */
         $activeFacets = $this->query->getActiveFacets();
+        $facetsConfig = $this->query->getFacets();
         foreach ($activeFacets as $fname => $values) {
             if (!is_array($values) || !count($values)) {
                 continue;
@@ -873,7 +987,28 @@ class SolariumQuerier extends AbstractQuerier
                 $hasFrom = isset($values['from']) && $values['from'] !== '';
                 $hasTo = isset($values['to']) && $values['to'] !== '';
 
-                if ($hasFrom && $hasTo) {
+                $facetData = $facetsConfig[$fname] ?? [];
+                $startField = $facetData['field'] ?? $fname;
+                $endField = !empty($facetData['field_end']) ? $facetData['field_end'] : null;
+
+                if ($endField) {
+                    // Interval overlap on uncertain dates: start ≤ to AND end ≥
+                    // from.
+                    $clauses = [];
+                    if ($hasTo) {
+                        $clauses[] = "$startField:[* TO " . $this->escapePhrase($values['to']) . ']';
+                    }
+                    if ($hasFrom) {
+                        $clauses[] = "$endField:[" . $this->escapePhrase($values['from']) . ' TO *]';
+                    }
+                    if ($clauses) {
+                        $this->select->addFilterQuery([
+                            'key' => $fname . '-facet',
+                            'query' => implode(' AND ', $clauses),
+                            'tag' => 'exclude',
+                        ]);
+                    }
+                } elseif ($hasFrom && $hasTo) {
                     $from = $this->escapePhrase($values['from']);
                     $to = $this->escapePhrase($values['to']);
                     $this->select->addFilterQuery([
@@ -917,8 +1052,9 @@ class SolariumQuerier extends AbstractQuerier
     protected function prepareRangeFacetBounds(array $facets): array
     {
         $fieldRanges = [];
-        // Map facet name to Solr field name.
+        // Map facet name to Solr field name (start) and optional end field.
         $nameToField = [];
+        $nameToFieldEnd = [];
 
         foreach ($facets as $name => $data) {
             if (in_array($data['type'] ?? '', ['Range', 'RangeDouble', 'SelectRange'])) {
@@ -927,6 +1063,9 @@ class SolariumQuerier extends AbstractQuerier
                     if ($field) {
                         $fieldRanges[$name] = [];
                         $nameToField[$name] = $field;
+                        if (!empty($data['field_end'])) {
+                            $nameToFieldEnd[$name] = $data['field_end'];
+                        }
                     }
                 }
             }
@@ -934,16 +1073,26 @@ class SolariumQuerier extends AbstractQuerier
 
         if ($fieldRanges && $nameToField) {
             // Use the actual Solr field names for the query.
-            $solrFields = array_unique(array_values($nameToField));
+            $solrFields = array_unique(array_merge(
+                array_values($nameToField),
+                array_values($nameToFieldEnd)
+            ));
             $all = $this->queryValuesCount($solrFields);
 
-            // Map results back to facet names.
+            // Map results back to facet names. For interval mode, min comes
+            // from the start field and max from the end field.
             foreach ($fieldRanges as $name => &$range) {
                 $field = $nameToField[$name] ?? null;
+                $fieldEnd = $nameToFieldEnd[$name] ?? null;
                 if ($field && isset($all[$field])) {
-                    $values = array_keys(array_filter($all[$field]));
-                    $range['min'] = $values ? min($values) : 0;
-                    $range['max'] = $values ? max($values) : 0;
+                    $startValues = array_keys(array_filter($all[$field]));
+                    $range['min'] = $startValues ? min($startValues) : 0;
+                    if ($fieldEnd && isset($all[$fieldEnd])) {
+                        $endValues = array_keys(array_filter($all[$fieldEnd]));
+                        $range['max'] = $endValues ? max($endValues) : 0;
+                    } else {
+                        $range['max'] = $startValues ? max($startValues) : 0;
+                    }
                 } else {
                     $range['min'] = 0;
                     $range['max'] = 0;
@@ -1027,6 +1176,27 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
+     * Estimate max number of query fields (qf) to stay under Solr max clauses.
+     *
+     * The maxClauseCount is 1024.
+     *
+     * Each query term generates one clause per qf field, and the analyzer may
+     * expand each clause (lowercase, ASCII folding, synonyms…). A conservative
+     * expansion factor of 5 is used.
+     */
+    protected function maxQueryFields(): int
+    {
+        $q = trim($this->query->getQuery()
+            . ' ' . $this->query->getQueryRefine());
+        // Count whitespace-separated tokens as a rough term estimate.
+        $terms = max(1, preg_match_all('/\S+/', $q));
+        // expansion ≈ 5 (lowercase + folding + synonyms + variants).
+        $max = (int) floor(1024 / ($terms * 5));
+        // At least 10 fields, at most 100.
+        return max(10, min(100, $max));
+    }
+
+    /**
      * Get fields with custom boosts (different from default 1).
      *
      * @return string[] Array of "field^boost" strings
@@ -1034,7 +1204,7 @@ class SolariumQuerier extends AbstractQuerier
     protected function getCustomBoostedFields(): array
     {
         $coreBoosts = $this->solrCore->setting('field_boost') ?: [];
-        $queryBoosts = (array) $this->query->getFieldBoosts();
+        $queryBoosts = $this->query->getFieldBoosts();
         $merged = array_merge($coreBoosts, $queryBoosts);
 
         $result = [];
@@ -1055,37 +1225,42 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
-        // DisMax is the only querier for now (not standard, not eDisMax).
         // Boosts from the index and from the query.
-        // In practice, solr manage boost only at search time, so the difference
-        // is only for configuration by the user.
-        // Important: when used, the full list of fields should be set.
-        $coreBoosts = (array) $this->solrCore->setting('field_boost');
-        $queryBoosts = (array) $this->query->getFieldBoosts();
+        $coreBoosts = $this->solrCore->setting('field_boost', []);
+        $queryBoosts = $this->query->getFieldBoosts();
         $merged = array_merge($coreBoosts, $queryBoosts);
 
-        if ($merged) {
-            $qf = [];
-            foreach ($merged as $field => $boost) {
-                // Skip numeric keys or empty field names: when field_boost setting
-                // returns a plain indexed array, casting with (array) gives integer
-                // keys (e.g. 0 => '0.5'), which would produce "0" as a field name
-                // and cause a Solr eDisMax SyntaxError.
-                if (!is_string($field) || $field === '') {
-                    continue;
-                }
-                $boost = (float) $boost;
-                $qf[] = $boost > 0 ? "$field^$boost" : $field;
+        if (!$merged) {
+            return $this;
+        }
+
+        // Keep only fields with a real boost (≠ 1): boost=1 is the default and
+        // just adds fields to qf without benefit, which can cause maxClauseCount
+        // overflow with many fields.
+        $boosted = [];
+        foreach ($merged as $field => $boost) {
+            if (!is_string($field) || $field === '') {
+                continue;
             }
-            if ($qf) {
-                $dismax = $this->select->getDisMax();
-                $existing = trim((string) $dismax->getQueryFields());
-                $final = $existing
-                    ? "$existing " . implode(' ', $qf)
-                    : implode(' ', $qf);
-                $dismax->setQueryFields($final);
+            $boost = (float) $boost;
+            if ($boost > 0 && $boost !== 1.0) {
+                $boosted[$field] = "$field^$boost";
             }
         }
+
+        if (!$boosted) {
+            return $this;
+        }
+
+        $dismax = $this->select->getDisMax();
+        $existing = trim((string) $dismax->getQueryFields());
+
+        // Append only the truly boosted fields to the existing qf.
+        $dismax->setQueryFields(
+            $existing !== ''
+                ? $existing . ' ' . implode(' ', $boosted)
+                : implode(' ', $boosted)
+        );
 
         return $this;
     }
@@ -1186,11 +1361,11 @@ class SolariumQuerier extends AbstractQuerier
             $allQuery = clone $this->select;
             $allQuery
                 ->setFields(['id'])
-                ->setRows(null)
-                ->setStart(null);
+                ->setRows(100)
+                ->setStart(0);
             $allQuery->getGrouping()
-                ->setLimit(null)
-                ->setOffset(null);
+                ->setLimit(1000000)
+                ->setOffset(0);
 
             $resultSetAll = $this->solariumClient->execute($allQuery);
 
@@ -1206,7 +1381,7 @@ class SolariumQuerier extends AbstractQuerier
                     $this->response->setAllResourceIdsForResourceType($type, $result);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->getLogger()->warn(
                 'Could not fetch all resource ids: {message}', // @translate
                 ['message' => $e->getMessage()]
@@ -1219,7 +1394,8 @@ class SolariumQuerier extends AbstractQuerier
         // Fetch all ids grouped by resource type (computed on demand).
         $allResourceIdsByType = $this->queryAllResourceIds(null, true);
 
-        // Aggregate only when not grouped by resource type and there are multiple types.
+        // Aggregate only when not grouped by resource type and there are
+        // multiple types.
         if (!$this->byResourceType && $this->resourceTypes && count($this->resourceTypes) > 1) {
             // Aggregate ids
             if (isset($allResourceIdsByType['resources'])) {
@@ -1290,6 +1466,16 @@ class SolariumQuerier extends AbstractQuerier
 
             $name = $this->fieldToIndex($fieldName) ?? $fieldName;
 
+            // A property term (with ":") that was not resolved to
+            // a Solr field means the field is not indexed.
+            if (strpos($name, ':') !== false) {
+                $this->services->get('Omeka\Logger')
+                    ->err('Solr: skipped filter on unmapped field "{field}".', ['field' => $fieldName]); // @translate
+                $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
+                    ->setQuery('-*:*');
+                return;
+            }
+
             if ($name === 'id') {
                 $value = [];
                 array_walk_recursive($values, function ($v) use (&$value): void {
@@ -1344,13 +1530,22 @@ class SolariumQuerier extends AbstractQuerier
             $name = $this->fieldToIndex($field) ?? $field;
             $isDate = substr($name, -3) === '_dt' || substr($name, -4) === '_dts' || substr($name, -4) === '_pdt' || substr($name, -4) === '_tdt' || substr($name, -5) === '_pdts' || substr($name, -5) === '_tdts';
 
+            // Two-field interval overlap: use start field for the upper bound
+            // and end field for the lower bound. Triggered when the form filter
+            // declares a "field_end" option.
+            $formFilter = $this->query->getFormFilter($field);
+            $endField = null;
+            if ($formFilter && !empty($formFilter['field_end'])) {
+                $endField = $this->fieldToIndex($formFilter['field_end']) ?? $formFilter['field_end'];
+            }
+
             foreach ($ranges as $range) {
                 if (!is_array($range)) {
                     continue;
                 }
 
-                $from = $range['from'] ?? '*';
-                $to = $range['to'] ?? '*';
+                $from = isset($range['from']) && $range['from'] !== '' ? $range['from'] : '*';
+                $to = isset($range['to']) && $range['to'] !== '' ? $range['to'] : '*';
 
                 if ($isDate && $from !== '*') {
                     $from = $this->normalizeDate($from);
@@ -1359,7 +1554,21 @@ class SolariumQuerier extends AbstractQuerier
                     $to = $this->normalizeDate($to);
                 }
 
-                if ($from !== '*' || $to !== '*') {
+                if ($from === '*' && $to === '*') {
+                    continue;
+                }
+
+                if ($endField) {
+                    $clauses = [];
+                    if ($to !== '*') {
+                        $clauses[] = "$name:[* TO $to]";
+                    }
+                    if ($from !== '*') {
+                        $clauses[] = "$endField:[$from TO *]";
+                    }
+                    $this->select->createFilterQuery($name . '_' . ++$this->appendToKey)
+                        ->setQuery(implode(' AND ', $clauses));
+                } else {
                     $this->select->createFilterQuery($name . '_' . ++$this->appendToKey)
                         ->setQuery("$name:[$from TO $to]");
                 }
@@ -1510,6 +1719,15 @@ class SolariumQuerier extends AbstractQuerier
                     $nameAny ??= $this->fieldToIndex($field) ?? $field;
                     $name = $nameAny;
                 }
+                // A property term (with ":") not resolved to a
+                // Solr field means the field is not indexed.
+                if (strpos($name, ':') !== false) {
+                    $this->services->get('Omeka\Logger')
+                        ->err('Solr: skipped filter on unmapped field "{field}".', ['field' => $field]); // @translate
+                    $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
+                        ->setQuery('-*:*');
+                    return;
+                }
 
                 // "AND/NOT" cannot be used as first.
                 // TODO Will be simplified in a future version.
@@ -1534,10 +1752,10 @@ class SolariumQuerier extends AbstractQuerier
      * Build advanced search filter like omeka api.
      *
      * Regex requires string (_s), not text or anything else.
-     * So if the field is not a string, use a simple "+", that
-     * will be enough in most of the cases.
-     * Furthermore, unlike sql, solr regex doesn't manage
-     * insensitive search, neither flag "i".
+     * So if the field is not a string, use a simple "+", that will be enough
+     * in most of the cases.
+     * Furthermore, unlike sql, solr regex doesn't manage insensitive search,
+     * neither flag "i".
      * The pattern is limited to 1000 characters by default.
      *
      * @todo Check the size of the pattern.
@@ -1599,9 +1817,9 @@ class SolariumQuerier extends AbstractQuerier
             // Matches.
             case 'nma':
             case 'ma':
-                // Matches is already an regular expression, so just set
-                // it. Note that Solr can manage only a small part of
-                // regex and anchors are added by default.
+                // Matches is already an regular expression, so just set it.
+                // Note that Solr can manage only a small part of regex and
+                // anchors are added by default.
                 // TODO Add // or not?
                 // TODO Escape regex for regexes…
                 $val = $this->fieldIsString($field) ? $val : $this->escapePhraseValue($val, 'OR');
@@ -1612,10 +1830,22 @@ class SolariumQuerier extends AbstractQuerier
             case 'lte':
             case 'gte':
             case 'gt':
-                // With a list of lt/lte/gte/gt, get the right value first in order
-                // to avoid multiple sql conditions.
-                // But the language cannot be determined: language of the site? of
-                // the data? of the user who does query?
+                // For date fields (e.g. EDTF indexed via ValueFormatter\Edtf),
+                // normalize input (EDTF or partial date) to ISO 8601 bounds
+                // supported by Solr date fields, including BCE years.
+                if ($this->fieldIsDate($field)) {
+                    $val = $this->edtfValuesToIso(
+                        $val,
+                        $type === 'lt' || $type === 'lte'
+                    );
+                    if (empty($val)) {
+                        return '';
+                    }
+                }
+                // With a list of lt/lte/gte/gt, get the right value first in
+                // order to avoid multiple sql conditions.
+                // But the language cannot be determined: language of the site?
+                // of the data? of the user who does query?
                 // Practically, mysql/mariadb sort with generic unicode rules by
                 // default, so use a generic sort.
                 /* @see https://www.unicode.org/reports/tr10/ */
@@ -1650,6 +1880,17 @@ class SolariumQuerier extends AbstractQuerier
             case '≤':
             case '≥':
             case '>':
+                // Normalize EDTF/partial dates to ISO 8601 for Solr date
+                // fields (BCE included).
+                if ($this->fieldIsDate($field)) {
+                    $val = $this->edtfValuesToIso(
+                        is_array($val) ? $val : [$val],
+                        $type === '<' || $type === '≤'
+                    );
+                    if (empty($val)) {
+                        return '';
+                    }
+                }
                 // The values are already cleaned.
                 $first = reset($val);
                 if (count($val) > 1) {
@@ -1761,7 +2002,7 @@ class SolariumQuerier extends AbstractQuerier
         }
         try {
             return (new \DateTime($date))->format('Y-m-d\TH:i:s\Z');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return '*';
         }
     }
@@ -1852,12 +2093,19 @@ class SolariumQuerier extends AbstractQuerier
             return $this->getSelectionIdFieldName($field);
         }
 
+        // Try to convert terms into standard field.
         $term = $this->easyMeta->propertyTerm($field);
         if (!$term) {
             return null;
         }
 
-        $indices = $this->usedSolrFields([], [], [strtr($term, ':', '_')]);
+        // Match standard fields (prefix_prop_suffix) and Drupal-style fields (suffix_prefix_prop).
+        $base = strtr($term, ':', '_');
+        $indices = $this->usedSolrFields(
+            [$base . '_'],
+            ['_' . $base],
+            []
+        );
         if (!$indices) {
             return null;
         }
@@ -1905,8 +2153,13 @@ class SolariumQuerier extends AbstractQuerier
             return null;
         }
 
-        // Check if a standard index exists.
-        $indices = $this->usedSolrFields([], [], [strtr($term, ':', '_')]);
+        // Match standard fields (prefix_prop_suffix) and Drupal-style fields (suffix_prefix_prop).
+        $base = strtr($term, ':', '_');
+        $indices = $this->usedSolrFields(
+            [$base . '_'],
+            ['_' . $base],
+            []
+        );
         if (!$indices) {
             return null;
         }
@@ -2175,8 +2428,22 @@ class SolariumQuerier extends AbstractQuerier
             // "+" to require all terms (like refine behavior).
             $words = preg_split('/\s+/', $string, -1, PREG_SPLIT_NO_EMPTY);
             if (count($words) > 1) {
-                $escaped = array_map(fn ($w) => '+' . $this->select->getHelper()->escapeTerm($w), $words);
+                $escaped = array_map(function ($w) {
+                    // Structured identifiers (ark, doi, url…) with ":" or "/"
+                    // must be treated as phrases, not escaped terms, because
+                    // edismax + copyField analyzers strip these separators,
+                    // making backslash-escaped terms unmatchable.
+                    // Other characters like "." have no issue.
+                    if (strpbrk($w, ':/') !== false) {
+                        return '+' . $this->escapePhrase($w);
+                    }
+                    return '+' . $this->select->getHelper()->escapeTerm($w);
+                }, $words);
                 return implode(' ', $escaped);
+            }
+            // Single word with structured separators: use phrase.
+            if (strpbrk($string, ':/') !== false) {
+                return $this->escapePhrase($string);
             }
             return $this->select->getHelper()->escapeTerm($string);
         }
@@ -2217,6 +2484,49 @@ class SolariumQuerier extends AbstractQuerier
     protected function escapePhrase(string $s): string
     {
         return $this->select->getHelper()->escapePhrase($s);
+    }
+
+    /**
+     * Normalize a list of user-typed date values to ISO 8601 strings
+     * compatible with Solr date fields, including BCE.
+     *
+     * Accepts EDTF strings, ISO dates, partial dates (year, year-month), and
+     * already-ISO values. For "lower bound" queries ($useMin=true), values are
+     * expanded to the earliest moment; for "upper bound", to the latest.
+     * Invalid values are dropped.
+     */
+    protected function edtfValuesToIso(
+        array $values,
+        bool $useMin
+    ): array {
+        $hasEdtf = class_exists(\EDTF\EdtfFactory::class);
+        if (!$hasEdtf) {
+            // Fallback: return values untouched, Solr will parse what it can
+            // (standard ISO only).
+            return array_filter(
+                array_map(fn ($v) => trim((string) $v), $values),
+                'strlen'
+            );
+        }
+        static $formatter;
+        if ($formatter === null) {
+            $formatter = new \SearchSolr\ValueFormatter\Edtf();
+        }
+        $formatter->setSettings([
+            'part' => $useMin ? 'min' : 'max',
+        ]);
+        $result = [];
+        foreach ($values as $v) {
+            $s = trim((string) $v);
+            if ($s === '') {
+                continue;
+            }
+            $iso = $formatter->format($s);
+            if ($iso) {
+                $result[] = reset($iso);
+            }
+        }
+        return $result;
     }
 
     /**

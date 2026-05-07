@@ -151,7 +151,7 @@ class Schema
             $this->fieldsByName = [];
             try {
                 $schema = $this->getSchema();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 return [];
             }
             foreach ($schema['fields'] as $field) {
@@ -198,7 +198,7 @@ class Schema
             $this->dynamicFieldsMap = [];
             try {
                 $schema = $this->getSchema();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 return [];
             }
             foreach ($schema['dynamicFields'] as $field) {
@@ -226,7 +226,7 @@ class Schema
             $dynamicFieldsMapBy = [];
             try {
                 $schema = $this->getSchema();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 return [];
             }
             foreach ($schema['dynamicFields'] as $field) {
@@ -258,7 +258,7 @@ class Schema
             $this->typesByName = [];
             try {
                 $schema = $this->getSchema();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 return [];
             }
             foreach ($schema['fieldTypes'] as $type) {

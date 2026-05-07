@@ -152,248 +152,21 @@ class MapController extends AbstractActionController
         $this->valueExtractorManager = $valueExtractorManager;
     }
 
+    /**
+     * Redirect to the core show page. The dedicated browse-resource
+     * page has been removed. Kept for backward compatibility of
+     * bookmarks and external links.
+     */
     public function browseResourceAction()
     {
         $solrCoreId = $this->params('core-id');
         $resourceName = $this->params('resource-name');
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
-        $maps = $solrCore->mapsByResourceName($resourceName);
-
-        if (!$solrCore->schema()->checkDefaultField()) {
-            $this->messenger()->addWarning(
-                'This core seems to have no default field. If there are no results to a default query, add the copy field "_text_" with source "*".' // @translate
-            );
-        }
-
-        return new ViewModel([
-            'solrCore' => $solrCore,
-            'resourceName' => $resourceName,
-            'maps' => $maps,
-        ]);
-    }
-
-    public function completeAction()
-    {
-        // TODO Complete for all resources names.
-
-        $solrCoreId = $this->params('core-id');
-        $resourceName = $this->params('resource-name') ?: 'items';
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
-
-        $api = $this->api();
-
-        // Get all existing indexed properties and keep only field names.
-        /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
-        $maps = $solrCore->mapsByResourceName($resourceName);
-        $maps = array_map(fn ($v) => $v->fieldName(), $maps);
-
-        $skipTermTexts = include dirname(__DIR__, 3) . '/config/metadata_text.php';
-
-        // Prepare the indexes by languages.
-        $qb = $this->connection->createQueryBuilder();
-        $qb
-            ->select(
-                'CONCAT(`vocabulary`.`prefix`, ":", `property`.`local_name`) AS term',
-                '`value`.`lang` AS lang',
-                // Required for mysql, but useless.
-                '`property`.`id` AS prop'
-            )
-            ->distinct()
-            ->from('`value`', 'value')
-            ->innerJoin('value', 'property', 'property', '`property`.`id` = `value`.`property_id`')
-            ->innerJoin('property', 'vocabulary', 'vocabulary', '`property`.`vocabulary_id` = `vocabulary`.`id`')
-            ->where('`value`.`lang` IS NOT NULL')
-            ->andWhere('`value`.`lang` != ""')
-            ->orderBy('`property`.`id`', 'asc')
-            ->addOrderBy('`value`.`lang`', 'asc')
-        ;
-        $result = $this->connection->executeQuery($qb)->fetchAllAssociative();
-        $langsByProperties = [];
-        foreach ($result as $propLang) {
-            $langsByProperties[$propLang['term']][] = $propLang['lang'];
-        }
-
-        if (empty($langsByProperties)) {
-            $this->messenger()->addSuccess(new PsrMessage(
-                'No values have a language. The indexes will use a generic language (_txt).' // @translate
-            ));
-        } else {
-            $this->messenger()->addSuccess(new PsrMessage(
-                'The values use the following languages: {json}.', // @translate
-                ['json' => json_encode($langsByProperties, 320)]
-            ));
-        }
-
-        // TODO Use language from the settings to prepare the maps?
-        // $langs = $this->settings('value_languages') ?: [];
-
-        $createMap = function (string $name, string $term, ?string $alias, array $pool, array $settings)
-            use ($api, $solrCoreId, $resourceName, &$maps): ?SolrMapRepresentation
-        {
-            if (in_array($name, $maps)) {
-                return null;
-            }
-            $data = [];
-            $data['o:solr_core']['o:id'] = $solrCoreId;
-            $data['o:resource_name'] = $resourceName;
-            $data['o:field_name'] = $name;
-            $data['o:alias'] = $alias;
-            $data['o:source'] = $term;
-            $data['o:pool'] = $pool;
-            $data['o:settings'] = $settings;
-            $result = $api->create('solr_maps', $data)->getContent();
-            $maps[] = $name;
-            return $result;
-        };
-
-        // Add all missing maps with a generic multivalued text field.
-        // Don't add a map if it exists at a upper level.
-        $newMaps = [];
-        $properties = $api->search('properties')->getContent();
-        $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
-        foreach ($properties as $property) {
-            // Skip property that are not used.
-            if (!in_array($property->id(), $usedPropertyIds)) {
-                continue;
-            }
-
-            $term = $property->term();
-
-            // For full text search (_t = single value, _txt = multivalued).
-            $name = strtr($term, ':', '_') . '_txt';
-            $result = $createMap($name, $term, null, [], ['formatter' => '', 'label' => $property->label()]);
-            if ($result) {
-                $newMaps[] = $name;
-            }
-
-            // For full text search with language managed by solr.
-            foreach ($langsByProperties[$term] ?? [] as $language) {
-                if (!isset($this->solrLangs[$language])) {
-                    continue;
-                }
-                $name = strtr($term, ':', '_') . '_txt_' . $this->solrLangs[$language];
-                $result = $createMap(
-                    $name,
-                    $term,
-                    null,
-                    ['filter_languages' => array_keys($this->solrLangs, $this->solrLangs[$language])],
-                    ['formatter' => '', 'label' => $property->label()]
-                );
-                if ($result) {
-                    $newMaps[] = $name;
-                }
-            }
-
-            if (!in_array($term, $skipTermTexts)) {
-                // For filters and facets.
-                $name = strtr($term, ':', '_') . '_ss';
-                $result = $createMap($name, $term, $term, [], ['formatter' => '', 'parts' => ['main'], 'label' => $property->label()]);
-                if ($result) {
-                    $newMaps[] = $name;
-                }
-
-                // For sort.
-                $name = strtr($term, ':', '_') . '_s';
-                $result = $createMap($name, $term, null, [], ['formatter' => '', 'parts' => ['main'], 'label' => $property->label()]);
-                if ($result) {
-                    $newMaps[] = $name;
-                }
-
-                // For bounce links.
-                $name = strtr($term, ':', '_') . '_link_ss';
-                $result = $createMap($name, $term, null, [], ['index_for_link' => true, 'parts' => ['link'], 'formatter' => '', 'label' => $property->label()]);
-                if ($result) {
-                    $newMaps[] = $name;
-                }
-            }
-        }
-
-        // Ideally, the update of the core should be done one time via an event.
-        $this->updateFieldsBoost($solrCore);
-
-        if ($newMaps) {
-            $this->messenger()->addSuccess(new PsrMessage(
-                '{count} new maps successfully created: {list}.', // @translate
-                ['count' => count($newMaps), 'list' => implode(', ', $newMaps)]
-            ));
-            $this->messenger()->addWarning('Check all new maps and remove useless ones.'); // @translate
-            $this->messenger()->addWarning('Don’t forget to run the indexation of the core.'); // @translate
-        } else {
-            $this->messenger()->addWarning('No new maps added.'); // @translate
-        }
-
-        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCoreId]);
-    }
-
-    public function cleanAction()
-    {
-        /**
-         * @var \Omeka\Mvc\Controller\Plugin\Api $api
-         */
-        $api = $this->api();
-
-        $solrCoreId = $this->params('core-id');
-        $resourceName = $this->params('resource-name');
-
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
-
-        // Get all existing indexed properties.
-        $maps = $solrCore->mapsByResourceName($resourceName);
-
-        // Map as associative array by map id and keep only the source.
-        $mapList = [];
-        foreach ($maps as $map) {
-            // Only the maps with the current resource name are removed.
-            if ($map->resourceName() === $resourceName) {
-                $mapList[$map->id()] = $map->source();
-            }
-        }
-
-        // Add all missing maps.
-        $result = [];
-        $properties = $api->search('properties')->getContent();
-        $usedPropertyIds = $this->listUsedPropertyIds($resourceName);
-        foreach ($properties as $property) {
-            // Skip property that are used.
-            if (in_array($property->id(), $usedPropertyIds)) {
-                continue;
-            }
-
-            // Skip property that are not mapped.
-            $term = $property->term();
-            if (!in_array($term, $mapList)) {
-                continue;
-            }
-
-            // TODO Skip map where the values are too much long for exact strings,
-            // for example ocr text should not be "_ss".
-            // But it should be already done because a check is done on complete action.
-
-            // There may be multiple maps with the same term.
-            $ids = array_keys(array_filter($mapList, fn ($v) => $v === $term));
-            $api->batchDelete('solr_maps', $ids);
-
-            $result[] = $term;
-        }
-
-        if ($result) {
-            // Ideally, the update of the core should be done via an event.
-            $this->updateFieldsBoost($solrCore);
-            $this->messenger()->addSuccess(new PsrMessage(
-                '{count} maps successfully deleted: {list}.', // @translate
-                ['count' => count($result), 'list' => implode(', ', $result)]
-            ));
-            $this->messenger()->addNotice('Don’t forget to run the indexation of the core.'); // @translate
-        } else {
-            $this->messenger()->addWarning('No maps deleted.'); // @translate
-        }
-
-        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCoreId]);
+        $url = $this->url()->fromRoute(
+            'admin/search/solr/core-id',
+            ['id' => $solrCoreId]
+        );
+        return $this->redirect()
+            ->toUrl($url . '?resource_type=' . urlencode($resourceName));
     }
 
     public function addAction()
@@ -429,11 +202,14 @@ class MapController extends AbstractActionController
                     ['solr_map_name' => $data['o:field_name']]
                 ));
 
-                return $this->redirect()->toRoute('admin/search/solr/core-id', [
-                    'id' => $solrCoreId,
-                    // TODO Add a filter on resource name.
-                    // 'resource-name' => $resourceName,
-                ]);
+                return $this->redirect()->toUrl(
+                    $this->url()->fromRoute(
+                        'admin/search/solr/core-id',
+                        ['id' => $solrCoreId]
+                    ) . '?resource_type=' . urlencode(
+                        $data['o:resource_name'] ?? $resourceName
+                    )
+                );
             } else {
                 $messages = $form->getMessages();
                 if (isset($messages['csrf'])) {
@@ -503,11 +279,14 @@ class MapController extends AbstractActionController
 
                 $this->messenger()->addWarning('Don’t forget to check search pages that use this map.'); // @translate
 
-                return $this->redirect()->toRoute('admin/search/solr/core-id', [
-                    'id' => $solrCoreId,
-                    // TODO Add a filter on resource name.
-                    // 'resource-name' => $resourceName,
-                ]);
+                return $this->redirect()->toUrl(
+                    $this->url()->fromRoute(
+                        'admin/search/solr/core-id',
+                        ['id' => $solrCoreId]
+                    ) . '?resource_type=' . urlencode(
+                        $data['o:resource_name'] ?? $resourceName
+                    )
+                );
             } else {
                 $messages = $form->getMessages();
                 if (isset($messages['csrf'])) {
@@ -648,41 +427,6 @@ class MapController extends AbstractActionController
      *
      * @todo Use EasyMeta (but filtered by resource).
      *
-     * @param string $resourceName
-     * @return \Omeka\Api\Representation\PropertyRepresentation[]
-     */
-    protected function listUsedPropertyIds($resourceName): array
-    {
-        $resourceTypes = [
-            'resources' => \Omeka\Entity\Resource::class,
-            'items' => \Omeka\Entity\Item::class,
-            'item_sets' => \Omeka\Entity\ItemSet::class,
-            'media' => \Omeka\Entity\Media::class,
-            'value_annotations' => \Omeka\Entity\ValueAnnotation::class,
-            'annotations' => \Annotate\Entity\Annotation::class,
-        ];
-
-        // Manage "generic" type.
-        if (!isset($resourceTypes[$resourceName])) {
-            return [];
-        }
-
-        $qb = $this->connection->createQueryBuilder()
-            ->select('DISTINCT value.property_id')
-            ->from('value', 'value')
-            ->innerJoin('value', 'resource', 'resource', 'resource.id = value.resource_id')
-            ->orderBy('value.property_id', 'ASC');
-        if ($resourceName !== 'resources') {
-            $qb
-                ->where('resource.resource_type = :resource_type')
-                ->setParameter('resource_type', $resourceTypes[$resourceName]);
-        }
-
-        return $this->connection
-            ->executeQuery($qb, $qb->getParameters())
-            ->fetchFirstColumn();
-    }
-
     /**
      * Convert an array of sources into a string of sources separated by "/".
      *

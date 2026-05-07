@@ -2,6 +2,7 @@ CREATE TABLE `solr_core` (
     `id` INT AUTO_INCREMENT NOT NULL,
     `name` VARCHAR(190) NOT NULL,
     `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
+    `backup_maps` LONGTEXT DEFAULT NULL COMMENT '(DC2Type:json)',
     PRIMARY KEY(`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
 

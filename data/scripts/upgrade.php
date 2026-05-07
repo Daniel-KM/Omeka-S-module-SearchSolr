@@ -35,22 +35,37 @@ $messenger = $plugins->get('messenger');
 $siteSettings = $services->get('Omeka\Settings\Site');
 $entityManager = $services->get('Omeka\EntityManager');
 
-if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.79')) {
+if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.84')) {
     $message = new \Omeka\Stdlib\Message(
         $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
-        'Common', '3.4.79'
+        'Common', '3.4.84'
     );
     $messenger->addError($message);
-    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
+    throw new ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.57')) {
+$hasError = false;
+
+if (PHP_VERSION_ID < 80100) {
     $message = new PsrMessage(
-        $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.57']
+        'This version of module {module} requires a version of php ≥ {version}.', // @translate
+        ['module' => 'SearchSolr', 'version' => '8.1']
     );
     $messenger->addError($message);
-    throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
+    $hasError = true;
+}
+
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.61')) {
+    $message = new PsrMessage(
+        $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
+        ['module' => 'Advanced Search', 'version' => '3.4.61']
+    );
+    $messenger->addError($message);
+    $hasError = true;
+}
+
+if ($hasError) {
+    throw new ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
 
 if (version_compare($oldVersion, '3.5.15.2', '<')) {
@@ -122,7 +137,7 @@ if (version_compare($oldVersion, '3.5.16.3', '<')) {
             WHERE `source` LIKE "%item_set%";
             SQL;
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
     }
 
     $sql = <<<'SQL'
@@ -168,7 +183,7 @@ if (version_compare($oldVersion, '3.5.18.3', '<')) {
         SQL;
     try {
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
     }
 }
 
@@ -221,7 +236,7 @@ if (version_compare($oldVersion, '3.5.31.3', '<')) {
         SQL;
     try {
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
     }
 
     $moduleManager = $services->get('Omeka\ModuleManager');
@@ -766,7 +781,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
         SQL;
     try {
         $connection->executeStatement($sql);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         // Already added.
     }
 
@@ -806,7 +821,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
             if ($result) {
                 $updateds[$oldIndex] = $newIndex;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Nothing to do.
             $messenger->addError($e->getMessage());
         }
@@ -844,7 +859,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
     foreach ($aliasesFromSource as $source => $alias) {
         try {
             $connection->update('solr_map', ['alias' => $alias], ['source' => $source]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Nothing to do.
             $messenger->addError($e->getMessage());
         }
@@ -859,7 +874,7 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
     foreach ($aliasesFromFieldName as $fieldName => $alias) {
         try {
             $connection->update('solr_map', ['alias' => $alias], ['field_name' => $fieldName]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Nothing to do.
             $messenger->addError($e->getMessage());
         }
@@ -1176,8 +1191,8 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
             $suggesterSettings = [
                 'solr_suggester_name' => 'omeka_suggester',
                 'solr_fields' => ['_text_'],
-                'solr_lookup_impl' => 'AnalyzingInfixLookupFactory',
-                'solr_build_on_commit' => true,
+                'solr_lookup_implementation' => 'AnalyzingInfixLookupFactory',
+                'solr_skip_build_on_commit' => false,
             ];
 
             $sql = <<<'SQL'
@@ -1212,18 +1227,18 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
 
             $updatedConfigs = 0;
             foreach ($searchConfigs as $configId => $configSettings) {
-                $settings = json_decode($configSettings, true) ?: [];
+                $configData = json_decode($configSettings, true) ?: [];
                 // Check if suggester is not set or is empty/null.
-                $currentSuggester = $settings['q']['suggester'] ?? null;
+                $currentSuggester = $configData['q']['suggester'] ?? null;
                 if (empty($currentSuggester)) {
-                    $settings['q']['suggester'] = $suggesterId;
+                    $configData['q']['suggester'] = $suggesterId;
                     $sql = <<<'SQL'
                         UPDATE `search_config`
                         SET `settings` = ?
                         WHERE `id` = ?
                         SQL;
                     $connection->executeStatement($sql, [
-                        json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                        json_encode($configData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
                         $configId,
                     ]);
                     $updatedConfigs++;
@@ -1252,4 +1267,138 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
             $messenger->addWarning($message);
         }
     }
+}
+
+if (version_compare($oldVersion, '3.5.65', '<')) {
+    // Rename suggester settings:
+    // - "solr_lookup_impl" to "solr_lookup_implementation"
+    // - "solr_build_on_commit" to "solr_skip_build_on_commit" (inverted).
+    // Replace "_text_" (not stored, EdgeNGram) with "auto" (all stored fields)
+    // when the suggester is not used in any search config.
+
+    // Get suggester ids used in search configs.
+    $sql = <<<'SQL'
+        SELECT `id`, `settings` FROM `search_config`
+        SQL;
+    $usedSuggesterIds = [];
+    foreach ($connection->executeQuery($sql)->fetchAllAssociative() as $config) {
+        $configSettings = json_decode($config['settings'], true) ?: [];
+        $suggesterId = $configSettings['q']['suggester'] ?? null;
+        if ($suggesterId) {
+            $usedSuggesterIds[(int) $suggesterId] = (int) $config['id'];
+        }
+    }
+
+    $sql = <<<'SQL'
+        SELECT `id`, `settings` FROM `search_suggester`
+        WHERE `settings` LIKE '%solr_%'
+        SQL;
+    foreach ($connection->executeQuery($sql)->fetchAllAssociative() as $suggester) {
+        $suggesterData = json_decode($suggester['settings'], true) ?: [];
+        $updated = false;
+
+        if (isset($suggesterData['solr_lookup_impl'])) {
+            $suggesterData['solr_lookup_implementation'] = $suggesterData['solr_lookup_impl'];
+            unset($suggesterData['solr_lookup_impl']);
+            $updated = true;
+        }
+
+        if (isset($suggesterData['solr_build_on_commit'])) {
+            $suggesterData['solr_skip_build_on_commit'] = !$suggesterData['solr_build_on_commit'];
+            unset($suggesterData['solr_build_on_commit']);
+            $updated = true;
+        }
+
+        // Replace _text_ with stored fields.
+        $solrFields = $suggesterData['solr_fields'] ?? [];
+        if (in_array('_text_', $solrFields)) {
+            $id = (int) $suggester['id'];
+            if (isset($usedSuggesterIds[$id])) {
+                $messenger->addWarning(new PsrMessage(
+                    'Solr suggester #{suggester_id} uses "_text_" (not stored), which produces character-level suggestions. Update it to use stored fields (words). It is used in search config #{config_id}.', // @translate
+                    ['suggester_id' => $id, 'config_id' => $usedSuggesterIds[$id]]
+                ));
+            } else {
+                $suggesterData['solr_fields'] = ['auto'];
+                $suggesterData['solr_lookup_implementation'] = 'AnalyzingInfixLookupFactory';
+                $updated = true;
+                $messenger->addNotice(new PsrMessage(
+                    'Solr suggester #{suggester_id}: "_text_" replaced with "auto" (all stored fields). You should rebuild the suggester dictionary.', // @translate
+                    ['suggester_id' => $id]
+                ));
+            }
+        }
+
+        if ($updated) {
+            $connection->executeStatement(
+                'UPDATE `search_suggester` SET `settings` = ? WHERE `id` = ?',
+                [json_encode($suggesterData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $suggester['id']]
+            );
+        }
+    }
+}
+
+if (version_compare($oldVersion, '3.5.66', '<')) {
+    $messenger->addSuccess(new PsrMessage(
+        'The suggester now uses an optimized unified field "suggest_txt" by default. You can select it in the suggester settings.' // @translate
+    ));
+}
+
+if (version_compare($oldVersion, '3.5.68', '<')) {
+    // Check if any engine uses visibility = public.
+    $sql = 'SELECT id, name, settings FROM search_engine';
+    $engines = $connection->executeQuery($sql)->fetchAllAssociative();
+    $hasPublicEngine = false;
+    foreach ($engines as $engine) {
+        $engineSettings = json_decode($engine['settings'], true) ?: [];
+        if (($engineSettings['visibility'] ?? null) === 'public') {
+            $hasPublicEngine = true;
+            break;
+        }
+    }
+
+    if ($hasPublicEngine) {
+        $messenger->addWarning(new PsrMessage(
+            'The visibility filter for Solr maps now defaults to "follow engine setting" instead of "all". Since at least one search engine is configured as "public", maps without an explicit visibility filter will now exclude private values. To keep the previous behavior (index all values), use the new maintenance action "Set all maps to index all values" on the Solr core page, or set individual maps to "All values".' // @translate
+        ));
+
+        // Set all existing maps to "all" to preserve current behavior.
+        $sql = <<<'SQL'
+            UPDATE solr_map
+            SET settings = JSON_SET(
+                COALESCE(settings, '{}'),
+                '$.pool.filter_visibility', 'all'
+            )
+            WHERE settings IS NULL
+               OR JSON_EXTRACT(settings, '$.pool.filter_visibility') IS NULL
+               OR JSON_EXTRACT(settings, '$.pool.filter_visibility') = ''
+            SQL;
+        $connection->executeStatement($sql);
+
+        $messenger->addSuccess(new PsrMessage(
+            'All existing Solr maps have been set to "All values" to preserve the current indexing behavior. Use the maintenance action "Remove private values from maps" to switch to the secure default.' // @translate
+        ));
+    } else {
+        $messenger->addSuccess(new PsrMessage(
+            'The visibility filter for Solr maps now defaults to "follow engine setting". Since no engine is configured as "public", this does not change the current behavior.' // @translate
+        ));
+    }
+
+    $messenger->addSuccess(new PsrMessage(
+        'A new maintenance action "Sync maps from search configs" is available on each Solr core page. It automatically creates the Solr maps needed by your search configurations (facets, filters, sorts, suggesters, boosts, bounce links) and removes unused property maps. It is recommended to run it now. A reindex is required after sync.' // @translate
+    ));
+
+    $sql = <<<'SQL'
+        ALTER TABLE `solr_core`
+            ADD `backup_maps` LONGTEXT DEFAULT NULL COMMENT '(DC2Type:json)' AFTER `settings`
+        SQL;
+    try {
+        $connection->executeStatement($sql);
+    } catch (\Throwable $e) {
+        // Column already exists.
+    }
+
+    $messenger->addSuccess(new PsrMessage(
+        'The maintenance action "Sync maps from search configs" now stores a backup of the previous map configuration on each run. The last 3 snapshots are kept on each Solr core and can be restored from the core page.' // @translate
+    ));
 }

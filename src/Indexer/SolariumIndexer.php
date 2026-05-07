@@ -160,11 +160,11 @@ class SolariumIndexer extends AbstractIndexer
     protected $documentCount = 0;
 
     /**
-     * Hard commit every N documents.
+     * Hard commit every N documents for durability during bulk indexing.
      *
      * @var int
      */
-    protected $hardCommitThreshold = 2000;
+    protected $hardCommitThreshold = 10000;
 
     public function canIndex(string $resourceName): bool
     {
@@ -209,12 +209,71 @@ class SolariumIndexer extends AbstractIndexer
         }
 
         $client = $this->getClient();
-        $update = $client
-            ->createUpdate()
-            ->addDeleteQuery($query)
-            ->addCommit();
-        $client->update($update);
+
+        // Delete + commit may be slow on large indexes or when Solr is busy. On
+        // timeout, poll until completion.
+        try {
+            $update = $client->createUpdate()
+                ->addDeleteQuery($query)
+                ->addCommit();
+            $client->update($update);
+        } catch (Exception $e) {
+            if (!str_starts_with($e->getMessage(),
+                'Solr HTTP error: HTTP request failed')
+            ) {
+                throw $e;
+            }
+            $this->getLogger()->info(
+                'Solr clear is processing, waiting for completion…' // @translate
+            );
+            $this->waitForSolrCommit($client);
+        }
+
         return $this;
+    }
+
+    /**
+     * Poll Solr until a pending commit completes.
+     *
+     * After an HTTP timeout on a commit request, Solr is still processing. This
+     * method polls with ping until a subsequent commit succeeds, confirming
+     * that the heavy operation is done.
+     */
+    protected function waitForSolrCommit(
+        SolariumClient $client,
+        int $maxWait = 600
+    ): void {
+        $adapter = $client->getAdapter();
+        $previousTimeout = $adapter->getTimeout();
+        // Short timeout for polling requests.
+        $adapter->setTimeout(15);
+
+        try {
+            for ($waited = 0; $waited < $maxWait; $waited += 10) {
+                sleep(10);
+                try {
+                    // A successful commit means the previous heavy commit
+                    // finished and Solr is idle.
+                    $update = $client->createUpdate()
+                        ->addCommit();
+                    $client->update($update);
+                    $this->getLogger()->info(
+                        'Solr commit completed after ~{seconds} seconds of polling.', // @translate
+                        ['seconds' => $waited + 10]
+                    );
+                    return;
+                } catch (\Throwable $e) {
+                    // Still processing, continue polling.
+                }
+            }
+        } finally {
+            $adapter->setTimeout($previousTimeout);
+        }
+
+        $this->getLogger()->warn(
+            'Solr commit did not complete within {seconds} seconds. Check Solr admin.', // @translate
+            ['seconds' => $maxWait]
+        );
     }
 
     public function indexResource(AbstractResourceRepresentation $resource): IndexerInterface
@@ -270,34 +329,97 @@ class SolariumIndexer extends AbstractIndexer
             }
         }
 
-        // Use soft commit for performance, hard commit periodically.
+        // Flush buffer to send docs to Solr without committing. Commits are
+        // expensive (segment merge, searcher warming) especially with many
+        // fields. Only hard commit periodically for durability, and once at the
+        // end via commit().
         try {
-            $useHardCommit = $this->documentCount >= $this->hardCommitThreshold;
-            $this->buffer->commit(null, null, !$useHardCommit);
-            if ($useHardCommit) {
-                $this->documentCount = 0;
-            }
+            $this->buffer->flush();
         } catch (Exception $e) {
-            $this->solrError($e);
-            $this->buffer->clear();
-            $this->documentCount = 0;
+            $message = $e->getMessage();
+            if (str_starts_with($message,
+                'Solr HTTP error: HTTP request failed')
+            ) {
+                $savedDocs = $this->buffer->getDocuments();
+                $this->buffer->clear();
+                if ($savedDocs) {
+                    $this->getLogger()->warn(
+                        'Solr flush timed out for {count} documents. Retrying…', // @translate
+                        ['count' => count($savedDocs)]
+                    );
+                    sleep(5);
+                    try {
+                        $this->buffer->addDocuments($savedDocs);
+                        $this->buffer->flush();
+                    } catch (Exception $e2) {
+                        $this->getLogger()->err(
+                            'Solr retry failed for {count} documents. They may be missing from the index.', // @translate
+                            ['count' => count($savedDocs)]
+                        );
+                        $this->buffer->clear();
+                    }
+                }
+            } else {
+                $this->solrError($e);
+                $this->buffer->clear();
+            }
         }
+
+        // No periodic commit: Solr's transaction log ensures durability for
+        // flushed data. Commits are done only at the end via commit() to avoid
+        // costly segment merges during bulk indexing.
 
         return $this;
     }
 
     /**
      * Force a hard commit to Solr (call after indexing is complete).
+     *
+     * Uses a long timeout because commits can trigger expensive segment merges,
+     * especially with many fields.
      */
     public function commit(): IndexerInterface
     {
+        if (!$this->solariumClient) {
+            return $this;
+        }
+
+        // Flush any remaining buffered documents.
         if ($this->buffer) {
             try {
-                $this->buffer->commit();
-            } catch (Exception $e) {
+                $this->buffer->flush();
+            } catch (\Throwable $e) {
                 $this->solrError($e);
             }
+            $this->buffer->clear();
         }
+
+        // Send commit with extended timeout (10 min) to handle large segment
+        // merges.
+        $adapter = $this->solariumClient->getAdapter();
+        $previousTimeout = $adapter->getTimeout();
+        $adapter->setTimeout(600);
+
+        try {
+            $update = $this->solariumClient->createUpdate()
+                ->addCommit();
+            $this->solariumClient->update($update);
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            if (str_starts_with($message,
+                'Solr HTTP error: HTTP request failed')
+            ) {
+                $this->getLogger()->info(
+                    'Solr commit is processing, waiting for completion…' // @translate
+                );
+                $this->waitForSolrCommit($this->solariumClient);
+            } else {
+                $this->solrError($e);
+            }
+        } finally {
+            $adapter->setTimeout($previousTimeout);
+        }
+
         $this->documentCount = 0;
         return $this;
     }
@@ -351,6 +473,32 @@ class SolariumIndexer extends AbstractIndexer
         }
 
         $this->mainLocale = $services->get('Omeka\Settings')->get('locale');
+
+        // Check Solr field count against maxFields limit.
+        $fieldStatus = $this->getSolrCore()->fieldLimitStatus();
+        if ($fieldStatus) {
+            if ($fieldStatus['exceeded']) {
+                $this->getLogger()->err(
+                    'The Solr core has {numFields} fields, exceeding the configured limit of {maxFields}. Indexing is stopped. To fix, either reduce or group field maps, or increase "maxFields" in solrconfig.xml and restart Solr.', // @translate
+                    [
+                        'numFields' => $fieldStatus['numFields'],
+                        'maxFields' => $fieldStatus['maxFields'],
+                    ]
+                );
+                return null;
+            } elseif ($fieldStatus['maxFields']
+                && $fieldStatus['numFields'] > $fieldStatus['maxFields'] * 0.9
+            ) {
+                $this->getLogger()->warn(
+                    'The Solr core has {numFields} fields, approaching the configured limit of {maxFields} ({percentage}%). It is recommended either to reduce or to group field maps, or to increase "maxFields" in solrconfig.xml and restart Solr.', // @translate
+                    [
+                        'numFields' => $fieldStatus['numFields'],
+                        'maxFields' => $fieldStatus['maxFields'],
+                        'percentage' => round($fieldStatus['numFields'] / $fieldStatus['maxFields'] * 100),
+                    ]
+                );
+            }
+        }
 
         return $this;
     }
@@ -444,9 +592,9 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
-            // Check if the value is a single valued field already filled.
-            // Is a single field value the first one or the last one? Most of
-            // the time, the first one.
+            // Check if the value is a single valued field already filled. Is a
+            // single field value the first one or the last one? Most of the
+            // time, the first one.
             if (!empty($isSingleFieldFilled[$solrField])) {
                 continue;
             }
@@ -488,9 +636,8 @@ class SolariumIndexer extends AbstractIndexer
         $this->appendSupportedFields($resource, $document);
 
         // Remove the duplicates in the multiple indexes: this is generally an
-        // unintentional issue (or related to a drupal field).
-        // It's recommended to use Solr boost mechanisms to boost a property or
-        // a document.
+        // unintentional issue (or related to a drupal field). It's recommended
+        // to use Solr boost mechanisms to boost a property or a document.
         foreach ($document->getFields() as $field => $values) {
             if (empty($this->isSingleValuedFields[$field]) && is_array($values) && count($values) > 1) {
                 $deduplicatedValues = array_unique($values);
@@ -599,54 +746,35 @@ class SolariumIndexer extends AbstractIndexer
     /**
      * Prepare the commit message error for log.
      *
-     * To get a better message: get the data ($request->getRawData()) and post it
-     * in Solr admin board.
+     * To get a better message: get the data ($request->getRawData()) and post
+     * it in Solr admin board.
      * @see \Solarium\Core\Client\Adapter\Http::createContext()
      */
     protected function solrError(
         Exception $exception,
         ?AbstractResourceRepresentation $resource = null,
-        ?SolariumInputDocument $document = null,
-        bool $isRecall = false
+        ?SolariumInputDocument $document = null
     ): self {
-        $error = method_exists($exception, 'getBody') ? json_decode((string) $exception->getBody(), true) : null;
+        $error = method_exists($exception, 'getBody')
+            ? json_decode((string) $exception->getBody(), true)
+            : null;
 
         $message = is_array($error) && isset($error['error']['msg'])
             ? $error['error']['msg']
             : $exception->getMessage();
 
-        if ($message === 'Solr HTTP error: HTTP request failed') {
-            // The exception can occur before or after buffer->clear().
-            if (!$isRecall && $this->buffer->getBuffer()) {
-                // Most of the time, the issue is a config issue with a limit.
-                sleep(30);
-                try {
-                    $this->buffer->commit();
-                } catch (Exception $e) {
-                    $this->solrError($e, null, null, true);
-                }
-            } else {
-                $firstDocument = $this->buffer->getBuffer();
-                $firstDocument = $firstDocument ? reset($firstDocument) : null;
-                if ($firstDocument) {
-                    $this->getLogger()->err(
-                        'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue. First document in the buffer: {document_id}.', // @translate
-                        ['document_id' => $firstDocument->offsetGet('id')]
-                    );
-                } else {
-                    $this->getLogger()->err(
-                        'Solr HTTP error: HTTP request failed due to network, limit of requests, or certificate issue.' // @translate
-                    );
-                }
-                $this->buffer->clear();
-            }
+        if (str_starts_with($message,
+            'Solr HTTP error: HTTP request failed')
+        ) {
+            $this->getLogger()->err(
+                'Solr HTTP error: HTTP request failed due to network, timeout, or certificate issue.' // @translate
+            );
         } elseif ($message === 'Solr HTTP error: Bad Request (400)') {
-            // TODO Retry the request here, because \Solarium\Core\Client\Adapter\Http::createContext()
             /** @see \Solarium\Core\Client\Adapter\Http::createContext() */
             if ($resource) {
                 $this->getLogger()->err(
                     'Indexing of {resource_name} #{id} failed: Invalid document (wrong field type or missing required field).', // @translate
-                    ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id(), 'message' => $message]
+                    ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id()]
                 );
             } else {
                 $this->getLogger()->err(
@@ -658,14 +786,6 @@ class SolariumIndexer extends AbstractIndexer
                 'Indexing of {resource_name} #{id} failed: {message}', // @translate
                 ['resource_name' => $this->easyMeta->resourceName(get_class($resource)), 'id' => $resource->id(), 'message' => $message]
             );
-        } elseif (!$isRecall && $this->buffer->getBuffer()) {
-            // Most of the time, the issue is a config issue with a limit.
-            sleep(30);
-            try {
-                $this->buffer->commit();
-            } catch (Exception $e) {
-                $this->solrError($e, null, null, true);
-            }
         } else {
             $this->getLogger()->err(
                 'Indexing of the batch failed: {message}', // @translate
@@ -739,8 +859,8 @@ class SolariumIndexer extends AbstractIndexer
      * multiple values to a single valued field.
      *
      * Because the multivalued quality is defined by the schema, it is not
-     * related to the resource name, so a single list is created.
-     * It avoids complexity with generic/resources/specific resources names too.
+     * related to the resource name, so a single list is created. It avoids
+     * complexity with generic/resources/specific resources names too.
      *
      * @todo Move the single valued check inside Solr core settings to do it one time.
      */
@@ -784,7 +904,8 @@ class SolariumIndexer extends AbstractIndexer
                     $value = $this->serverId;
                     break;
                 case 'timestamp':
-                    // If this is It should be the same timestamp for all documents that are being indexed.
+                    // If this is It should be the same timestamp for all
+                    // documents that are being indexed.
                     $value = gmdate('Y-m-d\TH:i:s\Z');
                     break;
                 case 'boost_document':
@@ -862,7 +983,8 @@ class SolariumIndexer extends AbstractIndexer
 
         // In Drupal, the same value is copied in each language field for sort…
         // @link https://git.drupalcode.org/project/search_api_solr/-/blob/4.x/src/Plugin/search_api/backend/SearchApiSolrBackend.php#L1130-1172
-        // For example, field is "ss_title", so sort field is "sort_X3b_fr_title".
+        // For example, field is "ss_title", so sort field is
+        // "sort_X3b_fr_title".
         // This is slighly different from Drupal process.
         $prefix = $this->vars['solr_maps'][$resourceName][$solrField]['prefix'];
         $matches = [];
@@ -927,7 +1049,7 @@ class SolariumIndexer extends AbstractIndexer
 
         $query['id'] = array_unique(array_merge($query['id'] ?? [], $resourceIds));
 
-        // TODO Search api is currently unavailable for resources (wait v4.1)
+        // TODO Search api is currently unavailable for resources (wait v4.1).
         // For now, use the first resource.
         $first = reset($resources);
         $resourceName = $first->resourceName();
@@ -960,11 +1082,13 @@ class SolariumIndexer extends AbstractIndexer
             $this->solariumClient = $this->getSolrCore()->solariumClient();
             // Use BufferedAdd plugin to reduce memory issue.
             $this->solariumClient->getPlugin('bufferedadd');
-            // Indexing is heavier than querying, so use a longer timeout.
-            $adapter = $this->solariumClient->getAdapter();
-            if ($adapter->getTimeout() < 60) {
-                $adapter->setTimeout(60);
-            }
+        }
+        // Indexing is heavier than querying, so use a longer timeout. Check
+        // every call: getSolrCore() may have initialized the client with a
+        // shorter timeout.
+        $adapter = $this->solariumClient->getAdapter();
+        if ($adapter->getTimeout() < 120) {
+            $adapter->setTimeout(120);
         }
         return $this->solariumClient;
     }
@@ -976,8 +1100,16 @@ class SolariumIndexer extends AbstractIndexer
         string $resourceName
     ): \SearchSolr\ValueExtractor\ValueExtractorInterface {
         if (!isset($this->valueExtractorCache[$resourceName])) {
-            $this->valueExtractorCache[$resourceName] = $this->valueExtractorManager
+            $extractor = $this->valueExtractorManager
                 ->get($resourceName);
+            // Propagate the engine's visibility setting so that maps with empty
+            // filter_visibility inherit the engine default.
+            if (method_exists($extractor, 'setEngineVisibility')) {
+                $extractor->setEngineVisibility(
+                    $this->searchEngine->setting('visibility')
+                );
+            }
+            $this->valueExtractorCache[$resourceName] = $extractor;
         }
         return $this->valueExtractorCache[$resourceName];
     }

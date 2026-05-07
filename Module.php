@@ -31,7 +31,9 @@
 namespace SearchSolr;
 
 if (!class_exists('Common\TraitModule', false)) {
-    require_once dirname(__DIR__) . '/Common/TraitModule.php';
+    require_once file_exists(dirname(__DIR__) . '/Common/src/TraitModule.php')
+        ? dirname(__DIR__) . '/Common/src/TraitModule.php'
+        : dirname(__DIR__) . '/Common/TraitModule.php';
 }
 
 use AdvancedSearch\Api\Representation\SearchConfigRepresentation;
@@ -61,7 +63,7 @@ class Module extends AbstractModule
 
     protected $dependencies = [
         'AdvancedSearch',
-     ];
+    ];
 
     public function init(ModuleManager $moduleManager): void
     {
@@ -92,13 +94,6 @@ class Module extends AbstractModule
     {
         parent::onBootstrap($event);
 
-        // Manage the dependency upon Search, in particular when upgrading.
-        // Once disabled, this current method and other ones are no more called.
-        if (!$this->isModuleActive('AdvancedSearch')) {
-            $this->disableModule(__NAMESPACE__);
-            return;
-        }
-
         /** @var \Omeka\Permissions\Acl $acl */
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $acl
@@ -112,31 +107,42 @@ class Module extends AbstractModule
     protected function preInstall(): void
     {
         $services = $this->getServiceLocator();
-        $translate = $services->get('ControllerPluginManager')->get('translate');
+        $translator = $services->get('MvcTranslator');
         $translator = $services->get('MvcTranslator');
 
-        if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.79')) {
+        if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActiveVersion('Common', '3.4.84')) {
             $message = new \Omeka\Stdlib\Message(
-                $translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
-                'Common', '3.4.79'
+                $translator->translate('The module %1$s should be upgraded to version %2$s or later.'), // @translate
+                'Common', '3.4.84'
             );
             throw new \Omeka\Module\Exception\ModuleCannotInstallException((string) $message);
         }
 
-        if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
-            $message = new PsrMessage(
-                'The composer library "{library}" is not installed. See readme.', // @translate
-                ['library' => 'Solarium']
-            );
-            throw new ModuleCannotInstallException((string) $message->setTranslator($translator));
+        $errors = [];
+
+        if (PHP_VERSION_ID < 80100) {
+            $errors[] = (string) (new PsrMessage(
+                'This version of module {module} requires a version of php ≥ {version}.', // @translate
+                ['module' => 'SearchSolr', 'version' => '8.1']
+            ))->setTranslator($translator);
         }
 
-        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.57')) {
-            $message = new PsrMessage(
-                $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-                ['module' => 'Advanced Search', 'version' => '3.4.57']
-            );
-            throw new ModuleCannotInstallException((string) $message);
+        if (!file_exists(__DIR__ . '/vendor/solarium/solarium/src/Client.php')) {
+            $errors[] = (string) (new PsrMessage(
+                'The composer library "{library}" is not installed. See readme.', // @translate
+                ['library' => 'Solarium']
+            ))->setTranslator($translator);
+        }
+
+        if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.61')) {
+            $errors[] = (string) (new PsrMessage(
+                'This module requires module "{module}" version "{version}" or greater.', // @translate
+                ['module' => 'Advanced Search', 'version' => '3.4.61']
+            ))->setTranslator($translator);
+        }
+
+        if ($errors) {
+            throw new ModuleCannotInstallException(implode("\n", $errors));
         }
     }
 
@@ -182,6 +188,13 @@ class Module extends AbstractModule
             \AdvancedSearch\Controller\Admin\SearchSuggesterController::class,
             'advancedsearch.suggester.save',
             [$this, 'handleSuggesterSave']
+        );
+
+        // Handle suggester reindex for Solr engines.
+        $sharedEventManager->attach(
+            \AdvancedSearch\Controller\Admin\SearchSuggesterController::class,
+            'advancedsearch.suggester.index',
+            [$this, 'handleSuggesterIndex']
         );
 
         $sharedEventManager->attach(
@@ -266,13 +279,18 @@ class Module extends AbstractModule
         $fieldset = $event->getParam('fieldset');
 
         $solrCore = $engineAdapter->getSolrCore();
-        $solrFields = $this->getSolrFieldsForSuggester($solrCore);
+        $indexFields = $this->getSolrFieldsForSuggester($solrCore);
 
-        // Add _text_ as first option (catchall copy field).
-        $fieldOptions = [
-            '_text_' => 'All fields (_text_ copy field)', // @translate
+        // Build optgroups: recommended single indexes first,
+        // then individual indexes to group into one suggester.
+        $recommended = [
+            'suggest_txt' => 'suggest_txt (unified field, recommended)', // @translate
+            'auto' => 'All text and string fields', // @translate
         ];
-        $fieldOptions += $solrFields;
+        $fieldOptions = [
+            'Recommended' => ['label' => 'Recommended', 'options' => $recommended], // @translate
+            'Individual fields' => ['label' => 'Individual fields', 'options' => $indexFields], // @translate
+        ];
 
         $fieldset
             ->add([
@@ -292,9 +310,8 @@ class Module extends AbstractModule
                 'type' => \Common\Form\Element\OptionalSelect::class,
                 'options' => [
                     'label' => 'Solr fields for suggestions', // @translate
-                    'info' => 'Select "All fields" to use the _text_ copy field (must be created first), or choose specific indexed fields. Multiple fields will create multiple suggesters that are queried together.', // @translate
+                    'info' => 'The unified field "suggest_txt" is the most efficient option: single suggester, short-value fields only. "All fields" creates one suggester per text/string field (including long values). Individual indexes can be grouped.', // @translate
                     'value_options' => $fieldOptions,
-                    'empty_option' => '',
                 ],
                 'attributes' => [
                     'id' => 'solr_fields',
@@ -304,11 +321,10 @@ class Module extends AbstractModule
                 ],
             ])
             ->add([
-                'name' => 'solr_lookup_impl',
+                'name' => 'solr_lookup_implementation',
                 'type' => \Common\Form\Element\OptionalSelect::class,
                 'options' => [
-                    'label' => 'Lookup implementation', // @translate
-                    'info' => 'Algorithm used for suggestions. AnalyzingInfixLookup finds matches anywhere in the text. BlendedInfixLookup weights prefix matches higher.', // @translate
+                    'label' => 'Algorithm for suggestions', // @translate
                     'value_options' => [
                         'AnalyzingInfixLookupFactory' => 'AnalyzingInfixLookup (matches anywhere)', // @translate
                         'BlendedInfixLookupFactory' => 'BlendedInfixLookup (prefix weighted)', // @translate
@@ -317,30 +333,33 @@ class Module extends AbstractModule
                     ],
                 ],
                 'attributes' => [
-                    'id' => 'solr_lookup_impl',
+                    'id' => 'solr_lookup_implementation',
                     'value' => 'AnalyzingInfixLookupFactory',
                 ],
             ])
             ->add([
-                'name' => 'solr_build_on_commit',
+                'name' => 'solr_skip_build_on_commit',
                 'type' => \Laminas\Form\Element\Checkbox::class,
                 'options' => [
-                    'label' => 'Build on commit', // @translate
-                    'info' => 'Automatically rebuild the suggester dictionary when documents are committed.', // @translate
+                    'label' => 'Skip automatic reindex on resource save', // @translate
+                    'info' => 'By default, the suggester dictionary is rebuilt each time documents are committed. Check to disable this on very large indexes.', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'solr_build_on_commit',
-                    'value' => true,
+                    'id' => 'solr_skip_build_on_commit',
                 ],
             ])
         ;
 
-        // Mark the form as handled so AdvancedSearch doesn't show the "no settings" message.
+        // Mark the form as handled so AdvancedSearch doesn't show
+        // the "no settings" message.
         $event->setParam('handled', true);
     }
 
     /**
-     * Handle suggester save for Solr engines - create Solr suggester via Config API.
+     * Handle suggester save/reindex for Solr engines.
+     *
+     * Dispatches a background job to create Solr suggesters and build
+     * dictionaries. Field resolution ("auto") is done inside the job.
      */
     public function handleSuggesterSave(Event $event): void
     {
@@ -355,117 +374,114 @@ class Module extends AbstractModule
         /** @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger */
         $messenger = $event->getParam('messenger');
 
-        $settings = $suggester->settings();
+        $services = $this->getServiceLocator();
 
-        // Handle both old single field (solr_field) and new multi-field (solr_fields).
-        $solrFields = $settings['solr_fields'] ?? [];
-        if (empty($solrFields) && !empty($settings['solr_field'])) {
-            // Backward compatibility with single field.
-            $solrFields = [$settings['solr_field']];
-        }
-        if (empty($solrFields)) {
-            $messenger->addWarning(new PsrMessage(
-                'No Solr fields configured for suggestions.' // @translate
-            ));
+        // Skip if a suggester build job is already running.
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $connection = $services->get('Omeka\Connection');
+        $runningJob = $connection->fetchOne(
+            'SELECT id FROM job WHERE class = ? AND status IN (?, ?)',
+            [
+                \SearchSolr\Job\CreateSolrSuggesters::class,
+                \Omeka\Entity\Job::STATUS_STARTING,
+                \Omeka\Entity\Job::STATUS_IN_PROGRESS,
+            ]
+        );
+        if ($runningJob) {
+            $messenger->addWarning(
+                'A suggester build job is already running (job #{job_id}). Skipping.' // @translate
+            );
             return;
         }
 
-        // If _text_ is selected, use only _text_ (it already contains all fields).
-        if (in_array('_text_', $solrFields)) {
-            $solrFields = ['_text_'];
-        }
+        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+        $job = $dispatcher->dispatch(\SearchSolr\Job\CreateSolrSuggesters::class, [
+            'search_suggester_id' => $suggester->id(),
+        ]);
 
-        $solrCore = $engineAdapter->getSolrCore();
-        if (!$solrCore) {
-            $messenger->addError(new PsrMessage(
-                'Solr core not found.' // @translate
-            ));
-            return;
-        }
-
-        // Generate base suggester name if not provided.
-        $baseSuggesterName = $settings['solr_suggester_name'] ?? '';
-        if (empty($baseSuggesterName)) {
-            // Create a safe name from the suggester name.
-            $baseSuggesterName = 'omeka_' . preg_replace('/[^a-z0-9_]/i', '_', strtolower($suggester->name()));
-        }
-
-        $options = [
-            'lookupImpl' => $settings['solr_lookup_impl'] ?? 'AnalyzingInfixLookupFactory',
-            'buildOnCommit' => !empty($settings['solr_build_on_commit']),
-        ];
-
-        $createdSuggesters = [];
-        foreach ($solrFields as $solrField) {
-            // For multiple fields, append field name to suggester name.
-            $suggesterName = count($solrFields) === 1
-                ? $baseSuggesterName
-                : $baseSuggesterName . '_' . preg_replace('/[^a-z0-9_]/i', '_', $solrField);
-
-            // Check if suggester already exists.
-            if ($solrCore->hasSuggester($suggesterName)) {
-                $messenger->addNotice(new PsrMessage(
-                    'Solr suggester "{name}" already exists.', // @translate
-                    ['name' => $suggesterName]
-                ));
-                $createdSuggesters[] = $suggesterName;
-                continue;
-            }
-
-            // Create the suggester.
-            $result = $solrCore->createSuggester($suggesterName, $solrField, $options);
-            if ($result === true) {
-                $messenger->addSuccess(new PsrMessage(
-                    'Solr suggester "{name}" created on field "{field}".', // @translate
-                    ['name' => $suggesterName, 'field' => $solrField]
-                ));
-                $createdSuggesters[] = $suggesterName;
-
-                // Build the suggester dictionary.
-                if ($solrCore->buildSuggester($suggesterName)) {
-                    $messenger->addSuccess(new PsrMessage(
-                        'Suggester dictionary for "{name}" built successfully.', // @translate
-                        ['name' => $suggesterName]
-                    ));
-                }
-            } else {
-                $messenger->addError(new PsrMessage(
-                    'Failed to create Solr suggester "{name}": {error}', // @translate
-                    ['name' => $suggesterName, 'error' => $result]
-                ));
-            }
-        }
-
-        // Store the created suggester names for querying.
-        // Note: This info is stored in the event for potential use by other handlers,
-        // but the actual suggester names are derived from settings at query time.
-        if ($createdSuggesters) {
-            $event->setParam('solr_suggester_names', $createdSuggesters);
-        }
+        $urlHelper = $services->get('ViewHelperManager')->get('url');
+        $message = new PsrMessage(
+            'Processing indexation of Solr suggestions in background (job {link_job}#{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+            [
+                'link_job' => sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'id' => $job->getId()]))),
+                'job_id' => $job->getId(),
+                'link_end' => '</a>',
+                'link_log' => class_exists('Log\Module', false)
+                    ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
+                    : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
+            ]
+        );
+        $message->setEscapeHtml(false);
+        $messenger->addSuccess($message);
     }
 
     /**
-     * Get Solr fields suitable for suggestions.
+     * Handle suggester reindex for Solr engines.
      */
-    protected function getSolrFieldsForSuggester(?Api\Representation\SolrCoreRepresentation $solrCore): array
+    public function handleSuggesterIndex(Event $event): void
     {
+        $this->handleSuggesterSave($event);
+    }
+
+    /**
+     * Get stored Solr fields suitable for suggestions.
+     *
+     * Only stored fields with human-readable values are returned:
+     * - `*_txt` (text_general, stored): full text, word-level matching
+     * - `*_ss` (strings, stored): exact values (only if no _txt exists
+     *   for the same property)
+     * - `*_s` (string, stored): idem
+     * Fields like `_text_` (not stored) or `*_str` (not stored) are excluded.
+     */
+    protected function getSolrFieldsForSuggester(
+        ?Api\Representation\SolrCoreRepresentation $solrCore,
+        bool $deduplicate = false
+    ): array {
         if (!$solrCore) {
             return [];
         }
 
-        $fields = [];
+        $allowedSuffixes = ['_txt', '_ss', '_s'];
         $schema = $solrCore->schema();
 
+        // Collect all matching stored fields.
+        $allFields = [];
+        $txtPrefixes = [];
         foreach ($solrCore->mapsOrderedByStructure() as $map) {
             $fieldName = $map->fieldName();
-            $schemaField = $schema->getField($fieldName);
-            if (!$schemaField) {
+            foreach ($allowedSuffixes as $suffix) {
+                if (substr($fieldName, -strlen($suffix)) === $suffix) {
+                    if (!$schema->getField($fieldName)) {
+                        break;
+                    }
+                    $prefix = substr($fieldName, 0, -strlen($suffix));
+                    $allFields[] = [
+                        'name' => $fieldName,
+                        'suffix' => $suffix,
+                        'prefix' => $prefix,
+                        'label' => $map->setting('label', ''),
+                    ];
+                    if ($suffix === '_txt') {
+                        $txtPrefixes[$prefix] = true;
+                    }
+                    break;
+                }
+            }
+        }
+
+        // When deduplicating, skip _ss/_s when _txt exists for the same
+        // property prefix (used for "auto" resolution, not for the form).
+        $fields = [];
+        foreach ($allFields as $field) {
+            if ($deduplicate
+                && $field['suffix'] !== '_txt'
+                && isset($txtPrefixes[$field['prefix']])
+            ) {
                 continue;
             }
-            $fieldLabel = $map->setting('label', '');
-            $fields[$fieldName] = $fieldLabel
-                ? sprintf('%s (%s)', $fieldLabel, $fieldName)
-                : $fieldName;
+            $fields[$field['name']] = $field['label']
+                ? sprintf('%s (%s)', $field['label'], $field['name'])
+                : $field['name'];
         }
 
         return $fields;
@@ -696,7 +712,7 @@ class Module extends AbstractModule
         $api = $services->get('Omeka\ApiManager');
         try {
             return $api->read('search_configs', [is_numeric($searchConfig) ? 'id' : 'slug' => $searchConfig])->getContent();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return null;
         }
     }
@@ -786,7 +802,8 @@ class Module extends AbstractModule
             return;
         }
 
-        // Set the default server id, used in some cases (shared core with Drupal).
+        // Set the default server id, used in some cases (shared
+        // core with Drupal).
         $settings = $services->get('Omeka\Settings');
         $serverId = strtolower(substr(strtr(base64_encode(random_bytes(128)), ['+' => '', '/' => '', '=' => '']), 0, 6));
         $settings->set('searchsolr_server_id', $serverId);
@@ -824,7 +841,8 @@ class Module extends AbstractModule
 
         $message = new \Omeka\Stdlib\Message(
             'The default core can be configured in the %1$ssearch manager%2$s.', // @translate
-            // Don't use the url helper, the route is not available during install.
+            // Don't use the url helper, the route is not available
+            // during install.
             sprintf('<a href="%s">', $urlHelper('admin') . '/search-manager/solr/core/' . $solrCoreId . '/edit'),
             '</a>'
         );

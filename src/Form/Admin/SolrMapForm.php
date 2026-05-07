@@ -82,7 +82,7 @@ class SolrMapForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'o:resource_name',
-                    'value' => 'items',
+                    'value' => $this->getOption('resource_name') ?: 'items',
                     'required' => true,
                 ],
             ])
@@ -248,11 +248,12 @@ class SolrMapForm extends Form
                 'name' => 'filter_visibility',
                 'type' => Element\Radio::class,
                 'options' => [
-                    'label' => 'Only visibility', // @translate
+                    'label' => 'Values visibility', // @translate
                     'value_options' => [
-                        '' => 'All', // @translate
-                        'public' => 'Public', // @translate
-                        'private' => 'Private', // @translate
+                        '' => 'Follow engine setting (recommended)', // @translate
+                        'all' => 'All values (override engine)', // @translate
+                        'public' => 'Public only', // @translate
+                        'private' => 'Private only', // @translate
                     ],
                 ],
                 'attributes' => [
@@ -393,6 +394,11 @@ class SolrMapForm extends Form
                         'max_length' => 'Max length', // @translate
                         'integer' => 'Number', // @translate
                         'year' => 'Year', // @translate
+                        'year_month' => 'Year-month (YYYYMM)', // @translate
+                        'decade' => 'Decade (round to 10)', // @translate
+                        'century' => 'Century (round to 100)', // @translate
+                        'millennium' => 'Millennium (round to 1000)', // @translate
+                        'truncate' => 'Truncate at separator', // @translate
                         'table' => 'Map value to a code or code to a value (module Table)', // @translate
                         // Table may be first post normalization or finalization too.
                         // TODO Allow to specify order of normalizations.
@@ -416,6 +422,20 @@ class SolrMapForm extends Form
                     'id' => 'max_length',
                     // Setting for normalization "max_length" only.
                     'data-normalization' => 'max_length',
+                ],
+            ])
+            ->add([
+                'name' => 'truncate_at',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Truncate at separators', // @translate
+                    'info' => 'List of separators, pipe-separated. The value is truncated at the first occurrence. Example: " (| - " truncates before " (" or " - ".', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'truncate_at',
+                    'required' => false,
+                    'placeholder' => ' (| - ',
+                    'data-normalization' => 'truncate',
                 ],
             ])
 
@@ -618,6 +638,10 @@ class SolrMapForm extends Form
             ])
             ->add([
                 'name' => 'max_length',
+                'required' => false,
+            ])
+            ->add([
+                'name' => 'truncate_at',
                 'required' => false,
             ])
             ->add([

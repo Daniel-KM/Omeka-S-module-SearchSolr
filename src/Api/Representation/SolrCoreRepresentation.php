@@ -94,6 +94,11 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $this->resource->getSettings();
     }
 
+    public function backupMaps(): ?array
+    {
+        return $this->resource->getBackupMaps();
+    }
+
     /**
      * @param string $name
      * @param mixed $default
@@ -255,7 +260,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             );
             $logger->err($message->getMessage(), $message->getContext());
             return $returnMessage ? $e->getMessage() : false;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $message = new PsrMessage(
                 'Solr core #{solr_core_id}: {message}', // @translate
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
@@ -275,7 +280,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             );
             $logger->err($message->getMessage(), $message->getContext());
             return $returnMessage ? $message->setTranslator($translator) : false;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $message = new PsrMessage(
                 'Solr core #{solr_core_id}: {message}', // @translate
                 ['solr_core_id' => $this->id(), 'message' => $e->getMessage()]
@@ -767,6 +772,10 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
 
     /**
      * Check if all required maps are managed by the core.
+     *
+     * List of fields, adapted:
+     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::missingRequiredMaps()
+     * @see \SearchSolr\Job\ReduceSolrFields::perform()
      */
     public function missingRequiredMaps(): ?array
     {
@@ -847,116 +856,431 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
-     * Create a suggester in Solr via Config API.
+     * Create or update a single Solr SuggestComponent with multiple suggesters.
      *
-     * @param string $suggesterName Name for the suggester.
-     * @param string $field Solr field to use for suggestions.
-     * @param array $options Additional options.
+     * Solr requires all suggesters to live in one searchComponent so that the
+     * `suggest.dictionary` parameter can reach any of them.
+     * Furthermore, creating separate components per field slows the start of
+     * solr because all fields should be rebuilt.
+     *
+     * @param array $suggesters List of suggester definitions, each with keys:
+     *   - name: suggester/dictionary name
+     *   - field: Solr field name
+     *   - lookupImpl: (optional) defaults to AnalyzingInfixLookupFactory
+     *   - suggestAnalyzerFieldType: (optional) defaults to text_general
+     *   - buildOnCommit: (optional) defaults to "false"
+     * @param string $componentName Name of the single searchComponent.
      * @return bool|string True on success, error message on failure.
      */
-    public function createSuggester(string $suggesterName, string $field, array $options = [])
-    {
+    public function updateSuggestComponent(
+        array $suggesters,
+        string $componentName = 'omeka_suggest'
+    ) {
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
-
         $configUrl = $this->clientUrl() . '/config';
 
-        // Default options.
-        $lookupImpl = $options['lookupImpl'] ?? 'AnalyzingInfixLookupFactory';
-        $dictionaryImpl = $options['dictionaryImpl'] ?? 'DocumentDictionaryFactory';
-        $analyzerFieldType = $options['suggestAnalyzerFieldType'] ?? 'text_general';
+        // Normalize each suggester definition.
+        $suggesterDefs = [];
+        foreach ($suggesters as $suggester) {
+            $name = $suggester['name'];
+            $suggesterDefs[] = [
+                'name' => $name,
+                'lookupImpl' => $suggester['lookupImpl']
+                    ?? 'AnalyzingInfixLookupFactory',
+                'field' => $suggester['field'],
+                'suggestAnalyzerFieldType' => $suggester['suggestAnalyzerFieldType']
+                    ?? 'text_suggest',
+                // Solr Config API requires booleans as strings.
+                'buildOnCommit' => !empty($suggester['buildOnCommit'])
+                    ? 'true' : 'false',
+            ];
+        }
 
-        // 1. Add the searchComponent.
-        $componentPayload = json_encode([
-            'add-searchcomponent' => [
-                'name' => $suggesterName,
-                'class' => 'solr.SuggestComponent',
-                'suggester' => [
-                    'name' => $suggesterName,
-                    'lookupImpl' => $lookupImpl,
-                    'dictionaryImpl' => $dictionaryImpl,
-                    'field' => $field,
-                    'suggestAnalyzerFieldType' => $analyzerFieldType,
-                    'buildOnCommit' => true,
-                ],
-            ],
+        $component = [
+            'name' => $componentName,
+            'class' => 'solr.SuggestComponent',
+            'suggester' => count($suggesterDefs) === 1
+                ? reset($suggesterDefs)
+                : $suggesterDefs,
+        ];
+
+        // Ensure the text_suggest field type exists in schema.
+        if (!$this->ensureSuggestFieldType()) {
+            $logger->err(
+                'SearchSolr: Failed to create text_suggest field type.' // @translate
+            );
+            return 'Failed to create text_suggest field type';
+        }
+
+        // Delete old suggest components from the overlay.
+        $this->deleteOverlaySuggestComponents($componentName);
+
+        // Reload core to release old IndexWriter locks held by
+        // AnalyzingInfixSuggesters on the default directory.
+        $this->reloadCore();
+        if (!$this->waitForCoreReady()) {
+            $logger->warn(
+                'SearchSolr: Core not ready after reload, continuing anyway.' // @translate
+            );
+        }
+
+        // Create the component fresh.
+        $payload = json_encode([
+            'add-searchcomponent' => $component,
         ]);
-
-        $result = $this->postToSolrConfig($configUrl, $componentPayload);
+        $result = $this->postToSolrConfig($configUrl, $payload);
         if ($result !== true) {
-            $logger->err('SearchSolr: Failed to create suggester component: ' . $result);
+            $logger->err(
+                'SearchSolr: Failed to create suggest component: {error}', // @translate
+                ['error' => is_string($result) ? $result : 'unknown']
+            );
             return $result;
         }
 
-        // 2. Add the request handler.
-        $handlerPayload = json_encode([
-            'add-requesthandler' => [
-                'name' => '/suggest',
-                'class' => 'solr.SearchHandler',
-                'startup' => 'lazy',
-                'defaults' => [
-                    'suggest' => true,
-                    'suggest.count' => 10,
-                    'suggest.dictionary' => $suggesterName,
-                ],
-                'components' => [$suggesterName],
-            ],
-        ]);
-
-        $result = $this->postToSolrConfig($configUrl, $handlerPayload);
-        if ($result !== true) {
-            // Try to update existing handler instead.
-            $handlerPayload = json_encode([
-                'update-requesthandler' => [
-                    'name' => '/suggest',
-                    'class' => 'solr.SearchHandler',
-                    'startup' => 'lazy',
-                    'defaults' => [
-                        'suggest' => true,
-                        'suggest.count' => 10,
-                        'suggest.dictionary' => $suggesterName,
-                    ],
-                    'components' => [$suggesterName],
-                ],
-            ]);
-            $result = $this->postToSolrConfig($configUrl, $handlerPayload);
-            if ($result !== true) {
-                $logger->warn('SearchSolr: Failed to create/update suggest handler: ' . $result);
-                // Not a fatal error, component was created.
-            }
+        if (!$this->waitForCoreReady()) {
+            $logger->warn(
+                'SearchSolr: Core not ready after creating component.' // @translate
+            );
         }
-
-        $logger->info('SearchSolr: Created suggester "{name}" on field "{field}".', [
-            'name' => $suggesterName,
-            'field' => $field,
-        ]);
 
         return true;
     }
 
     /**
-     * Build/rebuild the suggester dictionary.
+     * Delete all suggest-related searchComponents from the config overlay.
+     *
+     * Use a single http request with duplicate json keys (Solr's Noggit parser
+     * supports this).
      */
-    public function buildSuggester(string $suggesterName): bool
+    protected function deleteOverlaySuggestComponents(
+        string $currentComponentName
+    ): void {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $configUrl = $this->clientUrl() . '/config';
+
+        // Read only the overlay to avoid trying to delete
+        // components defined in solrconfig.xml.
+        $overlay = $this->getSolrConfigOverlay();
+        $components = $overlay['searchComponent'] ?? [];
+        $toDelete = [];
+        foreach ($components as $name => $comp) {
+            $class = $comp['class'] ?? '';
+            if ($class === 'solr.SuggestComponent') {
+                $toDelete[] = $name;
+            }
+        }
+
+        if (empty($toDelete)) {
+            return;
+        }
+
+        $logger->info(
+            'SearchSolr: Deleting {count} old suggest components.', // @translate
+            ['count' => count($toDelete)]
+        );
+
+        $parts = [];
+        foreach ($toDelete as $name) {
+            $parts[] = '"delete-searchcomponent":'
+                . json_encode($name);
+        }
+        $payload = '{' . implode(',', $parts) . '}';
+        $this->postToSolrConfig($configUrl, $payload);
+    }
+
+    /**
+     * Update the /suggest handler to reference a single suggest component.
+     *
+     * @return bool|string True on success, error message on failure.
+     */
+    public function updateSuggestHandler(
+        string $componentName = 'omeka_suggest'
+    ) {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $configUrl = $this->clientUrl() . '/config';
+
+        $handler = [
+            'name' => '/suggest',
+            'class' => 'solr.SearchHandler',
+            'startup' => 'lazy',
+            'defaults' => [
+                'suggest' => 'true',
+                'suggest.count' => '10',
+            ],
+            'components' => [$componentName],
+        ];
+
+        $payload = json_encode(['add-requesthandler' => $handler]);
+        $result = $this->postToSolrConfig($configUrl, $payload);
+        if ($result !== true) {
+            $payload = json_encode(['update-requesthandler' => $handler]);
+            $result = $this->postToSolrConfig($configUrl, $payload);
+            if ($result !== true) {
+                $logger->warn(
+                    'SearchSolr: Failed to create/update suggest handler: {error}', // @translate
+                    ['error' => is_string($result) ? $result : 'unknown']
+                );
+                return $result;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Build/rebuild suggester dictionaries.
+     *
+     * Uses a direct http post to the /suggest handler. Solr builds all
+     * specified dictionaries sequentially in a single request (no lock
+     * conflicts between suggesters).
+     *
+     * @param array $names Dictionary names to build. If empty, builds the
+     *   "default" dictionary only.
+     */
+    public function buildSuggester(array $names = []): bool
     {
-        $client = $this->solariumClient();
-        if (!$client) {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
+        $params = 'suggest.build=true&suggest.q=_';
+        foreach ($names as $name) {
+            $params .= '&suggest.dictionary='
+                . urlencode($name);
+        }
+
+        $url = $this->clientUrl() . '/suggest';
+        $headers = 'Content-Type: application/x-www-form-urlencoded';
+        $headers .= $this->basicAuthHeader();
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => $headers,
+                'content' => $params,
+                // Building many dictionaries may take a long time.
+                'timeout' => 3600,
+                'ignore_errors' => true,
+            ],
+        ]);
+        $response = @file_get_contents($url, false, $context);
+        if ($response === false) {
+            $logger->err(
+                'SearchSolr: No response from suggest handler.' // @translate
+            );
+            return false;
+        }
+        $result = json_decode($response, true);
+        if (isset($result['error'])) {
+            $logger->err(
+                'SearchSolr: Failed to build suggester: {error}', // @translate
+                ['error' => $result['error']['msg'] ?? 'unknown']
+            );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Reload the Solr core to release orphaned locks.
+     *
+     * Uses the CoreAdmin API which releases internal write locks left by
+     * crashed or interrupted processes.
+     */
+    public function reloadCore(): bool
+    {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
+        $settings = $this->clientSettings();
+        $coreName = $settings['core'] ?? null;
+        if (!$coreName) {
+            $logger->err('SearchSolr: Cannot reload: no core name.'); // @translate
+            return false;
+        }
+        $adminUrl = $settings['scheme'] . '://'
+            . $settings['host'] . ':' . $settings['port']
+            . '/solr/admin/cores?action=RELOAD&core='
+            . urlencode($coreName);
+        $authHeader = $this->basicAuthHeader();
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => $authHeader ? trim($authHeader) : null,
+                'timeout' => 60,
+                'ignore_errors' => true,
+            ],
+        ]);
+        $response = @file_get_contents($adminUrl, false, $context);
+        if ($response === false) {
+            $logger->err(
+                'SearchSolr: Core reload failed: no response from {url}.', // @translate
+                ['url' => preg_replace('~://[^@]+@~', '://***@', $adminUrl)]
+            );
+            return false;
+        }
+        $result = json_decode($response, true);
+        if (!empty($result['error'])) {
+            $logger->err(
+                'SearchSolr: Core reload error: {error}', // @translate
+                ['error' => $result['error']['msg'] ?? 'unknown']
+            );
+            return false;
+        }
+        $logger->info(
+            'SearchSolr: Core "{core}" reloaded successfully.', // @translate
+            ['core' => $coreName]
+        );
+        return true;
+    }
+
+    /**
+     * Restart the core via UNLOAD + CREATE (Core Admin API).
+     *
+     * More thorough than reloadCore(): fully closes the core, releasing all
+     * IndexWriter locks (e.g. from AnalyzingInfix-Suggester), before
+     * re-registering it. Falls back to reloadCore() on error.
+     */
+    public function restartCore(): bool
+    {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
+        $settings = $this->clientSettings();
+        $coreName = $settings['core'] ?? null;
+        if (!$coreName) {
+            $logger->err('SearchSolr: Cannot restart: no core name.'); // @translate
             return false;
         }
 
-        try {
-            $suggesterQuery = $client->createSuggester();
-            $suggesterQuery->setDictionary($suggesterName);
-            $suggesterQuery->setBuild(true);
-            $suggesterQuery->setQuery('_'); // Dummy query, just to trigger build.
-            $client->suggester($suggesterQuery);
-            return true;
-        } catch (\Exception $e) {
-            $services = $this->getServiceLocator();
-            $logger = $services->get('Omeka\Logger');
-            $logger->err('SearchSolr: Failed to build suggester: ' . $e->getMessage());
-            return false;
+        $baseAdminUrl = $settings['scheme'] . '://'
+            . $settings['host'] . ':' . $settings['port']
+            . '/solr/admin/cores';
+
+        $authHeader = $this->basicAuthHeader();
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => $authHeader ? trim($authHeader) : null,
+                'timeout' => 60,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        // Get core status to find instanceDir.
+        $statusUrl = $baseAdminUrl
+            . '?action=STATUS&core=' . urlencode($coreName);
+        $response = @file_get_contents(
+            $statusUrl, false, $context
+        );
+        if ($response === false) {
+            $logger->warn('SearchSolr: Cannot get core status, falling back to reload.'); // @translate
+            return $this->reloadCore();
         }
+        $result = json_decode($response, true);
+        $instanceDir = $result['status'][$coreName]['instanceDir']
+            ?? null;
+        if (!$instanceDir) {
+            $logger->warn('SearchSolr: Cannot find instanceDir, falling back to reload.'); // @translate
+            return $this->reloadCore();
+        }
+
+        // UNLOAD the core (releases all IndexWriter locks).
+        $unloadUrl = $baseAdminUrl
+            . '?action=UNLOAD&core=' . urlencode($coreName);
+        $response = @file_get_contents(
+            $unloadUrl, false, $context
+        );
+        if ($response === false
+            || !empty(json_decode($response, true)['error'])
+        ) {
+            $logger->warn('SearchSolr: Core unload failed, falling back to reload.'); // @translate
+            return $this->reloadCore();
+        }
+        $logger->info(
+            'SearchSolr: Core "{core}" unloaded.', // @translate
+            ['core' => $coreName]
+        );
+
+        // Recreate the core from its instanceDir.
+        $createUrl = $baseAdminUrl
+            . '?action=CREATE&name=' . urlencode($coreName)
+            . '&instanceDir=' . urlencode($instanceDir);
+        $response = @file_get_contents(
+            $createUrl, false, $context
+        );
+        if ($response === false
+            || !empty(json_decode($response, true)['error'])
+        ) {
+            // Retry once after a short wait.
+            sleep(2);
+            $response = @file_get_contents(
+                $createUrl, false, $context
+            );
+            if ($response === false
+                || !empty(json_decode($response, true)['error'])
+            ) {
+                $logger->err('SearchSolr: Core recreate failed after unload. Manual recovery may be needed.'); // @translate
+                return false;
+            }
+        }
+
+        $logger->info(
+            'SearchSolr: Core "{core}" restarted successfully.', // @translate
+            ['core' => $coreName]
+        );
+        return true;
+    }
+
+    /**
+     * Check number of fields in core against the configured maxFields limit.
+     *
+     * @return array Associative array with keys "numFields", "maxFields" and
+     * "exceeded" (bool), or null if unavailable.
+     */
+    public function fieldLimitStatus(): ?array
+    {
+        $url = $this->clientUrl();
+
+        // Get current field count via luke api.
+        $lukeUrl = $url . '/admin/luke?numTerms=0';
+        $authHeader = $this->basicAuthHeader();
+        $lukeResponse = @file_get_contents($lukeUrl, false,
+            stream_context_create(['http' => [
+                'timeout' => 10,
+                'header' => $authHeader ? trim($authHeader) : null,
+            ]]));
+        if ($lukeResponse === false) {
+            return null;
+        }
+        $luke = json_decode($lukeResponse, true);
+        $numFields = is_array($luke) && isset($luke['fields'])
+            ? count($luke['fields'])
+            : null;
+        if ($numFields === null) {
+            return null;
+        }
+
+        // Get maxFields from solr config api.
+        $maxFields = null;
+        $config = $this->getSolrConfig();
+        if ($config) {
+            $processors = $config['config']['updateProcessor'] ?? [];
+            foreach ($processors as $proc) {
+                if (($proc['class'] ?? '') === 'solr.NumFieldLimitingUpdateRequestProcessorFactory') {
+                    $maxFields = (int) ($proc['maxFields'] ?? 0) ?: null;
+                    break;
+                }
+            }
+        }
+
+        return [
+            'numFields' => $numFields,
+            'maxFields' => $maxFields,
+            'exceeded' => $maxFields !== null
+                && $numFields > $maxFields,
+        ];
     }
 
     /**
@@ -964,22 +1288,91 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     protected function getSolrConfig(): ?array
     {
-        $configUrl = $this->clientUrl() . '/config';
+        return $this->getSolrConfigEndpoint('/config');
+    }
 
+    /**
+     * Get Solr config overlay (only user-added entries).
+     */
+    protected function getSolrConfigOverlay(): array
+    {
+        $data = $this->getSolrConfigEndpoint('/config/overlay');
+        return $data['overlay'] ?? [];
+    }
+
+    protected function getSolrConfigEndpoint(string $path): ?array
+    {
+        $url = $this->clientUrl() . $path;
+
+        $headers = 'Content-Type: application/json';
+        $headers .= $this->basicAuthHeader();
         $context = stream_context_create([
             'http' => [
                 'method' => 'GET',
-                'header' => 'Content-Type: application/json',
+                'header' => $headers,
                 'timeout' => 10,
             ],
         ]);
 
-        $response = @file_get_contents($configUrl, false, $context);
+        $response = @file_get_contents($url, false, $context);
         if ($response === false) {
             return null;
         }
 
         return json_decode($response, true);
+    }
+
+    /**
+     * Poll the core until it responds to a ping or a timeout is reached.
+     *
+     * Used after reload or config changes to ensure the core is fully
+     * initialized before the next operation.
+     *
+     * @param int $maxWait Maximum seconds to wait.
+     * @param int $interval Seconds between polls.
+     * @return bool True if the core is ready, false on timeout.
+     */
+    public function waitForCoreReady(
+        int $maxWait = 300,
+        int $interval = 3
+    ): bool {
+        $client = $this->solariumClient();
+        if (!$client) {
+            return false;
+        }
+        $ping = $client->createPing();
+
+        $deadline = time() + $maxWait;
+        while (time() < $deadline) {
+            try {
+                $client->ping($ping);
+                return true;
+            } catch (\Throwable $e) {
+                // Core not ready yet.
+            }
+            sleep($interval);
+        }
+
+        return false;
+    }
+
+    /**
+     * Build an Authorization header for Solr BasicAuth, if configured.
+     *
+     * Returns an empty string when no credentials are set, or a string like
+     * "\r\nAuthorization: Basic ..." ready to append to an existing header
+     * value.
+     */
+    protected function basicAuthHeader(): string
+    {
+        $settings = $this->clientSettings();
+        if (empty($settings['username'])) {
+            return '';
+        }
+        $credentials = $settings['username']
+            . ':' . ($settings['password'] ?? '');
+        return "\r\nAuthorization: Basic "
+            . base64_encode($credentials);
     }
 
     /**
@@ -989,12 +1382,19 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      */
     protected function postToSolrConfig(string $url, string $payload)
     {
+        // The Config API triggers an internal core reload after each
+        // change. Use waitForCoreReady() afterwards for readiness.
+        $timeout = strlen($payload) > 100000 ? 120 : 30;
+        $headers = 'Content-Type: application/json';
+        $headers .= $this->basicAuthHeader();
         $context = stream_context_create([
             'http' => [
                 'method' => 'POST',
-                'header' => 'Content-Type: application/json',
+                'header' => $headers,
                 'content' => $payload,
-                'timeout' => 30,
+                'timeout' => $timeout,
+                // Allow reading response body on HTTP errors (4xx, 5xx).
+                'ignore_errors' => true,
             ],
         ]);
 
@@ -1006,6 +1406,184 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $result = json_decode($response, true);
         if (isset($result['error'])) {
             return $result['error']['msg'] ?? 'Unknown error';
+        }
+
+        return true;
+    }
+
+    /**
+     * Ensure the "text_suggest" field type exists in the Solr schema.
+     *
+     * Replaces apostrophes (straight and curly) with spaces so that StandardTokenizer
+     * splits "l'exception" into [l, exception], making "exception" matchable by
+     * AnalyzingInfixLookupFactory. Identifiers like "123.4567.890" are still
+     * preserved.
+     */
+    public function ensureSuggestFieldType(): bool
+    {
+        try {
+            $schema = $this->schema();
+            $types = $schema->getSchema()['fieldTypes'] ?? [];
+            foreach ($types as $type) {
+                if (($type['name'] ?? '') === 'text_suggest') {
+                    return true;
+                }
+            }
+        } catch (\Exception $e) {
+            // Schema not readable; try to create the type anyway.
+        }
+
+        $schemaUrl = $this->clientUrl() . '/schema';
+        $analyzer = [
+            'charFilters' => [
+                [
+                    'class' => 'solr.PatternReplaceCharFilterFactory',
+                    // Single quote, standard apostrophe, inverted.
+                    'pattern' => "['’‘]",
+                    'replacement' => ' ',
+                ],
+            ],
+            'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+            'filters' => [
+                ['class' => 'solr.LowerCaseFilterFactory'],
+            ],
+        ];
+
+        // Try add first; if it already exists, try replace.
+        $fieldTypeDef = [
+            'name' => 'text_suggest',
+            'class' => 'solr.TextField',
+            'positionIncrementGap' => '100',
+            'indexAnalyzer' => $analyzer,
+            'queryAnalyzer' => $analyzer,
+        ];
+        $result = $this->postToSolrConfig(
+            $schemaUrl,
+            json_encode(['add-field-type' => $fieldTypeDef])
+        );
+        if ($result === true) {
+            return true;
+        }
+
+        // "already exists" → try replace.
+        if (is_string($result)
+            && stripos($result, 'already exists') !== false
+        ) {
+            $result = $this->postToSolrConfig(
+                $schemaUrl,
+                json_encode(['replace-field-type' => $fieldTypeDef])
+            );
+            return $result === true;
+        }
+
+        $logger = $this->getServiceLocator()
+            ->get('Omeka\Logger');
+        $logger->err(
+            'SearchSolr: Cannot create text_suggest: {error}', // @translate
+            ['error' => $result]
+        );
+        return false;
+    }
+
+    /**
+     * Ensure the "suggest_txt" field exists in the Solr schema.
+     *
+     * Creates the field and copyField directives from _txt mapped fields.
+     * By default, long-value properties listed in metadata_text.php
+     * (descriptions, OCR, etc.) are excluded.
+     *
+     * @param bool $includeLongTexts Include long-value properties (OCR,
+     *   descriptions, etc.) in the suggest field.
+     * @return bool|string True on success, error message on failure.
+     */
+    public function ensureSuggestField(
+        bool $includeLongTexts = false
+    ) {
+        $skipTermTexts = $includeLongTexts
+            ? []
+            : (include dirname(__DIR__, 3) . '/config/metadata_text.php');
+
+        $sourceFields = [];
+        foreach ($this->maps() as $map) {
+            $fieldName = $map->fieldName();
+            if (!str_ends_with($fieldName, '_txt')) {
+                continue;
+            }
+            if ($skipTermTexts
+                && in_array($map->source(), $skipTermTexts)
+            ) {
+                continue;
+            }
+            $sourceFields[] = $fieldName;
+        }
+        $sourceFields = array_unique($sourceFields);
+
+        if (empty($sourceFields)) {
+            return 'No _txt maps found.';
+        }
+
+        $schemaUrl = $this->clientUrl() . '/schema';
+        $schema = $this->schema();
+
+        // Remove existing field and its copyFields if recreating.
+        if (isset($schema->getFieldsByName()['suggest_txt'])) {
+            // Delete copyFields targeting suggest_txt first.
+            $copyFields = $schema->getSchema()['copyFields'] ?? [];
+            $deletes = [];
+            foreach ($copyFields as $cf) {
+                if (($cf['dest'] ?? '') === 'suggest_txt') {
+                    $deletes[] = [
+                        'source' => $cf['source'],
+                        'dest' => 'suggest_txt',
+                    ];
+                }
+            }
+            if ($deletes) {
+                $this->postToSolrConfig($schemaUrl, json_encode([
+                    'delete-copy-field' => $deletes,
+                ]));
+            }
+            $result = $this->postToSolrConfig(
+                $schemaUrl,
+                json_encode([
+                    'delete-field' => ['name' => 'suggest_txt'],
+                ])
+            );
+            if ($result !== true) {
+                return 'Failed to delete existing suggest_txt: '
+                    . (is_string($result) ? $result : 'unknown');
+            }
+        }
+
+        // Create the field.
+        $result = $this->postToSolrConfig($schemaUrl, json_encode([
+            'add-field' => [
+                'name' => 'suggest_txt',
+                'type' => 'text_general',
+                'stored' => true,
+                'indexed' => true,
+                'multiValued' => true,
+            ],
+        ]));
+        if ($result !== true) {
+            return 'Failed to create suggest_txt field: '
+                . (is_string($result) ? $result : 'unknown');
+        }
+
+        // Create copyFields from each source _txt field.
+        $copyFields = [];
+        foreach ($sourceFields as $field) {
+            $copyFields[] = [
+                'source' => $field,
+                'dest' => 'suggest_txt',
+            ];
+        }
+        $result = $this->postToSolrConfig($schemaUrl, json_encode([
+            'add-copy-field' => $copyFields,
+        ]));
+        if ($result !== true) {
+            return 'Field created but copyFields failed: '
+                . (is_string($result) ? $result : 'unknown');
         }
 
         return true;

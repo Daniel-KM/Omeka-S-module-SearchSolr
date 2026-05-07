@@ -4,7 +4,7 @@
         display: none;
     }
 
-	header nav .solr-cores::before,
+    header nav .solr-cores::before,
     .solr-cores .subhead::before,
     .solr-cores .no-resources:before {
         content: "\f185";
@@ -166,6 +166,7 @@
         }
 
         ul a,
+        ul span,
         ul .inactive {
             padding: 6px 12px 5px;
             display: block;
@@ -177,7 +178,11 @@
         }
 
         ul li {
-          position: relative;
+            position: relative;
+
+            &.separator span {
+                font-style: italic;
+            }
         }
 
         ul li:hover::before {
@@ -219,8 +224,35 @@
         }
     }
 
+    details {
+        margin-bottom: 12px;
+    }
+    details summary,
     .quick-help summary {
         display: list-item;
+        cursor: pointer;
+    }
+
+    #search-config form .inputs {
+        width: 100%;
+    }
+
+    /* Sortable column indicators. */
+    th[data-sortable] {
+        cursor: pointer;
+        user-select: none;
+    }
+    th[data-sortable]::after {
+        content: ' \2195';
+        opacity: .3;
+    }
+    th[data-sortable].sort-asc::after {
+        content: ' \2191';
+        opacity: 1;
+    }
+    th[data-sortable].sort-desc::after {
+        content: ' \2193';
+        opacity: 1;
     }
 }
 

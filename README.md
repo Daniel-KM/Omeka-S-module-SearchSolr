@@ -51,7 +51,7 @@ the module to `SearchSolr`, go to the root of the module, and run:
 composer install --no-dev
 ```
 
-- For test
+* For test
 
 The module includes a comprehensive test suite with unit and functional tests.
 Run them from the root of Omeka:
@@ -162,6 +162,36 @@ Nevertheless, some people want an advanced search where they can request on a
 specific property, or a group of metadata, with pattern, and even combine them
 together with various joiners (and, or, not, near…). In that particular case, it
 will be required to create multiple indexes in details.
+
+### Type of indices
+
+The indices of the default Solr configuration work with names and suffixes
+matching type:
+
+- "_t" and "_txt" are used to store words individually.
+- "_s" and "_ss" are used to store whole string.
+- "_i" and "_is" are used to store integers.
+- "_dt" and "_dts" are used to store dates.
+- "_ancestor_path" and "_descendent_path" are used to store structures.
+
+The choice of type depends on what you need for a metadata:
+
+- For global searches, indices should be "_t" and "_txt".
+- For simple filters and facets, indices should be a multiple whole values
+  ("_ss", "_is" and "_dts").
+- For sort, it should be a single value ("_s", "_i" and "_dt").
+- For bounce links, it should be multiple values formatted for linking ("_link_ss").
+- For main autocompletion ("à-la-google search"), "_txt" should be used. There
+  is a default field "suggest_txt" that groups "_txt" fields.
+- For autocompletion in filters, you may use "_ss" for short values and "_txt"
+  for long ones. Here, autocompletion in filters is generally useless for long
+  values.
+- "_ancestor_path" and "_descendent_path" are generally used for search and
+  facets, generally with a thesaurus, a classification scheme, or geographic
+  names.
+
+Other indices are available for complex cases. Solr should be configured first
+if more types are needed.
 
 ### Bounce links
 
@@ -770,6 +800,18 @@ curl --user 'omeka_admin:MySecretPassPhrase' -X POST --data-binary '{"add-copy-f
 The response status should be 0. Of course, you need to reindex resources after
 this modification of the schema.
 
+### Suggester (autocompletion)
+
+For best performance, use a single suggester on a dedicated stored field rather
+than one suggester per field. Using more than some dozens of index for the same
+suggesters causes lock conflicts, slow builds in Solr and slow suggestions.
+
+The mode "auto" uses all indexes: even if it is filtered to avoid duplicate, it
+may be too much in some database with many various properties.
+
+The recommended approach is copy all the wanted index with `_txt` in a single
+field, like the one used for the main search.
+
 ### Optimizing search for prefix matching (Google-like search)
 
 By default, Solr uses the `text_general` field type for `_text_`, which only
@@ -901,6 +943,9 @@ TODO
 - [ ] Rename "resource_name" by "resource_type" anywhere.
 - [x] Fix indexing of boolean values with "*_b".
 - [ ] Find a better way to exclude fields than searching in other ones (not supported by solr anyway).
+- [ ] Disable `buildOnCommit` for suggester during batch reindexation to avoid costly intermediate rebuilds, then re-enable and rebuild once at the end.
+- [ ] Create suggest_txt to regroup all suggesters into a single index for performance.
+- [ ] Create a single suggest field approach automatically.
 
 
 Warning

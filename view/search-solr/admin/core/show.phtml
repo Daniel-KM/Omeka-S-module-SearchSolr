@@ -32,16 +32,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         <?php if ($solrCore->userIsAllowed('update')): ?>
         <div class="with-sub-menu">
             <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
-                <?= $translate('Maps') ?>
-            </a>
-            <ul class="collapsible">
-                <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
-                <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name), ['class' => 'link']) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <div class="with-sub-menu">
-            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
                 <?= $translate('Add a map') ?>
             </a>
             <ul class="collapsible">
@@ -50,12 +40,36 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <?php endforeach; ?>
             </ul>
         </div>
-        <?= $hyperlink($translate('Map all'), $solrCore->resourceMapUrl('items', 'complete'), [
-            'class' => 'button',
-            'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?>
-        <?= $hyperlink($translate('Remove unused'), $solrCore->resourceMapUrl('items', 'clean'), [
-            'class' => 'button',
-            'title' => $translate('Remove maps of properties that are not used.')]) ?>
+        <div class="with-sub-menu">
+            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
+                <?= $translate('Maintenance') ?>
+            </a>
+            <ul class="collapsible">
+                <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. Remove property maps not referenced by any config. System maps are kept. The current configuration is automatically snapshotted before sync (3 last snapshots, restorable below).')]) ?></li>
+                <li class="separator"><span><?= $translate('Technical actions') ?></span></li>
+                <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Remove extra maps to stay within Solr maxFields limit.')]) ?></li>
+                <li><?= $hyperlink($translate('Reset values visibility'), $solrCore->adminUrl('reset-maps-visibility'), [
+                    'class' => 'link',
+                    'title' => $translate('Reset all maps to "follow engine" visibility. Maps on a public engine will stop indexing private values.')]) ?></li>
+                <li class="separator"><span><?= $translate('Deprecated actions') ?></span></li>
+                <li><?= $hyperlink($translate('Recommended maps'), $solrCore->adminUrl('recommended-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Add indices (_txt, _ss, _s) to used properties, skipping _s/_ss for long values.')]) ?></li>
+                <li><?= $hyperlink($translate('Map all'), $solrCore->adminUrl('complete-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?></li>
+                <li><?= $hyperlink($translate('Remove unused properties'), $solrCore->adminUrl('clean-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Remove maps of properties that are not used.')]) ?></li>
+                <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->adminUrl('add-annotation-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Create maps for value annotations.')]) ?></li>
+            </ul>
+        </div>
         <?php endif; ?>
         <?= $hyperlink($translate('Export'), $solrCore->adminUrl('export'), [
             'class' => 'button',
@@ -81,16 +95,20 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 </nav>
 
 <?php if ($solrCore->userIsAllowed('update') && $solrCore->schema()->checkDefaultField()): ?>
-<fieldset id="search-config">
-    <legend><?= $translate('Search configuration') ?></legend>
+<details id="search-config">
+    <summary><?= $translate('Search configuration') ?></summary>
     <p class="explanation"><?= $translate('Configure the analyzer for the catchall field "_text_". This affects how search queries match indexed content.') ?></p>
     <?php
     $textFieldType = $solrCore->schema()->getFieldsByName()['_text_']['type'] ?? null;
     if ($textFieldType):
-        $isOptimized = $textFieldType === 'text_search';
-        $currentLabel = $isOptimized
-            ? $translate('optimized (Google-like search via EdgeNGram)')
-            : sprintf($translate('default (strict matching via "%s")'), $escape($textFieldType));
+        $solrLanguages = include dirname(__DIR__, 4) . '/config/solr_languages.php';
+        if ($textFieldType === 'text_search') {
+            $currentLabel = $translate('optimized (Google-like search via EdgeNGram)');
+        } elseif (preg_match('/^text_search_(\w+)$/', $textFieldType, $m) && isset($solrLanguages[$m[1]])) {
+            $currentLabel = sprintf($translate('linguistic (%s)'), $solrLanguages[$m[1]]['label']);
+        } else {
+            $currentLabel = sprintf($translate('default (strict matching via "%s")'), $escape($textFieldType));
+        }
     ?>
     <p class="explanation"><strong><?= sprintf($translate('Current configuration: %s.'), $currentLabel) ?></strong></p>
     <?php endif; ?>
@@ -117,18 +135,113 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     <span class="explanation"><?= $translate('Use EdgeNGram: prefix matching, accent-insensitive. "napo" finds "napoléon", "cafe" finds "café". Works for all languages.') ?></span>
                 </label>
             </div>
+            <div class="inputs">
+                <label>
+                    <input type="radio" name="search_config" value="linguistic">
+                    <?= $translate('Linguistic (language-specific)') ?>
+                    <span class="explanation"><?= $translate('Use language stemmer: accent-insensitive, stopwords, light stemming. "chat" does not find "château". Best for single-language collections.') ?></span>
+                </label>
+                <select name="search_language" style="margin-left: 1.5em; max-width: 300px;">
+                    <?php foreach ($solrLanguages as $langCode => $langDef): ?>
+                    <option value="<?= $escape($langCode) ?>"<?= $langCode === 'fr' ? ' selected' : '' ?>><?= $escape($langDef['label']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
         </div>
         <button type="submit"><?= $translate('Apply') ?></button>
     </form>
-</fieldset>
+</details>
 <?php endif; ?>
 
-<h3><?= $translate('By index') ?></h3>
+<?php if ($solrCore->userIsAllowed('update')): ?>
+<?php $hasSuggestTxt = (bool) $solrCore->schema()->getField('suggest_txt'); ?>
+<details id="suggest-config">
+    <summary><?= $translate('Suggest configuration') ?></summary>
+    <p class="explanation"><?= $translate('Configure the "suggest_txt" field used for autocompletion. This field aggregates copyFields from _txt mapped fields.') ?></p>
+    <?php if ($hasSuggestTxt): ?>
+    <p class="explanation"><strong><?= $translate('Current status: suggest_txt exists.') ?></strong></p>
+    <?php else: ?>
+    <p class="explanation"><strong><?= $translate('Current status: suggest_txt does not exist.') ?></strong></p>
+    <?php endif; ?>
+    <ul>
+        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt' : 'Create suggest_txt'), $solrCore->adminUrl('create-suggest-field'), [
+            'class' => 'button',
+            'title' => $translate('Create the "suggest_txt" field with copyFields from short-value _txt fields for autocompletion.')]) ?></li>
+        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (with long texts)' : 'Create suggest_txt (with long texts)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1', [
+            'class' => 'button',
+            'title' => $translate('Create "suggest_txt" including long-value properties (OCR, descriptions, etc.).')]) ?></li>
+    </ul>
+</details>
+<?php endif; ?>
+
+<?php
+$backups = $solrCore->backupMaps();
+$snapshots = $backups['snapshots'] ?? [];
+?>
+<?php if ($solrCore->userIsAllowed('update') && $snapshots): ?>
+<details id="solr-core-backups">
+    <summary><?= sprintf($translate('Map snapshots (%d)'), count($snapshots)) ?></summary>
+    <p class="explanation"><?= $translate('A snapshot is taken before each "Sync maps from search configs". The 3 most recent snapshots are kept on this core.') ?></p>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $translate('Date') ?></th>
+                <th><?= $translate('Author') ?></th>
+                <th><?= $translate('Maps') ?></th>
+                <th><?= $translate('Actions') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($snapshots as $i => $snap): ?>
+            <tr>
+                <td><?= $escape((string) ($snap['datetime'] ?? '')) ?></td>
+                <td><?= $escape((string) ($snap['user_name'] ?? '')) ?></td>
+                <td><?= (int) ($snap['count'] ?? 0) ?></td>
+                <td>
+                    <?= $hyperlink($translate('Restore'), $solrCore->adminUrl('restore-backup') . '?index=' . $i, [
+                        'class' => 'button',
+                        'onclick' => 'return confirm("' . $escapeAttr($translate('Restore this snapshot? Current maps will be replaced. The current state is itself snapshotted before restore.')) . '");',
+                    ]) ?>
+                    <?= $hyperlink($translate('Delete'), $solrCore->adminUrl('delete-backup') . '?index=' . $i, [
+                        'class' => 'button delete',
+                        'onclick' => 'return confirm("' . $escapeAttr($translate('Delete this snapshot?')) . '");',
+                    ]) ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</details>
+<?php endif; ?>
 
 <?= $partial('search-solr/admin/core/help-index-names') ?>
 
+<?php
+// Determine active resource type filter from query string.
+$activeResourceFilter = $_GET['resource_type'] ?? '';
+$maps = $solrCore->mapsByFieldName();
+// Collect all resource types used in maps.
+$usedResourceTypes = [];
+foreach ($maps as $fieldMaps) {
+    foreach ($fieldMaps as $map) {
+        $usedResourceTypes[$map->resourceName()] = true;
+    }
+}
+ksort($usedResourceTypes);
+?>
+<div class="maps-filter" style="display: flex; justify-content: flex-end; align-items: center; gap: .5em; margin-bottom: .5em;">
+    <span id="maps-count-label"><?= $translate('Number of maps:') ?></span>
+    <span id="maps-count"></span>
+    <label for="filter-resource-type"><?= $translate('Filter by resource type') ?></label>
+    <select id="filter-resource-type">
+        <option value=""><?= $translate('All') ?></option>
+        <?php foreach (array_keys($usedResourceTypes) as $rType): ?>
+        <option value="<?= $escapeAttr($rType) ?>"<?= $rType === $activeResourceFilter ? ' selected' : '' ?>><?= $escape($rType) ?></option>
+        <?php endforeach; ?>
+    </select>
+</div>
+
 <div class="by-solr-index">
-<?php $maps = $solrCore->mapsByFieldName(); ?>
 <?php if (count($maps)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>

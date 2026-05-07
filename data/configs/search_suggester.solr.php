@@ -5,9 +5,9 @@
  *
  * When created, it can be modified in the admin board.
  *
- * The default Solr field is "_text_" which is the standard Solr catchall
- * copy field that aggregates all indexed content. If "_text_" doesn't exist,
- * it can be created via the Solr core admin page or changed to another field.
+ * Use stored fields for suggestions: "_text_" is not stored by default and
+ * uses EdgeNGram, resulting in character-level fragments instead of real values.
+ * Specific "_txt" fields (text_general, stored) return complete values.
  *
  * @var array
  */
@@ -21,10 +21,12 @@ return [
     'o:settings' => [
         // Solr-specific settings.
         'solr_suggester_name' => 'omeka_suggester',
-        // Use _text_ catchall copy field (standard Solr field).
-        // Can be an array for multiple fields: ['dcterms_title_txt', 'dcterms_creator_txt']
-        'solr_fields' => ['_text_'],
-        'solr_lookup_impl' => 'AnalyzingInfixLookupFactory',
-        'solr_build_on_commit' => true,
+        // "suggest_txt" is a unified field aggregating all short-value
+        // _txt fields via copyField (created via admin action).
+        // "auto" uses all stored text and string fields individually.
+        // Or specify fields: ['dcterms_title_txt', 'dcterms_creator_txt'].
+        'solr_fields' => ['suggest_txt'],
+        'solr_lookup_implementation' => 'AnalyzingInfixLookupFactory',
+        'solr_skip_build_on_commit' => false,
     ],
 ];

@@ -121,7 +121,7 @@ class SuggesterFormIntegrationTest extends TestCase
         $form = $this->getSolrSuggesterForm();
 
         $settings = $form->get('o:settings');
-        $this->assertTrue($settings->has('solr_lookup_impl'));
+        $this->assertTrue($settings->has('solr_lookup_implementation'));
     }
 
     /**
@@ -132,7 +132,7 @@ class SuggesterFormIntegrationTest extends TestCase
         $form = $this->getSolrSuggesterForm();
 
         $settings = $form->get('o:settings');
-        $lookupImplElement = $settings->get('solr_lookup_impl');
+        $lookupImplElement = $settings->get('solr_lookup_implementation');
 
         $options = $lookupImplElement->getValueOptions();
 
@@ -150,7 +150,7 @@ class SuggesterFormIntegrationTest extends TestCase
         $form = $this->getSolrSuggesterForm();
 
         $settings = $form->get('o:settings');
-        $this->assertTrue($settings->has('solr_build_on_commit'));
+        $this->assertTrue($settings->has('solr_skip_build_on_commit'));
     }
 
     /**
