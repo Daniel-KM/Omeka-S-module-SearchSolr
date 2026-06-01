@@ -987,6 +987,20 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
+            // Resolve the configured field (property term or alias) to its Solr
+            // index. Skip the facet when the field is not mapped, to avoid an
+            // "undefined field" error from Solr.
+            $field = $this->resolveFieldOrNull($data['field']);
+            if ($field === null) {
+                $this->getLogger()
+                    ->warn(
+                        'Solr: skipped facet on unmapped field "{field}".', // @translate
+                        ['field' => $data['field']]
+                    );
+                continue;
+            }
+            $data['field'] = $field;
+
             // Handle range facets.
             if (in_array($data['type'] ?? '', ['Range', 'RangeDouble', 'SelectRange'])) {
                 $min = $data['min'] ?? ($fieldRanges[$name]['min'] ?? 0);
@@ -1059,15 +1073,21 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
+            // Resolve the active facet field; skip when it is not mapped.
+            $facetData = $facetsConfig[$fname] ?? [];
+            $startField = $this->resolveFieldOrNull($facetData['field'] ?? $fname);
+            if ($startField === null) {
+                continue;
+            }
+            $endField = !empty($facetData['field_end'])
+                ? $this->resolveFieldOrNull($facetData['field_end'])
+                : null;
+
             $firstKey = key($values);
             // Check for range facet.
             if (count($values) <= 2 && ($firstKey === 'from' || $firstKey === 'to')) {
                 $hasFrom = isset($values['from']) && $values['from'] !== '';
                 $hasTo = isset($values['to']) && $values['to'] !== '';
-
-                $facetData = $facetsConfig[$fname] ?? [];
-                $startField = $facetData['field'] ?? $fname;
-                $endField = !empty($facetData['field_end']) ? $facetData['field_end'] : null;
 
                 if ($endField) {
                     // Interval overlap on uncertain dates: start ≤ to AND end ≥
@@ -1091,21 +1111,21 @@ class SolariumQuerier extends AbstractQuerier
                     $to = $this->escapePhrase($values['to']);
                     $this->select->addFilterQuery([
                         'key' => $fname . '-facet',
-                        'query' => "$fname:[$from TO $to]",
+                        'query' => "$startField:[$from TO $to]",
                         'tag' => 'exclude',
                     ]);
                 } elseif ($hasFrom) {
                     $from = $this->escapePhrase($values['from']);
                     $this->select->addFilterQuery([
                         'key' => $fname . '-facet',
-                        'query' => "$fname:[$from TO *]",
+                        'query' => "$startField:[$from TO *]",
                         'tag' => 'exclude',
                     ]);
                 } elseif ($hasTo) {
                     $to = $this->escapePhrase($values['to']);
                     $this->select->addFilterQuery([
                         'key' => $fname . '-facet',
-                        'query' => "$fname:[* TO $to]",
+                        'query' => "$startField:[* TO $to]",
                         'tag' => 'exclude',
                     ]);
                 }
@@ -1119,7 +1139,7 @@ class SolariumQuerier extends AbstractQuerier
                 $escaped = $this->escapePhraseValue($values, 'OR');
                 $this->select->addFilterQuery([
                     'key' => $key,
-                    'query' => "{!tag=$tag}$fname:$escaped",
+                    'query' => "{!tag=$tag}$startField:$escaped",
                 ]);
             }
         }
@@ -1137,12 +1157,17 @@ class SolariumQuerier extends AbstractQuerier
         foreach ($facets as $name => $data) {
             if (in_array($data['type'] ?? '', ['Range', 'RangeDouble', 'SelectRange'])) {
                 if (!isset($data['min']) || !isset($data['max'])) {
-                    $field = $data['field'] ?? null;
+                    $field = !empty($data['field'])
+                        ? $this->resolveFieldOrNull($data['field'])
+                        : null;
                     if ($field) {
                         $fieldRanges[$name] = [];
                         $nameToField[$name] = $field;
                         if (!empty($data['field_end'])) {
-                            $nameToFieldEnd[$name] = $data['field_end'];
+                            $endField = $this->resolveFieldOrNull($data['field_end']);
+                            if ($endField !== null) {
+                                $nameToFieldEnd[$name] = $endField;
+                            }
                         }
                     }
                 }
@@ -1195,8 +1220,16 @@ class SolariumQuerier extends AbstractQuerier
             }
         } elseif ($sort) {
             [$field, $order] = array_pad(explode(' ', $sort, 2), 2, 'asc');
-            $field = $this->fieldToIndex($field) ?? $field;
-            $this->select->addSort($field, strtolower($order) === 'desc' ? SelectQuery::SORT_DESC : SelectQuery::SORT_ASC);
+            $name = $this->resolveFieldOrNull($field);
+            if ($name === null) {
+                $this->getLogger()
+                    ->warn(
+                        'Solr: skipped sort on unmapped field "{field}".', // @translate
+                        ['field' => $field]
+                    );
+            } else {
+                $this->select->addSort($name, strtolower($order) === 'desc' ? SelectQuery::SORT_DESC : SelectQuery::SORT_ASC);
+            }
         }
 
         return $this;
@@ -1574,8 +1607,11 @@ class SolariumQuerier extends AbstractQuerier
             // A property term (with ":") that was not resolved to
             // a Solr field means the field is not indexed.
             if (strpos($name, ':') !== false) {
-                $this->services->get('Omeka\Logger')
-                    ->err('Solr: skipped filter on unmapped field "{field}".', ['field' => $fieldName]); // @translate
+                $this->getLogger()
+                    ->err(
+                        'Solr: skipped filter on unmapped field "{field}".', // @translate
+                        ['field' => $fieldName]
+                    );
                 $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
                     ->setQuery('-*:*');
                 return;
@@ -1827,8 +1863,11 @@ class SolariumQuerier extends AbstractQuerier
                 // A property term (with ":") not resolved to a
                 // Solr field means the field is not indexed.
                 if (strpos($name, ':') !== false) {
-                    $this->services->get('Omeka\Logger')
-                        ->err('Solr: skipped filter on unmapped field "{field}".', ['field' => $field]); // @translate
+                    $this->getLogger()
+                        ->err(
+                            'Solr: skipped filter on unmapped field "{field}".', // @translate
+                            ['field' => $field]
+                        );
                     $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
                         ->setQuery('-*:*');
                     return;
@@ -2236,6 +2275,19 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         return $this->selectBestIndex($indices);
+    }
+
+    /**
+     * Resolve a configured field to its Solr index, or null when it is a
+     * property term not mapped to any Solr field.
+     *
+     * An unmapped term must be skipped instead of being sent raw to Solr, which
+     * would raise an "undefined field" error or match nothing.
+     */
+    protected function resolveFieldOrNull(string $field): ?string
+    {
+        $name = $this->fieldToIndex($field) ?? $field;
+        return strpos($name, ':') === false ? $name : null;
     }
 
     /**
