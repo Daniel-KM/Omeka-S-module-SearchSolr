@@ -2096,6 +2096,26 @@ class SolariumQuerier extends AbstractQuerier
             return is_array($result) ? reset($result) : $result;
         }
 
+        // System field aliases: a config made for the internal engine uses keys
+        // like "resource_template_id"; map them to the Solr field via the map
+        // source, so facets/filters/sort still resolve after switching to Solr.
+        static $systemSources = [
+            'resource_type' => 'resource_name',
+            'resource_name' => 'resource_name',
+            'is_public' => 'is_public',
+            'owner_id' => 'owner/o:id',
+            'site_id' => 'site/o:id',
+            'resource_class_id' => 'resource_class/o:term',
+            'resource_template_id' => 'resource_template/o:label',
+            'item_set_id' => 'item_set/o:id',
+        ];
+        if (isset($systemSources[$field])) {
+            $maps = $this->solrCore->mapsBySource($systemSources[$field]);
+            if ($maps) {
+                return reset($maps)->fieldName();
+            }
+        }
+
         // Handle special selection fields.
         if ($field === 'selection_id' || $field === 'selection_public_id') {
             return $this->getSelectionIdFieldName($field);
