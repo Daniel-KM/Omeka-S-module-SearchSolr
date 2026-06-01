@@ -119,6 +119,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'item_sets_tree' => 'Item: Item sets tree', // @translate
                     'media' => 'Item: Media', // @translate
                     'has_media' => 'Item: Has media', // @translate
+                    'digital_object' => 'Item: Digital object', // @translate
+                    'has_digital_object' => 'Item: Has digital object', // @translate
                     'content' => 'Media: Content (from html or extractable text from file, included alto)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
                     'value' => 'Value itself (in particular for module Thesaurus)', // @translate
@@ -289,6 +291,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         if ($field === 'has_media') {
             return $resource instanceof ItemRepresentation
                 ? [count($resource->media()) > 0]
+                : [false];
+        }
+
+        if ($field === 'digital_object') {
+            return $resource instanceof ItemRepresentation
+                ? $this->extractItemDigitalObjectsValue($resource, $solrMap)
+                : [];
+        }
+
+        if ($field === 'has_digital_object') {
+            return $resource instanceof ItemRepresentation
+                ? [$this->itemHasDigitalObjects($resource)]
                 : [false];
         }
 
@@ -488,6 +502,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             'items' => [],
             'item_sets' => [],
             'media' => [],
+            'digital_objects' => [],
             'assets' => [],
             'users' => [],
         ];
@@ -504,6 +519,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             \Omeka\Api\Representation\AssetRepresentation::class => 'assets',
             \Omeka\Api\Representation\UserRepresentation::class => 'users',
         ];
+        if (class_exists('DigitalObject\Module', false)) {
+            $resourceNames[\DigitalObject\Api\Representation\DigitalObjectRepresentation::class] = 'digital_objects';
+        }
         if (!isset($resourceNames[get_class($resource)])) {
             return false;
         }
@@ -617,6 +635,54 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             $extractedValues = array_merge($extractedValues, $values);
         }
         return $extractedValues;
+    }
+
+    /**
+     * Mirror of extractItemMediasValue() for digital objects referenced by the
+     * item through property values. A DigitalObject is autonomous (no item FK),
+     * so the link is discovered by walking $item->values() and collecting any
+     * value resource whose resourceName is "digital_objects".
+     */
+    protected function extractItemDigitalObjectsValue(
+        ItemRepresentation $item,
+        ?SolrMapRepresentation $solrMap
+    ): array {
+        $extractedValues = [];
+        foreach ($this->collectItemDigitalObjects($item) as $do) {
+            $values = $this->extractValue($do, $solrMap->subMap());
+            $extractedValues = array_merge($extractedValues, $values);
+        }
+        return $extractedValues;
+    }
+
+    protected function itemHasDigitalObjects(ItemRepresentation $item): bool
+    {
+        foreach ($this->collectItemDigitalObjects($item) as $do) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return iterable<\Omeka\Api\Representation\AbstractResourceEntityRepresentation>
+     */
+    protected function collectItemDigitalObjects(ItemRepresentation $item): iterable
+    {
+        $seen = [];
+        foreach ($item->values() as $property) {
+            foreach ($property['values'] as $value) {
+                $vr = $value->valueResource();
+                if (!$vr || $vr->resourceName() !== 'digital_objects') {
+                    continue;
+                }
+                $id = $vr->id();
+                if (isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+                yield $vr;
+            }
+        }
     }
 
     protected function extractItemItemSetsValue(
@@ -931,7 +997,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
     protected function extractMediaContent(MediaRepresentation $media): array
     {
-        if ($media->ingester() === 'html') {
+        if ($media->renderer() === 'html') {
             $output = $media->mediaData()['html'];
             return $output ? [$output] : [];
         }

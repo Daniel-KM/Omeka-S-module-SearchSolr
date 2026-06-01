@@ -325,6 +325,9 @@ class ReduceSolrFields extends AbstractJob
             'item_sets' => \Omeka\Entity\ItemSet::class,
             'media' => \Omeka\Entity\Media::class,
         ];
+        if (class_exists('DigitalObject\Module', false)) {
+            $resourceTypes['digital_objects'] = \DigitalObject\Entity\DigitalObject::class;
+        }
         if (!isset($resourceTypes[$resourceName])) {
             return [];
         }

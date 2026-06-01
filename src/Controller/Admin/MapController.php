@@ -384,6 +384,7 @@ class MapController extends AbstractActionController
             'item_set' => 'Item set', // @translate
             'item' => 'Item', // @translate
             'media' => 'Media', // @translate
+            'digital_object' => 'Digital object', // @translate
         ];
 
         $propertyLabels = [];
