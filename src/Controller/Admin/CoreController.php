@@ -543,39 +543,6 @@ class CoreController extends AbstractActionController
         return true;
     }
 
-    public function clearFullIndexAction()
-    {
-        $id = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
-        try {
-            $this->clearFullIndex($solrCore);
-            $this->messenger()->addWarning(new PsrMessage(
-                'All indexes of core "{solr_core_name}" were deleted.', // @translate
-                ['solr_core_name' => $solrCore->name()]
-            ));
-        } catch (\Throwable $e) {
-            $this->messenger()->addError(new PsrMessage(
-                'Error clearing index: {error}', // @translate
-                ['error' => $e->getMessage()]
-            ));
-        }
-        return $this->redirect()->toRoute(
-            'admin/search/solr/core-id',
-            ['id' => $id, 'action' => 'show']
-        );
-    }
-
-    protected function clearFullIndex(SolrCoreRepresentation $solrCore): void
-    {
-        $solariumClient = $solrCore->solariumClient();
-        $update = $solariumClient
-            ->createUpdate()
-            ->addDeleteQuery('*:*')
-            ->addCommit();
-        $solariumClient->update($update);
-    }
-
     protected function importSolrMapping(SolrCoreRepresentation $solrCore, $filepath, array $options)
     {
         $rows = $this->extractRows($filepath, $options);

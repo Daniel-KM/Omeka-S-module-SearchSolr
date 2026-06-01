@@ -173,7 +173,7 @@ class SolariumIndexer extends AbstractIndexer
             ->has($resourceName);
     }
 
-    public function clearIndex(?Query $query = null): IndexerInterface
+    public function clearIndex(?Query $query = null, bool $all = false): IndexerInterface
     {
         // Solr does not use the same query format than the one used for select:
         // filter queries cannot be used directly. So use them as query part.
@@ -202,6 +202,9 @@ class SolariumIndexer extends AbstractIndexer
                     $query = mb_substr($query, 8);
                 }
             }
+        } elseif ($all) {
+            // Shared core: clear all indexes, included externally managed ones.
+            $query = '*:*';
         } else {
             $query = $this->indexField
                 ? "$this->indexField:$this->indexName"
