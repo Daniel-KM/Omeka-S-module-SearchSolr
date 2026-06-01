@@ -193,7 +193,6 @@ class CoreController extends AbstractActionController
         }
 
         $data = $form->getData();
-        $clearFullIndex = !empty($data['o:settings']['clear_full_index']);
 
         // Store query as array to simplify process.
         $filterResources = [];
@@ -205,7 +204,6 @@ class CoreController extends AbstractActionController
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
         $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages']))));
         $data['o:settings']['field_boost'] = $this->prepareFieldsBoost($solrCore);
-        unset($data['o:settings']['clear_full_index']);
         $this->api()->update('solr_cores', $id, $data);
 
         $this->messenger()->addSuccess(new PsrMessage(
@@ -233,14 +231,6 @@ class CoreController extends AbstractActionController
             $this->messenger()->addWarning('Don’t forget to reindex this core with external indexers.'); // @translate
         } else {
             $this->messenger()->addWarning('Don’t forget to reindex the resources and to check the mapping of the search pages that use this core.'); // @translate
-        }
-
-        if ($clearFullIndex) {
-            $this->clearFullIndex($solrCore);
-            $this->messenger()->addWarning(new PsrMessage(
-                'All indexes of core "{solr_core_name}" were deleted.', // @translate
-                ['solr_core_name' => $solrCore->name()]
-            ));
         }
 
         $maps = $solrCore->maps();
@@ -551,6 +541,29 @@ class CoreController extends AbstractActionController
             return false;
         }
         return true;
+    }
+
+    public function clearFullIndexAction()
+    {
+        $id = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        try {
+            $this->clearFullIndex($solrCore);
+            $this->messenger()->addWarning(new PsrMessage(
+                'All indexes of core "{solr_core_name}" were deleted.', // @translate
+                ['solr_core_name' => $solrCore->name()]
+            ));
+        } catch (\Throwable $e) {
+            $this->messenger()->addError(new PsrMessage(
+                'Error clearing index: {error}', // @translate
+                ['error' => $e->getMessage()]
+            ));
+        }
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id',
+            ['id' => $id, 'action' => 'show']
+        );
     }
 
     protected function clearFullIndex(SolrCoreRepresentation $solrCore): void

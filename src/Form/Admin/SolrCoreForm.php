@@ -238,18 +238,7 @@ class SolrCoreForm extends Form
                     'placeholder' => 'fr de sp und',
                 ],
             ])
-            // TODO Replace the checkbox by a button.
-            ->add([
-                'name' => 'clear_full_index',
-                'type' => Element\Checkbox::class,
-                'options' => [
-                    'label' => 'Clear all indexes, included external ones', // @translate
-                    'info' => 'Warning: this button will clear all indexes on the core, included indexes externally managed if multi-index is set.', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'clear_full_index',
-                ],
-            ]);
+        ;
 
         /*
         $settingsFieldset->get('resource_languages')
@@ -336,10 +325,6 @@ class SolrCoreForm extends Form
         $inputFilter = $this->getInputFilter();
         $settingFilters = $inputFilter->get('o:settings');
         $settingFilters
-            ->add([
-                'name' => 'clear_full_index',
-                'required' => false,
-            ])
             ->add([
                 'name' => 'support',
                 'required' => false,
