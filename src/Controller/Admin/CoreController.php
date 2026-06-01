@@ -987,6 +987,59 @@ class CoreController extends AbstractActionController
         ]);
     }
 
+    /**
+     * Disable the data-driven (schemaless) mode of the "_default" config set.
+     */
+    public function disableDataDrivenAction()
+    {
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        try {
+            $solariumClient = $solrCore->solariumClient();
+            $endpoint = $solariumClient->getEndpoint();
+            $url = $endpoint->getBaseUri() . 'config';
+
+            $data = json_encode([
+                'set-user-property' => [
+                    'update.autoCreateFields' => 'false',
+                ],
+            ]);
+
+            $httpClient = new \Laminas\Http\Client($url, [
+                'timeout' => 30,
+            ]);
+            $httpClient->setMethod('POST');
+            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $httpClient->setRawBody($data);
+            $response = $httpClient->send();
+
+            if ($response->isSuccess()) {
+                $this->messenger()->addSuccess(new PsrMessage(
+                    'Data-driven schema disabled (update.autoCreateFields = false) on core "{solr_core_name}".', // @translate
+                    ['solr_core_name' => $solrCore->name()]
+                ));
+            } else {
+                $body = json_decode($response->getBody(), true);
+                $error = $body['error']['msg'] ?? $response->getReasonPhrase();
+                $this->messenger()->addError(new PsrMessage(
+                    'Failed to disable data-driven schema: {error}', // @translate
+                    ['error' => $error]
+                ));
+            }
+        } catch (\Throwable $e) {
+            $this->messenger()->addError(new PsrMessage(
+                'Error disabling data-driven schema: {error}', // @translate
+                ['error' => $e->getMessage()]
+            ));
+        }
+
+        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+            'id' => $id,
+            'action' => 'show',
+        ]);
+    }
+
     public function recommendedMapsAction()
     {
         return $this->dispatchCompleteMapsJob('recommended');

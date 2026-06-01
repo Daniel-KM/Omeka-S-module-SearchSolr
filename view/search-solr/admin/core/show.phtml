@@ -64,6 +64,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     'class' => 'link',
                     'title' => $translate('Remove the catchall copyField "_text_". Full-text search via "_text_" will stop working until it is recreated.')]) ?></li>
                 <?php endif; ?>
+                <li><?= $hyperlink($translate('Disable data-driven schema'), $solrCore->adminUrl('disable-data-driven'), [
+                    'class' => 'link',
+                    'title' => $translate('Recommended for production: this module manages its own fields through the maps.')]) ?></li>
                 <li class="separator"><span><?= $translate('Deprecated actions') ?></span></li>
                 <li><?= $hyperlink($translate('Recommended maps'), $solrCore->adminUrl('recommended-maps'), [
                     'class' => 'link',
