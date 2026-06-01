@@ -109,6 +109,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'owner' => 'Owner', // @translate
                     'site' => 'Site', // @translate
                     'is_public' => 'Is public', // @translate
+                    'group_id' => 'Groups (module Group)', // @translate
                     'created' => 'Created', // @translate
                     'modified' => 'Modified', // @translate
                     'resource_class' => 'Resource class', // @translate
@@ -228,6 +229,10 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             return method_exists($resource, 'owner')
                 ? $this->extractOwnerValues($resource, $solrMap)
                 : [];
+        }
+
+        if ($field === 'group_id') {
+            return $this->extractReservedGroupIds($resource);
         }
 
         if ($field === 'site') {
@@ -529,6 +534,32 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         return $user
             ? $this->extractValue($user, $solrMap->subMap())
             : [];
+    }
+
+    /**
+     * Ids of the groups (module Group) the resource is reserved to.
+     *
+     * Stored so a private resource can be searched and faceted by users who
+     * belong to one of these groups, like it is already browsable.
+     *
+     * @return int[]
+     */
+    protected function extractReservedGroupIds(AbstractEntityRepresentation $resource): array
+    {
+        if (!class_exists(\Group\Entity\GroupResource::class)) {
+            return [];
+        }
+        $resourceId = (int) $resource->id();
+        if (!$resourceId) {
+            return [];
+        }
+        /** @var \Doctrine\DBAL\Connection $connection */
+        $connection = $resource->getServiceLocator()->get('Omeka\Connection');
+        $groupIds = $connection->executeQuery(
+            'SELECT `group_id` FROM `group_resource` WHERE `resource_id` = :id',
+            ['id' => $resourceId]
+        )->fetchFirstColumn();
+        return array_values(array_map('intval', $groupIds));
     }
 
     protected function extractSitesValues(

@@ -837,7 +837,15 @@ class SolariumQuerier extends AbstractQuerier
         // Visibility.
         if ($this->query->getIsPublic() && ($field = $this->solrCoreField('is_public'))) {
             $val = $this->fieldIsBool($field) ? 'true' : '1';
-            $this->select->addFilterQuery(['key' => 'is_public', 'query' => "$field:$val"]);
+            $publicClause = "$field:$val";
+            // Module Group: also show resources reserved to a group the current
+            // user belongs to (so reserved private content is searchable and
+            // faceted, like it is already browsable).
+            $groupClause = $this->groupVisibilityClause();
+            $this->select->addFilterQuery([
+                'key' => 'is_public',
+                'query' => $groupClause ? "($publicClause OR $groupClause)" : $publicClause,
+            ]);
         }
 
         // Site.
@@ -2292,6 +2300,52 @@ class SolariumQuerier extends AbstractQuerier
                 : null;
         }
         return $this->solrCoreFieldCache[$source];
+    }
+
+    /**
+     * Solr clause matching resources reserved to a group of the current user.
+     *
+     * Returns null (no widening, public only) when module Group is inactive, no
+     * group field is mapped, the user is anonymous, or the user belongs to no
+     * group. The clause only ever adds the user's own group ids, so it cannot
+     * widen visibility beyond the user's groups.
+     */
+    protected function groupVisibilityClause(): ?string
+    {
+        if (!class_exists(\Group\Module::class, false)) {
+            return null;
+        }
+        $field = $this->solrCoreField('group_id');
+        if (!$field) {
+            return null;
+        }
+        $user = $this->services->get('Omeka\AuthenticationService')->getIdentity();
+        if (!$user) {
+            return null;
+        }
+        $connection = $this->services->get('Omeka\Connection');
+        $groupIds = $connection->executeQuery(
+            'SELECT `group_id` FROM `group_user` WHERE `user_id` = :id',
+            ['id' => $user->getId()]
+        )->fetchFirstColumn();
+        return $this->buildGroupClause($field, $groupIds);
+    }
+
+    /**
+     * Build the Solr clause "field:(id OR id ...)" from a list of group ids.
+     *
+     * Returns null when there is no field or no valid id, so the visibility
+     * filter stays restricted to public resources (no leak).
+     *
+     * @param int[]|string[] $groupIds
+     */
+    protected function buildGroupClause(?string $field, array $groupIds): ?string
+    {
+        $groupIds = array_values(array_unique(array_filter(array_map('intval', $groupIds))));
+        if (!$field || !$groupIds) {
+            return null;
+        }
+        return $field . ':(' . implode(' OR ', $groupIds) . ')';
     }
 
     /**
