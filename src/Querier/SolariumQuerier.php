@@ -1508,8 +1508,35 @@ class SolariumQuerier extends AbstractQuerier
     protected function appendHiddenFilters(): self
     {
         $hidden = $this->query->getFiltersQueryHidden();
-        if ($hidden) {
-            $this->processFilters($hidden);
+        if (!$hidden) {
+            return $this;
+        }
+
+        // Hidden filters may mix two shapes per field:
+        // - flat values  : ['field' => [val1, val2, ...]]              → processFilters
+        // - filter rows  : ['field' => [['join','type','val',...], ]]  → processAdvancedFilters
+        // Split before dispatch to keep both shapes supported.
+        $flat = [];
+        $advanced = [];
+        foreach ($hidden as $field => $values) {
+            if (!is_array($values)) {
+                $flat[$field] = $values;
+                continue;
+            }
+            foreach ($values as $value) {
+                if (is_array($value) && !empty($value['type'])) {
+                    $advanced[$field][] = $value;
+                } else {
+                    $flat[$field][] = $value;
+                }
+            }
+        }
+
+        if ($flat) {
+            $this->processFilters($flat);
+        }
+        if ($advanced) {
+            $this->processAdvancedFilters($advanced);
         }
         return $this;
     }
