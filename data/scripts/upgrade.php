@@ -257,7 +257,7 @@ if (version_compare($oldVersion, '3.5.31.3', '<')) {
         ->select('id', 'settings')
         ->from('solr_core', 'solr_core')
         ->orderBy('id', 'asc');
-    $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $solrCoresSettings = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->fetchAllKeyValue();
     foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
         $solrCoreSettings = json_decode($solrCoreSettings, true) ?: [];
         unset($solrCoreSettings['site_url']);
@@ -329,7 +329,7 @@ if (version_compare($oldVersion, '3.5.31.3', '<')) {
         ->select('id', 'settings')
         ->from('solr_core', 'solr_core')
         ->orderBy('id', 'asc');
-    $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $solrCoresSettings = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->fetchAllKeyValue();
     foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
         $solrCoreSettings = json_decode($solrCoreSettings, true) ?: [];
         foreach ($fields as $oldName => $newField) {
@@ -603,7 +603,7 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
         ->select('id', 'id')
         ->from('solr_core', 'solr_core')
         ->orderBy('id', 'asc');
-    $solrCoreIds = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $solrCoreIds = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->fetchAllKeyValue();
     foreach ($solrCoreIds as $solrCoreId) {
         foreach ($newIndexes as $fieldName => $sourceName) {
             // Check if the map exists.
@@ -621,7 +621,7 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
                 * /
                 ->where("solr_core_id = $solrCoreId AND resource_name = 'generic' AND field_name = '$fieldName'")
             ;
-            $solrCoreMaps = $connection->executeQuery($qb)->rowCount();
+            $solrCoreMaps = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->rowCount();
             if (!is_numeric($solrCoreMaps) || $solrCoreMaps) {
                 continue;
             }
@@ -681,7 +681,7 @@ if (version_compare($oldVersion, '3.5.55', '<')) {
         ->select('id', 'settings')
         ->from('solr_map', 'solr_map')
         ->orderBy('id', 'asc');
-    $solrMapIds = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $solrMapIds = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->fetchAllKeyValue();
     foreach ($solrMapIds as $solrMapId => $solrMapSettings) {
         $solrMapSettings = json_decode($solrMapSettings, true);
         $formatter = $solrMapSettings['formatter'] ?? '';
@@ -931,7 +931,7 @@ if (version_compare($oldVersion, '3.5.60', '<')) {
         ->select('id', 'settings')
         ->from('solr_map', 'solr_map')
         ->orderBy('id', 'asc');
-    $solrMapIds = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $solrMapIds = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->fetchAllKeyValue();
     foreach ($solrMapIds as $solrMapId => $solrMapSettings) {
         $solrMapSettings = json_decode($solrMapSettings, true);
         $parts = $solrMapSettings['part'] ?? $solrMapSettings['parts'] ?? [];
@@ -1006,7 +1006,7 @@ if (version_compare($oldVersion, '3.5.62', '<')) {
         ->select('id', 'settings')
         ->from('solr_core', 'solr_core')
         ->orderBy('id', 'asc');
-    $solrCoresSettings = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $solrCoresSettings = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->fetchAllKeyValue();
     foreach ($solrCoresSettings as $solrCoreId => $solrCoreSettings) {
         $solrCoreSettings = json_decode($solrCoreSettings, true) ?: [];
         $fieldBoost = $solrCoreSettings['field_boost'] ?? '';
@@ -1071,7 +1071,7 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
         ->from('solr_map', 'solr_map')
         ->where('settings LIKE \'%"table"%\'')
         ->orderBy('id', 'asc');
-    $solrMapRows = $connection->executeQuery($qb)->fetchAllKeyValue();
+    $solrMapRows = $connection->executeQuery($qb->getSQL(), $qb->getParameters())->fetchAllKeyValue();
     $fixedTable = 0;
     foreach ($solrMapRows as $solrMapId => $solrMapSettings) {
         $solrMapSettings = json_decode($solrMapSettings, true) ?: [];

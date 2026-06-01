@@ -373,7 +373,7 @@ class CompleteSolrMaps extends AbstractJob
             )
             ->orderBy('value.property_id', 'ASC');
         return $connection
-            ->executeQuery($qb, $qb->getParameters())
+            ->executeQuery($qb->getSQL(), $qb->getParameters())
             ->fetchFirstColumn();
     }
 
@@ -399,7 +399,7 @@ class CompleteSolrMaps extends AbstractJob
             ->having('MAX(LENGTH(value.value)) > :max_length')
             ->setParameter('max_length', $maxLength);
         return $connection
-            ->executeQuery($qb, $qb->getParameters())
+            ->executeQuery($qb->getSQL(), $qb->getParameters())
             ->fetchFirstColumn();
     }
 
@@ -432,7 +432,7 @@ class CompleteSolrMaps extends AbstractJob
             ->andWhere("value.lang != ''")
             ->orderBy('property.id', 'asc')
             ->addOrderBy('value.lang', 'asc');
-        $result = $connection->executeQuery($qb)
+        $result = $connection->executeQuery($qb->getSQL(), $qb->getParameters())
             ->fetchAllAssociative();
         $langsByProperties = [];
         foreach ($result as $row) {

@@ -344,7 +344,7 @@ class ReduceSolrFields extends AbstractJob
             )
             ->orderBy('value.property_id', 'ASC');
         return $connection
-            ->executeQuery($qb, $qb->getParameters())
+            ->executeQuery($qb->getSQL(), $qb->getParameters())
             ->fetchFirstColumn();
     }
 
@@ -370,7 +370,7 @@ class ReduceSolrFields extends AbstractJob
             ->having('MAX(LENGTH(value.value)) > :max_length')
             ->setParameter('max_length', $maxLength);
         return $connection
-            ->executeQuery($qb, $qb->getParameters())
+            ->executeQuery($qb->getSQL(), $qb->getParameters())
             ->fetchFirstColumn();
     }
 
