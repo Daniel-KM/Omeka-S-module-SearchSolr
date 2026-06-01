@@ -51,6 +51,16 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
         return $this;
     }
 
+    /**
+     * Optional language used to pick the title of a linked resource, so
+     * multilingual facets can be indexed per language (one map per language).
+     */
+    protected function resourceTitleLang(): ?string
+    {
+        $lang = trim((string) ($this->settings['resource_title_language'] ?? ''));
+        return $lang === '' ? null : $lang;
+    }
+
     public function preFormat($value): array
     {
         if ($value === '' || $value === [] || $value === null) {
@@ -77,7 +87,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                         }
                         $vr = $value->valueResource();
                         if ($vr) {
-                            $result['full_3'] = $vr->displayTitle();
+                            $result['full_3'] = $vr->displayTitle(null, $this->resourceTitleLang());
                         }
                     } elseif ($value instanceof \Omeka\Api\Representation\AssetRepresentation) {
                         $result['value'] = trim((string) $value->altText());
@@ -99,7 +109,7 @@ abstract class AbstractValueFormatter implements ValueFormatterInterface
                     if ($v === '') {
                         $vr = $value->valueResource();
                         $result['main'] = $vr
-                            ? trim((string) $vr->displayTitle())
+                            ? trim((string) $vr->displayTitle(null, $this->resourceTitleLang()))
                             : trim((string) $value->uri());
                     } else {
                         $result['main'] = $v;

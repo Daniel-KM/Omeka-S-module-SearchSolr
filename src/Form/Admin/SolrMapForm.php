@@ -364,6 +364,19 @@ class SolrMapForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'resource_title_language',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Linked resource title: language', // @translate
+                    'info' => 'Optional ISO language code (e.g. "en", "fr") used to pick the title of a linked resource for indexing. Useful for multilingual facets: create one map per language. Falls back to the default title when the language is missing.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'resource_title_language',
+                    'required' => false,
+                    'placeholder' => 'fr',
+                ],
+            ])
+            ->add([
                 'name' => 'formatter',
                 'type' => Element\Radio::class,
                 'options' => [

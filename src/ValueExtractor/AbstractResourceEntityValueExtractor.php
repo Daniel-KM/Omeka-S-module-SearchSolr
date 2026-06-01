@@ -199,7 +199,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         if ($field === '') {
             if (method_exists($resource, 'displayTitle')) {
-                $title = $resource->displayTitle('');
+                $lang = (string) $solrMap->setting('resource_title_language');
+                $title = $resource->displayTitle('', $lang !== '' ? $lang : null);
             } elseif (method_exists($resource, 'title')) {
                 $title = $resource->title();
             } elseif (method_exists($resource, 'label')) {
@@ -398,7 +399,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
 
         // TODO Use all available locales to get the title and the description.
         if ($field === 'o:title' && method_exists($resource, 'displayTitle')) {
-            $result = $resource->displayTitle();
+            $lang = (string) $solrMap->setting('resource_title_language');
+            $result = $resource->displayTitle(null, $lang !== '' ? $lang : null);
             return $result === null || $result === '' || $result === []
                 ? []
                 : [$result];
