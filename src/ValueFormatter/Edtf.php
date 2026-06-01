@@ -60,34 +60,9 @@ class Edtf extends AbstractValueFormatter
             return [];
         }
 
-        if (!class_exists(EdtfFactory::class)) {
+        [$min, $max] = $this->bounds($edtfString);
+        if ($min === null && $max === null) {
             return [];
-        }
-
-        try {
-            $result = EdtfFactory::newParser()->parse($edtfString);
-        } catch (\Throwable $e) {
-            return [];
-        }
-
-        if (!$result->isValid()) {
-            return [];
-        }
-
-        $edtf = $result->getEdtfValue();
-
-        // Compute bounds. For intervals, use explicit start/end dates;
-        // otherwise build min/max from the single value's precision.
-        if ($edtf instanceof Interval) {
-            $min = $edtf->hasStartDate()
-                ? $this->toIso($edtf->getStartDate(), false)
-                : null;
-            $max = $edtf->hasEndDate()
-                ? $this->toIso($edtf->getEndDate(), true)
-                : null;
-        } else {
-            $min = $this->toIso($edtf, false);
-            $max = $this->toIso($edtf, true);
         }
 
         $part = $this->settings['part'] ?? 'min';
@@ -99,6 +74,63 @@ class Edtf extends AbstractValueFormatter
             $values[] = $max;
         }
         return $values;
+    }
+
+    /**
+     * Parse an EDTF string once and return its [minIso, maxIso] bounds,
+     * memoized per string and precision.
+     *
+     * The same annotation date is indexed by several maps (year
+     * start/end/range, date start/end): the EDTF parse is the costly step and
+     * is identical for all of them, so parsing once and reusing the bounds
+     * removes the per-map repetition. The cache is soft-capped to keep memory
+     * bounded during a full reindex.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    protected function bounds(string $edtfString): array
+    {
+        static $cache = [];
+
+        $key = ($this->dateOnly ? '1|' : '0|') . $edtfString;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        $result = [null, null];
+        if (class_exists(EdtfFactory::class)) {
+            try {
+                $parsed = EdtfFactory::newParser()->parse($edtfString);
+                if ($parsed->isValid()) {
+                    $edtf = $parsed->getEdtfValue();
+                    // For intervals, use explicit start/end dates; otherwise
+                    // build min/max from the single value's precision.
+                    if ($edtf instanceof Interval) {
+                        $min = $edtf->hasStartDate()
+                            ? $this->toIso($edtf->getStartDate(), false)
+                            : null;
+                        $max = $edtf->hasEndDate()
+                            ? $this->toIso($edtf->getEndDate(), true)
+                            : null;
+                    } else {
+                        $min = $this->toIso($edtf, false);
+                        $max = $this->toIso($edtf, true);
+                    }
+                    $result = [$min, $max];
+                }
+            } catch (\Throwable $e) {
+                // Invalid EDTF: cache the null bounds to avoid re-parsing.
+            }
+        }
+
+        // Within a resource the same date repeats across maps (cache hit);
+        // across the whole index distinct dates accumulate, so reset when large
+        // rather than growing unbounded.
+        if (count($cache) >= 20000) {
+            $cache = [];
+        }
+
+        return $cache[$key] = $result;
     }
 
     /**
