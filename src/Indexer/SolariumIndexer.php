@@ -360,8 +360,14 @@ class SolariumIndexer extends AbstractIndexer
                     }
                 }
             } else {
+                // When a document is rejected (generally invalid value for a
+                // typed field), a batch flush fails as a whole, so reindex
+                // documents one by one to skip only the offending ones instead
+                // of losing the whole batch.
+                $savedDocs = $this->buffer->getDocuments();
                 $this->solrError($e);
                 $this->buffer->clear();
+                $this->flushDocumentsOneByOne($savedDocs);
             }
         }
 
@@ -370,6 +376,29 @@ class SolariumIndexer extends AbstractIndexer
         // costly segment merges during bulk indexing.
 
         return $this;
+    }
+
+    /**
+     * Re-index documents individually to skip only the ones Solr rejects.
+     *
+     * A batch flush fails as a whole when a single document is invalid, so this
+     * isolates the offending documents and keeps every valid one indexed.
+     */
+    protected function flushDocumentsOneByOne(array $documents): void
+    {
+        foreach ($documents as $document) {
+            try {
+                $this->buffer->addDocument($document);
+                $this->buffer->flush();
+            } catch (Exception $e) {
+                $this->buffer->clear();
+                $fields = $document->getFields();
+                $this->getLogger()->err(
+                    'Document {id} rejected by Solr and skipped: {message}', // @translate
+                    ['id' => $fields['id'] ?? '?', 'message' => $e->getMessage()]
+                );
+            }
+        }
     }
 
     /**
