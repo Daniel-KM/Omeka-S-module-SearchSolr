@@ -407,8 +407,8 @@ class Module extends AbstractModule
                 'job_id' => $job->getId(),
                 'link_end' => '</a>',
                 'link_log' => class_exists('Log\Module', false)
-                    ? sprintf('<a href="%1$s">', $urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]]))
-                    : sprintf('<a href="%1$s" target="_blank">', $urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()])),
+                    ? sprintf('<a href="%1$s">', htmlspecialchars($urlHelper('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]])))
+                    : sprintf('<a href="%1$s" target="_blank" rel="noopener noreferrer">', htmlspecialchars($urlHelper('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()]))),
             ]
         );
         $message->setEscapeHtml(false);
@@ -843,7 +843,7 @@ class Module extends AbstractModule
             'The default core can be configured in the %1$ssearch manager%2$s.', // @translate
             // Don't use the url helper, the route is not available
             // during install.
-            sprintf('<a href="%s">', $urlHelper('admin') . '/search-manager/solr/core/' . $solrCoreId . '/edit'),
+            sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin') . '/search-manager/solr/core/' . $solrCoreId . '/edit')),
             '</a>'
         );
         $message->setEscapeHtml(false);
@@ -899,7 +899,7 @@ class Module extends AbstractModule
 
         $message = new \Omeka\Stdlib\Message(
             'A default Solr search engine has been created. Configure it in the %1$ssearch manager%2$s.', // @translate
-            sprintf('<a href="%s">', $urlHelper('admin') . '/search-manager/engine/' . $searchEngineId . '/edit'),
+            sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin') . '/search-manager/engine/' . $searchEngineId . '/edit')),
             '</a>'
         );
         $message->setEscapeHtml(false);

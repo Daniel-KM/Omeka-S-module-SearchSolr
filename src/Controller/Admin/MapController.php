@@ -189,7 +189,7 @@ class MapController extends AbstractActionController
                 $data = $this->arrayFilterRecursiveEmptyValue($data);
                 $data = $this->cleanMapSettings($data);
                 $data = $this->arrayFilterRecursiveEmptyValue($data);
-                $data['o:source'] = $this->sourceArrayToString($data['o:source']);
+                $data['o:source'] = $this->sourceArrayToString($data['o:source'] ?? []);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->create('solr_maps', $data);
@@ -264,7 +264,7 @@ class MapController extends AbstractActionController
                 $data = $this->arrayFilterRecursiveEmptyValue($data);
                 $data = $this->cleanMapSettings($data);
                 $data = $this->arrayFilterRecursiveEmptyValue($data);
-                $data['o:source'] = $this->sourceArrayToString($data['o:source']);
+                $data['o:source'] = $this->sourceArrayToString($data['o:source'] ?? []);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
                 $this->api()->update('solr_maps', $id, $data);
@@ -448,7 +448,7 @@ class MapController extends AbstractActionController
      */
     protected function sourceArrayToString($source)
     {
-        return implode('/', array_map(fn ($v) => $v['source'], $source));
+        return implode('/', array_map(fn ($v) => $v['source'] ?? '', $source ?: []));
     }
 
     /**

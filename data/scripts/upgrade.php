@@ -500,7 +500,7 @@ if (version_compare($oldVersion, '3.5.42', '<')) {
 
         $message = new PsrMessage(
             'The table used for indexation has been converted into a standard {link}table{link_end}. It is recommended to remove the old one from the config.', // @translate
-            ['link' => sprintf('<a href="%s">', $table->url()), 'link_end' => '</a>']
+            ['link' => sprintf('<a href="%s">', htmlspecialchars($table->url())), 'link_end' => '</a>']
         );
         $message->setEscapeHtml(false);
         $messenger->addWarning($message);
@@ -900,7 +900,7 @@ if (version_compare($oldVersion, '3.5.58', '<')) {
     $message = new PsrMessage(
         'A {link}config form{link_end} was added to specify the use of php-curl if wanted and the solarium timeout.', // @translate
         [
-            'link' => sprintf('<a href="%s">', $url('admin/default', ['controller' => 'module', 'action' => 'configure'], ['query' => ['id' => 'SearchSolr']])),
+            'link' => sprintf('<a href="%s">', htmlspecialchars($url('admin/default', ['controller' => 'module', 'action' => 'configure'], ['query' => ['id' => 'SearchSolr']]))),
             'link_end' => '</a>',
         ]
     );
