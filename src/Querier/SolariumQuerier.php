@@ -148,6 +148,12 @@ class SolariumQuerier extends AbstractQuerier
             $result = $client->suggester($suggesterQuery);
 
             $limit = $this->query ? $this->query->getLimit() : 10;
+            // Resolve the locale used to strip elided articles from suggested
+            // surface forms. Solr's AnalyzingInfixLookupFactory returns the raw
+            // stored text, so the dedup and the displayed value are normalized
+            // here: "l'écomusée", "l’écomusée" and "écomusée" collapse to one.
+            $elisionLocale = $suggestOptions['elision_locale']
+                ?? $this->resolveTranslatorLocale();
             $seen = [];
             $suggestions = [];
             foreach ($result as $dictionary) {
@@ -157,6 +163,7 @@ class SolariumQuerier extends AbstractQuerier
                         if ($value === '') {
                             continue;
                         }
+                        $value = $this->stripElidedArticles($value, $elisionLocale);
                         // Truncate long suggestions at word boundary.
                         if ($maxLength && mb_strlen($value) > $maxLength) {
                             $value = mb_substr($value, 0, $maxLength);
@@ -192,6 +199,69 @@ class SolariumQuerier extends AbstractQuerier
         } catch (\Throwable $e) {
             $this->getLogger()->err('Solr suggester error: ' . $e->getMessage());
             return $this->response->setMessage('Solr suggester error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Per-language elided articles (aligned on Solr's lang/contractions_*.txt).
+     * Keys are 2-letter ISO 639-1 codes. Articles are matched
+     * case-insensitively and accept both ASCII (U+0027) and curly (U+2019)
+     * apostrophes.
+     */
+    protected const ELISION_ARTICLES = [
+        'fr' => ['l', 'd', 'n', 'qu', 'j', 'm', 't', 's', 'c', 'jusqu', 'lorsqu', 'puisqu', 'quoiqu'],
+        'it' => ['c', 'l', 'all', 'dall', 'dell', 'nell', 'sull', 'coll', 'pell', 'gl', 'agl', 'dagl', 'degl', 'negl', 'sugl', 'un', 'm', 't', 's', 'v', 'd', 'st', 'n', 'd'],
+        'ca' => ['d', 'l', 'm', 'n', 's', 't'],
+        'ga' => ['d', 'm', 'b'],
+    ];
+
+    /**
+     * Strip a leading elided article from a value, based on locale. Matches the
+     * Solr ElisionFilter but applied to the displayed surface form so that the
+     * deduplication and the displayed suggestion are language-aware.
+     */
+    protected function stripElidedArticles(string $value, ?string $locale): string
+    {
+        if ($value === '' || $locale === null) {
+            return $value;
+        }
+        $lang = strtolower(substr($locale, 0, 2));
+        $articles = self::ELISION_ARTICLES[$lang] ?? null;
+        if (!$articles) {
+            return $value;
+        }
+        $pattern = '/^(' . implode('|', array_map('preg_quote', $articles)) . ')[\'\x{2019}]\s*/iu';
+        $stripped = preg_replace($pattern, '', $value);
+        return $stripped === null ? $value : ltrim($stripped);
+    }
+
+    /**
+     * Resolve the locale used as fallback for elision stripping. Looks first at
+     * the site locale (from the query site id) so that suggestions on a French
+     * site strip French articles even when the global translator has not been
+     * switched yet to the site locale.
+     */
+    protected function resolveTranslatorLocale(): ?string
+    {
+        try {
+            $siteId = $this->query ? $this->query->getSiteId() : null;
+            if ($siteId) {
+                $siteSettings = $this->services->get('Omeka\Settings\Site');
+                $siteSettings->setTargetId($siteId);
+                $locale = $siteSettings->get('locale');
+                if (is_string($locale) && $locale !== '') {
+                    return $locale;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fall through to translator locale.
+        }
+        try {
+            $translator = $this->services->get('MvcTranslator');
+            $locale = method_exists($translator, 'getLocale') ? $translator->getLocale() : null;
+            return is_string($locale) && $locale !== '' ? $locale : null;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 
