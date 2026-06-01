@@ -617,6 +617,18 @@ class SolrMapForm extends Form
 
         $settingsFieldset
             ->add([
+                'name' => 'include_digital_object',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Include digital objects', // @translate
+                    'info' => 'For source "Item: Has media" only: also return true when the item has no native media but is linked to at least one digital object (module Digital Object). Useful when the content was migrated to digital objects. Reindex required.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'include_digital_object',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'finalization',
                 'type' => CommonElement\OptionalMultiCheckbox::class,
                 'options' => [

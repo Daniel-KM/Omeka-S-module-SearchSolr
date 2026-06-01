@@ -289,9 +289,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         }
 
         if ($field === 'has_media') {
-            return $resource instanceof ItemRepresentation
-                ? [count($resource->media()) > 0]
-                : [false];
+            if (!$resource instanceof ItemRepresentation) {
+                return [false];
+            }
+            if (count($resource->media()) > 0) {
+                return [true];
+            }
+            // Items whose content was migrated to linked digital objects have
+            // no native media: optionally count them as having media too.
+            return [
+                (bool) $solrMap->setting('include_digital_object')
+                    && $this->itemHasDigitalObjects($resource),
+            ];
         }
 
         if ($field === 'digital_object') {
