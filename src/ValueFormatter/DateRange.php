@@ -44,6 +44,12 @@ class DateRange extends AbstractValueFormatter
         if (preg_match('|^\s*(\d+)\s*[-/]\s*(\d+)\s*$|', $value, $matches)) {
             $start = $matches[1];
             $end = $matches[2];
+            // Complete an abbreviated end year with the leading digits of the
+            // start (e.g. "1914-18" => 1918, "1939-45" => 1945), so the range
+            // stays valid instead of producing "[1914 TO 18]".
+            if (strlen($end) < strlen($start)) {
+                $end = substr($start, 0, strlen($start) - strlen($end)) . $end;
+            }
         }
         // A single year like 1914.
         elseif (preg_match('|^\s*(\d+)\s*$|', $value, $matches)) {
@@ -52,6 +58,12 @@ class DateRange extends AbstractValueFormatter
 
         if (!isset($start) || !isset($end)) {
             return [];
+        }
+
+        // Guarantee start <= end, else Solr rejects the date range field and
+        // the whole document fails to index.
+        if ((int) $start > (int) $end) {
+            [$start, $end] = [$end, $start];
         }
 
         return ["[$start TO $end]"];
