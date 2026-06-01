@@ -1496,9 +1496,68 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
      *   descriptions, etc.) in the suggest field.
      * @return bool|string True on success, error message on failure.
      */
+    /**
+     * Ensure a language-neutral suggest field type with diacritics folding.
+     *
+     * Creates (or replaces) a "text_suggest_folded" type using
+     * StandardTokenizer + LowerCaseFilter + ASCIIFoldingFilter
+     * (preserveOriginal=true). No language-specific stemming, so it works
+     * across all languages indexed in the same core.
+     */
+    public function ensureSuggestFoldedFieldType(): bool
+    {
+        $analyzer = [
+            'tokenizer' => ['class' => 'solr.StandardTokenizerFactory'],
+            'filters' => [
+                ['class' => 'solr.LowerCaseFilterFactory'],
+                [
+                    'class' => 'solr.ASCIIFoldingFilterFactory',
+                    'preserveOriginal' => 'true',
+                ],
+            ],
+        ];
+        $fieldTypeDef = [
+            'name' => 'text_suggest_folded',
+            'class' => 'solr.TextField',
+            'positionIncrementGap' => '100',
+            'indexAnalyzer' => $analyzer,
+            'queryAnalyzer' => $analyzer,
+        ];
+        $schemaUrl = $this->clientUrl() . '/schema';
+        $result = $this->postToSolrConfig(
+            $schemaUrl,
+            json_encode(['add-field-type' => $fieldTypeDef])
+        );
+        if ($result === true) {
+            return true;
+        }
+        if (is_string($result)
+            && stripos($result, 'already exists') !== false
+        ) {
+            $result = $this->postToSolrConfig(
+                $schemaUrl,
+                json_encode(['replace-field-type' => $fieldTypeDef])
+            );
+            return $result === true;
+        }
+        $this->getServiceLocator()->get('Omeka\Logger')->err(
+            'SearchSolr: Cannot create text_suggest_folded: {error}', // @translate
+            ['error' => is_string($result) ? $result : 'unknown']
+        );
+        return false;
+    }
+
     public function ensureSuggestField(
-        bool $includeLongTexts = false
+        bool $includeLongTexts = false,
+        ?string $fieldType = null
     ) {
+        if ($fieldType === null) {
+            if (!$this->ensureSuggestFoldedFieldType()) {
+                return 'Failed to create language-neutral folded type.';
+            }
+            $fieldType = 'text_suggest_folded';
+        }
+
         $skipTermTexts = $includeLongTexts
             ? []
             : (include dirname(__DIR__, 3) . '/config/metadata_text.php');
@@ -1559,7 +1618,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $result = $this->postToSolrConfig($schemaUrl, json_encode([
             'add-field' => [
                 'name' => 'suggest_txt',
-                'type' => 'text_general',
+                'type' => $fieldType,
                 'stored' => true,
                 'indexed' => true,
                 'multiValued' => true,

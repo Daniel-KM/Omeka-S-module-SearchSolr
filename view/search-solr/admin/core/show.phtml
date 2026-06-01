@@ -163,6 +163,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
     <?php else: ?>
     <p class="explanation"><strong><?= $translate('Current status: suggest_txt does not exist.') ?></strong></p>
     <?php endif; ?>
+    <p class="explanation"><?= $translate('By default, "suggest_txt" uses a language-neutral folded type (lowercase + ASCII folding, preserveOriginal), so suggestions are case- and diacritics-insensitive. Use the "diacritics-sensitive" variants to keep type "text_general" instead.') ?></p>
     <ul>
         <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt' : 'Create suggest_txt'), $solrCore->adminUrl('create-suggest-field'), [
             'class' => 'button',
@@ -170,6 +171,12 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (with long texts)' : 'Create suggest_txt (with long texts)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1', [
             'class' => 'button',
             'title' => $translate('Create "suggest_txt" including long-value properties (OCR, descriptions, etc.).')]) ?></li>
+        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (diacritics-sensitive)' : 'Create suggest_txt (diacritics-sensitive)'), $solrCore->adminUrl('create-suggest-field') . '?keep_diacritics=1', [
+            'class' => 'button',
+            'title' => $translate('Create "suggest_txt" with type "text_general" (case-insensitive only).')]) ?></li>
+        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (with long texts, diacritics-sensitive)' : 'Create suggest_txt (with long texts, diacritics-sensitive)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1&keep_diacritics=1', [
+            'class' => 'button',
+            'title' => $translate('Create "suggest_txt" including long-value properties with type "text_general".')]) ?></li>
     </ul>
 </details>
 <?php endif; ?>

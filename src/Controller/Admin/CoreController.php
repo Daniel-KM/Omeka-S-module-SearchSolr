@@ -1867,10 +1867,13 @@ class CoreController extends AbstractActionController
 
         $includeLongTexts = (bool) $this->params()
             ->fromQuery('include_long_texts');
+        $keepDiacritics = (bool) $this->params()
+            ->fromQuery('keep_diacritics');
         $alreadyExists = (bool) $solrCore->schema()
             ->getField('suggest_txt');
+        $fieldType = $keepDiacritics ? 'text_general' : null;
         $result = $solrCore
-            ->ensureSuggestField($includeLongTexts);
+            ->ensureSuggestField($includeLongTexts, $fieldType);
         if ($result === true) {
             $this->messenger()->addSuccess($alreadyExists
                 ? 'Field "suggest_txt" recreated. Reindex required.' // @translate
