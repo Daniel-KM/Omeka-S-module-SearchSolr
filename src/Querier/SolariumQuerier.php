@@ -1806,7 +1806,7 @@ class SolariumQuerier extends AbstractQuerier
             case 'nsw':
             case 'sw':
                 if ($this->fieldIsString($field)) {
-                    $val = $this->escape($val, '', '.*');
+                    $val = $this->regexValue($val, '', '.*');
                 } else {
                     $val = $this->escapePhraseValue($val, 'AND');
                 }
@@ -1816,7 +1816,7 @@ class SolariumQuerier extends AbstractQuerier
             case 'new':
             case 'ew':
                 if ($this->fieldIsString($field)) {
-                    $val = $this->escape($val, '.*', '');
+                    $val = $this->regexValue($val, '.*', '');
                 } else {
                     $val = $this->escapePhraseValue($val, 'AND');
                 }
@@ -2479,6 +2479,39 @@ class SolariumQuerier extends AbstractQuerier
         }
         $escaped = array_map(fn ($v) => $this->escapePhrase($pre . $v . $post), $vals);
         return implode(' OR ', $escaped);
+    }
+
+    /**
+     * Build a Solr regex term (or OR-list) for "starts/ends with" on a string
+     * field.
+     *
+     * Each value is wrapped as /<pre><escaped value><post>/, where $pre and
+     * $post are raw regex fragments (".*"), and the value's own regex
+     * metacharacters are escaped so it matches literally. The previous code
+     * used escape() (escapePhrase), which quoted the value: the ".*" was then
+     * searched as a literal phrase and never matched anything.
+     */
+    protected function regexValue($val, string $pre, string $post): string
+    {
+        $vals = is_array($val) ? $val : [$val];
+        $vals = array_filter(array_map('strval', $vals), 'strlen');
+        if (!$vals) {
+            return '';
+        }
+        $escaped = array_map(
+            fn ($v) => '/' . $pre . $this->escapeRegexChars($v) . $post . '/',
+            $vals
+        );
+        return implode(' OR ', $escaped);
+    }
+
+    /**
+     * Escape Lucene regex metacharacters so the value is matched literally
+     * inside a Solr "/.../" regex query.
+     */
+    protected function escapeRegexChars(string $s): string
+    {
+        return preg_replace('~([.\\\\+*?()\[\]{}|^$/"@<>#&\x7e])~', '\\\\$1', $s);
     }
 
     /**
