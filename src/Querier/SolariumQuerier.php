@@ -272,11 +272,16 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function getSuggesterNames(array $suggestOptions)
     {
-        // Support both old single field (solr_field) and new multi-field (solr_fields).
+        // Support both old single field (solr_field) and new multi-field
+        // (solr_fields).
         $solrFields = $suggestOptions['solr_fields'] ?? [];
         if (empty($solrFields) && !empty($suggestOptions['solr_field'])) {
             $solrFields = [$suggestOptions['solr_field']];
         }
+
+        // When a catchall is explicitly selected, a single suggester on it is
+        // enough. Kept consistent with CreateSolrSuggesters.
+        $solrFields = \SearchSolr\Stdlib\SuggesterFields::reduceToCatchall($solrFields);
 
         // Resolve "auto": stored text and string fields, preferring _txt.
         if (empty($solrFields) || in_array('auto', $solrFields)) {

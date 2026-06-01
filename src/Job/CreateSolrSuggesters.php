@@ -70,6 +70,10 @@ class CreateSolrSuggesters extends AbstractJob
             $solrFields = [$settings['solr_field']];
         }
 
+        // When a catchall is explicitly selected, build a single suggester on
+        // it. Kept consistent with SolariumQuerier::getSuggesterNames().
+        $solrFields = \SearchSolr\Stdlib\SuggesterFields::reduceToCatchall($solrFields);
+
         // Auto-create suggest_txt field if selected but missing.
         if (in_array('suggest_txt', $solrFields)) {
             $result = $solrCore->ensureSuggestField();
