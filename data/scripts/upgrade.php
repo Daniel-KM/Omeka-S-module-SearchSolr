@@ -1402,3 +1402,46 @@ if (version_compare($oldVersion, '3.5.68', '<')) {
         'The maintenance action "Sync maps from search configs" now stores a backup of the previous map configuration on each run. The last 3 snapshots are kept on each Solr core and can be restored from the core page.' // @translate
     ));
 }
+
+if (version_compare($oldVersion, '3.5.69', '<')) {
+    // Re-index multi-value list settings (parts, normalization, etc.) that
+    // were stored as json objects with a gap ({"1":"main"}) after an empty
+    // option was filtered out without re-indexing, so they become lists again
+    // (["main"]). Map-like settings such as "table" keep their keys.
+    $listKeys = ['parts', 'normalization', 'thesaurus_metadata', 'finalization'];
+    $rows = $connection
+        ->executeQuery('SELECT `id`, `settings` FROM `solr_map`')
+        ->fetchAllAssociative();
+    foreach ($rows as $row) {
+        $settings = strlen((string) $row['settings'])
+            ? json_decode($row['settings'], true)
+            : [];
+        if (!is_array($settings) || !$settings) {
+            continue;
+        }
+        $normalized = $settings;
+        foreach ($listKeys as $listKey) {
+            if (isset($normalized[$listKey]) && is_array($normalized[$listKey])) {
+                $normalized[$listKey] = array_values($normalized[$listKey]);
+            }
+        }
+        if ($normalized !== $settings) {
+            $connection->executeStatement(
+                'UPDATE `solr_map` SET `settings` = :settings WHERE `id` = :id',
+                ['settings' => json_encode($normalized), 'id' => $row['id']]
+            );
+        }
+    }
+
+    $messenger->addSuccess(new PsrMessage(
+        'Autocompletion is now diacritics-insensitive by default. To apply, click "Recreate suggest_txt" in the "Suggest configuration" section on the core show page and reindex.' // @translate
+    ));
+
+    $messenger->addSuccess(new PsrMessage(
+        'The search now supports jokers "*" and "?" by default. They cannot be used as first character and the query should contains at least three characters.' // @translate
+    ));
+
+    $messenger->addSuccess(new PsrMessage(
+        'The map source "Item: Has media" has a new option "Include digital objects": when set, an item with no native media but linked to at least one digital object (module Digital Object) is also indexed as having media.' // @translate
+    ));
+}
