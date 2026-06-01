@@ -164,11 +164,11 @@ class SolrCoreForm extends Form
                 'type' => Element\Radio::class,
                 'options' => [
                     'label' => 'Http request type', // @translate
-                    'info' => 'Choose if requests to Solr use "get" or "post".', // @translate
+                    'info' => 'With "get by default", only big queries use "post" (limit is 1024 bytes) and it avoids "414 URI too long" with many facets or filters, but post queries are not cached.With "get", requests always use "get" and fail when too long. So keep "post" unless an HTTP cache layer requires pure "get".', // @translate
                     'documentation' => 'https://solarium.readthedocs.io/en/latest/plugins/#postbigrequest-plugin',
                     'value_options' => [
-                        'post' => 'Post (allow big queries and numerous facets)', // @translate
-                        'get' => 'Get (cacheable)', // @translate
+                        'post' => '"Get" by default and "Post" for big queries (not cacheable)', // @translate
+                        'get' => '"Get" only (fail on big queries)', // @translate
                     ],
                 ],
                 'attributes' => [
@@ -279,46 +279,10 @@ class SolrCoreForm extends Form
                 ]);
         }
 
-        $querySettingsFieldset
-            ->add([
-                'name' => 'minimum_match',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Minimum match (or/and)', // @translate
-                    'info' => <<<'TXT'
-                        Integer "1" means "OR", "100%" means "AND". Complex expressions are possible, like "3<80%".
-                        If empty, the config of the solr core (solrconfig.xml) will be used.
-                        TXT, // @translate
-                    'documentation' => 'https://solr.apache.org/guide/the-dismax-query-parser.html#mm-minimum-should-match-parameter',
-                ],
-                'attributes' => [
-                    'required' => false,
-                    'value' => '',
-                    'placeholder' => '3<80%',
-                ],
-            ])
-            ->add([
-                'name' => 'tie_breaker',
-                'type' => Element\Number::class,
-                'options' => [
-                    'label' => 'Tie breaker', // @translate
-                    'info' => <<<'TXT'
-                        Increase score according to the number of matched fields.
-                        If empty, the config of the solr core (solrconfig.xml) will be used.
-                        TXT, // @translate
-                    'documentation' => 'https://solr.apache.org/guide/the-dismax-query-parser.html#the-tie-tie-breaker-parameter',
-                ],
-                'attributes' => [
-                    'id' => 'tie_breaker',
-                    'required' => false,
-                    'value' => '',
-                    'placeholder' => '0.15',
-                    'inclusive' => true,
-                    'min' => '0.0',
-                    'max' => '1.0',
-                    'step' => '0.01',
-                ],
-            ]);
+        // Query relevance settings (minimum match, tie breaker) were moved to
+        // the "Search configuration" section on the core show page, with the
+        // catchall analyzer, since they tune search behaviour rather than the
+        // connection/indexing defined here.
 
         // TODO Other fields (boost...) requires multiple fields. See https://secure.php.net/manual/en/class.solrdismaxquery.php.
 
@@ -333,10 +297,6 @@ class SolrCoreForm extends Form
             ->get('query')
             ->add([
                 'name' => 'copy_field_info',
-                'required' => false,
-            ])
-            ->add([
-                'name' => 'tie_breaker',
                 'required' => false,
             ]);
         $settingFilters

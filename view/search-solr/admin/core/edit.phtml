@@ -60,7 +60,35 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores create edit');
 </nav>
 
 <?= $this->form()->openTag($form) ?>
-<?= $this->formCollection($form, false) ?>
+
+<?php // Top-level elements (o:name and the csrf token). ?>
+<?php foreach ($form->getElements() as $element): ?>
+<?= $this->formRow($element) ?>
+<?php endforeach; ?>
+
+<?php $settings = $form->get('o:settings'); ?>
+
+<fieldset class="field-container">
+    <legend><?= $translate('Connection') ?></legend>
+    <?= $this->formCollection($settings->get('client'), false) ?>
+</fieldset>
+
+<fieldset class="field-container">
+    <legend><?= $translate('General filter') ?></legend>
+    <?= $this->formRow($settings->get('filter_resources')) ?>
+</fieldset>
+
+<fieldset class="field-container">
+    <legend><?= $translate('Shared core') ?></legend>
+    <?= $this->formRow($settings->get('support')) ?>
+    <?= $this->formRow($settings->get('server_id')) ?>
+    <?= $this->formRow($settings->get('resource_languages')) ?>
+</fieldset>
+
+<?php if ($settings->has('query') && count($settings->get('query')->getElements())): ?>
+<?= $this->formCollection($settings->get('query'), false) ?>
+<?php endif; ?>
+
 <?php $this->trigger('view.edit.form.after'); ?>
 <?= $this->form()->closeTag() ?>
 

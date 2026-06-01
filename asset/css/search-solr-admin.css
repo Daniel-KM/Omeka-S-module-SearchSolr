@@ -236,6 +236,21 @@
     #search-config form .inputs {
         width: 100%;
     }
+    /* Distinguish the radio label (bold) from its explanation (grey block on
+       its own line). */
+    #search-config .inputs > label {
+        font-weight: bold;
+    }
+    #search-config .explanation {
+        display: block;
+        margin-top: .15em;
+        font-weight: normal;
+        color: #6c7280;
+        font-size: .9em;
+    }
+    #search-config .inputs > label .explanation {
+        margin-left: 1.7em;
+    }
 
     /* Sortable column indicators. */
     th[data-sortable] {

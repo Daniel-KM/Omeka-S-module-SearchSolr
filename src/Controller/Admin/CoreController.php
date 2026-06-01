@@ -204,6 +204,17 @@ class CoreController extends AbstractActionController
         $data['o:settings']['client']['host'] = preg_replace('(^https?://)', '', $data['o:settings']['client']['host']);
         $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages']))));
         $data['o:settings']['field_boost'] = $this->prepareFieldsBoost($solrCore);
+
+        // Query relevance settings (minimum_match, tie_breaker) are edited on
+        // the show page, not in this form: preserve them so a full save here
+        // does not wipe them.
+        $existingQuery = $solrCore->settings()['query'] ?? [];
+        foreach (['minimum_match', 'tie_breaker'] as $key) {
+            if (isset($existingQuery[$key]) && $existingQuery[$key] !== '') {
+                $data['o:settings']['query'][$key] = $existingQuery[$key];
+            }
+        }
+
         $this->api()->update('solr_cores', $id, $data);
 
         $this->messenger()->addSuccess(new PsrMessage(
@@ -241,7 +252,7 @@ class CoreController extends AbstractActionController
             ));
         }
 
-        return $this->redirect()->toRoute('admin/search/solr');
+        return $this->redirect()->toRoute('admin/search');
     }
 
     public function showAction()
@@ -1886,6 +1897,14 @@ class CoreController extends AbstractActionController
         $id = $this->params('id');
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
+        // Persist query relevance settings, moved here from the core edit form:
+        // they tune search behaviour like the catchall analyzer below. Empty
+        // values are dropped by the adapter (fallback to solrconfig.xml).
+        $settings = $solrCore->settings();
+        $settings['query']['minimum_match'] = trim((string) $this->params()->fromPost('minimum_match', ''));
+        $settings['query']['tie_breaker'] = trim((string) $this->params()->fromPost('tie_breaker', ''));
+        $this->api()->update('solr_cores', $id, ['o:settings' => $settings], [], ['isPartial' => true]);
+
         $searchConfig = $this->params()->fromPost('search_config', 'keep');
 
         // Combine linguistic + language into one value.
@@ -1894,10 +1913,11 @@ class CoreController extends AbstractActionController
             $searchConfig = $lang ? 'linguistic:' . $lang : 'keep';
         }
 
-        // Option "keep": do nothing.
+        // Option "keep": only the query relevance settings above were saved;
+        // the catchall analyzer schema is left untouched.
         if ($searchConfig === 'keep') {
             $this->messenger()->addSuccess(new PsrMessage(
-                'Search configuration unchanged.' // @translate
+                'Query relevance settings saved. Catchall analyzer unchanged.' // @translate
             ));
             return $this->redirect()->toRoute('admin/search/solr/core-id', [
                 'id' => $id,
