@@ -1040,6 +1040,55 @@ class CoreController extends AbstractActionController
         ]);
     }
 
+    public function optimizeAction()
+    {
+        $id = $this->params('id');
+
+        $job = $this->jobDispatcher()->dispatch(
+            \SearchSolr\Job\OptimizeSolrIndex::class,
+            ['solr_core_id' => (int) $id]
+        );
+
+        $urlPlugin = $this->url();
+        $message = new PsrMessage(
+            'Optimizing index in background (job {link_job}#{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+            [
+                'link_job' => sprintf(
+                    '<a href="%s">',
+                    htmlspecialchars($urlPlugin->fromRoute(
+                        'admin/id',
+                        ['controller' => 'job', 'id' => $job->getId()]
+                    ))
+                ),
+                'job_id' => $job->getId(),
+                'link_end' => '</a>',
+                'link_log' => class_exists('Log\Module', false)
+                    ? sprintf(
+                        '<a href="%1$s">',
+                        htmlspecialchars($urlPlugin->fromRoute(
+                            'admin/default',
+                            ['controller' => 'log'],
+                            ['query' => ['job_id' => $job->getId()]]
+                        ))
+                    )
+                    : sprintf(
+                        '<a href="%1$s" target="_blank" rel="noopener noreferrer">',
+                        htmlspecialchars($urlPlugin->fromRoute(
+                            'admin/id',
+                            ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()]
+                        ))
+                    ),
+            ]
+        );
+        $message->setEscapeHtml(false);
+        $this->messenger()->addSuccess($message);
+
+        return $this->redirect()->toRoute(
+            'admin/search/solr/core-id',
+            ['id' => $id]
+        );
+    }
+
     public function recommendedMapsAction()
     {
         return $this->dispatchCompleteMapsJob('recommended');

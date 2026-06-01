@@ -67,6 +67,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Disable data-driven schema'), $solrCore->adminUrl('disable-data-driven'), [
                     'class' => 'link',
                     'title' => $translate('Recommended for production: this module manages its own fields through the maps.')]) ?></li>
+                <li><?= $hyperlink($translate('Optimize index'), $solrCore->adminUrl('optimize'), [
+                    'class' => 'link',
+                    'title' => $translate('Rewrite all indexes in background to finalize a Solr version migration or reclaim deleted-document space.')]) ?></li>
                 <li class="separator"><span><?= $translate('Deprecated actions') ?></span></li>
                 <li><?= $hyperlink($translate('Recommended maps'), $solrCore->adminUrl('recommended-maps'), [
                     'class' => 'link',
