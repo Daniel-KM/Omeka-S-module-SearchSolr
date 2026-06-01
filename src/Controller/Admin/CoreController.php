@@ -1539,6 +1539,12 @@ class CoreController extends AbstractActionController
             ['items', 'has_media_b', 'has_media', ['formatter' => 'boolean', 'label' => 'Has media']],
         ];
 
+        // Module Group: index the ids of the groups a resource is reserved to,
+        // so reserved private content is searchable and faceted for members.
+        if (class_exists(\Group\Module::class, false)) {
+            $requiredMaps[] = ['generic', 'group_id_is', 'group_id', ['label' => 'Groups (module Group)']];
+        }
+
         $existingMapsByField = [];
         foreach ($existingMaps as $map) {
             $existingMapsByField[$map->fieldName()] = $map;
