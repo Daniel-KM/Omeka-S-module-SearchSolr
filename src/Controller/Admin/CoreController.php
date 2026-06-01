@@ -918,6 +918,75 @@ class CoreController extends AbstractActionController
         ]);
     }
 
+    /**
+     * Delete the catchall copyField "_text_" in Solr (inverse of create).
+     */
+    public function deleteCatchallAction()
+    {
+        $id = $this->params('id');
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        $schema = $solrCore->schema();
+
+        // Check if _text_ copyField exists.
+        if (!$schema->checkDefaultField()) {
+            $this->messenger()->addWarning(new PsrMessage(
+                'The catchall field "_text_" does not exist in core "{solr_core_name}".', // @translate
+                ['solr_core_name' => $solrCore->name()]
+            ));
+            return $this->redirect()->toRoute('admin/search/solr/core-id', [
+                'id' => $id,
+                'action' => 'show',
+            ]);
+        }
+
+        // Delete the copyField via Solr API.
+        try {
+            $solariumClient = $solrCore->solariumClient();
+            $endpoint = $solariumClient->getEndpoint();
+            $url = $endpoint->getBaseUri() . 'schema';
+
+            $data = json_encode([
+                'delete-copy-field' => [
+                    'source' => '*',
+                    'dest' => '_text_',
+                ],
+            ]);
+
+            $httpClient = new \Laminas\Http\Client($url, [
+                'timeout' => 30,
+            ]);
+            $httpClient->setMethod('POST');
+            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $httpClient->setRawBody($data);
+            $response = $httpClient->send();
+
+            if ($response->isSuccess()) {
+                $this->messenger()->addSuccess(new PsrMessage(
+                    'Catchall field "_text_" deleted in core "{solr_core_name}".', // @translate
+                    ['solr_core_name' => $solrCore->name()]
+                ));
+            } else {
+                $body = json_decode($response->getBody(), true);
+                $error = $body['error']['msg'] ?? $response->getReasonPhrase();
+                $this->messenger()->addError(new PsrMessage(
+                    'Failed to delete catchall field: {error}', // @translate
+                    ['error' => $error]
+                ));
+            }
+        } catch (\Throwable $e) {
+            $this->messenger()->addError(new PsrMessage(
+                'Error deleting catchall field: {error}', // @translate
+                ['error' => $e->getMessage()]
+            ));
+        }
+
+        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+            'id' => $id,
+            'action' => 'show',
+        ]);
+    }
+
     public function recommendedMapsAction()
     {
         return $this->dispatchCompleteMapsJob('recommended');

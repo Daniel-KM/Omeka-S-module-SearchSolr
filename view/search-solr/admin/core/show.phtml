@@ -59,6 +59,10 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Create _text_'), $solrCore->adminUrl('create-catchall'), [
                     'class' => 'link',
                     'title' => $translate('Create the catchall copyField "_text_" for optimized full-text search. Reindexing will be required.')]) ?></li>
+                <?php else: ?>
+                <li><?= $hyperlink($translate('Delete _text_'), $solrCore->adminUrl('delete-catchall'), [
+                    'class' => 'link',
+                    'title' => $translate('Remove the catchall copyField "_text_". Full-text search via "_text_" will stop working until it is recreated.')]) ?></li>
                 <?php endif; ?>
                 <li class="separator"><span><?= $translate('Deprecated actions') ?></span></li>
                 <li><?= $hyperlink($translate('Recommended maps'), $solrCore->adminUrl('recommended-maps'), [
