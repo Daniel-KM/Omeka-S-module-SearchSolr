@@ -2522,6 +2522,19 @@ class SolariumQuerier extends AbstractQuerier
      * @uses \Solarium\Core\Query\Helper::escapeTerm()
      * @uses \Solarium\Core\Query\Helper::escapePhrase()
      */
+    /**
+     * Minimum literal characters before the first user wildcard ("*"/"?") for
+     * it to be kept active, so the term enumeration is anchored on a prefix
+     * (never a leading wildcard scanning the whole term dictionary).
+     */
+    const WILDCARD_MIN_PREFIX = 3;
+
+    /**
+     * Maximum number of wildcard terms kept per query, to bound the per-field
+     * expansion done by edismax. Extra wildcards are escaped to literals.
+     */
+    const WILDCARD_MAX_TERMS = 3;
+
     protected function escapeTermOrPhrase(string $string): string
     {
         $string = trim($string);
@@ -2534,25 +2547,15 @@ class SolariumQuerier extends AbstractQuerier
             // Google-like search: escape each word individually and prefix with
             // "+" to require all terms (like refine behavior).
             $words = preg_split('/\s+/', $string, -1, PREG_SPLIT_NO_EMPTY);
+            $wildcardCount = 0;
             if (count($words) > 1) {
-                $escaped = array_map(function ($w) {
-                    // Structured identifiers (ark, doi, url…) with ":" or "/"
-                    // must be treated as phrases, not escaped terms, because
-                    // edismax + copyField analyzers strip these separators,
-                    // making backslash-escaped terms unmatchable.
-                    // Other characters like "." have no issue.
-                    if (strpbrk($w, ':/') !== false) {
-                        return '+' . $this->escapePhrase($w);
-                    }
-                    return '+' . $this->select->getHelper()->escapeTerm($w);
-                }, $words);
+                $escaped = [];
+                foreach ($words as $w) {
+                    $escaped[] = '+' . $this->escapeWord($w, $wildcardCount);
+                }
                 return implode(' ', $escaped);
             }
-            // Single word with structured separators: use phrase.
-            if (strpbrk($string, ':/') !== false) {
-                return $this->escapePhrase($string);
-            }
-            return $this->select->getHelper()->escapeTerm($string);
+            return $this->escapeWord($string, $wildcardCount);
         }
 
         $output = [];
@@ -2566,6 +2569,45 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
         return implode(' AND ', $output);
+    }
+
+    /**
+     * Escape one query word, keeping an explicit user wildcard ("*"/"?") only
+     * when it is safe.
+     *
+     * A wildcard is kept active only when at least {@see WILDCARD_MIN_PREFIX}
+     * literal characters precede the first one (so the term lookup is anchored
+     * on a prefix, never a leading wildcard scanning the whole dictionary) and
+     * within {@see WILDCARD_MAX_TERMS} wildcard terms per query. Position of
+     * the wildcard (middle or end) does not matter, only the leading prefix.
+     * Otherwise "*"/"?" are escaped to literals. Structured identifiers (with
+     * ":" or "/") are kept as phrases.
+     */
+    protected function escapeWord(string $w, int &$wildcardCount): string
+    {
+        if (strpbrk($w, ':/') !== false) {
+            return $this->escapePhrase($w);
+        }
+
+        $firstWildcard = strcspn($w, '*?');
+        $hasWildcard = $firstWildcard < strlen($w);
+        $prefixLength = $hasWildcard
+            ? mb_strlen(substr($w, 0, $firstWildcard))
+            : 0;
+        if ($hasWildcard
+            && $prefixLength >= self::WILDCARD_MIN_PREFIX
+            && $wildcardCount < self::WILDCARD_MAX_TERMS
+        ) {
+            ++$wildcardCount;
+            // Escape every special character, then re-enable the wildcards.
+            return str_replace(
+                ['\\*', '\\?'],
+                ['*', '?'],
+                $this->select->getHelper()->escapeTerm($w)
+            );
+        }
+
+        return $this->select->getHelper()->escapeTerm($w);
     }
 
     /**
