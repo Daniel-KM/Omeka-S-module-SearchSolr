@@ -141,10 +141,26 @@ class SolrMapAdapter extends AbstractEntityAdapter
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
             $array = $this->arrayFilterRecursiveEmptyValue($request->getValue('o:settings') ?: []);
+            $array = self::normalizeListSettings($array);
             $entity->setSettings($array);
         }
 
         $this->hydrateSolrCore($request, $entity);
+    }
+
+    /**
+     * Re-index multi-value list settings so that removing an empty option does
+     * not leave a gap stored as a json object ({"1":"main"}) instead of a list
+     * (["main"]). Keep map-like settings such as "table" (code => label).
+     */
+    public static function normalizeListSettings(array $settings): array
+    {
+        foreach (['parts', 'normalization', 'thesaurus_metadata', 'finalization'] as $key) {
+            if (isset($settings[$key]) && is_array($settings[$key])) {
+                $settings[$key] = array_values($settings[$key]);
+            }
+        }
+        return $settings;
     }
 
     protected function hydrateSolrCore(Request $request, EntityInterface $entity): void
