@@ -860,14 +860,55 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         $privateOnly = $filterVisibility === 'private';
 
         $extractedValues = [];
-        foreach ($resource->values() as $term => $propertyData) {
-            foreach ($propertyData['values'] as $value) {
-                if ($filterVisibility
-                    && (($privateOnly && $value->isPublic())
-                        || ($publicOnly && !$value->isPublic()))
-                ) {
-                    continue;
+        foreach ($this->collectResourceAnnotations($resource) as $entry) {
+            if ($filterVisibility
+                && (($privateOnly && $entry['public'])
+                    || ($publicOnly && !$entry['public']))
+            ) {
+                continue;
+            }
+            if ($annotationTerm) {
+                // Extract only the specified property from each annotation.
+                foreach ($entry['byTerm'][$annotationTerm] ?? [] as $annValue) {
+                    $extractedValues[] = $annValue;
                 }
+            } else {
+                // Extract all properties from each annotation.
+                foreach ($entry['byTerm'] as $annValues) {
+                    foreach ($annValues as $annValue) {
+                        $extractedValues[] = $annValue;
+                    }
+                }
+            }
+        }
+        return $extractedValues;
+    }
+
+    /**
+     * Collect, once per resource, every value annotation flattened by term.
+     *
+     * A resource is indexed against all its maps in sequence and several maps
+     * may target "value_annotations" (e.g. role, date bounds…). Walking all
+     * values and lazy-loading each value annotation for every such map is the
+     * indexing bottleneck, since valueAnnotation() is not memoized. This
+     * memoizes the traversal per resource (single entry, reset on the next
+     * resource) so the annotations are loaded only once instead of once per
+     * map.
+     *
+     * @return array<int, array{public: bool, byTerm: array<string, array>}>
+     */
+    protected function collectResourceAnnotations(
+        AbstractResourceEntityRepresentation $resource
+    ): array {
+        static $cacheId = null;
+        static $cacheData = [];
+        $resourceId = $resource->id();
+        if ($cacheId === $resourceId) {
+            return $cacheData;
+        }
+        $data = [];
+        foreach ($resource->values() as $propertyData) {
+            foreach ($propertyData['values'] as $value) {
                 try {
                     $annotation = $value->valueAnnotation();
                 } catch (\Throwable $e) {
@@ -876,28 +917,16 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 if (!$annotation) {
                     continue;
                 }
-                if ($annotationTerm) {
-                    // Extract only the specified property from each annotation.
-                    $annValues = $annotation->value(
-                        $annotationTerm, ['all' => true]
-                    );
-                    foreach ($annValues as $annValue) {
-                        $extractedValues[] = $annValue;
-                    }
-                } else {
-                    // Extract all properties from each annotation.
-                    foreach (array_keys($annotation->values()) as $annTerm) {
-                        $annValues = $annotation->value(
-                            $annTerm, ['all' => true]
-                        );
-                        foreach ($annValues as $annValue) {
-                            $extractedValues[] = $annValue;
-                        }
-                    }
+                $byTerm = [];
+                foreach (array_keys($annotation->values()) as $annTerm) {
+                    $byTerm[$annTerm] = $annotation->value($annTerm, ['all' => true]);
                 }
+                $data[] = ['public' => $value->isPublic(), 'byTerm' => $byTerm];
             }
         }
-        return $extractedValues;
+        $cacheId = $resourceId;
+        $cacheData = $data;
+        return $data;
     }
 
     protected function extractMediaContent(MediaRepresentation $media): array
