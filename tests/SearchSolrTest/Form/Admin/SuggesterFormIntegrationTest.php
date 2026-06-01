@@ -90,6 +90,17 @@ class SuggesterFormIntegrationTest extends TestCase
     {
         $form = $this->getSolrSuggesterForm();
 
+        // The "_text_" catchall option is only listed when the core schema
+        // reports it, which requires a reachable Solr server.
+        try {
+            $hasCatchall = $this->solrCore->schema()->checkDefaultField();
+        } catch (\Throwable $e) {
+            $hasCatchall = false;
+        }
+        if (!$hasCatchall) {
+            $this->markTestSkipped('Requires a running Solr server exposing the "_text_" catchall.');
+        }
+
         $settings = $form->get('o:settings');
         $fieldElement = $settings->get('solr_fields');
         $options = $fieldElement->getValueOptions();

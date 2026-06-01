@@ -97,6 +97,41 @@ class SolariumQuerierSuggesterTest extends TestCase
     }
 
     /**
+     * The dedicated suggestion catchall suggest_txt also collapses the list.
+     */
+    public function testGetSuggesterNamesWithSuggestTxtMixedIgnoresOthers(): void
+    {
+        $querier = $this->createQuerierForTesting();
+
+        $options = [
+            'solr_suggester_name' => 'omeka_suggester',
+            'solr_fields' => ['suggest_txt', 'dcterms_title_txt', 'dcterms_creator_txt'],
+        ];
+
+        $result = $this->invokeMethod($querier, 'getSuggesterNames', [$options]);
+
+        $this->assertEquals('omeka_suggester', $result);
+    }
+
+    /**
+     * With both catchalls present the list still collapses to a single
+     * suggester (suggest_txt has priority, see SuggesterFields).
+     */
+    public function testGetSuggesterNamesWithBothCatchallsCollapsesToOne(): void
+    {
+        $querier = $this->createQuerierForTesting();
+
+        $options = [
+            'solr_suggester_name' => 'omeka_suggester',
+            'solr_fields' => ['_text_', 'suggest_txt', 'dcterms_title_txt'],
+        ];
+
+        $result = $this->invokeMethod($querier, 'getSuggesterNames', [$options]);
+
+        $this->assertEquals('omeka_suggester', $result);
+    }
+
+    /**
      * Test getSuggesterNames with legacy solr_field (backward compatibility).
      */
     public function testGetSuggesterNamesWithLegacySolrField(): void
@@ -272,6 +307,13 @@ class SolariumQuerierSuggesterTest extends TestCase
 
         $querier = new SolariumQuerier();
         $this->setProperty($querier, 'services', $services);
+
+        // The "auto" field resolution reads the core maps. Provide an empty
+        // core so the fallback paths (no field, no config) don't hit a real
+        // Solr.
+        $solrCore = $this->createMock(\SearchSolr\Api\Representation\SolrCoreRepresentation::class);
+        $solrCore->method('mapsOrderedByStructure')->willReturn([]);
+        $this->setProperty($querier, 'solrCore', $solrCore);
 
         return $querier;
     }
