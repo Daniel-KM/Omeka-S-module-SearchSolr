@@ -240,6 +240,8 @@ class ReduceSolrFields extends AbstractJob
             // Solr dynamic fields naming convention.
             'resource_name_s',
             'id_i',
+            'is_public_b',
+            // Kept for cores not yet migrated from the integer field.
             'is_public_i',
             'name_s',
             'owner_id_i',

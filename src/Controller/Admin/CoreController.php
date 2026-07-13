@@ -1870,7 +1870,7 @@ class CoreController extends AbstractActionController
             // Generic (all resource types).
             ['generic', 'resource_name_s', 'resource_name', ['label' => 'Resource type']],
             ['generic', 'id_i', 'o:id', ['label' => 'Internal id']],
-            ['generic', 'is_public_i', 'is_public', ['parts' => ['main'], 'formatter' => 'boolean', 'label' => 'Public']],
+            ['generic', 'is_public_b', 'is_public', ['parts' => ['main'], 'formatter' => 'boolean', 'label' => 'Public']],
             ['generic', 'name_s', 'o:title', ['label' => 'Name']],
             ['generic', 'owner_id_i', 'owner/o:id', ['label' => 'Owner']],
             ['generic', 'site_id_is', 'site/o:id', ['label' => 'Site']],
@@ -1902,10 +1902,23 @@ class CoreController extends AbstractActionController
         }
 
         $existingMapsByField = [];
+        $existingGenericSources = [];
         foreach ($existingMaps as $map) {
             $existingMapsByField[$map->fieldName()] = $map;
+            if ($map->resourceName() === 'generic') {
+                $existingGenericSources[$map->source()] = true;
+            }
         }
         foreach ($requiredMaps as [$scope, $fieldName, $source, $mapSettings]) {
+            // Do not duplicate the visibility map when it already exists under
+            // the legacy field name "is_public_i": keep it to avoid a reindex,
+            // so only fresh cores get the boolean "is_public_b".
+            if ($source === 'is_public'
+                && !isset($existingMapsByField[$fieldName])
+                && !empty($existingGenericSources['is_public'])
+            ) {
+                continue;
+            }
             if (isset($existingMapsByField[$fieldName])) {
                 $existing = $existingMapsByField[$fieldName];
                 if ($existing->resourceName() !== $scope) {
