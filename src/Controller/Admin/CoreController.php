@@ -1089,6 +1089,92 @@ class CoreController extends AbstractActionController
         );
     }
 
+    public function createCoreOnServerAction()
+    {
+        $id = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+
+        $connection = $solrCore->clientSettings();
+        $coreName = (string) ($connection['core'] ?? '');
+        $configSet = trim((string) ($connection['config_set'] ?? '')) ?: '_default';
+        $logger = $solrCore->getServiceLocator()->get('Omeka\Logger');
+        $coreAdmin = new \SearchSolr\Solr\CoreAdmin($logger);
+
+        // A core created manually on the server is reused without creation.
+        if ($coreAdmin->coreExists($connection, $coreName)) {
+            $this->messenger()->addWarning(new PsrMessage(
+                'The core "{core}" already exists on the server; it is used as is, nothing was created.', // @translate
+                ['core' => $coreName]
+            ));
+            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+        }
+
+        if (!$coreAdmin->createCore($connection, $coreName, $configSet)) {
+            $this->messenger()->addError(new PsrMessage(
+                'Failed to create the core "{core}" on the Solr server. Check the logs: the config set "{config_set}" must exist in SOLR_HOME/configsets on the server.', // @translate
+                ['core' => $coreName, 'config_set' => $configSet]
+            ));
+            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+        }
+
+        // Provision the schema field types and field used for suggestions.
+        $solrCore->ensureSuggestFieldType();
+        $solrCore->ensureSuggestFoldedFieldType();
+        $solrCore->ensureSuggestField();
+
+        $this->messenger()->addSuccess(new PsrMessage(
+            'The core "{core}" was created on the Solr server and its schema initialized. Default maps are being created; reindex afterwards.', // @translate
+            ['core' => $coreName]
+        ));
+
+        // Provision the default and required maps in background.
+        return $this->dispatchCompleteMapsJob('complete');
+    }
+
+    public function deleteCoreOnServerAction()
+    {
+        $id = $this->params('id');
+        if (!$this->getRequest()->isPost()) {
+            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+        }
+
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $connection = $solrCore->clientSettings();
+        $coreName = (string) ($connection['core'] ?? '');
+
+        // Refuse to delete a core shared by an engine setting "index_name", as
+        // its documents may belong to another index or third party.
+        $searchEngines = $this->api()->search('search_engines')->getContent();
+        foreach ($searchEngines as $engine) {
+            if ((int) $engine->settingEngineAdapter('solr_core_id') === (int) $id
+                && $engine->settingEngineAdapter('index_name')
+            ) {
+                $this->messenger()->addError(new PsrMessage(
+                    'The core "{core}" is shared (an engine sets index_name); deletion on the server is refused.', // @translate
+                    ['core' => $coreName]
+                ));
+                return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+            }
+        }
+
+        $logger = $solrCore->getServiceLocator()->get('Omeka\Logger');
+        $coreAdmin = new \SearchSolr\Solr\CoreAdmin($logger);
+        if ($coreAdmin->deleteCore($connection, $coreName)) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                'The core "{core}" was deleted on the Solr server. The connection is still registered in Omeka.', // @translate
+                ['core' => $coreName]
+            ));
+        } else {
+            $this->messenger()->addError(new PsrMessage(
+                'Failed to delete the core "{core}" on the Solr server. Check the logs.', // @translate
+                ['core' => $coreName]
+            ));
+        }
+        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+    }
+
     public function recommendedMapsAction()
     {
         return $this->dispatchCompleteMapsJob('recommended');

@@ -40,14 +40,31 @@ class CoreAdmin
     }
 
     /**
+     * Whether a core or collection of this name already exists on the server.
+     */
+    public function coreExists(array $connection, string $coreName): bool
+    {
+        if ($coreName === '') {
+            return false;
+        }
+        $result = $this->httpGet($connection, '/solr/admin/cores?action=STATUS'
+            . '&core=' . urlencode($coreName) . '&wt=json');
+        // An existing core has a non-empty status block (e.g. instanceDir),
+        // while an absent one returns an empty object.
+        return !empty($result['status'][$coreName]);
+    }
+
+    /**
      * Create a core (standalone) or collection (cloud) on the Solr server.
      *
      * Standalone uses the CoreAdmin api with a config set (default "_default",
-     * shipped with Solr, providing a managed schema and the dynamic fields used
-     * by the module). SolrCloud uses the Collections api, where the config set
-     * must already be uploaded to ZooKeeper. Returns false when the server is
-     * unreachable, the config set is missing, or the core already exists; the
-     * schema field types and the maps are provisioned by the caller afterwards.
+     * which must exist in SOLR_HOME/configsets on the server, providing a
+     * managed schema and the dynamic fields used by the module). SolrCloud uses
+     * the Collections api, where the config set must already be uploaded to
+     * ZooKeeper. When a core of the same name already exists, nothing is
+     * created and true is returned, so an externally provisioned core is simply
+     * reused. The schema field types and the maps are provisioned by the
+     * caller.
      */
     public function createCore(array $connection, string $coreName, string $configSet = '_default'): bool
     {
@@ -60,6 +77,15 @@ class CoreAdmin
         if ($mode === null) {
             $this->logger->err('SearchSolr: Cannot create core: Solr server is unreachable.'); // @translate
             return false;
+        }
+
+        // A core created manually on the server is reused as is.
+        if ($this->coreExists($connection, $coreName)) {
+            $this->logger->info(
+                'SearchSolr: Core "{core}" already exists on the server; reused without creation.', // @translate
+                ['core' => $coreName]
+            );
+            return true;
         }
 
         if ($mode === 'cloud') {

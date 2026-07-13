@@ -114,6 +114,19 @@ class SolrCoreForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'config_set',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Config set (to create the core)', // @translate
+                    'info' => 'Used only when creating the core on the server. The config set must exist in SOLR_HOME/configsets on the Solr server ("_default" is shipped with Solr). Leave empty when the core is created manually on the server.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'config_set',
+                    'required' => false,
+                    'placeholder' => '_default',
+                ],
+            ])
+            ->add([
                 'name' => 'secure',
                 'type' => Element\Checkbox::class,
                 'options' => [
@@ -301,6 +314,10 @@ class SolrCoreForm extends Form
             ]);
         $settingFilters
             ->get('client')
+            ->add([
+                'name' => 'config_set',
+                'required' => false,
+            ])
             ->add([
                 'name' => 'secure',
                 'required' => false,

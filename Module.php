@@ -870,12 +870,12 @@ class Module extends AbstractModule
         $urlHelper
     ): void {
         $existing = (int) $connection->fetchOne(
-            "SELECT COUNT(*) FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` IN ('Solr_public', 'Solr_admin', 'Solr_api')"
+            "SELECT COUNT(*) FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` IN ('Solr (public)', 'Solr (admin)', 'Solr (api)')"
         );
 
-        $publicEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr_public', 'public');
-        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr_admin', 'all');
-        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr_api', 'all');
+        $publicEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (public)', 'public');
+        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (admin)', 'all');
+        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (api)', 'all');
         if ($publicEngineId) {
             $this->createDefaultSuggester($connection, $publicEngineId, $messenger);
         }
