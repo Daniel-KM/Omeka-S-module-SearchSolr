@@ -1250,7 +1250,14 @@ class SolariumQuerier extends AbstractQuerier
                         ['field' => $field]
                     );
             } else {
-                $this->select->addSort($name, strtolower($order) === 'desc' ? SelectQuery::SORT_DESC : SelectQuery::SORT_ASC);
+                $solariumOrder = strtolower($order) === 'desc' ? SelectQuery::SORT_DESC : SelectQuery::SORT_ASC;
+                $this->select->addSort($name, $solariumOrder);
+                // Like the api: the resource id is always the tie-breaker, in
+                // the same order (see AbstractEntityAdapter::search()).
+                $idField = $this->fieldToIndex('id');
+                if ($idField && $idField !== $name && $idField !== 'id') {
+                    $this->select->addSort($idField, $solariumOrder);
+                }
             }
         }
 
@@ -1624,10 +1631,50 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
+            // Standard args that are not a plain "field = values" filter.
+            if ($fieldName === 'not_item_set_id') {
+                // fieldToIndex: the item set map is scoped to "items", so the
+                // generic-only solrCoreField() cannot resolve it.
+                $itemSetField = $this->fieldToIndex('item_set_id');
+                $ids = array_filter(array_map('intval', is_array($values) ? $values : [$values]));
+                if ($itemSetField && $ids) {
+                    $this->select
+                        ->createFilterQuery('not_item_set_' . ++$this->appendToKey)
+                        ->setQuery("-$itemSetField:(" . implode(' OR ', $ids) . ')');
+                }
+                continue;
+            }
+            if ($fieldName === 'in_sites') {
+                $siteField = $this->solrCoreField('site/o:id');
+                if ($siteField) {
+                    $value = is_array($values) ? reset($values) : $values;
+                    $this->select
+                        ->createFilterQuery('in_sites_' . ++$this->appendToKey)
+                        ->setQuery(
+                            filter_var($value, FILTER_VALIDATE_BOOLEAN)
+                                ? "$siteField:[* TO *]"
+                                : "-$siteField:[* TO *]"
+                        );
+                }
+                continue;
+            }
+            if ($fieldName === 'search') {
+                // Core semantic: match in any property (see
+                // AbstractResourceEntityAdapter). Routed to the aggregated
+                // property values index; tokenization makes it approximate.
+                $this->processAdvancedFilters(['property_values' => [[
+                    'join' => 'and',
+                    'field' => 'property_values',
+                    'type' => 'in',
+                    'val' => $values,
+                ]]]);
+                continue;
+            }
+
             $name = $this->fieldToIndex($fieldName) ?? $fieldName;
 
-            // A property term (with ":") that was not resolved to
-            // a Solr field means the field is not indexed.
+            // A property term (with ":") that was not resolved to a Solr field
+            // means the field is not indexed.
             if (strpos($name, ':') !== false) {
                 $this->getLogger()
                     ->err(
@@ -1658,29 +1705,63 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
-            // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
+            // Avoid issue with basic direct hidden quey filter like
+            // "resource_template_id_i=1".
 
             $values = is_array($values) ? $values : [$values];
 
+            $scalars = [];
             foreach ($values as $v) {
                 if (is_array($v)) {
                     // Skip date range queries (for hidden queries).
-                    if (isset($v['from']) || isset($v['to'])
-                        || isset($v['joiner']) || isset($v['type']) || isset($v['text'])
-                        || isset($v['join']) || isset($v['val']) || isset($v['value'])
-                    ) {
-                        continue;
-                    }
+                    continue;
                 }
-
                 if (is_scalar($v) && strlen((string) $v)) {
-                    $escaped = $this->escapePhraseValue($v, 'OR');
-                    $this->select
-                        ->createFilterQuery($name . '_' . ++$this->appendToKey)
-                        ->setQuery("$name:$escaped");
+                    $scalars[] = $v;
                 }
             }
+            if (!$scalars) {
+                continue;
+            }
+
+            $scalars = $this->convertStandardFilterValues($fieldName, $name, $scalars);
+
+            // Multiple values of one arg mean "any of them" (like the api), so
+            // they are joined in a single filter query with OR.
+            $escaped = $this->escapePhraseValue($scalars, 'OR');
+            if (strlen($escaped)) {
+                $this->select
+                    ->createFilterQuery($name . '_' . ++$this->appendToKey)
+                    ->setQuery("$name:$escaped");
+            }
         }
+    }
+
+    /**
+     * Convert the values of a standard arg to what the Solr field stores.
+     *
+     * The api uses numeric ids for classes and templates while the mapped Solr
+     * fields store the term or the label; boolean fields store true/false.
+     */
+    protected function convertStandardFilterValues(string $fieldName, string $solrField, array $values): array
+    {
+        if ($fieldName === 'resource_class_id') {
+            return array_values(array_filter(
+                array_map(fn ($v) => $this->easyMeta->resourceClassTerm(is_numeric($v) ? (int) $v : $v), $values)
+            ));
+        }
+        if ($fieldName === 'resource_template_id') {
+            return array_values(array_filter(
+                array_map(fn ($v) => $this->easyMeta->resourceTemplateLabel(is_numeric($v) ? (int) $v : $v), $values)
+            ));
+        }
+        if ($this->fieldIsBool($solrField)) {
+            return array_map(
+                fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false',
+                $values
+            );
+        }
+        return $values;
     }
 
     protected function processDateRangeFilters(array $filters): void
@@ -2261,11 +2342,20 @@ class SolariumQuerier extends AbstractQuerier
             'resource_type' => 'resource_name',
             'resource_name' => 'resource_name',
             'is_public' => 'is_public',
+            'id' => 'o:id',
             'owner_id' => 'owner/o:id',
             'site_id' => 'site/o:id',
             'resource_class_id' => 'resource_class/o:term',
+            'resource_class_term' => 'resource_class/o:term',
             'resource_template_id' => 'resource_template/o:label',
             'item_set_id' => 'item_set/o:id',
+            'has_media' => 'has_media',
+            // Pseudo-field for "any property" rows and the arg "search".
+            'property_values' => 'property_values',
+            // Standard sort keys.
+            'created' => 'created',
+            'modified' => 'modified',
+            'title' => 'o:title',
         ];
         if (isset($systemSources[$field])) {
             $maps = $this->solrCore->mapsBySource($systemSources[$field]);
