@@ -94,7 +94,7 @@ class MapController extends AbstractActionController
         'est' => 'et',
         'eu' => 'eu',
         'eus' => 'eu',
-        'bas' => 'eu',
+        'baq' => 'eu',
         'fa' => 'fa',
         'fas' => 'fa',
         'per' => 'fa',

@@ -54,7 +54,7 @@ class CompleteSolrMaps extends AbstractJob
         'est' => 'et',
         'eu' => 'eu',
         'eus' => 'eu',
-        'bas' => 'eu',
+        'baq' => 'eu',
         'fa' => 'fa',
         'fas' => 'fa',
         'per' => 'fa',

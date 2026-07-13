@@ -2252,12 +2252,14 @@ class CoreController extends AbstractActionController
      * A language index is useful only when the install is really multilingual,
      * so two conditions are required: the sites use at least two distinct
      * locales, and the property has values in at least two of these languages.
-     * The languages are compared on the primary subtag, so a site in "fr-FR"
-     * matches the values in "fr" and in "fr-FR", which are both indexed in the
-     * same "fr" index.
+     * The languages are compared on their two-letter code, so a site in "en_US"
+     * matches the values in "en", "en-GB" and "eng", which are all indexed in
+     * the same "en" index.
+     *
+     * @see \SearchSolr\Stdlib\LanguageCodes
      *
      * @param string[] $terms
-     * @return array Language codes to filter on, by term and primary subtag.
+     * @return array Language codes to filter on, by term and two-letter code.
      */
     protected function multilingualLangsByTerm(array $terms): array
     {
@@ -2270,14 +2272,14 @@ class CoreController extends AbstractActionController
         $siteSettings = $services->get('Omeka\Settings\Site');
         $connection = $services->get('Omeka\Connection');
 
-        $primary = fn ($lang): string => strtolower(strtok((string) $lang, '-_') ?: '');
+        $toIso1 = fn ($lang): string => \SearchSolr\Stdlib\LanguageCodes::toIso1($lang);
 
         // Locales of the sites, the global locale being the default one.
-        $globalLocale = $primary($settings->get('locale'));
+        $globalLocale = $toIso1($settings->get('locale'));
         $siteLangs = [];
         foreach ($this->api()->search('sites', [], ['returnScalar' => 'id'])->getContent() as $siteId) {
             $siteSettings->setTargetId($siteId);
-            $lang = $primary($siteSettings->get('locale')) ?: $globalLocale;
+            $lang = $toIso1($siteSettings->get('locale')) ?: $globalLocale;
             if ($lang) {
                 $siteLangs[$lang] = true;
             }
@@ -2304,7 +2306,7 @@ class CoreController extends AbstractActionController
             if (!isset($terms[$term])) {
                 continue;
             }
-            $lang = $primary($row['lang']);
+            $lang = $toIso1($row['lang']);
             if ($lang && isset($siteLangs[$lang])) {
                 $result[$term][$lang][] = $row['lang'];
             }
