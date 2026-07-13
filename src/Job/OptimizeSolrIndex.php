@@ -37,8 +37,8 @@ class OptimizeSolrIndex extends AbstractJob
         }
 
         try {
-            /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-            $solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
+            /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
+            $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         } catch (\Throwable $e) {
             $logger->err(
                 'Solr core #{id} not found.', // @translate

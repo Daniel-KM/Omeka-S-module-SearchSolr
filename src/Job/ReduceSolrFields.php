@@ -27,7 +27,7 @@ class ReduceSolrFields extends AbstractJob
 
     /**
      * List of fields, adapted:
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::missingRequiredMaps()
+     * @see \SearchSolr\Stdlib\SolrCore::missingRequiredMaps()
      * @see \SearchSolr\Job\ReduceSolrFields::perform()
      */
     public function perform(): void
@@ -53,9 +53,8 @@ class ReduceSolrFields extends AbstractJob
         }
 
         try {
-            /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-            $solrCore = $api->read('solr_cores', $solrCoreId)
-                ->getContent();
+            /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
+            $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         } catch (\Throwable $e) {
             $this->logger->err(
                 'Solr core #{id} not found.', // @translate
@@ -151,8 +150,7 @@ class ReduceSolrFields extends AbstractJob
         ));
 
         // Reload core to get fresh maps.
-        $solrCore = $api->read('solr_cores', $solrCoreId)
-            ->getContent();
+        $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         $usedFields = $this->collectUsedSolrFields(
             $solrCore, $api
         );
@@ -268,8 +266,7 @@ class ReduceSolrFields extends AbstractJob
         ];
 
         // Reload core after step 2.
-        $solrCore = $api->read('solr_cores', $solrCoreId)
-            ->getContent();
+        $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         $usedFields = $this->collectUsedSolrFields(
             $solrCore, $api
         );
@@ -310,8 +307,7 @@ class ReduceSolrFields extends AbstractJob
             ]
         ));
 
-        $solrCore = $api->read('solr_cores', $solrCoreId)
-            ->getContent();
+        $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         $this->finalize(
             $solrCore, $api, $removed,
             $numFields, $estimatedFields, $maxFields
@@ -377,7 +373,7 @@ class ReduceSolrFields extends AbstractJob
     }
 
     protected function collectUsedSolrFields(
-        \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore,
+        \SearchSolr\Stdlib\SolrCore $solrCore,
         \Omeka\Api\Manager $api
     ): array {
         $usedFields = [];
@@ -468,7 +464,7 @@ class ReduceSolrFields extends AbstractJob
     }
 
     protected function finalize(
-        \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore,
+        \SearchSolr\Stdlib\SolrCore $solrCore,
         \Omeka\Api\Manager $api,
         array $removed,
         int $originalFields,
@@ -483,9 +479,7 @@ class ReduceSolrFields extends AbstractJob
                 ?: 1;
         }
         $solrCoreSettings['field_boost'] = $boosts;
-        $api->update('solr_cores', $solrCore->id(), [
-            'o:settings' => $solrCoreSettings,
-        ], [], ['isPartial' => true]);
+        $this->updateEngineSolrSettings($solrCore->id(), $solrCoreSettings);
 
         $this->logger->notice(new PsrMessage(
             'Reduction complete: {count} maps removed. Estimated fields after reindex: {estimated} (was {original}, limit: {maxFields}).', // @translate
@@ -516,5 +510,22 @@ class ReduceSolrFields extends AbstractJob
                 ]
             ));
         }
+    }
+
+    /**
+     * Save the solr settings of the engine (facet "solr" of its settings).
+     */
+    protected function updateEngineSolrSettings(int $engineId, array $solrSettings): void
+    {
+        $services = $this->getServiceLocator();
+        $connection = $services->get('Omeka\Connection');
+        $engineSettings = json_decode((string) $connection->fetchOne(
+            'SELECT `settings` FROM `search_engine` WHERE `id` = ?', [$engineId]
+        ), true) ?: [];
+        $engineSettings['solr'] = $solrSettings;
+        $connection->executeStatement(
+            'UPDATE `search_engine` SET `settings` = ?, `modified` = NOW() WHERE `id` = ?;',
+            [json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $engineId]
+        );
     }
 }

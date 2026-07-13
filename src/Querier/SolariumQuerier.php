@@ -7,7 +7,7 @@ use AdvancedSearch\Querier\Exception\QuerierException;
 use AdvancedSearch\Query;
 use AdvancedSearch\Response;
 use AdvancedSearch\Stdlib\SearchResources;
-use SearchSolr\Api\Representation\SolrCoreRepresentation;
+use SearchSolr\Stdlib\SolrCore as SolrCoreRepresentation;
 use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Select\Query\Query as SelectQuery;
 use Solarium\QueryType\Select\Result\Result as SolariumResult;
@@ -3374,14 +3374,12 @@ class SolariumQuerier extends AbstractQuerier
         return $this;
     }
 
-    protected function getSolrCore(): SolrCoreRepresentation
+    protected function getSolrCore(): \SearchSolr\Stdlib\SolrCore
     {
         if (!isset($this->solrCore)) {
-            $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-            if ($solrCoreId) {
-                $api = $this->services->get('Omeka\ApiManager');
-                // Automatically throw an exception when empty.
-                $this->solrCore = $api->read('solr_cores', $solrCoreId)->getContent();
+            if ($this->searchEngine) {
+                // The core is a facet of the engine.
+                $this->solrCore = new \SearchSolr\Stdlib\SolrCore($this->searchEngine, $this->services);
                 $this->solariumClient = $this->solrCore->solariumClient();
                 $clientSettings = $this->solrCore->clientSettings();
                 if (($clientSettings['http_request_type'] ?? 'post') !== 'get') {

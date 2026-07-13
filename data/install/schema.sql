@@ -1,26 +1,18 @@
-CREATE TABLE `solr_core` (
-    `id` INT AUTO_INCREMENT NOT NULL,
-    `name` VARCHAR(190) NOT NULL,
-    `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
-    `backup_maps` LONGTEXT DEFAULT NULL COMMENT '(DC2Type:json)',
-    PRIMARY KEY(`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
-
 CREATE TABLE `solr_map` (
     `id` INT AUTO_INCREMENT NOT NULL,
-    `solr_core_id` INT NOT NULL,
+    `engine_id` INT NOT NULL,
     `resource_name` VARCHAR(190) NOT NULL,
     `field_name` VARCHAR(190) NOT NULL,
     `source` VARCHAR(190) NOT NULL,
     `alias` VARCHAR(190) DEFAULT NULL,
     `pool` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
     `settings` LONGTEXT NOT NULL COMMENT '(DC2Type:json)',
-    INDEX IDX_39A565C527B35A19 (`solr_core_id`),
-    INDEX IDX_39A565C527B35A195103DEBC (`solr_core_id`, `resource_name`),
-    INDEX IDX_39A565C527B35A194DEF17BC (`solr_core_id`, `field_name`),
-    INDEX IDX_39A565C527B35A19E16C6B94 (`solr_core_id`, `alias`),
-    INDEX IDX_39A565C527B35A195F8A7F73 (`solr_core_id`, `source`),
+    INDEX IDX_39A565C5E78C9C0A (`engine_id`),
+    INDEX IDX_39A565C5E78C9C0A5103DEBC (`engine_id`, `resource_name`),
+    INDEX IDX_39A565C5E78C9C0A4DEF17BC (`engine_id`, `field_name`),
+    INDEX IDX_39A565C5E78C9C0AE16C6B94 (`engine_id`, `alias`),
+    INDEX IDX_39A565C5E78C9C0A5F8A7F73 (`engine_id`, `source`),
     PRIMARY KEY(`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;
 
-ALTER TABLE `solr_map` ADD CONSTRAINT FK_39A565C527B35A19 FOREIGN KEY (`solr_core_id`) REFERENCES `solr_core` (`id`) ON DELETE CASCADE;
+ALTER TABLE `solr_map` ADD CONSTRAINT FK_39A565C5E78C9C0A FOREIGN KEY (`engine_id`) REFERENCES `search_engine` (`id`) ON DELETE CASCADE;

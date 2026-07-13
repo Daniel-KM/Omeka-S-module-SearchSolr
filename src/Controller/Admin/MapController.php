@@ -174,7 +174,7 @@ class MapController extends AbstractActionController
         $solrCoreId = $this->params('core-id');
         $resourceName = $this->params('resource-name');
 
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        $solrCore = $this->solrCore((int) $solrCoreId);
 
         $form = $this->getForm(SolrMapForm::class, [
             'solr_core_id' => $solrCoreId,
@@ -245,10 +245,10 @@ class MapController extends AbstractActionController
         $id = $this->params('id');
 
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          * @var \SearchSolr\Api\Representation\SolrMapRepresentation $map
          */
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
+        $solrCore = $this->solrCore((int) $solrCoreId);
 
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $map */
         $map = $this->api()->read('solr_maps', $id)->getContent();
@@ -371,8 +371,16 @@ class MapController extends AbstractActionController
 
     protected function getSolrSchema($solrCoreId)
     {
-        $solrCore = $this->api()->read('solr_cores', $solrCoreId)->getContent();
-        return $solrCore->schema()->getSchema();
+        $solrCore = $this->solrCore((int) $solrCoreId);
+        try {
+            return $solrCore->schema()->getSchema();
+        } catch (\Exception $e) {
+            // Solr unreachable: the form still works without the schema hints.
+            $this->messenger()->addWarning(
+                'The Solr server is not reachable, so the schema hints are unavailable.' // @translate
+            );
+            return null;
+        }
     }
 
     protected function getSourceLabels()

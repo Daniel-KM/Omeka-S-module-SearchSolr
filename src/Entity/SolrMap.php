@@ -37,16 +37,16 @@ use Omeka\Entity\AbstractEntity;
  * @Table(
  *     indexes={
  *         @Index(
- *             columns={"solr_core_id","resource_name"}
+ *             columns={"engine_id","resource_name"}
  *         ),
  *         @Index(
- *             columns={"solr_core_id","field_name"}
+ *             columns={"engine_id","field_name"}
  *         ),
  *         @Index(
- *             columns={"solr_core_id","alias"}
+ *             columns={"engine_id","alias"}
  *         ),
  *         @Index(
- *             columns={"solr_core_id","source"}
+ *             columns={"engine_id","source"}
  *         )
  *     }
  * )
@@ -63,18 +63,20 @@ class SolrMap extends AbstractEntity
     protected $id;
 
     /**
-     * @var SolrCore
+     * The solarium search engine of the map: an engine is a real backend, so
+     * the maps belong to the engine directly.
+     *
+     * @var \AdvancedSearch\Entity\SearchEngine
      *
      * @ManyToOne(
-     *     targetEntity="SearchSolr\Entity\SolrCore",
-     *     inversedBy="maps"
+     *     targetEntity="AdvancedSearch\Entity\SearchEngine"
      * )
      * @JoinColumn(
      *     nullable=false,
      *     onDelete="CASCADE"
      * )
      */
-    protected $solrCore;
+    protected $engine;
 
     /**
      * @var string
@@ -142,15 +144,15 @@ class SolrMap extends AbstractEntity
         return $this->id;
     }
 
-    public function setSolrCore(SolrCore $solrCore): self
+    public function setEngine(\AdvancedSearch\Entity\SearchEngine $engine): self
     {
-        $this->solrCore = $solrCore;
+        $this->engine = $engine;
         return $this;
     }
 
-    public function getSolrCore(): SolrCore
+    public function getEngine(): \AdvancedSearch\Entity\SearchEngine
     {
-        return $this->solrCore;
+        return $this->engine;
     }
 
     public function setResourceName(string $resourceName): self

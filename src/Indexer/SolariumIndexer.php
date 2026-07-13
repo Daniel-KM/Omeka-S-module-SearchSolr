@@ -35,7 +35,7 @@ use AdvancedSearch\Indexer\IndexerInterface;
 use AdvancedSearch\Query;
 use Exception;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
-use SearchSolr\Api\Representation\SolrCoreRepresentation;
+use SearchSolr\Stdlib\SolrCore as SolrCoreRepresentation;
 use SearchSolr\Api\Representation\SolrMapRepresentation;
 use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Update\Query\Document as SolariumInputDocument;
@@ -1186,11 +1186,9 @@ class SolariumIndexer extends AbstractIndexer
     protected function getSolrCore(): SolrCoreRepresentation
     {
         if (!isset($this->solrCore)) {
-            $solrCoreId = $this->searchEngine->settingEngineAdapter('solr_core_id');
-            if ($solrCoreId) {
-                // Automatically throw an exception when empty.
-                $this->solrCore = $this->getServiceLocator()->get('Omeka\ApiManager')
-                    ->read('solr_cores', $solrCoreId)->getContent();
+            if ($this->searchEngine) {
+                // The core is a facet of the engine.
+                $this->solrCore = new \SearchSolr\Stdlib\SolrCore($this->searchEngine, $this->getServiceLocator());
                 $this->solariumClient = $this->solrCore->solariumClient();
             }
         }

@@ -37,19 +37,9 @@ class SolrConfigFieldset extends Fieldset
 {
     public function init(): void
     {
+        // The connection to the Solr core is a facet of the engine, edited on
+        // its core page: no more core to select here.
         $this
-            ->add([
-                'name' => 'solr_core_id',
-                'type' => Element\Select::class,
-                'options' => [
-                    'label' => 'Solr core', // @translate
-                    'value_options' => $this->getSolrCoresOptions(),
-                ],
-                'attributes' => [
-                    'id' => 'solr_core_id',
-                    'required' => true,
-                ],
-            ])
             ->add([
                 'name' => 'index_name',
                 'type' => Element\Text::class,
@@ -64,49 +54,4 @@ class SolrConfigFieldset extends Fieldset
             ]);
     }
 
-    protected function getSolrCoresOptions()
-    {
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation[] $solrCores */
-        $solrCores = $this->getOption('solrCores');
-        if (!count($solrCores)) {
-            return [];
-        }
-
-        $searchEngineId = $this->getOption('search_engine_id');
-
-        // If the core doesn't support multiple index, it will be unavailable,
-        // except for the current index.
-        $solrCore = reset($solrCores);
-        $services = $solrCore->getServiceLocator();
-        $translator = $services->get('MvcTranslator');
-
-        /** @var \AdvancedSearch\Api\Representation\SearchEngineRepresentation[] $searchEngines */
-        $searchEngines = $services->get('Omeka\ApiManager')->search('search_engines', ['adapter' => 'solarium'])->getContent();
-        $coreIndexes = [];
-        foreach ($searchEngines as $searchEngine) {
-            $coreId = $searchEngine->settingEngineAdapter('solr_core_id', '');
-            $coreIndexes[$coreId][] = $searchEngine->id();
-        }
-
-        $options = [];
-        foreach ($solrCores as $solrCore) {
-            $option = [
-                'value' => $solrCore->id(),
-                'label' => $solrCore->name(),
-            ];
-            if (isset($coreIndexes[$solrCore->id()])
-                && !$solrCore->mapsBySource('search_index', 'resources')
-                && !in_array($searchEngineId, $coreIndexes[$solrCore->id()])
-            ) {
-                $option['label'] = (string) (new \Common\Stdlib\PsrMessage(
-                    '{label} (unavailable: option multi-index not set)', // @translate
-                    ['label' => $option['label']]
-                ))->setTranslator($translator);
-                $option['disabled'] = true;
-            }
-            $options[] = $option;
-        }
-
-        return $options;
-    }
 }

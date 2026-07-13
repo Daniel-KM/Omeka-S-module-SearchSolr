@@ -40,7 +40,7 @@ use Omeka\Form\ConfirmForm;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use SearchSolr\Api\Adapter\TraitArrayFilterRecursiveEmptyValue;
-use SearchSolr\Api\Representation\SolrCoreRepresentation;
+use SearchSolr\Stdlib\SolrCore as SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
@@ -101,8 +101,14 @@ class CoreController extends AbstractActionController
 
     public function browseAction()
     {
-        $response = $this->api()->search('solr_cores');
-        $solrCores = $response->getContent();
+        // A core is a facet of a solarium engine: one line per engine.
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+        $solrCores = [];
+        foreach ($this->api()->search('search_engines', ['sort_by' => 'name'])->getContent() as $engine) {
+            if ($engine->engineAdapterName() === 'solarium') {
+                $solrCores[] = new \SearchSolr\Stdlib\SolrCore($engine, $services);
+            }
+        }
         return new ViewModel([
             'solrCores' => $solrCores,
         ]);
@@ -123,32 +129,39 @@ class CoreController extends AbstractActionController
         }
 
         $data = $form->getData();
-        $data['o:settings'] = [
-            'client' => [
-                'scheme' => 'http',
-                'host' => 'localhost',
-                'port' => '8983',
-                'path' => '/',
-                'secure' => '0',
+        // A core is a facet of a solarium engine: adding a core creates the
+        // engine, with a default connection to edit next.
+        $engine = $this->api()->create('search_engines', [
+            'o:name' => $data['o:name'],
+            'o:engine_adapter' => 'solarium',
+            'o:settings' => [
+                'resource_types' => ['items', 'item_sets'],
+                'solr' => [
+                    'client' => [
+                        'scheme' => 'http',
+                        'host' => 'localhost',
+                        'port' => '8983',
+                        'path' => '/',
+                        'secure' => '0',
+                    ],
+                    'server_id' => '',
+                ],
             ],
-            'server_id' => '',
-        ];
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->create('solr_cores', $data)->getContent();
+        ])->getContent();
         $this->messenger()->addSuccess(new PsrMessage(
             'Solr core "{solr_core_name}" created.', // @translate
-            ['solr_core_name' => $solrCore->name()]
+            ['solr_core_name' => $engine->name()]
         ));
-        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $solrCore->id(), 'action' => 'edit']);
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $engine->id(), 'action' => 'edit']);
     }
 
     public function editAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         // Detect copy field and its type for informational message in form.
         $copyFieldInfo = null;
@@ -176,7 +189,10 @@ class CoreController extends AbstractActionController
             'server_id' => $this->settings()->get('searchsolr_server_id'),
             'copy_field_info' => $copyFieldInfo,
         ]);
-        $data = $solrCore->jsonSerialize();
+        $data = [
+            'o:name' => $solrCore->name(),
+            'o:settings' => $solrCore->settings(),
+        ];
 
         // Secret fields (password, admin_password) are never prefilled: the
         // Secret view helper blanks them and the adapter keeps the stored value
@@ -239,7 +255,29 @@ class CoreController extends AbstractActionController
             }
         }
 
-        $this->api()->update('solr_cores', $id, $data);
+        // Passwords are stored encrypted at rest; an empty submission keeps
+        // the stored value and the "remove" checkbox clears it (logic moved
+        // from the former core adapter).
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+        $cipher = $services->get('Omeka\Cipher');
+        $storedClient = (array) ($solrCore->settings()['client'] ?? []);
+        foreach (['password', 'admin_password'] as $key) {
+            $remove = !empty($data['o:settings']['client'][$key . '_remove']);
+            unset($data['o:settings']['client'][$key . '_remove']);
+            if ($remove) {
+                unset($data['o:settings']['client'][$key]);
+            } elseif (!empty($data['o:settings']['client'][$key])) {
+                $data['o:settings']['client'][$key] = $cipher->encrypt((string) $data['o:settings']['client'][$key]);
+            } elseif (!empty($storedClient[$key])) {
+                $data['o:settings']['client'][$key] = $storedClient[$key];
+            }
+        }
+
+        // Save: the engine name and its solr settings.
+        if (($data['o:name'] ?? '') !== '' && $data['o:name'] !== $solrCore->name()) {
+            $this->api()->update('search_engines', $id, ['o:name' => $data['o:name']], [], ['isPartial' => true]);
+        }
+        $this->updateSolrSettings((int) $id, $data['o:settings']);
 
         $this->messenger()->addSuccess(new PsrMessage(
             'Solr core "{solr_core_name}" updated.', // @translate
@@ -282,10 +320,10 @@ class CoreController extends AbstractActionController
     public function showAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
@@ -326,10 +364,10 @@ class CoreController extends AbstractActionController
     public function showIndexingStatsAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $counts = $this->getIndexedResourceCounts($solrCore);
 
@@ -351,10 +389,10 @@ class CoreController extends AbstractActionController
     public function deleteConfirmAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $searchEngines = $solrCore->searchEngines();
         $searchConfigs = $solrCore->searchConfigs();
@@ -379,7 +417,9 @@ class CoreController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $this->api()->delete('solr_cores', $this->params('id'));
+                // A core is a facet of its engine: deleting it deletes the
+                // engine, with its maps, search pages and suggesters.
+                $this->api()->delete('search_engines', $this->params('id'));
                 $this->messenger()->addSuccess('Solr core successfully deleted'); // @translate
             } else {
                 $this->messenger()->addError('Solr core could not be deleted'); // @translate
@@ -391,10 +431,10 @@ class CoreController extends AbstractActionController
     public function importAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         /** @var \SearchSolr\Form\Admin\SolrCoreMappingImportForm $form */
         $form = $this->getForm(SolrCoreMappingImportForm::class);
@@ -458,10 +498,10 @@ class CoreController extends AbstractActionController
     public function exportAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         // Export all maps even empty, so the user will have the headers.
         $filename = $this->exportFilename($solrCore);
@@ -490,10 +530,10 @@ class CoreController extends AbstractActionController
     public function listDocumentsAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $resourceName = $this->params()->fromQuery('resource_name') ?: '';
 
@@ -511,10 +551,10 @@ class CoreController extends AbstractActionController
     public function listResourcesAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         // The search config is useless here.
         $searchConfig = $this->getSearchConfigAdmin();
@@ -540,10 +580,10 @@ class CoreController extends AbstractActionController
     public function listValuesAction()
     {
         /**
-         * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+         * @var \SearchSolr\Stdlib\SolrCore $solrCore
          */
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $searchConfig = $this->getSearchConfigAdmin();
         $fieldName = $this->params()->fromQuery('fieldname');
@@ -873,7 +913,7 @@ class CoreController extends AbstractActionController
     public function createCatchallAction()
     {
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $schema = $solrCore->schema();
 
@@ -942,7 +982,7 @@ class CoreController extends AbstractActionController
     public function deleteCatchallAction()
     {
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $schema = $solrCore->schema();
 
@@ -1011,7 +1051,7 @@ class CoreController extends AbstractActionController
     public function disableDataDrivenAction()
     {
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         try {
             $solariumClient = $solrCore->solariumClient();
@@ -1110,8 +1150,8 @@ class CoreController extends AbstractActionController
     public function createCoreOnServerAction()
     {
         $id = $this->params('id');
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
+        $solrCore = $this->solrCore((int) $id);
 
         $connection = $solrCore->clientSettings();
         $coreName = (string) ($connection['core'] ?? '');
@@ -1157,20 +1197,18 @@ class CoreController extends AbstractActionController
             return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
+        $solrCore = $this->solrCore((int) $id);
         $connection = $solrCore->clientSettings();
         $coreName = (string) ($connection['core'] ?? '');
 
-        // Refuse to delete a core shared by an engine setting "index_name", as
+        // Refuse to delete a core shared through the setting "index_name", as
         // its documents may belong to another index or third party.
-        $searchEngines = $this->api()->search('search_engines')->getContent();
-        foreach ($searchEngines as $engine) {
-            if ((int) $engine->settingEngineAdapter('solr_core_id') === (int) $id
-                && $engine->settingEngineAdapter('index_name')
-            ) {
+        $sharedEngines = [$solrCore->searchEngine()];
+        foreach ($sharedEngines as $engine) {
+            if ($engine->settingEngineAdapter('index_name')) {
                 $this->messenger()->addError(new PsrMessage(
-                    'The core "{core}" is shared (an engine sets index_name); deletion on the server is refused.', // @translate
+                    'The core "{core}" is shared (the engine sets index_name); deletion on the server is refused.', // @translate
                     ['core' => $coreName]
                 ));
                 return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
@@ -1260,7 +1298,7 @@ class CoreController extends AbstractActionController
     {
         $api = $this->api();
         $id = $this->params('id');
-        $solrCore = $api->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $maps = $solrCore->maps();
         $mapList = [];
@@ -1316,8 +1354,7 @@ class CoreController extends AbstractActionController
     public function reduceMapsAction()
     {
         $id = $this->params('id');
-        $solrCore = $this->api()
-            ->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $fieldStatus = $solrCore->fieldLimitStatus();
         if (!$fieldStatus || !$fieldStatus['maxFields']) {
@@ -1347,7 +1384,7 @@ class CoreController extends AbstractActionController
     {
         $api = $this->api();
         $id = (int) $this->params('id');
-        $solrCore = $api->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $existingFields = array_map(
             fn ($m) => $m->fieldName(), $solrCore->maps()
@@ -1457,7 +1494,7 @@ class CoreController extends AbstractActionController
     {
         $api = $this->api();
         $id = (int) $this->params('id');
-        $solrCore = $api->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         // On a plain access, show the form to choose the sources to align. The
         // sync runs on submit only, so the coverage is an explicit choice.
@@ -1509,13 +1546,9 @@ class CoreController extends AbstractActionController
 
         // Check for shared engine (index_name).
         // Sync cannot work reliably when multiple Omeka instances share a core.
-        $searchEngines = $api->search('search_engines')
-            ->getContent();
+        $searchEngines = [$solrCore->searchEngine()];
         foreach ($searchEngines as $engine) {
-            $coreId = $engine->settingEngineAdapter('solr_core_id');
-            if ((int) $coreId === $id
-                && $engine->settingEngineAdapter('index_name')
-            ) {
+            if ($engine->settingEngineAdapter('index_name')) {
                 $this->messenger()->addError(
                     'This core is used by a shared engine (index_name is set). Sync is not supported for shared engines.' // @translate
                 );
@@ -1567,16 +1600,8 @@ class CoreController extends AbstractActionController
         $siteSettings = $services->get('Omeka\Settings\Site');
         $connection = $services->get('Omeka\Connection');
 
-        // 1. Find search engines that use this Solr core.
-        $engineIds = [];
-        $searchEngines = $api->search('search_engines')
-            ->getContent();
-        foreach ($searchEngines as $engine) {
-            $coreId = $engine->settingEngineAdapter('solr_core_id');
-            if ((int) $coreId === $id) {
-                $engineIds[] = $engine->id();
-            }
-        }
+        // 1. The engine of this core (a core is a facet of its engine).
+        $engineIds = [$id];
 
         // 2. Collect property terms from configs and suggesters, when the
         // "configs" source is checked.
@@ -1816,8 +1841,7 @@ class CoreController extends AbstractActionController
         // Refresh after deletion.
         $existingFieldNames = [];
         if ($deleted) {
-            $solrCore = $api->read('solr_cores', $id)
-                ->getContent();
+            $solrCore = $this->solrCore((int) $id);
         }
         foreach ($solrCore->maps() as $map) {
             $existingFieldNames[] = $map->fieldName();
@@ -2134,17 +2158,15 @@ class CoreController extends AbstractActionController
         if ($deleted || $created) {
             // Actionable reminder: a new map stays empty until reindexing.
             $links = [];
-            foreach ($searchEngines as $engine) {
-                if ((int) $engine->settingEngineAdapter('solr_core_id') === $id) {
-                    $links[] = sprintf(
-                        '<a href="%s">%s</a>',
-                        htmlspecialchars($this->url()->fromRoute(
-                            'admin/search-manager/engine-id',
-                            ['id' => $engine->id(), 'action' => 'index']
-                        )),
-                        htmlspecialchars($engine->name())
-                    );
-                }
+            foreach ($solrCore->searchEngines() as $engine) {
+                $links[] = sprintf(
+                    '<a href="%s">%s</a>',
+                    htmlspecialchars($this->url()->fromRoute(
+                        'admin/search-manager/engine-id',
+                        ['id' => $engine->id(), 'action' => 'index']
+                    )),
+                    htmlspecialchars($engine->name())
+                );
             }
             $message = new PsrMessage(
                 'Reindex required: the changed maps stay empty until then. Reindex: {links}.', // @translate
@@ -2415,7 +2437,7 @@ class CoreController extends AbstractActionController
     public function resetMapsVisibilityAction()
     {
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $connection = $this->getEvent()->getApplication()->getServiceManager()
             ->get('Omeka\Connection');
@@ -2455,7 +2477,7 @@ class CoreController extends AbstractActionController
     public function createSuggestFieldAction()
     {
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         $includeLongTexts = (bool) $this->params()
             ->fromQuery('include_long_texts');
@@ -2496,7 +2518,7 @@ class CoreController extends AbstractActionController
     public function configureSearchAction()
     {
         $id = $this->params('id');
-        $solrCore = $this->api()->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         // Persist query relevance settings, moved here from the core edit form:
         // they tune search behaviour like the catchall analyzer below. Empty
@@ -2504,7 +2526,7 @@ class CoreController extends AbstractActionController
         $settings = $solrCore->settings();
         $settings['query']['minimum_match'] = trim((string) $this->params()->fromPost('minimum_match', ''));
         $settings['query']['tie_breaker'] = trim((string) $this->params()->fromPost('tie_breaker', ''));
-        $this->api()->update('solr_cores', $id, ['o:settings' => $settings], [], ['isPartial' => true]);
+        $this->updateSolrSettings((int) $id, $settings);
 
         $searchConfig = $this->params()->fromPost('search_config', 'keep');
 
@@ -2715,7 +2737,7 @@ class CoreController extends AbstractActionController
      * @param \SearchSolr\Api\Representation\SolrMapRepresentation[] $existingMaps
      */
     protected function snapshotMaps(
-        \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore,
+        \SearchSolr\Stdlib\SolrCore $solrCore,
         array $existingMaps
     ): void {
         $services = $this->getEvent()->getApplication()->getServiceManager();
@@ -2800,7 +2822,7 @@ class CoreController extends AbstractActionController
             );
         }
 
-        $solrCore = $api->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
 
         // Snapshot the current state before restoring.
         $this->snapshotMaps($solrCore, $solrCore->maps());
@@ -2835,7 +2857,7 @@ class CoreController extends AbstractActionController
         }
 
         // Refresh boost configuration.
-        $solrCore = $api->read('solr_cores', $id)->getContent();
+        $solrCore = $this->solrCore((int) $id);
         $this->updateFieldsBoost($solrCore);
 
         $this->messenger()->addSuccess(new PsrMessage(

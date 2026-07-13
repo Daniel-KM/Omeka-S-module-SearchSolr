@@ -47,11 +47,19 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Reset values visibility'), $solrCore->adminUrl('reset-maps-visibility'), [
                     'class' => 'link',
                     'title' => $translate('Reset all maps to "follow engine" visibility. Maps on a public engine will stop indexing private values.')]) ?></li>
-                <?php if (!$solrCore->schema()->checkDefaultField()): ?>
+                <?php
+                try {
+                    $hasCatchall = $solrCore->schema()->checkDefaultField();
+                } catch (\Exception $e) {
+                    // Solr unreachable: hide the schema-dependent entries.
+                    $hasCatchall = null;
+                }
+                ?>
+                <?php if ($hasCatchall === false): ?>
                 <li><?= $hyperlink($translate('Create _text_'), $solrCore->adminUrl('create-catchall'), [
                     'class' => 'link',
                     'title' => $translate('Create the catchall copyField "_text_" for optimized full-text search. Reindexing will be required.')]) ?></li>
-                <?php else: ?>
+                <?php elseif ($hasCatchall === true): ?>
                 <li><?= $hyperlink($translate('Delete _text_'), $solrCore->adminUrl('delete-catchall'), [
                     'class' => 'link',
                     'title' => $translate('Remove the catchall copyField "_text_". Full-text search via "_text_" will stop working until it is recreated.')]) ?></li>
@@ -110,8 +118,12 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 // reindex wipes both.
 $thisUrl = $solrCore->clientUrlAdmin();
 $sharedWith = [];
-foreach ($this->api()->search('solr_cores')->getContent() as $otherCore) {
-    if ($otherCore->id() !== $solrCore->id() && $otherCore->clientUrlAdmin() === $thisUrl) {
+foreach ($this->api()->search('search_engines')->getContent() as $otherEngine) {
+    if ($otherEngine->id() === $solrCore->id() || $otherEngine->engineAdapterName() !== 'solarium') {
+        continue;
+    }
+    $otherCore = $otherEngine->engineAdapter() ? $otherEngine->engineAdapter()->getSolrCore() : null;
+    if ($otherCore && $otherCore->clientUrlAdmin() === $thisUrl) {
         $sharedWith[] = $otherCore->name();
     }
 }
@@ -120,7 +132,15 @@ foreach ($this->api()->search('solr_cores')->getContent() as $otherCore) {
 <p class="messages"><span class="message warning"><?= $escape(sprintf($translate('This core points to the same Solr url as: %s. They share one physical index and schema, so one overwrites the other and a reindex wipes both. Give each core its own physical Solr core (a distinct core name in the url).'), implode(', ', $sharedWith))) ?></span></p>
 <?php endif; ?>
 
-<?php if ($solrCore->userIsAllowed('update') && $solrCore->schema()->checkDefaultField()): ?>
+<?php
+$hasCatchallTop = null;
+try {
+    $hasCatchallTop = $solrCore->schema()->checkDefaultField();
+} catch (\Exception $e) {
+    // Solr unreachable.
+}
+?>
+<?php if ($solrCore->userIsAllowed('update') && $hasCatchallTop): ?>
 <details id="search-config">
     <summary><?= $translate('Search configuration') ?></summary>
     <p class="explanation"><?= $translate('Configure the analyzer for the catchall field "_text_". This affects how search queries match indexed content.') ?></p>

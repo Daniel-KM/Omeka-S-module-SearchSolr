@@ -170,9 +170,11 @@ class Module extends AbstractModule
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
+        // The cores are appended inside the Indexing section of the search
+        // manager, through its dedicated event.
         $sharedEventManager->attach(
             \AdvancedSearch\Controller\Admin\IndexController::class,
-            'view.browse.after',
+            'view.browse.engines.after',
             [$this, 'appendBrowseCores']
         );
 
@@ -263,10 +265,16 @@ class Module extends AbstractModule
 
     public function appendBrowseCores(Event $event): void
     {
+        // A core is a facet of a solarium engine: one line per engine.
         $view = $event->getTarget();
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $response = $api->search('solr_cores');
-        $solrCores = $response->getContent();
+        $services = $this->getServiceLocator();
+        $api = $services->get('Omeka\ApiManager');
+        $solrCores = [];
+        foreach ($api->search('search_engines', ['sort_by' => 'name'])->getContent() as $engine) {
+            if ($engine->engineAdapterName() === 'solarium') {
+                $solrCores[] = new \SearchSolr\Stdlib\SolrCore($engine, $services);
+            }
+        }
         echo $view->partial('search-solr/admin/core/browse-table', [
             'solrCores' => $solrCores,
         ]);
@@ -477,7 +485,7 @@ class Module extends AbstractModule
      * Fields like `_text_` (not stored) or `*_str` (not stored) are excluded.
      */
     protected function getSolrFieldsForSuggester(
-        ?Api\Representation\SolrCoreRepresentation $solrCore,
+        ?\SearchSolr\Stdlib\SolrCore $solrCore,
         bool $deduplicate = false
     ): array {
         if (!$solrCore) {
@@ -760,7 +768,7 @@ class Module extends AbstractModule
         }
     }
 
-    protected function getSolrCoreAdmin(): ?\SearchSolr\Api\Representation\SolrCoreRepresentation
+    protected function getSolrCoreAdmin(): ?\SearchSolr\Stdlib\SolrCore
     {
         $searchConfig = $this->getSearchConfigAdmin();
         if (!$searchConfig) {
@@ -782,16 +790,16 @@ class Module extends AbstractModule
      */
     protected function searchSearchEnginesByCoreId($solrCoreId)
     {
-        $result = [];
+        // A core is a facet of its engine (1:1): the core id is the engine id.
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        /** @var \AdvancedSearch\Api\Representation\SearchEngineRepresentation[] $searchEngines */
-        $searchEngines = $api->search('search_engines', ['adapter' => 'solarium'])->getContent();
-        foreach ($searchEngines as $searchEngine) {
-            if ($searchEngine->settingEngineAdapter('solr_core_id') == $solrCoreId) {
-                $result[$searchEngine->id()] = $searchEngine;
-            }
+        try {
+            $searchEngine = $api->read('search_engines', $solrCoreId)->getContent();
+        } catch (\Throwable $e) {
+            return [];
         }
-        return $result;
+        return $searchEngine->engineAdapterName() === 'solarium'
+            ? [$searchEngine->id() => $searchEngine]
+            : [];
     }
 
     /**

@@ -42,7 +42,7 @@ class SolrMapAdapter extends AbstractEntityAdapter
 
     protected $sortFields = [
         'id' => 'id',
-        'core' => 'solrCore',
+        'core' => 'engine',
         'resource_name' => 'resourceName',
         'field_name' => 'fieldName',
         'alias' => 'alias',
@@ -51,7 +51,7 @@ class SolrMapAdapter extends AbstractEntityAdapter
 
     protected $scalarFields = [
         'id' => 'id',
-        'core' => 'solrCore',
+        'core' => 'engine',
         'resource_name' => 'resourceName',
         'field_name' => 'fieldName',
         'alias' => 'alias',
@@ -81,16 +81,19 @@ class SolrMapAdapter extends AbstractEntityAdapter
 
         // Id is managed via entity adapter.
 
-        if (isset($query['solr_core_id']) && $query['solr_core_id']) {
-            $coreAlias = $this->createAlias();
+        // The canonical key is "engine_id"; "solr_core_id" is kept as an
+        // alias, since the engine and the former core are the same object.
+        $engineId = $query['engine_id'] ?? $query['solr_core_id'] ?? null;
+        if ($engineId) {
+            $engineAlias = $this->createAlias();
             $qb
                 ->innerJoin(
-                    'omeka_root.solrCore',
-                    $coreAlias
+                    'omeka_root.engine',
+                    $engineAlias
                 )
                 ->andWhere($expr->eq(
-                    $coreAlias . '.id',
-                    $this->createNamedParameter($qb, $query['solr_core_id']))
+                    $engineAlias . '.id',
+                    $this->createNamedParameter($qb, $engineId))
                 );
         }
         if (isset($query['resource_name']) && $query['resource_name']) {
@@ -165,17 +168,24 @@ class SolrMapAdapter extends AbstractEntityAdapter
 
     protected function hydrateSolrCore(Request $request, EntityInterface $entity): void
     {
-        if ($this->shouldHydrate($request, 'o:solr_core')) {
-            $data = $request->getContent();
-            if (isset($data['o:solr_core']['o:id'])
-                && is_numeric($data['o:solr_core']['o:id'])
-            ) {
-                $core = $this->getAdapter('solr_cores')
-                    ->findEntity($data['o:solr_core']['o:id']);
-            } else {
-                $core = null;
-            }
-            $entity->setSolrCore($core);
+        // The canonical payload is "o:engine"; "o:solr_core" is kept as an
+        // alias, since the engine and the former core are the same object.
+        $data = $request->getContent();
+        $engineId = null;
+        if ($this->shouldHydrate($request, 'o:engine')
+            && isset($data['o:engine']['o:id'])
+            && is_numeric($data['o:engine']['o:id'])
+        ) {
+            $engineId = (int) $data['o:engine']['o:id'];
+        } elseif ($this->shouldHydrate($request, 'o:solr_core')
+            && isset($data['o:solr_core']['o:id'])
+            && is_numeric($data['o:solr_core']['o:id'])
+        ) {
+            $engineId = (int) $data['o:solr_core']['o:id'];
+        } else {
+            return;
         }
+        $engine = $this->getAdapter('search_engines')->findEntity($engineId);
+        $entity->setEngine($engine);
     }
 }

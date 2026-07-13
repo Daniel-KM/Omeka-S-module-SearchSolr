@@ -75,64 +75,48 @@ vendor/bin/phpunit -c modules/SearchSolr/phpunit.xml --testdox
 Quick start
 -----------
 
+An engine is a real backend: each Solr search engine of Omeka corresponds to
+one physical Solr core, and carries its connection, its settings, its maps and
+its snapshots directly (there is no separate "core" object to manage). The
+"core page" of an engine (Search manager > Solr) is simply the place where its
+connection and its maps are edited.
+
 1. Installation
     1. Install Solr (see a Solr tutorial or documentation, or [below for Debian]).
-    2. Create a Solr index (= "core") (see [below "Solr management"]), that is
-       named `omeka` or whatever you want (use it for the path in point 2.1).
+    2. Create a physical Solr core (see [below "Solr management"]), named
+       `omeka` or whatever you want.
     3. Install the module [Advanced Search].
     4. Install this module [Advanced Search adapter for Solr].
-2. In Solr admin
-    1. A default core `default` is automatically added, and it is linked to the
-       default install of Solr with the path `solr/omeka`. It contains a default
-       list of mappings for Dublin Core elements too.
-    2. Check if this core is working, or configure it correctly (host, port, and
-       path of the Solr instance): the status should be `OK`.
-    3. This default core can be customized if needed, for example to force the
-       queries to be a "OR" query (default) or a "AND" query (more common).
-3. In Search admin
-    1. Create an index
-        1. Add a new index with name `Default` or whatever you want, using the
-        Solr adapter and the `default` core.
-        2. Default mapping between omeka metadata and solr indexes are added
-        automatically, but it possible to add new ones for various purposes
-        (general search, specific search, display, link, facets, sort, etc.).
-        This is the main point to understand: it is recommended to index a value
-        multiple times.
-        3. Launch the indexation by clicking on the "reindex" button (two arrows
-        forming a circle).
-    2. Create a page
-        1. Add a page with name `Default` or whatever you want, a path to access
-        it, for example `search` or `find`, the index that was created in the
-        previous step (`Default (Solr)` here), and a form (`Basic`). Forms added
-        by modules can manage an advanced input field and/or filters.
-        2. In the page configuration, you can enable/disable facet and sort
-        fields by drag-drop. The order of the fields will be the one that will
-        be used for display. Note that some fields seem duplicated, but they
-        aren’t. Some of them allow to prepare search indexes and some other
-        facets or sort indexes. Some of them may be used for all uses.
-        For example, you can use `dcterms_type_ss`, `dcterms_subject_ss`,
-        `resource_class_s`, `item_set_title_ss`, `dcterms_creator_ss`,
-        `dcterms_date_s`, `dcterms_spatial_ss`, `dcterms_language_ss` and
-        `dcterms_rights_ss` as facets, and `relevance`, `dcterms_title_s`,
-        `dcterms_date_s`, and `dcterms_creator_s` as sort fields. See below more
-        information about [indexation in Solr].
-        3. Edit the name of the label that will be used for facets and sort
-        fields in the same page. The string will be automatically translated if
-        it exists in Omeka.
-        4. There are options for the default search results. If wanted, the
-        query may be nothing, all, or anything. See the [documentation].
-4. In admin or site settings
-    1. To access to the search form, enable it in the main settings (for the
-       admin board) and in the site settings (for the front-end sites). So the
-       search engine will be available in the specified path: `https://example.com/s/my-site/search`
-       or `https://example.com/admin/search` in this example.
+2. Check the default engine
+    1. At install, a default Solr engine is created, with a connection to the
+       core `omeka` of a local Solr, a default list of maps for the Dublin Core
+       elements, a default suggester, and a search config "Api" usable to
+       redirect the admin api searches to Solr.
+    2. On its core page (Search manager > Solr, then the engine), check the
+       connection (host, port, core) : the status should be `OK`.
+    3. To use another physical core, add one with "Add Solr core": the engine
+       is created with it. One engine per physical core: two engines cannot
+       point to the same Solr url.
+3. Align the maps, then reindex
+    1. On the core page, the menu Maintenance > "Align the maps…" creates the
+       maps for the checked sources (search configs, settings, resource
+       templates, used properties), so any property searchable with the
+       internal engine is also queryable with Solr. A snapshot is taken before
+       each alignment and can be restored.
+    2. Reindex the engine (the two arrows button in the search manager).
+4. Create a search page
+    1. Add a search page with a name, a path, for example `search` or `find`,
+       the Solr engine, and the form (`Main`).
+    2. In the search page, manage the filters, the sort fields and the facets.
+       With the aligned maps, the fields can be the property terms themselves
+       (`dcterms:subject`…) or specific Solr fields (`dcterms_subject_ss`…).
+5. In admin or site settings
+    1. To access the search form, enable the page in the main settings (for
+       the admin board) and in the site settings (for the front-end sites), so
+       the search is available on the specified path:
+       `https://example.com/s/my-site/search` or `https://example.com/admin/search`.
     2. Optionally, add a custom navigation link to the search page in the
        navigation settings of the site.
-5. In Solr dashboard
-    1. In the case the search doesn’t return any results, check the config of
-       the core in the Solr Dashboard and see [this issue on omeka.org] to set
-       and fill the default field. Or check if there is a field "`*`" in the
-       schema that is ignored.
 
 The search form should appear. Type some text then submit the form to display
 the results as grid or as list. The page can be themed.
@@ -142,16 +126,14 @@ the results as grid or as list. The page can be themed.
 For now, the Search module does not replace the default search page neither the
 default search engine. So the theme should be updated.
 
-Don’t forget to check Search facets and sort fields of each search page each
-time that the list of core fields is modified: the fields that don’t exist
-anymore are removed; the new ones are not added; the renamed ones are updated,
-but issues may occur in case of duplicate names.
+Don’t forget to align the maps and to reindex each time the list of fields or
+the Solr config is modified.
 
-Furthermore, a check should be done when a field has the same name for items and
-item sets.
-
-Don’t forget to reindex the fields each time the Solr config is updated too.
-
+For a strong protection against private metadata leak, you can create a second
+physical core indexed from public resources only, with its own engine, and use
+it for the public search pages and suggesters: the shared core holds private
+data, and the public search (and the suggester, built from the same index) is
+otherwise protected only by the query filter.
 
 Indexation in Solr
 ------------------

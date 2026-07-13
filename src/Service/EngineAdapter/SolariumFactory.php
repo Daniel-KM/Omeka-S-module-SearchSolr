@@ -40,7 +40,8 @@ class SolariumFactory implements FactoryInterface
     {
         return new Solarium(
             $services->get('Omeka\ApiManager'),
-            $services->get('MvcTranslator')
+            $services->get('MvcTranslator'),
+            $services
         );
     }
 }

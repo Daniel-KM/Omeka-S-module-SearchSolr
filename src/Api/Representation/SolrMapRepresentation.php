@@ -52,7 +52,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
     public function getJsonLd(): array
     {
         return [
-            'o:solr_core' => $this->solrCore()->getReference()->jsonSerialize(),
+            'o:engine' => ['o:id' => $this->resource->getEngine()->getId()],
             'o:resource_name' => $this->resource->getResourceName(),
             'o:field_name' => $this->resource->getFieldName(),
             'o:alias' => $this->resource->getAlias(),
@@ -77,10 +77,25 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         return $url('admin/search-manager/solr/core-id-map-resource-id', $params, $options);
     }
 
-    public function solrCore(): ?SolrCoreRepresentation
+    /**
+     * The Solr core of the map, a facet of its engine.
+     */
+    public function solrCore(): ?\SearchSolr\Stdlib\SolrCore
     {
-        $solrCore = $this->resource->getSolrCore();
-        return $this->getAdapter('solr_cores')->getRepresentation($solrCore);
+        $engine = $this->getAdapter('search_engines')
+            ->getRepresentation($this->resource->getEngine());
+        return $engine
+            ? new \SearchSolr\Stdlib\SolrCore($engine, $this->getServiceLocator())
+            : null;
+    }
+
+    /**
+     * The solarium search engine of the map.
+     */
+    public function searchEngine(): ?\AdvancedSearch\Api\Representation\SearchEngineRepresentation
+    {
+        return $this->getAdapter('search_engines')
+            ->getRepresentation($this->resource->getEngine());
     }
 
     public function resourceName(): string

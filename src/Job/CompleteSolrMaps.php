@@ -132,9 +132,8 @@ class CompleteSolrMaps extends AbstractJob
         $resourceName = $this->getArg('resource_name', 'items');
 
         try {
-            /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
-            $solrCore = $api->read('solr_cores', $solrCoreId)
-                ->getContent();
+            /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
+            $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         } catch (\Throwable $e) {
             $this->logger->err(
                 'Solr core #{id} not found.', // @translate
@@ -294,8 +293,7 @@ class CompleteSolrMaps extends AbstractJob
         }
 
         // Update field boosts.
-        $solrCore = $api->read('solr_cores', $solrCoreId)
-            ->getContent();
+        $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         $this->updateFieldsBoost($solrCore, $api);
 
         if ($newMaps) {
@@ -442,7 +440,7 @@ class CompleteSolrMaps extends AbstractJob
     }
 
     protected function updateFieldsBoost(
-        \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore,
+        \SearchSolr\Stdlib\SolrCore $solrCore,
         \Omeka\Api\Manager $api
     ): void {
         $solrCoreSettings = $solrCore->settings();
@@ -452,8 +450,23 @@ class CompleteSolrMaps extends AbstractJob
                 ?: 1;
         }
         $solrCoreSettings['field_boost'] = $boosts;
-        $api->update('solr_cores', $solrCore->id(), [
-            'o:settings' => $solrCoreSettings,
-        ], [], ['isPartial' => true]);
+        $this->updateEngineSolrSettings($solrCore->id(), $solrCoreSettings);
+    }
+
+    /**
+     * Save the solr settings of the engine (facet "solr" of its settings).
+     */
+    protected function updateEngineSolrSettings(int $engineId, array $solrSettings): void
+    {
+        $services = $this->getServiceLocator();
+        $connection = $services->get('Omeka\Connection');
+        $engineSettings = json_decode((string) $connection->fetchOne(
+            'SELECT `settings` FROM `search_engine` WHERE `id` = ?', [$engineId]
+        ), true) ?: [];
+        $engineSettings['solr'] = $solrSettings;
+        $connection->executeStatement(
+            'UPDATE `search_engine` SET `settings` = ?, `modified` = NOW() WHERE `id` = ?;',
+            [json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $engineId]
+        );
     }
 }
