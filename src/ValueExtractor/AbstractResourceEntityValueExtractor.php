@@ -543,6 +543,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             'item_sets' => [],
             'media' => [],
             'digital_objects' => [],
+            'concepts' => [],
             'assets' => [],
             'users' => [],
         ];
@@ -561,6 +562,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         ];
         if (class_exists('DigitalObject\Module', false)) {
             $resourceNames[\DigitalObject\Api\Representation\DigitalObjectRepresentation::class] = 'digital_objects';
+        }
+        if (class_exists('Thesaurus\Module', false)) {
+            $resourceNames[\Thesaurus\Api\Representation\ConceptRepresentation::class] = 'concepts';
         }
         if (!isset($resourceNames[get_class($resource)])) {
             return false;

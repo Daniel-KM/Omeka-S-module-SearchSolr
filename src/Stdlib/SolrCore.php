@@ -533,7 +533,9 @@ class SolrCore
             return $maps['generic'] ?? [];
         }
 
-        if (!in_array($resourceName, ['items', 'item_sets', 'media'])) {
+        // The specific resource types of modules are resources too, so they use
+        // the maps defined for all resources.
+        if (!in_array($resourceName, ['items', 'item_sets', 'media', 'digital_objects', 'concepts'])) {
             return array_merge(
                 $maps['generic'] ?? [],
                 $maps[$resourceName] ?? []

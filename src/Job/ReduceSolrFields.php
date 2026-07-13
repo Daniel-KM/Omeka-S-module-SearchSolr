@@ -94,7 +94,7 @@ class ReduceSolrFields extends AbstractJob
             'Step 1: Removing maps for unused properties.' // @translate
         );
         $properties = $api->search('properties')->getContent();
-        foreach (['items', 'item_sets', 'media'] as $resourceName) {
+        foreach (['items', 'item_sets', 'media', 'digital_objects', 'concepts'] as $resourceName) {
             $usedIds = $this->listUsedPropertyIds(
                 $connection, $resourceName
             );
@@ -325,6 +325,9 @@ class ReduceSolrFields extends AbstractJob
         ];
         if (class_exists('DigitalObject\Module', false)) {
             $resourceTypes['digital_objects'] = \DigitalObject\Entity\DigitalObject::class;
+        }
+        if (class_exists('Thesaurus\Module', false)) {
+            $resourceTypes['concepts'] = \Thesaurus\Entity\Concept::class;
         }
         if (!isset($resourceTypes[$resourceName])) {
             return [];

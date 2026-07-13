@@ -355,6 +355,9 @@ class CompleteSolrMaps extends AbstractJob
         if (class_exists('DigitalObject\Module', false)) {
             $resourceTypes['digital_objects'] = \DigitalObject\Entity\DigitalObject::class;
         }
+        if (class_exists('Thesaurus\Module', false)) {
+            $resourceTypes['concepts'] = \Thesaurus\Entity\Concept::class;
+        }
         if (!isset($resourceTypes[$resourceName])) {
             return [];
         }

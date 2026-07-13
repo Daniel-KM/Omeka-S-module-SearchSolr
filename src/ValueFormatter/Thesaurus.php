@@ -3,6 +3,7 @@
 namespace SearchSolr\ValueFormatter;
 
 use Omeka\Api\Representation\ItemRepresentation;
+use Thesaurus\Api\Representation\ConceptRepresentation;
 use Thesaurus\Stdlib\Thesaurus as TThesaurus;
 
 /**
@@ -44,8 +45,10 @@ class Thesaurus extends AbstractValueFormatter
             return [];
         }
 
+        // A concept is a dedicated resource type since Thesaurus 3.4.26, but it
+        // may still be an item in older versions.
         $vr = $value->valueResource();
-        if (!$vr || !$vr instanceof ItemRepresentation) {
+        if (!$vr || !($vr instanceof ItemRepresentation || $vr instanceof ConceptRepresentation)) {
             return [];
         }
 
@@ -147,7 +150,7 @@ class Thesaurus extends AbstractValueFormatter
         return $results;
     }
 
-    protected function getThesaurus(ItemRepresentation $item): ?TThesaurus
+    protected function getThesaurus(ItemRepresentation|ConceptRepresentation $item): ?TThesaurus
     {
         /** @var \Thesaurus\Stdlib\Thesaurus $thesaurus */
         $thesaurus = $this->services->get('Thesaurus\Thesaurus');
