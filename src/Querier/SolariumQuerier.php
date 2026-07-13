@@ -1972,40 +1972,64 @@ class SolariumQuerier extends AbstractQuerier
                 }
 
                 $requireInteger = in_array($type, SearchResources::FIELD_QUERY['value_integer']);
-                if ($requireInteger) {
-                    $nameInteger ??= $this->fieldToIndexNumeric($field) ?? $nameAny ?? ($nameAny = ($this->fieldToIndex($field) ?? $field));
-                    $name = $nameInteger;
-                } else {
-                    $nameAny ??= $this->fieldToIndex($field) ?? $field;
-                    $name = $nameAny;
-                }
-                // A property term (with ":") not resolved to a
-                // Solr field means the field is not indexed.
-                if (strpos($name, ':') !== false) {
-                    $this->getLogger()
-                        ->err(
-                            'Solr: skipped filter on unmapped field "{field}".', // @translate
-                            ['field' => $field]
-                        );
-                    $this->select->createFilterQuery('unmapped_' . ++$this->appendToKey)
-                        ->setQuery('-*:*');
-                    return;
-                }
 
-                // "AND/NOT" cannot be used as first.
-                // TODO Will be simplified in a future version.
+                // A row may hold several fields (aggregated alias): the api
+                // combines them in one predicate with OR, so the sub-clauses
+                // are OR-joined inside a single clause of the chain.
+                $rowFields = isset($f['fields']) && is_array($f['fields']) && $f['fields']
+                    ? array_values(array_unique(array_filter($f['fields'], 'is_string')))
+                    : [$field];
+
                 $isNegative = substr($type, 0, 1) === 'n';
                 $wrap = $isNegative ? '(NOT ' : '(';
                 $end = ')';
+                $isAbsence = in_array($type, ['nex', 'nexs', 'nexm'], true);
 
-                $query = $this->buildAdvancedFilterQuery($type, $val, $name, $wrap, $end);
-                if ($query) {
-                    if ($joiner === 'OR') {
-                        $orGroups[] = $andGroup;
-                        $andGroup = [];
+                $subClauses = [];
+                foreach ($rowFields as $rowField) {
+                    $name = $requireInteger
+                        ? ($this->fieldToIndexNumeric($rowField) ?? $this->fieldToIndex($rowField) ?? $rowField)
+                        : ($this->fieldToIndex($rowField) ?? $rowField);
+                    // A property term (with ":") not resolved to a Solr field
+                    // means the field is not indexed. The clause is adapted
+                    // locally: a positive condition on a missing field matches
+                    // nothing, an absence condition (nex…) matches everything.
+                    // A local clause keeps the other branches of an "or" chain
+                    // working, unlike a global -*:*.
+                    if (strpos($name, ':') !== false) {
+                        $this->getLogger()
+                            ->err(
+                                'Solr: no index for the field "{field}", filter adapted.', // @translate
+                                ['field' => $rowField]
+                            );
+                        if ($isAbsence) {
+                            $subClauses[] = '*:*';
+                        }
+                        continue;
                     }
-                    $andGroup[] = $query;
+                    $subClause = $this->buildAdvancedFilterQuery($type, $val, $name, $wrap, $end);
+                    if ($subClause) {
+                        $subClauses[] = $subClause;
+                    }
                 }
+
+                if ($subClauses) {
+                    $query = count($subClauses) === 1
+                        ? reset($subClauses)
+                        : '(' . implode(' OR ', $subClauses) . ')';
+                } elseif (!$isAbsence) {
+                    // No resolvable field for a positive condition: the clause
+                    // matches nothing.
+                    $query = '(NOT *:*)';
+                } else {
+                    $query = '*:*';
+                }
+
+                if ($joiner === 'OR') {
+                    $orGroups[] = $andGroup;
+                    $andGroup = [];
+                }
+                $andGroup[] = $query;
             }
         }
 
@@ -2093,12 +2117,26 @@ class SolariumQuerier extends AbstractQuerier
             // Matches.
             case 'nma':
             case 'ma':
-                // Matches is already an regular expression, so just set it.
-                // Note that Solr can manage only a small part of regex and
-                // anchors are added by default.
-                // TODO Add // or not?
-                // TODO Escape regex for regexes…
-                $val = $this->fieldIsString($field) ? $val : $this->escapePhraseValue($val, 'OR');
+                // The value is a user regex with sql semantics (partial match,
+                // ^/$ anchors); a Lucene regex is anchored on the full value
+                // and has no ^/$, so the anchors are translated and the rest is
+                // wrapped with ".*". Dialects differ beyond that, so exotic
+                // patterns stay approximate. Regex requires a string field.
+                if (!$this->fieldIsString($field)) {
+                    return '';
+                }
+                $vals = array_filter(array_map('strval', is_array($val) ? $val : [$val]), 'strlen');
+                if (!$vals) {
+                    return '';
+                }
+                $regexes = array_map(function ($v) {
+                    $pre = str_starts_with($v, '^') ? '' : '.*';
+                    $post = str_ends_with($v, '$') && !str_ends_with($v, '\$') ? '' : '.*';
+                    $v = preg_replace('~^\^~', '', $v);
+                    $v = preg_replace('~(?<!\\\\)\$$~', '', $v);
+                    return '/' . $pre . str_replace('/', '\/', $v) . $post . '/';
+                }, $vals);
+                $val = count($regexes) === 1 ? reset($regexes) : '(' . implode(' OR ', $regexes) . ')';
                 return "$field:$wrap$val$end";
 
             // Greater/lower.
@@ -2220,7 +2258,16 @@ class SolariumQuerier extends AbstractQuerier
                     $fqValues = implode(' OR ', array_map('intval', $fqValues));
                     return "$field:$wrap($fqValues)$end";
                 }
-                // Fallback for string field (_link_ss).
+                // Fallback for string field: only meaningful when the field
+                // stores the linked resource ids as strings; a "_link_ss" of
+                // titles cannot match ids, so a dedicated "_link_is" map is
+                // required for res/nres.
+                if (str_ends_with($field, '_link_ss')) {
+                    $this->getLogger()->warn(
+                        'Solr: the type res/nres on "{field}" needs a map of the linked resource ids (suffix _link_is); the title index cannot match ids.', // @translate
+                        ['field' => $field]
+                    );
+                }
                 $fqValues = $this->escapePhraseValue(array_map('strval', $fqValues), 'OR');
                 return "$field:$wrap$fqValues$end";
 
