@@ -1895,6 +1895,8 @@ class CoreController extends AbstractActionController
             ['resources', 'created_dt', 'created', ['label' => 'Created']],
             ['resources', 'modified_dt', 'modified', ['label' => 'Modified']],
             ['resources', 'property_values_txt', 'property_values', ['label' => 'All property values']],
+            ['resources', 'has_original_b', 'has_original', ['formatter' => 'boolean', 'label' => 'Has original file']],
+            ['resources', 'has_thumbnails_b', 'has_thumbnails', ['formatter' => 'boolean', 'label' => 'Has thumbnails']],
             ['resources', 'value_annotations_txt', 'value_annotations', ['label' => 'Value annotations (all)']],
             // Items.
             ['items', 'item_set_id_is', 'item_set/o:id', ['label' => 'Item set id']],

@@ -1652,8 +1652,6 @@ class SolariumQuerier extends AbstractQuerier
             static $presenceArgs = [
                 'in_sites' => 'site/o:id',
                 'has_asset' => 'asset',
-                'has_original' => 'url_original',
-                'has_thumbnails' => 'url_thumbnail_large',
             ];
             if (isset($presenceArgs[$fieldName])) {
                 $maps = $this->solrCore->mapsBySource($presenceArgs[$fieldName]);
@@ -2230,22 +2228,21 @@ class SolariumQuerier extends AbstractQuerier
                     $val = array_map(fn ($v) => mb_strtolower($this->removeDiacritics((string) $v)), $val);
                 }
                 // TODO Manage uri and resources with lt, lte, gte, gt (it has a meaning at least for resource ids, but separate).
+                // Strict bounds use the exclusive range brackets of Solr:
+                // the previous string decrement/increment was a no-op on
+                // strings, making lt/gt inclusive.
                 if ($type === 'lt') {
-                    $val = reset($val);
-                    $val = $this->escapePhrase(--$val);
-                    return "$field:[* TO $val]";
+                    $val = $this->escapePhrase(reset($val));
+                    return "$field:[* TO $val}";
                 } elseif ($type === 'lte') {
-                    $val = reset($val);
-                    $val = $this->escapePhrase($val);
+                    $val = $this->escapePhrase(reset($val));
                     return "$field:[* TO $val]";
                 } elseif ($type === 'gte') {
-                    $val = array_pop($val);
-                    $val = $this->escapePhrase($val);
+                    $val = $this->escapePhrase(array_pop($val));
                     return "$field:[$val TO *]";
                 } elseif ($type === 'gt') {
-                    $val = array_pop($val);
-                    $val = $this->escapePhrase(++$val);
-                    return "$field:[$val TO *]";
+                    $val = $this->escapePhrase(array_pop($val));
+                    return $field . ':{' . $val . ' TO *]';
                 }
                 break;
 
@@ -2486,6 +2483,8 @@ class SolariumQuerier extends AbstractQuerier
             'resource_template_id' => 'resource_template/o:label',
             'item_set_id' => 'item_set/o:id',
             'has_media' => 'has_media',
+            'has_original' => 'has_original',
+            'has_thumbnails' => 'has_thumbnails',
             'media_type' => 'o:media_type',
             'media_types' => 'media/o:media_type',
             'item_id' => 'item/o:id',

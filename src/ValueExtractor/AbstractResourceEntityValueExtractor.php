@@ -119,6 +119,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'item_sets_tree' => 'Item: Item sets tree', // @translate
                     'media' => 'Item: Media', // @translate
                     'has_media' => 'Item: Has media', // @translate
+                    'has_original' => 'Has an original file', // @translate
+                    'has_thumbnails' => 'Has thumbnails', // @translate
                     'digital_object' => 'Item: Digital object', // @translate
                     'has_digital_object' => 'Item: Has digital object', // @translate
                     'content' => 'Media: Content (from html or extractable text from file, included alto)', // @translate
@@ -301,6 +303,34 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 (bool) $solrMap->setting('include_digital_object')
                     && $this->itemHasDigitalObjects($resource),
             ];
+        }
+
+        if ($field === 'has_original') {
+            if ($resource instanceof MediaRepresentation) {
+                return [(bool) $resource->hasOriginal()];
+            }
+            if ($resource instanceof ItemRepresentation) {
+                foreach ($resource->media() as $media) {
+                    if ($media->hasOriginal()) {
+                        return [true];
+                    }
+                }
+            }
+            return [false];
+        }
+
+        if ($field === 'has_thumbnails') {
+            if ($resource instanceof MediaRepresentation) {
+                return [(bool) $resource->hasThumbnails()];
+            }
+            if ($resource instanceof ItemRepresentation) {
+                foreach ($resource->media() as $media) {
+                    if ($media->hasThumbnails()) {
+                        return [true];
+                    }
+                }
+            }
+            return [false];
         }
 
         if ($field === 'digital_object') {
