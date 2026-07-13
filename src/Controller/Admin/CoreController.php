@@ -1752,11 +1752,18 @@ class CoreController extends AbstractActionController
         // and _ss for exact filters and facets (_ss is skipped later for long
         // values). Suffixes required by the configs are kept as they are.
         if ($scope !== 'configs') {
+            // Only the templates used by at least one resource: the curated
+            // set excludes the default "Base resource" and any stale template
+            // as long as no resource uses them.
             $sqlExtraTerms = $scope === 'templates'
                 ? 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
                 FROM resource_template_property rtp
                 INNER JOIN property pr ON pr.id = rtp.property_id
-                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id'
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                WHERE EXISTS (
+                    SELECT 1 FROM resource r
+                    WHERE r.resource_template_id = rtp.resource_template_id
+                )'
                 : 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
                 FROM value v
                 INNER JOIN property pr ON pr.id = v.property_id
@@ -1814,8 +1821,26 @@ class CoreController extends AbstractActionController
 
         // 6. Create missing maps for used properties.
         // Long-value properties should not get _ss/_s.
+        // Long-value properties get only _txt: an exact-value index (_ss/_s)
+        // is useless on long texts and Solr rejects the whole document beyond
+        // 32766 bytes in a docValues string. The static list is completed by
+        // a data-driven detection on the real corpus: any value over the hard
+        // limit, or an average length beyond an exact-value usefulness.
         $longValueProperties = include dirname(__DIR__, 3)
             . '/config/metadata_text.php';
+        $longValueProperties = array_unique(array_merge(
+            $longValueProperties,
+            $connection->fetchFirstColumn(
+                'SELECT CONCAT(vo.prefix, ":", pr.local_name)
+                FROM value v
+                INNER JOIN property pr ON pr.id = v.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                WHERE v.value IS NOT NULL
+                GROUP BY v.property_id
+                HAVING MAX(CHAR_LENGTH(v.value)) > 30000
+                    OR AVG(CHAR_LENGTH(v.value)) > 1000'
+            )
+        ));
 
         // Settings templates per suffix.
         $suffixSettings = [
