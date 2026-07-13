@@ -1852,14 +1852,25 @@ class SolariumQuerier extends AbstractQuerier
             ]
         );
 
+        // Accumulate all rows of all fields in a single filter query, like the
+        // api does with its single where: a per-field filter query would make
+        // "or" between rows of different fields structurally impossible
+        // (filter queries are always joined with AND by Solr). The api where is
+        // a flat sql string, so it follows the sql precedence (AND binds
+        // tighter than OR); Solr has no such precedence, so the chain is
+        // encoded explicitly as AND-groups joined with OR: "A AND B OR C"
+        // becomes "(A AND B) OR (C)".
+        $orGroups = [];
+        $andGroup = [];
+        $first = true;
+
         foreach ($filters as $field => $filterList) {
-            // Avoid issue with basic direct hidden quey filter like "resource_template_id_i=1".
+            // Avoid issue with basic direct hidden quey filter like
+            // "resource_template_id_i=1".
             if (!is_array($filterList)) {
                 continue;
             }
 
-            $fq = '';
-            $first = true;
             $name = null;
             $nameAny = null;
             $nameInteger = null;
@@ -1940,6 +1951,11 @@ class SolariumQuerier extends AbstractQuerier
                 // Check joiner and invert the query type for joiner "not".
 
                 if ($first) {
+                    // A leading "not" keeps its negation even without a
+                    // previous condition to join with.
+                    if ($joiner === 'not') {
+                        $type = SearchResources::FIELD_QUERY['reciprocal'][$type];
+                    }
                     $joiner = '';
                     $first = false;
                 } elseif ($joiner) {
@@ -1984,14 +2000,25 @@ class SolariumQuerier extends AbstractQuerier
 
                 $query = $this->buildAdvancedFilterQuery($type, $val, $name, $wrap, $end);
                 if ($query) {
-                    $fq .= " $joiner $query";
+                    if ($joiner === 'OR') {
+                        $orGroups[] = $andGroup;
+                        $andGroup = [];
+                    }
+                    $andGroup[] = $query;
                 }
             }
+        }
 
-            if ($fq) {
-                $this->select->createFilterQuery($name . '_fq_' . ++$this->appendToKey)
-                ->setQuery(ltrim($fq));
-            }
+        if ($andGroup) {
+            $orGroups[] = $andGroup;
+        }
+        $orGroups = array_filter($orGroups);
+        if ($orGroups) {
+            $this->select->createFilterQuery('adv_fq_' . ++$this->appendToKey)
+                ->setQuery(implode(' OR ', array_map(
+                    fn ($group) => '(' . implode(' AND ', $group) . ')',
+                    $orGroups
+                )));
         }
     }
 
@@ -2034,8 +2061,10 @@ class SolariumQuerier extends AbstractQuerier
             case 'nin':
             case 'in':
                 if ($this->fieldIsString($field)) {
-                    // $value = $this->->escapeTermOrPhrase($value);
-                    $val = $this->escape($val, '.*', '.*');
+                    // A string field is not tokenized, so "contains" needs a
+                    // regex; escape() quoted the value, so the ".*" was
+                    // searched literally and never matched (like sw/ew).
+                    $val = $this->regexValue($val, '.*', '.*');
                 } else {
                     $val = $this->escapePhraseValue($val, 'AND');
                 }
@@ -2195,13 +2224,14 @@ class SolariumQuerier extends AbstractQuerier
                 $fqValues = $this->escapePhraseValue(array_map('strval', $fqValues), 'OR');
                 return "$field:$wrap$fqValues$end";
 
-            // Exists (has a value).
+            // Exists (has a value). These types have no value ($val is null),
+            // so the previous phrase escaping produced field:"" that never
+            // matched. The existence is the open range on the field; the
+            // absence embeds *:* so the clause stays valid inside OR groups.
             case 'nex':
-                $val = $this->escapePhraseValue($val, 'OR');
-                return "(-$field:$val)";
+                return "(*:* NOT $field:[* TO *])";
             case 'ex':
-                $val = $this->escapePhraseValue($val, 'OR');
-                return "(+$field:$val)";
+                return "$field:[* TO *]";
 
             default:
                 return '';
@@ -2537,22 +2567,24 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function getFieldPriority(string $field): int
     {
-        if (str_ends_with($field, '_link_ss')) {
-            return 0;
-        }
-        if (str_ends_with($field, '_ss')) {
-            return 1;
+        // Value indexes first: the "_link_*" variants store the titles of the
+        // linked resources, not the own values of the resource, so they must
+        // never win for a plain value filter or sort. Linked-resource query
+        // types resolve through fieldToIndexNumeric(), which has its own
+        // priority with "_link_is" first.
+        if (str_ends_with($field, '_link_ss') || str_ends_with($field, '_link')) {
+            return 9;
         }
         if (str_ends_with($field, '_ss_lower')) {
-            return 2;
+            return 1;
         }
-        if (str_ends_with($field, '_link')) {
-            return 3;
+        if (str_ends_with($field, '_ss')) {
+            return 0;
         }
         if (str_starts_with($field, 'sm_')) {
-            return 4;
+            return 2;
         }
-        return 5;
+        return 3;
     }
 
     protected function getFieldPriorityNumeric(string $field): int
