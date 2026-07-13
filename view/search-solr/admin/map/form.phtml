@@ -37,23 +37,23 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
     <button type="submit" class="button"><?= $translate('Save') ?></button>
 </div>
 
-<h4><?= $translate('Resource type') ?></h4>
+<h2><?= $translate('Resource type') ?></h2>
 <p><?= $translate('Fill index with metadata from a type of resource') ?></p>
 <?= $this->formRow($form->get('o:resource_name')) ?>
 
-<h4><?= $translate('Source') ?></h4>
+<h2><?= $translate('Source') ?></h2>
 <p><?= $translate('Metadata to extract from Omeka') ?></p>
 <?= $this->formRow($form->get('o:source')) ?>
 <?= $this->formCollection($form->get('o:pool')) ?>
 
-<h4><?= $translate('Destination') ?></h4>
+<h2><?= $translate('Destination') ?></h2>
 <?= $partial('search-solr/admin/core/help-index-names') ?>
 <?= $this->formRow($form->get('o:field_name')) ?>
 
-<h4><?= $translate('Alias') ?></h4>
+<h2><?= $translate('Alias') ?></h2>
 <?= $this->formRow($form->get('o:alias')) ?>
 
-<h4><?= $translate('Format') ?></h4>
+<h2><?= $translate('Format') ?></h2>
 <p><?= $translate('Adapt the metadata') ?></p>
 <?= $this->formCollection($form->get('o:settings')) ?>
 

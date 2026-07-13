@@ -121,8 +121,6 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'has_media' => 'Item: Has media', // @translate
                     'has_original' => 'Has an original file', // @translate
                     'has_thumbnails' => 'Has thumbnails', // @translate
-                    'digital_object' => 'Item: Digital object', // @translate
-                    'has_digital_object' => 'Item: Has digital object', // @translate
                     'content' => 'Media: Content (from html or extractable text from file, included alto)', // @translate
                     'is_open' => 'Item set: Is open', // @translate
                     'value' => 'Value itself (in particular for module Thesaurus)', // @translate
@@ -163,6 +161,9 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'o:thumbnail' => 'Thumbnail (asset)', // @translate
                     'o:term' => 'Property or class term', // @translate
                     'property_values' => 'All property values', // @translate
+                    // The digital objects are a niche source: kept last.
+                    'digital_object' => 'Item: Digital object', // @translate
+                    'has_digital_object' => 'Item: Has digital object', // @translate
                 ],
             ],
             // Set dcterms first.

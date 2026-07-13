@@ -191,7 +191,9 @@ class MapController extends AbstractActionController
                 $data = $this->arrayFilterRecursiveEmptyValue($data);
                 $data['o:source'] = $this->sourceArrayToString($data['o:source'] ?? []);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
-                $data['o:resource_name'] = $resourceName;
+                // The scope is chosen in the form ("Scope" radio); the route
+                // resource-name is only the default, so it is the fallback.
+                $data['o:resource_name'] = $data['o:resource_name'] ?? $resourceName;
                 // Explicit provenance: a map created by hand is never removed
                 // by the maps sync.
                 $data['o:settings']['origin'] = 'manual';

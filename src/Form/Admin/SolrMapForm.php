@@ -708,6 +708,12 @@ class SolrMapForm extends Form
         foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
             $result[$name] = $this->valueExtractorManager->get($name)->getLabel() ?: $name;
         }
+        // The digital objects are a niche scope: keep them last.
+        if (isset($result['digital_objects'])) {
+            $digitalObjects = $result['digital_objects'];
+            unset($result['digital_objects']);
+            $result['digital_objects'] = $digitalObjects;
+        }
         return $result;
     }
 

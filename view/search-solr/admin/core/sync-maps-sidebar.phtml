@@ -1,0 +1,58 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
+ * @var \SearchSolr\Form\Admin\SolrCoreSyncForm $form
+ *
+ * Lean version of the maps alignment form, loaded into the core page sidebar.
+ * The options are laid out like the backup sidebar of module Easy Admin: one
+ * fieldset by option, the legend as its label and the description inside it, so
+ * the title carries no description.
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+$translate = $plugins->get('translate');
+
+$form->setAttribute('action', $solrCore->adminUrl('sync-maps'));
+$form->prepare();
+
+$sources = $form->get('sync_sources');
+$sourcesChecked = array_map('strval', (array) $sources->getValue());
+$clean = $form->get('clean');
+?>
+
+<div id="sidebar-confirm">
+    <h3><?= $escape($translate('Align the maps')) ?></h3>
+    <?= $this->form()->openTag($form) ?>
+
+    <fieldset>
+        <legend><?= $escape($translate('Sources of the properties to map')) ?></legend>
+        <p class="explanation"><?= $escape($translate('The maps are created for the union of the checked sources. System maps are always kept and a snapshot is taken before each alignment, so the previous configuration can be restored.')) ?></p>
+        <div class="inputs">
+            <?php foreach ($sources->getValueOptions() as $value => $label): ?>
+            <label>
+                <input type="checkbox" name="sync_sources[]" value="<?= $escapeAttr($value) ?>"<?= in_array((string) $value, $sourcesChecked, true) ? ' checked="checked"' : '' ?>>
+                <?= $escape($translate($label)) ?>
+            </label>
+            <?php endforeach; ?>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend><?= $escape($translate('Unused maps')) ?></legend>
+        <p class="explanation"><?= $escape($translate('Remove the property maps not referenced by the checked sources. Customized maps are kept.')) ?></p>
+        <div class="inputs">
+            <input type="hidden" name="clean" value="0">
+            <label>
+                <input type="checkbox" name="clean" value="1"<?= $clean->getValue() ? ' checked="checked"' : '' ?>>
+                <?= $escape($translate('Remove unused maps automatically')) ?>
+            </label>
+        </div>
+    </fieldset>
+
+    <?= $this->formRow($form->get('csrf')) ?>
+    <button type="submit" class="button"><?= $escape($translate('Align the maps')) ?></button>
+    <?= $this->form()->closeTag() ?>
+</div>

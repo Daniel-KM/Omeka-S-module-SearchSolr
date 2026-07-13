@@ -2,7 +2,6 @@
 /**
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore
- * @var \SearchSolr\ValueExtractor\ValueExtractorInterface[] $valueExtractors
  */
 
 $plugins = $this->getHelperPluginManager();
@@ -30,32 +29,18 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         <?php if ($solrCore->userIsAllowed('update')): ?>
         <div class="with-sub-menu">
             <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
-                <?= $translate('Add a map') ?>
-            </a>
-            <ul class="collapsible">
-                <?php foreach ($valueExtractors as $name => $valueExtractor): ?>
-                <li><?= $hyperlink($valueExtractor->getLabel(), $solrCore->resourceMapUrl($name, 'add'), ['class' => 'link']) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <div class="with-sub-menu">
-            <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
                 <?= $translate('Maintenance') ?>
             </a>
             <ul class="collapsible">
-                <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
+                <li class="separator"><span><?= $translate('Maps') ?></span></li>
+                <li><?= $hyperlink($translate('Align the maps…'), '#', [
+                    'class' => 'link sidebar-content',
+                    'data-sidebar-content-url' => $solrCore->adminUrl('sync-maps'),
+                    'title' => $translate('Create the maps for the sources you choose (search configs, settings, resource templates, used properties), and optionally remove the unused ones. System maps are kept; a snapshot allows to restore.')]) ?></li>
+                <li><?= $hyperlink($translate('Add a custom map'), $solrCore->resourceMapUrl('resources', 'add'), [
                     'class' => 'link',
-                    'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. System maps are kept. The current configuration is automatically snapshotted before sync (3 last snapshots, restorable below).')]) ?></li>
-                <li><?= $hyperlink($translate('Sync maps (+ remove unused maps)'), $solrCore->adminUrl('sync-maps') . '?clean=1', [
-                    'class' => 'link',
-                    'title' => $translate('Same as the sync from search configs, and remove the property maps not referenced by any config (customized maps are kept; a snapshot allows to restore).')]) ?></li>
-                <li><?= $hyperlink($translate('Sync maps (+ resource templates)'), $solrCore->adminUrl('sync-maps') . '?scope=templates', [
-                    'class' => 'link',
-                    'title' => $translate('Same as the sync from search configs, plus the properties of the resource templates used by at least one resource, so any curated property is queryable like with the internal engine (_txt and _ss).')]) ?></li>
-                <li><?= $hyperlink($translate('Sync maps (+ used properties)'), $solrCore->adminUrl('sync-maps') . '?scope=used', [
-                    'class' => 'link',
-                    'title' => $translate('Same as the sync from search configs, plus every property holding at least one value, so any used property is queryable like with the internal engine (_txt and _ss). Check the Solr maxFields limit on large vocabularies.')]) ?></li>
-                <li class="separator"><span><?= $translate('Technical actions') ?></span></li>
+                    'title' => $translate('Add one map by hand for a special source or with custom settings (formatter, pool filters, boost). The resource scope is chosen in the form.')]) ?></li>
+                <li class="separator"><span><?= $translate('Schema and core') ?></span></li>
                 <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
                     'class' => 'link',
                     'title' => $translate('Remove extra maps to stay within Solr maxFields limit.')]) ?></li>
@@ -247,7 +232,7 @@ $snapshots = $backups['snapshots'] ?? [];
 <?php if ($solrCore->userIsAllowed('update') && $snapshots): ?>
 <details id="solr-core-backups">
     <summary><?= sprintf($translate('Map snapshots (%d)'), count($snapshots)) ?></summary>
-    <p class="explanation"><?= $translate('A snapshot is taken before each "Sync maps from search configs". The 3 most recent snapshots are kept on this core.') ?></p>
+    <p class="explanation"><?= $translate('A snapshot is taken before each maps alignment. The 3 most recent snapshots are kept on this core.') ?></p>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
             <tr>

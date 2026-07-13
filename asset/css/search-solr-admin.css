@@ -25,6 +25,11 @@
         display: none;
     }
 
+    /* Section labels of the map form (Resource type, Source, Destination…). */
+    #solr-map-form > h2 {
+        margin-top: 1.2em;
+    }
+
     .required fieldset[name^="o:source["] .field-meta::after {
         content: "";
     }

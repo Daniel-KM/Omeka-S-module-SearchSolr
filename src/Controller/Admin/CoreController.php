@@ -287,11 +287,6 @@ class CoreController extends AbstractActionController
         $id = $this->params('id');
         $solrCore = $this->api()->read('solr_cores', $id)->getContent();
 
-        $valueExtractors = [];
-        foreach ($this->valueExtractorManager->getRegisteredNames() as $name) {
-            $valueExtractors[$name] = $this->valueExtractorManager->get($name);
-        }
-
         $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
             $this->messenger()->addError(new PsrMessage(
@@ -325,7 +320,6 @@ class CoreController extends AbstractActionController
         return new ViewModel([
             'solrCore' => $solrCore,
             'resource' => $solrCore,
-            'valueExtractors' => $valueExtractors,
         ]);
     }
 
@@ -1552,13 +1546,51 @@ class CoreController extends AbstractActionController
         $id = (int) $this->params('id');
         $solrCore = $api->read('solr_cores', $id)->getContent();
 
-        $scope = $this->params()->fromQuery('scope', 'configs');
-        if (!in_array($scope, ['configs', 'used', 'templates'])) {
-            $scope = 'configs';
+        // On a plain access, show the form to choose the sources to align. The
+        // sync runs on submit only, so the coverage is an explicit choice.
+        $form = $this->getForm(\SearchSolr\Form\Admin\SolrCoreSyncForm::class);
+        if (!$this->getRequest()->isPost()) {
+            // Back-compat: the old preset links passed the scope as a query and
+            // ran immediately. Honour them, else render the form.
+            $scopeQuery = $this->params()->fromQuery('scope');
+            if ($scopeQuery === null) {
+                // The form only makes sense in the core page sidebar (xhr); a
+                // direct visit just goes back to the core page.
+                if (!$this->getRequest()->isXmlHttpRequest()) {
+                    return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+                }
+                return (new ViewModel([
+                    'solrCore' => $solrCore,
+                    'form' => $form,
+                ]))
+                    ->setTerminal(true)
+                    ->setTemplate('search-solr/admin/core/sync-maps-sidebar');
+            }
+            $sources = ['configs', 'settings', 'site_settings'];
+            if ($scopeQuery === 'templates') {
+                $sources[] = 'templates';
+            } elseif ($scopeQuery === 'used') {
+                $sources[] = 'used';
+            }
+            $clean = (bool) $this->params()->fromQuery('clean');
+        } else {
+            $form->setData($this->params()->fromPost());
+            if (!$form->isValid()) {
+                $this->messenger()->addFormErrors($form);
+                return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+            }
+            $data = $form->getData();
+            $sources = $data['sync_sources'] ?: ['configs'];
+            $clean = (bool) ($data['clean'] ?? false);
         }
-        // Deletion of the maps not referenced by any config is opt-in: a sync
-        // launched after saving a config should not silently remove maps.
-        $clean = (bool) $this->params()->fromQuery('clean');
+        if (in_array('all', $sources, true)) {
+            $sources = ['configs', 'settings', 'site_settings', 'templates', 'used'];
+        }
+        $wantConfigs = in_array('configs', $sources, true);
+        $wantSettings = in_array('settings', $sources, true);
+        $wantSiteSettings = in_array('site_settings', $sources, true);
+        $wantTemplates = in_array('templates', $sources, true);
+        $wantUsed = in_array('used', $sources, true);
 
         // Check for shared engine (index_name).
         // Sync cannot work reliably when multiple Omeka instances share a core.
@@ -1631,10 +1663,12 @@ class CoreController extends AbstractActionController
             }
         }
 
-        // 2. Collect property terms from configs and suggesters.
+        // 2. Collect property terms from configs and suggesters, when the
+        // "configs" source is checked.
         $usedFields = [];
-        $searchConfigs = $api->search('search_configs')
-            ->getContent();
+        $searchConfigs = $wantConfigs
+            ? $api->search('search_configs')->getContent()
+            : [];
         foreach ($searchConfigs as $config) {
             $configEngine = $config->searchEngine();
             if (!$configEngine
@@ -1750,8 +1784,9 @@ class CoreController extends AbstractActionController
         }
 
         // Suggesters need _txt.
-        $suggesters = $api->search('search_suggesters')
-            ->getContent();
+        $suggesters = $wantConfigs
+            ? $api->search('search_suggesters')->getContent()
+            : [];
         foreach ($suggesters as $suggester) {
             $se = $suggester->searchEngine();
             if (!in_array($se->id(), $engineIds)) {
@@ -1764,11 +1799,13 @@ class CoreController extends AbstractActionController
             }
         }
 
-        // 3. Bounce links from AdvancedResourceTemplate whitelist/blacklist
-        // (main + site settings).
-        $linkFields = $this->collectBounceProperties(
-            $settings, $siteSettings, $connection
-        );
+        // 3. Bounce links from AdvancedResourceTemplate whitelist/blacklist,
+        // from the main settings and/or the site settings when checked.
+        $linkFields = ($wantSettings || $wantSiteSettings)
+            ? $this->collectBounceProperties(
+                $settings, $siteSettings, $connection, $wantSettings, $wantSiteSettings
+            )
+            : [];
         foreach ($linkFields as $term) {
             if (!isset($usedFields[$term])) {
                 $usedFields[$term] = [];
@@ -1780,24 +1817,28 @@ class CoreController extends AbstractActionController
         // extra property gets the default value indexes: _txt for word search
         // and _ss for exact filters and facets (_ss is skipped later for long
         // values). Suffixes required by the configs are kept as they are.
-        if ($scope !== 'configs') {
-            // Only the templates used by at least one resource: the curated
-            // set excludes the default "Base resource" and any stale template
-            // as long as no resource uses them.
-            $sqlExtraTerms = $scope === 'templates'
-                ? 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+        // Only the templates used by at least one resource: the curated set
+        // excludes the default "Base resource" and any stale template as long
+        // as no resource uses them.
+        $extraSql = [];
+        if ($wantTemplates) {
+            $extraSql[] = 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
                 FROM resource_template_property rtp
                 INNER JOIN property pr ON pr.id = rtp.property_id
                 INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
                 WHERE EXISTS (
                     SELECT 1 FROM resource r
                     WHERE r.resource_template_id = rtp.resource_template_id
-                )'
-                : 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+                )';
+        }
+        if ($wantUsed) {
+            $extraSql[] = 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
                 FROM value v
                 INNER JOIN property pr ON pr.id = v.property_id
                 INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id';
-            foreach ($connection->fetchFirstColumn($sqlExtraTerms) as $term) {
+        }
+        foreach ($extraSql as $sql) {
+            foreach ($connection->fetchFirstColumn($sql) as $term) {
                 $usedFields[$term] ??= [];
                 $usedFields[$term] += ['_txt' => true, '_ss' => true];
             }
@@ -2106,15 +2147,10 @@ class CoreController extends AbstractActionController
 
         // Summary line.
         $totalExisting = count($existingMaps);
-        $scopeLabels = [
-            'configs' => 'search configs', // @translate
-            'used' => 'search configs + used properties', // @translate
-            'templates' => 'search configs + resource templates', // @translate
-        ];
         $this->messenger()->addSuccess(new PsrMessage(
-            'Sync complete (scope: {scope}, cleaning: {cleaning}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
+            'Sync complete (sources: {sources}, cleaning: {cleaning}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
             [
-                'scope' => $scopeLabels[$scope],
+                'sources' => implode(', ', $sources),
                 'cleaning' => $clean ? 'on' : 'off',
                 'props' => count($usedFields),
                 'before' => $totalExisting,
@@ -2148,9 +2184,26 @@ class CoreController extends AbstractActionController
             );
         }
         if ($deleted || $created) {
-            $this->messenger()->addWarning(
-                'Reindex required.' // @translate
+            // Actionable reminder: a new map stays empty until reindexing.
+            $links = [];
+            foreach ($searchEngines as $engine) {
+                if ((int) $engine->settingEngineAdapter('solr_core_id') === $id) {
+                    $links[] = sprintf(
+                        '<a href="%s">%s</a>',
+                        htmlspecialchars($this->url()->fromRoute(
+                            'admin/search-manager/engine-id',
+                            ['id' => $engine->id(), 'action' => 'index']
+                        )),
+                        htmlspecialchars($engine->name())
+                    );
+                }
+            }
+            $message = new PsrMessage(
+                'Reindex required: the changed maps stay empty until then. Reindex: {links}.', // @translate
+                ['links' => implode(', ', $links) ?: '—']
             );
+            $message->setEscapeHtml(false);
+            $this->messenger()->addWarning($message);
         }
 
         return $this->redirect()->toRoute(
@@ -2260,7 +2313,9 @@ class CoreController extends AbstractActionController
     protected function collectBounceProperties(
         \Omeka\Settings\Settings $settings,
         \Omeka\Settings\SiteSettings $siteSettings,
-        \Doctrine\DBAL\Connection $connection
+        \Doctrine\DBAL\Connection $connection,
+        bool $includeMain = true,
+        bool $includeSites = true
     ): array {
         $keyWl = 'advancedresourcetemplate_properties_as_search_whitelist';
         $keyBl = 'advancedresourcetemplate_properties_as_search_blacklist';
@@ -2269,20 +2324,27 @@ class CoreController extends AbstractActionController
         $blacklists = [];
 
         // Main settings.
-        $wl = $settings->get($keyWl, ['all']);
-        $bl = $settings->get($keyBl, []);
-        $whitelists[] = is_array($wl) ? $wl : [$wl];
-        $blacklists[] = is_array($bl) ? $bl : [$bl];
-
-        // All site settings.
-        $siteIds = $connection->executeQuery('SELECT id FROM site')
-            ->fetchFirstColumn();
-        foreach ($siteIds as $siteId) {
-            $siteSettings->setTargetId((int) $siteId);
-            $wl = $siteSettings->get($keyWl, ['all']);
-            $bl = $siteSettings->get($keyBl, []);
+        if ($includeMain) {
+            $wl = $settings->get($keyWl, ['all']);
+            $bl = $settings->get($keyBl, []);
             $whitelists[] = is_array($wl) ? $wl : [$wl];
             $blacklists[] = is_array($bl) ? $bl : [$bl];
+        }
+
+        // All site settings.
+        if ($includeSites) {
+            $siteIds = $connection->executeQuery('SELECT id FROM site')
+                ->fetchFirstColumn();
+            foreach ($siteIds as $siteId) {
+                $siteSettings->setTargetId((int) $siteId);
+                $wl = $siteSettings->get($keyWl, ['all']);
+                $bl = $siteSettings->get($keyBl, []);
+                $whitelists[] = is_array($wl) ? $wl : [$wl];
+                $blacklists[] = is_array($bl) ? $bl : [$bl];
+            }
+        }
+        if (!$whitelists && !$blacklists) {
+            return [];
         }
 
         // If any source has "all", use all used properties.
