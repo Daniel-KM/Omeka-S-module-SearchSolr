@@ -45,7 +45,10 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
             <ul class="collapsible">
                 <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
                     'class' => 'link',
-                    'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. Remove property maps not referenced by any config. System maps are kept. The current configuration is automatically snapshotted before sync (3 last snapshots, restorable below).')]) ?></li>
+                    'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. System maps are kept. The current configuration is automatically snapshotted before sync (3 last snapshots, restorable below).')]) ?></li>
+                <li><?= $hyperlink($translate('Sync maps (+ remove unused maps)'), $solrCore->adminUrl('sync-maps') . '?clean=1', [
+                    'class' => 'link',
+                    'title' => $translate('Same as the sync from search configs, and remove the property maps not referenced by any config (customized maps are kept; a snapshot allows to restore).')]) ?></li>
                 <li><?= $hyperlink($translate('Sync maps (+ resource templates)'), $solrCore->adminUrl('sync-maps') . '?scope=templates', [
                     'class' => 'link',
                     'title' => $translate('Same as the sync from search configs, plus the properties of the resource templates used by at least one resource, so any curated property is queryable like with the internal engine (_txt and _ss).')]) ?></li>

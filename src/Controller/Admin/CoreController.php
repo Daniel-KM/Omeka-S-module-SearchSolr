@@ -208,6 +208,16 @@ class CoreController extends AbstractActionController
 
         $data = $form->getData();
 
+        // The Secret "remove" checkboxes are raw markup, not form elements, so
+        // they are absent from getData(): carry them over from the raw post so
+        // the adapter can clear the stored password.
+        $postClient = $this->params()->fromPost('o:settings')['client'] ?? [];
+        foreach (['password_remove', 'admin_password_remove'] as $key) {
+            if (!empty($postClient[$key])) {
+                $data['o:settings']['client'][$key] = $postClient[$key];
+            }
+        }
+
         // Store query as array to simplify process.
         $filterResources = [];
         parse_str($data['o:settings']['filter_resources'] ?? '', $filterResources);
@@ -1546,6 +1556,9 @@ class CoreController extends AbstractActionController
         if (!in_array($scope, ['configs', 'used', 'templates'])) {
             $scope = 'configs';
         }
+        // Deletion of the maps not referenced by any config is opt-in: a sync
+        // launched after saving a config should not silently remove maps.
+        $clean = (bool) $this->params()->fromQuery('clean');
 
         // Check for shared engine (index_name).
         // Sync cannot work reliably when multiple Omeka instances share a core.
@@ -1816,12 +1829,12 @@ class CoreController extends AbstractActionController
         // unwanted result. The last 3 snapshots are kept per core.
         $this->snapshotMaps($solrCore, $existingMaps);
 
-        // 5. Delete property maps not referenced by any config.
+        // 5. Delete property maps not referenced by any config, when asked.
         // Keep maps with custom settings (formatter, pool filters,
         // normalization, boost, etc.).
         $deleted = [];
         $kept = [];
-        foreach ($existingBySource as $source => $maps) {
+        foreach ($clean ? $existingBySource : [] as $source => $maps) {
             if (in_array($source, $systemSources)
                 || strpos($source, '/') !== false
                 || strpos($source, ':') === false
@@ -2094,9 +2107,10 @@ class CoreController extends AbstractActionController
             'templates' => 'search configs + resource templates', // @translate
         ];
         $this->messenger()->addSuccess(new PsrMessage(
-            'Sync complete (scope: {scope}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
+            'Sync complete (scope: {scope}, cleaning: {cleaning}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
             [
                 'scope' => $scopeLabels[$scope],
+                'cleaning' => $clean ? 'on' : 'off',
                 'props' => count($usedFields),
                 'before' => $totalExisting,
                 'deleted' => count($deleted),
