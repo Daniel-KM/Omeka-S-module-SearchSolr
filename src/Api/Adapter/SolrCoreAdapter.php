@@ -88,6 +88,23 @@ class SolrCoreAdapter extends AbstractEntityAdapter
         }
         if ($this->shouldHydrate($request, 'o:settings')) {
             $array = $this->arrayFilterRecursiveEmptyValue($request->getValue('o:settings') ?: []);
+            // Encrypt the Solr passwords at rest, so a database dump alone does
+            // not reveal them. The Secret fields are never prefilled, so an
+            // empty submission keeps the current stored value instead of
+            // clearing it. No-op when no key is configured.
+            $cipher = $this->getServiceLocator()->get('Omeka\Cipher');
+            $current = $entity->getSettings();
+            foreach (['password', 'admin_password'] as $key) {
+                $remove = !empty($array['client'][$key . '_remove']);
+                unset($array['client'][$key . '_remove']);
+                if ($remove) {
+                    unset($array['client'][$key]);
+                } elseif (!empty($array['client'][$key])) {
+                    $array['client'][$key] = $cipher->encrypt((string) $array['client'][$key]);
+                } elseif (!empty($current['client'][$key])) {
+                    $array['client'][$key] = $current['client'][$key];
+                }
+            }
             $entity->setSettings($array);
         }
     }

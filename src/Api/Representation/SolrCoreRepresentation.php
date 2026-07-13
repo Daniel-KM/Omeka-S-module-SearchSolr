@@ -110,11 +110,26 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         return $settings[$name] ?? $default;
     }
 
+    /**
+     * Decrypt the Solr passwords stored encrypted at rest. A no-op for legacy
+     * clear values or when no encryption key is configured.
+     */
+    protected function decryptClientPasswords(array $client): array
+    {
+        $cipher = $this->getServiceLocator()->get('Omeka\Cipher');
+        foreach (['password', 'admin_password'] as $key) {
+            if (!empty($client[$key])) {
+                $client[$key] = $cipher->decrypt((string) $client[$key]);
+            }
+        }
+        return $client;
+    }
+
     public function clientSettings(): array
     {
         // Currently, the keys from the old module Solr are kept.
         // TODO Convert settings during from old module Solr before saving.
-        $clientSettings = (array) $this->setting('client', []);
+        $clientSettings = $this->decryptClientPasswords((array) $this->setting('client', []));
         $clientSettings['endpoint'] = $this->endpoint();
         return $clientSettings + [
             'scheme' => null,
@@ -138,6 +153,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         if (!is_array($clientSettings)) {
             $clientSettings = (array) $clientSettings;
         }
+        $clientSettings = $this->decryptClientPasswords($clientSettings);
         return array_replace(
             [
                 // Solarium manages multiple endpoints, so the endpoint should

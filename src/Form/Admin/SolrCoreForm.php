@@ -150,10 +150,10 @@ class SolrCoreForm extends Form
             ])
             ->add([
                 'name' => 'password',
-                'type' => Element\Text::class,
+                'type' => \Common\Form\Element\Secret::class,
                 'options' => [
                     'label' => 'Solr password', // @translate
-                    'info' => 'Note: the password is saved clear in the database, so it is recommended to create a specific user.', // @translate
+                    'info' => 'Note: the password is encrypted at rest when a secret key is set (auto-generated in config/secret_key.php on install, or the OMEKA_SECRET_KEY environment variable), otherwise it is stored clear. It is also recommended to use a specific user.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'password',
@@ -174,10 +174,10 @@ class SolrCoreForm extends Form
             ])
             ->add([
                 'name' => 'admin_password',
-                'type' => Element\Text::class,
+                'type' => \Common\Form\Element\Secret::class,
                 'options' => [
                     'label' => 'Solr admin password (core operations)', // @translate
-                    'info' => 'Note: the password is saved clear in the database, so it is recommended to create a specific user.', // @translate
+                    'info' => 'Note: the password is encrypted at rest when a secret key is set (auto-generated in config/secret_key.php on install, or the OMEKA_SECRET_KEY environment variable), otherwise it is stored clear. It is also recommended to use a specific user.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'admin_password',

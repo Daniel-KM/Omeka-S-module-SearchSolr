@@ -178,12 +178,26 @@ class CoreController extends AbstractActionController
         ]);
         $data = $solrCore->jsonSerialize();
 
+        // Secret fields (password, admin_password) are never prefilled: the
+        // Secret view helper blanks them and the adapter keeps the stored value
+        // on empty submission, so they are neither echoed nor cleared on edit.
+
         // The setting "filter_resources" should be a string.
         $data['o:settings']['filter_resources'] = empty($data['o:settings']['filter_resources'])
             ? ''
             : http_build_query($data['o:settings']['filter_resources']);
 
         $form->setData($data);
+
+        // Flag the Secret fields that already hold a value, so the helper shows
+        // the "set" icon and the control to remove the saved password.
+        $clientFieldset = $form->get('o:settings')->get('client');
+        $storedClient = (array) $solrCore->setting('client', []);
+        foreach (['password', 'admin_password'] as $key) {
+            if (!empty($storedClient[$key])) {
+                $clientFieldset->get($key)->setOption('has_value', true);
+            }
+        }
 
         if (!$this->checkPostAndValidForm($form)) {
             return new ViewModel([
