@@ -1774,6 +1774,20 @@ class CoreController extends AbstractActionController
             }
         }
 
+        // 3c. Collected properties holding at least one linked resource get an
+        // index of the linked resource ids, required by the query types
+        // res/nres of the pivot.
+        $linkedTerms = $connection->fetchFirstColumn(
+            'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+            FROM value v
+            INNER JOIN property pr ON pr.id = v.property_id
+            INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+            WHERE v.value_resource_id IS NOT NULL'
+        );
+        foreach (array_intersect($linkedTerms, array_keys($usedFields)) as $term) {
+            $usedFields[$term]['_link_is'] = true;
+        }
+
         // 4. Get existing maps for this core.
         $existingMaps = $solrCore->maps();
         $existingBySource = [];
@@ -1858,6 +1872,13 @@ class CoreController extends AbstractActionController
                 'index_for_link' => true,
                 'parts' => ['link'],
                 'formatter' => '',
+            ],
+            // Ids of the linked resources, for the query types res/nres: the
+            // part "link" yields the linked resource id (or the uri/literal),
+            // and the integer formatter drops the non numeric values.
+            '_link_is' => [
+                'parts' => ['link'],
+                'formatter' => 'integer',
             ],
             // Interval lower bound: extract the smallest year from each EDTF
             // value, then aggregate to the smallest year across multivalued

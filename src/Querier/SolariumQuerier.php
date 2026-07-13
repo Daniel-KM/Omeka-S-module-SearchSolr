@@ -2447,9 +2447,9 @@ class SolariumQuerier extends AbstractQuerier
                 // stores the linked resource ids as strings; a "_link_ss" of
                 // titles cannot match ids, so a dedicated "_link_is" map is
                 // required for res/nres.
-                if (str_ends_with($field, '_link_ss')) {
+                if (!str_ends_with($field, '_link_ss')) {
                     $this->getLogger()->warn(
-                        'Solr: the type res/nres on "{field}" needs a map of the linked resource ids (suffix _link_is); the title index cannot match ids.', // @translate
+                        'Solr: the type res/nres on "{field}" compares ids as strings; run the maps sync to create the integer index of the linked resource ids (_link_is).', // @translate
                         ['field' => $field]
                     );
                 }
