@@ -41,19 +41,23 @@ class SolrCoreForm extends Form
         $this
             ->setAttribute('id', 'solr-core-form');
 
-        $this
-            ->add([
-                'name' => 'o:name',
-                'type' => Element\Text::class,
-                'options' => [
-                    'label' => 'Name', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'o-name',
-                    'required' => true,
-                    'placeholder' => 'omeka',
-                ],
-            ]);
+        // The name belongs to the engine: it is edited on the search engine
+        // form only, so it is asked only on creation.
+        if (empty($this->getOption('skip_name'))) {
+            $this
+                ->add([
+                    'name' => 'o:name',
+                    'type' => Element\Text::class,
+                    'options' => [
+                        'label' => 'Name', // @translate
+                    ],
+                    'attributes' => [
+                        'id' => 'o-name',
+                        'required' => true,
+                        'placeholder' => 'omeka',
+                    ],
+                ]);
+        }
 
         $settingsFieldset = new Fieldset('o:settings');
         $this
@@ -257,6 +261,18 @@ class SolrCoreForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'server_id',
+                ],
+            ])
+            ->add([
+                'name' => 'index_name',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr index name for shared core', // @translate
+                    'info' => 'May be empty, or may be or may not be the same index name than the third party, depending on its configuration.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'index_name',
+                    'required' => false,
                 ],
             ])
             ->add([

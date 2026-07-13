@@ -101,17 +101,9 @@ class CoreController extends AbstractActionController
 
     public function browseAction()
     {
-        // A core is a facet of a solarium engine: one line per engine.
-        $services = $this->getEvent()->getApplication()->getServiceManager();
-        $solrCores = [];
-        foreach ($this->api()->search('search_engines', ['sort_by' => 'name'])->getContent() as $engine) {
-            if ($engine->engineAdapterName() === 'solarium') {
-                $solrCores[] = new \SearchSolr\Stdlib\SolrCore($engine, $services);
-            }
-        }
-        return new ViewModel([
-            'solrCores' => $solrCores,
-        ]);
+        // The cores are listed in the table of the search engines of the search
+        // manager.
+        return $this->redirect()->toRoute('admin/search-manager');
     }
 
     public function addAction()
@@ -188,9 +180,10 @@ class CoreController extends AbstractActionController
         $form = $this->getForm(SolrCoreForm::class, [
             'server_id' => $this->settings()->get('searchsolr_server_id'),
             'copy_field_info' => $copyFieldInfo,
+            // The name belongs to the engine and is edited on its form.
+            'skip_name' => true,
         ]);
         $data = [
-            'o:name' => $solrCore->name(),
             'o:settings' => $solrCore->settings(),
         ];
 
@@ -273,10 +266,10 @@ class CoreController extends AbstractActionController
             }
         }
 
-        // Save: the engine name and its solr settings.
-        if (($data['o:name'] ?? '') !== '' && $data['o:name'] !== $solrCore->name()) {
-            $this->api()->update('search_engines', $id, ['o:name' => $data['o:name']], [], ['isPartial' => true]);
-        }
+        // Keep the solr settings managed outside of this form, in particular
+        // the snapshots of the maps (backup_maps).
+        $data['o:settings'] = array_replace($solrCore->settings(), $data['o:settings']);
+
         $this->updateSolrSettings((int) $id, $data['o:settings']);
 
         $this->messenger()->addSuccess(new PsrMessage(
@@ -425,7 +418,7 @@ class CoreController extends AbstractActionController
                 $this->messenger()->addError('Solr core could not be deleted'); // @translate
             }
         }
-        return $this->redirect()->toRoute('admin/search-manager/solr');
+        return $this->redirect()->toRoute('admin/search-manager');
     }
 
     public function importAction()
@@ -1204,15 +1197,12 @@ class CoreController extends AbstractActionController
 
         // Refuse to delete a core shared through the setting "index_name", as
         // its documents may belong to another index or third party.
-        $sharedEngines = [$solrCore->searchEngine()];
-        foreach ($sharedEngines as $engine) {
-            if ($engine->settingEngineAdapter('index_name')) {
-                $this->messenger()->addError(new PsrMessage(
-                    'The core "{core}" is shared (the engine sets index_name); deletion on the server is refused.', // @translate
-                    ['core' => $coreName]
-                ));
-                return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
-            }
+        if ($solrCore->setting('index_name')) {
+            $this->messenger()->addError(new PsrMessage(
+                'The core "{core}" is shared (the engine sets index_name); deletion on the server is refused.', // @translate
+                ['core' => $coreName]
+            ));
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
         $logger = $solrCore->getServiceLocator()->get('Omeka\Logger');
@@ -1546,16 +1536,13 @@ class CoreController extends AbstractActionController
 
         // Check for shared engine (index_name).
         // Sync cannot work reliably when multiple Omeka instances share a core.
-        $searchEngines = [$solrCore->searchEngine()];
-        foreach ($searchEngines as $engine) {
-            if ($engine->settingEngineAdapter('index_name')) {
-                $this->messenger()->addError(
-                    'This core is used by a shared engine (index_name is set). Sync is not supported for shared engines.' // @translate
-                );
-                return $this->redirect()->toRoute(
-                    'admin/search-manager/solr/core-id', ['id' => $id]
-                );
-            }
+        if ($solrCore->setting('index_name')) {
+            $this->messenger()->addError(
+                'This core is used by a shared engine (index_name is set). Sync is not supported for shared engines.' // @translate
+            );
+            return $this->redirect()->toRoute(
+                'admin/search-manager/solr/core-id', ['id' => $id]
+            );
         }
 
         // Sources that must never be deleted.

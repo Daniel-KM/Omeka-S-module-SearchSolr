@@ -33,7 +33,6 @@ use AdvancedSearch\EngineAdapter\AbstractEngineAdapter;
 use Laminas\I18n\Translator\TranslatorInterface;
 use Omeka\Api\Manager as ApiManager;
 use SearchSolr\Stdlib\SolrCore;
-use SearchSolr\Form\Admin\SolrConfigFieldset;
 
 class Solarium extends AbstractEngineAdapter
 {
@@ -49,7 +48,7 @@ class Solarium extends AbstractEngineAdapter
 
     protected $label = 'Solr [via Solarium]'; // @translate
 
-    protected $configFieldsetClass = \SearchSolr\Form\Admin\SolrConfigFieldset::class;
+    protected $configFieldsetClass = null;
 
     protected $indexerClass = \SearchSolr\Indexer\SolariumIndexer::class;
 
@@ -73,7 +72,9 @@ class Solarium extends AbstractEngineAdapter
 
     public function getConfigFieldset(): ?\Laminas\Form\Fieldset
     {
-        return new SolrConfigFieldset();
+        // The whole solr configuration, including the index name for a shared
+        // core, is edited on the core page.
+        return null;
     }
 
     public function getAvailableFields(): array

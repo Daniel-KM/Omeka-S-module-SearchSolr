@@ -168,12 +168,12 @@ class Module extends AbstractModule
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
-        // The cores are appended inside the Indexing section of the search
-        // manager, through its dedicated event.
+        // The url, the status and the actions of each core are displayed in the
+        // table of the search engines of the search manager.
         $sharedEventManager->attach(
             \AdvancedSearch\Controller\Admin\IndexController::class,
-            'view.browse.engines.after',
-            [$this, 'appendBrowseCores']
+            'view.browse.engine_details',
+            [$this, 'filterBrowseEngineDetails']
         );
 
         // An engine is a real backend: forbid two solarium engines on the
@@ -256,21 +256,69 @@ class Module extends AbstractModule
         );
     }
 
-    public function appendBrowseCores(Event $event): void
+    public function filterBrowseEngineDetails(Event $event): void
     {
-        // A core is a facet of a solarium engine: one line per engine.
+        // A core is a facet of a solarium engine: fill the url, the status and
+        // the core actions of each solarium engine in the table of the search
+        // engines.
+        /** @var \Laminas\View\Renderer\PhpRenderer $view */
         $view = $event->getTarget();
         $services = $this->getServiceLocator();
-        $api = $services->get('Omeka\ApiManager');
+        $translate = $view->plugin('translate');
+        $escape = $view->plugin('escapeHtml');
+        $escapeAttr = $view->plugin('escapeHtmlAttr');
+        $hyperlink = $view->plugin('hyperlink');
+
         $solrCores = [];
-        foreach ($api->search('search_engines', ['sort_by' => 'name'])->getContent() as $engine) {
+        foreach ($event->getParam('searchEngines', []) as $engine) {
             if ($engine->engineAdapterName() === 'solarium') {
-                $solrCores[] = new \SearchSolr\Stdlib\SolrCore($engine, $services);
+                $solrCores[$engine->id()] = new \SearchSolr\Stdlib\SolrCore($engine, $services);
             }
         }
-        echo $view->partial('search-solr/admin/core/browse-table', [
-            'solrCores' => $solrCores,
-        ]);
+        if (!$solrCores) {
+            return;
+        }
+
+        // Two cores on the same physical core write to the same index and
+        // schema, so one clobbers the other and a reindex wipes both: flag the
+        // shared urls.
+        $coreUrlUsage = [];
+        foreach ($solrCores as $solrCore) {
+            $coreUrlUsage[$solrCore->clientUrlAdmin()] = ($coreUrlUsage[$solrCore->clientUrlAdmin()] ?? 0) + 1;
+        }
+
+        $details = $event->getParam('details', []);
+        foreach ($solrCores as $engineId => $solrCore) {
+            $urlHtml = $hyperlink($solrCore->clientUrlAdmin(), $solrCore->clientUrlAdminBoard(), [
+                'target' => '_blank',
+                'title' => $translate('Solr admin interface, if reachable'),
+            ]);
+            if ($coreUrlUsage[$solrCore->clientUrlAdmin()] > 1) {
+                $urlHtml .= ' <span class="field-generic o-icon-warning" title="'
+                    . $escapeAttr($translate('This url is shared by another core. Two cores on the same physical core conflict on the schema and the reindex.'))
+                    . '">' . $escape($translate('shared url')) . '</span>';
+            }
+            $actions = [
+                '<li>' . $solrCore->link('', 'edit', [
+                    'class' => 'o-icon- fas fa-plug',
+                    'title' => $translate('Edit the Solr connection'),
+                ]) . '</li>',
+                '<li>' . $hyperlink('', $solrCore->adminUrl(), [
+                    'class' => 'o-icon- far fa-sun',
+                    'title' => $translate('Map Omeka metadata and Solr indices'),
+                ]) . '</li>',
+                '<li>' . $solrCore->link('', 'show-indexing-stats', [
+                    'class' => 'o-icon- far fa-chart-bar',
+                    'title' => $translate('View indexing statistics'),
+                ]) . '</li>',
+            ];
+            $details[$engineId] = [
+                'url' => $urlHtml,
+                'status' => $escape((string) $solrCore->status(true)),
+                'actions' => $actions,
+            ];
+        }
+        $event->setParam('details', $details);
     }
 
     /**

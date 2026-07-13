@@ -24,7 +24,6 @@ return [
     'form_elements' => [
         'invokables' => [
             Form\ConfigForm::class => Form\ConfigForm::class,
-            Form\Admin\SolrConfigFieldset::class => Form\Admin\SolrConfigFieldset::class,
             Form\Admin\SolrCoreMappingImportForm::class => Form\Admin\SolrCoreMappingImportForm::class,
             Form\Admin\SolrCoreSyncForm::class => Form\Admin\SolrCoreSyncForm::class,
             Form\Admin\SourceFieldset::class => Form\Admin\SourceFieldset::class,

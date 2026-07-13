@@ -954,7 +954,7 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         // Index name.
-        if ($this->searchEngine->settingEngineAdapter('index_name') && ($field = $this->solrCoreField('search_index'))) {
+        if ($this->getSolrCore()->setting('index_name') && ($field = $this->solrCoreField('search_index'))) {
             $this->select->addFilterQuery(['key' => 'index_name', 'query' => "$field:" . $this->searchEngine->shortName()]);
         }
 
