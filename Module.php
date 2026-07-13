@@ -875,9 +875,34 @@ class Module extends AbstractModule
 
         $publicEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (public)', 'public');
         $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (admin)', 'all');
-        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (api)', 'all');
+        $apiEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (api)', 'all');
         if ($publicEngineId) {
             $this->createDefaultSuggester($connection, $publicEngineId, $messenger);
+        }
+
+        // A minimal search config bound to the api engine, so the admin only
+        // has to select it in the main settings (advancedsearch_api_config) to
+        // redirect the api searches to Solr, once the core is indexed. The api
+        // queries are normalized generically, so the config carries nothing but
+        // the engine. Idempotent by slug; the setting is never set
+        // automatically.
+        if ($apiEngineId) {
+            $apiConfigId = (int) $connection->fetchOne(
+                "SELECT `id` FROM `search_config` WHERE `slug` = 'api'"
+            );
+            if (!$apiConfigId) {
+                $connection->executeStatement(
+                    "INSERT INTO `search_config` (`engine_id`, `name`, `slug`, `form_adapter`, `settings`, `created`) VALUES (?, 'Api', 'api', 'main', '{}', NOW());",
+                    [$apiEngineId]
+                );
+                $message = new \Omeka\Stdlib\Message(
+                    'A search config "Api" bound to the engine "Solr (api)" has been created. To speed up the admin api searches (for example the linked resources sidebar), select it in the %1$smain settings%2$s once the core is indexed.', // @translate
+                    sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin') . '/setting#advancedsearch_api_config')),
+                    '</a>'
+                );
+                $message->setEscapeHtml(false);
+                $messenger->addSuccess($message);
+            }
         }
 
         // Recommend dedicated cores when at least one engine was just created.
