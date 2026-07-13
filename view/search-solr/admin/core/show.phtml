@@ -14,6 +14,7 @@ $hyperlink = $plugins->get('hyperlink');
 $escapeAttr = $plugins->get('escapeHtmlAttr');
 
 $this->headLink()
+    ->appendStylesheet($assetUrl('css/common-page-action-menu.css', 'Common'))
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()
     ->appendFile($assetUrl('js/common-page-action-menu.js', 'Common'), 'text/javascript', ['defer' => 'defer'])
@@ -26,7 +27,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 
 <div id="page-actions">
     <?php // $this->trigger('view.show.page_actions', ['resource' => $solrCore]); ?>
-    <div id="page-action-menu">
+    <div class="page-action-menu">
         <?php if ($solrCore->userIsAllowed('update')): ?>
         <div class="with-sub-menu">
             <a href="#" class="button expand" aria-label="<?= $translate('Expand') ?>" title="<?= $translate('Expand') ?>">
