@@ -21,6 +21,7 @@ $form->prepare();
 $sources = $form->get('sync_sources');
 $sourcesChecked = array_map('strval', (array) $sources->getValue());
 $clean = $form->get('clean');
+$multilingual = $form->get('multilingual');
 ?>
 
 <div id="sidebar-confirm">
@@ -37,6 +38,18 @@ $clean = $form->get('clean');
                 <?= $escape($translate($label)) ?>
             </label>
             <?php endforeach; ?>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend><?= $escape($translate('Multilingual values')) ?></legend>
+        <p class="explanation"><?= $escape($translate('Add a language index by property and language, for example dcterms_subject_fr_ss and dcterms_subject_en_ss. Used only when the sites have at least two distinct locales and the property has values in at least two of these languages. The values without language are included in each language index.')) ?></p>
+        <div class="inputs">
+            <input type="hidden" name="multilingual" value="0">
+            <label>
+                <input type="checkbox" name="multilingual" value="1"<?= $multilingual->getValue() ? ' checked="checked"' : '' ?>>
+                <?= $escape($translate('Support of multilingual values')) ?>
+            </label>
         </div>
     </fieldset>
 

@@ -800,10 +800,18 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
         SolrMapRepresentation $solrMap
     ): array {
         /** @var \Omeka\Api\Representation\ValueRepresentation[] $values */
+        // A language filter excludes the values without language, but such a
+        // value is generally language neutral, so it should be indexed in each
+        // language index. The empty string is the core way to match them.
+        // @see \Omeka\Api\Representation\AbstractResourceEntityRepresentation::value()
+        $langs = $solrMap->pool('filter_languages') ?: null;
+        if ($langs && $solrMap->pool('filter_languages_no_lang')) {
+            $langs[] = '';
+        }
         $values = $resource->value($solrMap->firstSource(), [
             'all' => true,
             'type' => $solrMap->pool('data_types'),
-            'lang' => $solrMap->pool('filter_languages'),
+            'lang' => $langs,
         ]);
         return $this->extractPropertyValuesEach($resource, $solrMap, $values);
     }

@@ -245,6 +245,18 @@ class SolrMapForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'filter_languages_no_lang',
+                'type' => Element\Checkbox::class,
+                'options' => [
+                    'label' => 'Include values without language', // @translate
+                    'info' => 'Used only with the option above: a value without language is generally language neutral, so it is indexed in each language index.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'filter_languages_no_lang',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'filter_visibility',
                 'type' => Element\Radio::class,
                 'options' => [

@@ -1573,6 +1573,7 @@ class CoreController extends AbstractActionController
                 $sources[] = 'used';
             }
             $clean = (bool) $this->params()->fromQuery('clean');
+            $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
         } else {
             $form->setData($this->params()->fromPost());
             if (!$form->isValid()) {
@@ -1582,6 +1583,7 @@ class CoreController extends AbstractActionController
             $data = $form->getData();
             $sources = $data['sync_sources'] ?: ['configs'];
             $clean = (bool) ($data['clean'] ?? false);
+            $multilingual = (bool) ($data['multilingual'] ?? false);
         }
         if (in_array('all', $sources, true)) {
             $sources = ['configs', 'settings', 'site_settings', 'templates', 'used'];
@@ -1987,6 +1989,12 @@ class CoreController extends AbstractActionController
         ];
 
         $created = [];
+        // Language indexes are added only when the install is really
+        // multilingual: at least two site locales and a property with values in
+        // at least two of these languages.
+        $langsByTerm = $multilingual
+            ? $this->multilingualLangsByTerm(array_keys($usedFields))
+            : [];
         // The folded fields need their type and dynamic field in the schema;
         // pushed once, on the first folded map to create. On failure the folded
         // maps are skipped: sorts keep using the plain string field.
@@ -2031,10 +2039,37 @@ class CoreController extends AbstractActionController
                 $created[] = $fieldName;
                 $existingFieldNames[] = $fieldName;
             }
+
+            // Language indexes, for facets and filters by language, so a site
+            // displays the values of its own locale. They are built on the
+            // exact-value index, skipped for long values like the plain one.
+            if ($isLong || !isset($requiredSuffixes['_ss'])) {
+                continue;
+            }
+            foreach ($langsByTerm[$term] ?? [] as $lang => $langCodes) {
+                $fieldName = $base . '_' . $lang . '_ss';
+                if (in_array($fieldName, $existingFieldNames)) {
+                    continue;
+                }
+                $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $id],
+                    'o:resource_name' => 'resources',
+                    'o:field_name' => $fieldName,
+                    'o:source' => $term,
+                    'o:pool' => [
+                        'filter_languages' => $langCodes,
+                        'filter_languages_no_lang' => true,
+                    ],
+                    'o:settings' => ($suffixSettings['_ss'] ?? ['formatter' => ''])
+                        + ['label' => $term . ' (' . $lang . ')', 'origin' => 'sync'],
+                ]);
+                $created[] = $fieldName;
+                $existingFieldNames[] = $fieldName;
+            }
         }
 
-        // 8. Ensure required system maps exist.
-        // These are the maps needed for Solr to function.
+        // 8. Ensure required system maps exist. These are the maps needed for
+        // Solr to function.
         $requiredMaps = [
             // Generic (all resource types).
             ['generic', 'resource_name_s', 'resource_name', ['label' => 'Resource type']],
@@ -2209,6 +2244,74 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute(
             'admin/search-manager/solr/core-id', ['id' => $id]
         );
+    }
+
+    /**
+     * List the languages to index separately for each multilingual property.
+     *
+     * A language index is useful only when the install is really multilingual,
+     * so two conditions are required: the sites use at least two distinct
+     * locales, and the property has values in at least two of these languages.
+     * The languages are compared on the primary subtag, so a site in "fr-FR"
+     * matches the values in "fr" and in "fr-FR", which are both indexed in the
+     * same "fr" index.
+     *
+     * @param string[] $terms
+     * @return array Language codes to filter on, by term and primary subtag.
+     */
+    protected function multilingualLangsByTerm(array $terms): array
+    {
+        if (!$terms) {
+            return [];
+        }
+
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+        $settings = $services->get('Omeka\Settings');
+        $siteSettings = $services->get('Omeka\Settings\Site');
+        $connection = $services->get('Omeka\Connection');
+
+        $primary = fn ($lang): string => strtolower(strtok((string) $lang, '-_') ?: '');
+
+        // Locales of the sites, the global locale being the default one.
+        $globalLocale = $primary($settings->get('locale'));
+        $siteLangs = [];
+        foreach ($this->api()->search('sites', [], ['returnScalar' => 'id'])->getContent() as $siteId) {
+            $siteSettings->setTargetId($siteId);
+            $lang = $primary($siteSettings->get('locale')) ?: $globalLocale;
+            if ($lang) {
+                $siteLangs[$lang] = true;
+            }
+        }
+        if (count($siteLangs) < 2) {
+            return [];
+        }
+
+        // Languages of the values, by property term.
+        $sql = <<<'SQL'
+            SELECT CONCAT(vocabulary.prefix, ':', property.local_name) AS term, value.lang AS lang
+            FROM value AS value
+            JOIN property AS property ON property.id = value.property_id
+            JOIN vocabulary AS vocabulary ON vocabulary.id = property.vocabulary_id
+            WHERE value.lang IS NOT NULL AND value.lang != ''
+            GROUP BY term, value.lang
+            SQL;
+        $rows = $connection->executeQuery($sql)->fetchAllAssociative();
+
+        $terms = array_fill_keys($terms, true);
+        $result = [];
+        foreach ($rows as $row) {
+            $term = $row['term'];
+            if (!isset($terms[$term])) {
+                continue;
+            }
+            $lang = $primary($row['lang']);
+            if ($lang && isset($siteLangs[$lang])) {
+                $result[$term][$lang][] = $row['lang'];
+            }
+        }
+
+        // A single language is the monolingual case: no language index needed.
+        return array_filter($result, fn ($langs): bool => count($langs) > 1);
     }
 
     /**

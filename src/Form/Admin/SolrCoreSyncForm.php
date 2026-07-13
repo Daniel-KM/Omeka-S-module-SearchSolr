@@ -41,6 +41,17 @@ class SolrCoreSyncForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'multilingual',
+                'type' => 'checkbox',
+                'options' => [
+                    'label' => 'Support of multilingual values', // @translate
+                    'info' => 'Add a language index by property and language, for example dcterms_subject_fr_ss and dcterms_subject_en_ss. Used only when the sites have at least two distinct locales and the property has values in at least two of these languages. The values without language are included in each language index.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'multilingual',
+                ],
+            ])
+            ->add([
                 'name' => 'clean',
                 'type' => 'checkbox',
                 'options' => [
@@ -63,6 +74,7 @@ class SolrCoreSyncForm extends Form
         // widest, self-cleaning coverage). A multicheckbox reads its checked
         // options from the element value, not from an attribute.
         $this->get('sync_sources')->setValue(array_keys($this->sourceList));
+        $this->get('multilingual')->setValue(true);
         $this->get('clean')->setValue(true);
     }
 }
