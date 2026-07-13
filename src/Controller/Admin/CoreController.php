@@ -1681,11 +1681,14 @@ class CoreController extends AbstractActionController
                     );
                 }
             }
-            // Boosts: the suffix is already in the field name;
-            // just ensure the property is known.
+            // Boosts are applied to the query fields, so a boost set on a bare
+            // property term needs the fulltext index; when the field name
+            // carries a suffix, that suffix is used instead.
             foreach ($config->subSetting('index', 'field_boosts', []) as $fieldName => $boost) {
                 $this->collectFieldAsProperty(
-                    $fieldName, $usedFields, []
+                    (string) $fieldName,
+                    $usedFields,
+                    strpos((string) $fieldName, ':') === false ? [] : ['_txt']
                 );
             }
             // Aliases need _txt (fulltext search).
@@ -1717,6 +1720,19 @@ class CoreController extends AbstractActionController
                         $fieldName, $usedFields, ['_ss']
                     );
                 }
+            }
+        }
+
+        // Boosts set on the core itself apply to every config using it, so they
+        // are always collected: a boosted field must exist in the index, else
+        // Solr rejects the whole query ("is not a valid field name").
+        foreach ($solrCore->setting('field_boost') ?: [] as $fieldName => $boost) {
+            if (is_string($fieldName) && $fieldName !== '') {
+                $this->collectFieldAsProperty(
+                    $fieldName,
+                    $usedFields,
+                    strpos($fieldName, ':') === false ? [] : ['_txt']
+                );
             }
         }
 

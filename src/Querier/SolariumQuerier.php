@@ -1353,8 +1353,15 @@ class SolariumQuerier extends AbstractQuerier
         $result = [];
         foreach ($merged as $field => $boost) {
             $boost = (float) $boost;
-            if ($boost !== 1.0 && $boost > 0) {
-                $result[] = "$field^$boost";
+            if ($boost === 1.0 || $boost <= 0) {
+                continue;
+            }
+            // A boost may be keyed by a property term ("dcterms:title"), so
+            // resolve it to the Solr field, and skip it when it is not mapped:
+            // Solr rejects the whole query on an unknown field in "qf".
+            $index = $this->resolveFieldOrNull((string) $field);
+            if ($index !== null) {
+                $result[] = "$index^$boost";
             }
         }
         return $result;
@@ -1386,8 +1393,14 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
             $boost = (float) $boost;
-            if ($boost > 0 && $boost !== 1.0) {
-                $boosted[$field] = "$field^$boost";
+            if ($boost <= 0 || $boost === 1.0) {
+                continue;
+            }
+            // Resolve property terms to Solr fields and skip unmapped ones,
+            // else Solr rejects the query ("is not a valid field name").
+            $index = $this->resolveFieldOrNull($field);
+            if ($index !== null) {
+                $boosted[$index] = "$index^$boost";
             }
         }
 
