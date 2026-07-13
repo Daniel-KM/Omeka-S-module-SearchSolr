@@ -1251,6 +1251,9 @@ class SolariumQuerier extends AbstractQuerier
                     );
             } else {
                 $solariumOrder = strtolower($order) === 'desc' ? SelectQuery::SORT_DESC : SelectQuery::SORT_ASC;
+                // The sort follows the collation when a folded variant of the
+                // field exists (a plain string field sorts in byte order).
+                $name = $this->preferFoldedField($name);
                 $this->select->addSort($name, $solariumOrder);
                 // Like the api: the resource id is always the tie-breaker, in
                 // the same order (see AbstractEntityAdapter::search()).
@@ -1990,6 +1993,11 @@ class SolariumQuerier extends AbstractQuerier
                     $name = $requireInteger
                         ? ($this->fieldToIndexNumeric($rowField) ?? $this->fieldToIndex($rowField) ?? $rowField)
                         : ($this->fieldToIndex($rowField) ?? $rowField);
+                    // Alphabetical comparisons follow the collation when a
+                    // folded variant of the field exists.
+                    if (in_array($type, ['lt', 'lte', 'gte', 'gt', '<', '≤', '≥', '>'], true)) {
+                        $name = $this->preferFoldedField($name);
+                    }
                     // A property term (with ":") not resolved to a Solr field
                     // means the field is not indexed. The clause is adapted
                     // locally: a positive condition on a missing field matches
@@ -2169,6 +2177,11 @@ class SolariumQuerier extends AbstractQuerier
                     } else {
                         natcasesort($val);
                     }
+                }
+                // A folded field stores lowercased ascii terms, so the
+                // bounds are folded the same way.
+                if (str_ends_with($field, '_fold_s')) {
+                    $val = array_map(fn ($v) => mb_strtolower($this->removeDiacritics((string) $v)), $val);
                 }
                 // TODO Manage uri and resources with lt, lte, gte, gt (it has a meaning at least for resource ids, but separate).
                 if ($type === 'lt') {
@@ -2731,6 +2744,24 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * @todo Replace by a single regex?
      */
+    /**
+     * Prefer the folded variant of a string field, when it is mapped: sorts
+     * and alphabetical comparisons then follow the database collation (case
+     * and diacritics insensitive) instead of the byte order.
+     */
+    protected function preferFoldedField(string $name): string
+    {
+        if (str_ends_with($name, '_fold_s')
+            || !preg_match('~_(ss|s)$~', $name)
+        ) {
+            return $name;
+        }
+        $candidate = preg_replace('~_(ss|s)$~', '_fold_s', $name);
+        return in_array($candidate, $this->usedSolrFields([], ['_fold_s'], []))
+            ? $candidate
+            : $name;
+    }
+
     protected function usedSolrFields(array $prefixes, array $suffixes, array $contains): array
     {
         // Cache all field names on first call to avoid repeated API queries.

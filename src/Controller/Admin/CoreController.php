@@ -1661,12 +1661,13 @@ class CoreController extends AbstractActionController
                     );
                 }
             }
-            // Sorts need _s.
+            // Sorts need _s, plus the folded variant so the order follows
+            // the database collation (case and diacritics insensitive).
             foreach ($config->subSetting('results', 'sort_list', []) as $f) {
                 $v = strtok($f['name'] ?? '', ' ');
                 if ($v) {
                     $this->collectFieldAsProperty(
-                        $v, $usedFields, ['_s']
+                        $v, $usedFields, ['_s', '_fold_s']
                     );
                 }
             }
@@ -1792,6 +1793,8 @@ class CoreController extends AbstractActionController
             '_ss' => ['formatter' => '', 'parts' => ['main']],
             '_s' => ['formatter' => '', 'parts' => ['main']],
             '_i' => ['formatter' => 'integer'],
+            // Folded sort/comparison variant (see ensureFoldedFieldType).
+            '_fold_s' => ['formatter' => '', 'parts' => ['main']],
             '_link_ss' => [
                 'index_for_link' => true,
                 'parts' => ['link'],
@@ -1829,6 +1832,10 @@ class CoreController extends AbstractActionController
         ];
 
         $created = [];
+        // The folded fields need their type and dynamic field in the schema;
+        // pushed once, on the first folded map to create. On failure the folded
+        // maps are skipped: sorts keep using the plain string field.
+        $foldedSchemaReady = null;
         foreach ($usedFields as $term => $requiredSuffixes) {
             if (!is_array($requiredSuffixes)
                 || empty($requiredSuffixes)
@@ -1841,13 +1848,20 @@ class CoreController extends AbstractActionController
             foreach (array_keys($requiredSuffixes) as $suffix) {
                 // Skip _ss/_s for long-value properties.
                 if ($isLong
-                    && in_array($suffix, ['_ss', '_s', '_i'])
+                    && in_array($suffix, ['_ss', '_s', '_fold_s', '_i'])
                 ) {
                     continue;
                 }
                 $fieldName = $base . $suffix;
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
+                }
+                if ($suffix === '_fold_s') {
+                    $foldedSchemaReady ??= $solrCore->ensureFoldedFieldType()
+                        && $solrCore->ensureFoldedDynamicField();
+                    if (!$foldedSchemaReady) {
+                        continue;
+                    }
                 }
                 $mapSettings = $suffixSettings[$suffix]
                     ?? ['formatter' => ''];
@@ -2091,7 +2105,7 @@ class CoreController extends AbstractActionController
             // Compound interval suffixes (_min_i / _max_i / _min_l / _max_l)
             // are matched before the simple suffixes thanks to the alternation
             // order: longest alternatives first.
-            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|txt|ss|s|dt|is|ls|i|l|b)$/',
+            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|link_is|fold_s|txt|ss|s|dt|is|ls|i|l|b)$/',
             $value,
             $m
         )) {

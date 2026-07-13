@@ -1527,6 +1527,96 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * Ensure the "string_folded" field type exists in the Solr schema.
+     *
+     * A single-term type (KeywordTokenizer) lowercased and ascii-folded, so
+     * sorts and alphabetical comparisons on "*_fold_s" fields follow the
+     * database collation (case and diacritics insensitive) instead of the byte
+     * order of a plain string field.
+     */
+    public function ensureFoldedFieldType(): bool
+    {
+        try {
+            $types = $this->schema()->getSchema()['fieldTypes'] ?? [];
+            foreach ($types as $type) {
+                if (($type['name'] ?? '') === 'string_folded') {
+                    return true;
+                }
+            }
+        } catch (\Exception $e) {
+            // Schema not readable; try to create the type anyway.
+        }
+
+        $fieldTypeDef = [
+            'name' => 'string_folded',
+            'class' => 'solr.TextField',
+            'sortMissingLast' => true,
+            'analyzer' => [
+                'tokenizer' => ['class' => 'solr.KeywordTokenizerFactory'],
+                'filters' => [
+                    ['class' => 'solr.LowerCaseFilterFactory'],
+                    ['class' => 'solr.ASCIIFoldingFilterFactory'],
+                ],
+            ],
+        ];
+        $result = $this->postToSolrConfig(
+            $this->clientUrl() . '/schema',
+            json_encode(['add-field-type' => $fieldTypeDef])
+        );
+        if ($result === true || (is_string($result) && stripos($result, 'already exists') !== false)) {
+            return true;
+        }
+
+        $this->getServiceLocator()->get('Omeka\Logger')->err(
+            'SearchSolr: Cannot create string_folded: {error}', // @translate
+            ['error' => $result]
+        );
+        return false;
+    }
+
+    /**
+     * Ensure the dynamic field "*_fold_s" exists in the Solr schema.
+     *
+     * The field is a single string_folded term, indexed only. TextField has no
+     * docValues, so sorting requires "uninvertible" (checked on Solr 10).
+     */
+    public function ensureFoldedDynamicField(): bool
+    {
+        try {
+            $dynamicFields = $this->schema()->getSchema()['dynamicFields'] ?? [];
+            foreach ($dynamicFields as $dynamicField) {
+                if (($dynamicField['name'] ?? '') === '*_fold_s') {
+                    return true;
+                }
+            }
+        } catch (\Exception $e) {
+            // Schema not readable; try to create the field anyway.
+        }
+
+        $fieldDef = [
+            'name' => '*_fold_s',
+            'type' => 'string_folded',
+            'indexed' => true,
+            'stored' => false,
+            'multiValued' => false,
+            'uninvertible' => true,
+        ];
+        $result = $this->postToSolrConfig(
+            $this->clientUrl() . '/schema',
+            json_encode(['add-dynamic-field' => $fieldDef])
+        );
+        if ($result === true || (is_string($result) && stripos($result, 'already exists') !== false)) {
+            return true;
+        }
+
+        $this->getServiceLocator()->get('Omeka\Logger')->err(
+            'SearchSolr: Cannot create the dynamic field *_fold_s: {error}', // @translate
+            ['error' => $result]
+        );
+        return false;
+    }
+
+    /**
      * Ensure the "suggest_txt" field exists in the Solr schema.
      *
      * Creates the field and copyField directives from _txt mapped fields.
