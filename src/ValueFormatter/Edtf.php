@@ -121,6 +121,13 @@ class Edtf extends AbstractValueFormatter
             } catch (\Throwable $e) {
                 // Invalid EDTF: cache the null bounds to avoid re-parsing.
             }
+        } else {
+            // The edtf-php library is not installed: minimal fallback for the
+            // common patterns (year, year-month, year-month-day, negative
+            // years, interval with open bounds), so the year and date indexes
+            // keep working without the dependency. Full EDTF (seasons,
+            // uncertainty…) needs the library.
+            $result = $this->boundsFallback($edtfString);
         }
 
         // Within a resource the same date repeats across maps (cache hit);
@@ -131,6 +138,45 @@ class Edtf extends AbstractValueFormatter
         }
 
         return $cache[$key] = $result;
+    }
+
+    /**
+     * Minimal bounds parser used when the edtf-php library is missing.
+     *
+     * @return array [min, max], as iso date strings or nulls.
+     */
+    protected function boundsFallback(string $edtfString): array
+    {
+        $parsePart = function (string $part, bool $isMax): ?string {
+            $part = trim($part);
+            if ($part === '' || $part === '..') {
+                return null;
+            }
+            if (!preg_match('~^(-?\d{1,6})(?:-(\d{2}))?(?:-(\d{2}))?$~', $part, $m)) {
+                return null;
+            }
+            $year = (int) $m[1];
+            $month = isset($m[2]) && $m[2] !== '' ? (int) $m[2] : null;
+            $day = isset($m[3]) && $m[3] !== '' ? (int) $m[3] : null;
+            if ($month !== null && ($month < 1 || $month > 12)) {
+                return null;
+            }
+            if ($month === null) {
+                $month = $isMax ? 12 : 1;
+                $day = $isMax ? 31 : 1;
+            } elseif ($day === null) {
+                $day = $isMax ? (int) date('t', mktime(0, 0, 0, $month, 1, abs($year) ?: 2000)) : 1;
+            } elseif ($day < 1 || $day > 31) {
+                return null;
+            }
+            return sprintf('%s%04d-%02d-%02d', $year < 0 ? '-' : '', abs($year), $month, $day);
+        };
+
+        $parts = explode('/', $edtfString, 2);
+        if (count($parts) === 2) {
+            return [$parsePart($parts[0], false), $parsePart($parts[1], true)];
+        }
+        return [$parsePart($edtfString, false), $parsePart($edtfString, true)];
     }
 
     /**

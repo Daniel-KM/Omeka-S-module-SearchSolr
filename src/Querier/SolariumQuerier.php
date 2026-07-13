@@ -2026,11 +2026,18 @@ class SolariumQuerier extends AbstractQuerier
                 $end = ')';
                 $isAbsence = in_array($type, ['nex', 'nexs', 'nexm'], true);
 
+                $isYearType = in_array($type, ['yreq', 'nyreq', 'yrgte', 'yrlte', 'yrgt', 'yrlt'], true);
+
                 $subClauses = [];
                 foreach ($rowFields as $rowField) {
                     $name = $requireInteger
                         ? ($this->fieldToIndexNumeric($rowField) ?? $this->fieldToIndex($rowField) ?? $rowField)
                         : ($this->fieldToIndex($rowField) ?? $rowField);
+                    // The year types target the year index of the field
+                    // (suffix _year_is, formatter edtf_year), when mapped.
+                    if ($isYearType) {
+                        $name = $this->fieldToIndexYear($rowField) ?? $name;
+                    }
                     // Alphabetical comparisons follow the collation when a
                     // folded variant of the field exists.
                     if (in_array($type, ['lt', 'lte', 'gte', 'gt', '<', '≤', '≥', '>'], true)) {
@@ -2788,6 +2795,20 @@ class SolariumQuerier extends AbstractQuerier
     /**
      * @todo Replace by a single regex?
      */
+    /**
+     * Resolve a field to its year index (suffix _year_is or _year_i), if any.
+     */
+    protected function fieldToIndexYear(string $field): ?string
+    {
+        $term = $this->easyMeta->propertyTerm($field) ?? $field;
+        $base = strtr($term, ':', '_') . '_';
+        $candidates = array_filter(
+            $this->usedSolrFields([], ['_year_is', '_year_i'], []),
+            fn ($v) => strncmp($v, $base, strlen($base)) === 0
+        );
+        return $candidates ? reset($candidates) : null;
+    }
+
     /**
      * Prefer the folded variant of a string field, when it is mapped: sorts
      * and alphabetical comparisons then follow the database collation (case
