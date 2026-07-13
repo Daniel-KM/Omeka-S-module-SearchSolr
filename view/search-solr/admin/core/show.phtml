@@ -16,6 +16,7 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
 $this->headLink()
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()
+    ->appendFile($assetUrl('js/common-page-action-menu.js', 'Common'), 'text/javascript', ['defer' => 'defer'])
     ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
 $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-map-browse browse');
