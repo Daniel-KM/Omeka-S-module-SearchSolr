@@ -46,6 +46,12 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Sync maps from search configs'), $solrCore->adminUrl('sync-maps'), [
                     'class' => 'link',
                     'title' => $translate('Create maps for properties used in facets, filters, sorts, suggesters and bounce links. Remove property maps not referenced by any config. System maps are kept. The current configuration is automatically snapshotted before sync (3 last snapshots, restorable below).')]) ?></li>
+                <li><?= $hyperlink($translate('Sync maps (+ resource templates)'), $solrCore->adminUrl('sync-maps') . '?scope=templates', [
+                    'class' => 'link',
+                    'title' => $translate('Same as the sync from search configs, plus the properties of the resource templates, so any curated property is queryable like with the internal engine (_txt and _ss).')]) ?></li>
+                <li><?= $hyperlink($translate('Sync maps (+ used properties)'), $solrCore->adminUrl('sync-maps') . '?scope=used', [
+                    'class' => 'link',
+                    'title' => $translate('Same as the sync from search configs, plus every property holding at least one value, so any used property is queryable like with the internal engine (_txt and _ss). Check the Solr maxFields limit on large vocabularies.')]) ?></li>
                 <li class="separator"><span><?= $translate('Technical actions') ?></span></li>
                 <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
                     'class' => 'link',

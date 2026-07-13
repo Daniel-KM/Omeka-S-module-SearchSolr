@@ -1529,13 +1529,23 @@ class CoreController extends AbstractActionController
      * boosts, suggesters, bounce links, etc; remove property maps not
      * referenced by any config. System maps and value_annotations are kept.
      *
-     * TODO Optionally collect properties from resource templates to create _txt maps for fulltext/boost/suggest, even when the property is not yet in a search config. This would complement property_values_txt with per-field granularity.
+     * The query arg "scope" widens the collection beyond the configs, since the
+     * query pivot lets any property be queried like in the internal engine: -
+     * "configs" (default): properties referenced by the search configs; -
+     * "used": plus every property holding at least one value; - "templates":
+     * plus the properties of the resource templates (curated
+     *   middle ground between configs and all used properties).
      */
     public function syncMapsAction()
     {
         $api = $this->api();
         $id = (int) $this->params('id');
         $solrCore = $api->read('solr_cores', $id)->getContent();
+
+        $scope = $this->params()->fromQuery('scope', 'configs');
+        if (!in_array($scope, ['configs', 'used', 'templates'])) {
+            $scope = 'configs';
+        }
 
         // Check for shared engine (index_name).
         // Sync cannot work reliably when multiple Omeka instances share a core.
@@ -1735,6 +1745,26 @@ class CoreController extends AbstractActionController
                 $usedFields[$term] = [];
             }
             $usedFields[$term]['_link_ss'] = true;
+        }
+
+        // 3b. Widen the collection beyond the configs when requested. Each
+        // extra property gets the default value indexes: _txt for word search
+        // and _ss for exact filters and facets (_ss is skipped later for long
+        // values). Suffixes required by the configs are kept as they are.
+        if ($scope !== 'configs') {
+            $sqlExtraTerms = $scope === 'templates'
+                ? 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+                FROM resource_template_property rtp
+                INNER JOIN property pr ON pr.id = rtp.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id'
+                : 'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+                FROM value v
+                INNER JOIN property pr ON pr.id = v.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id';
+            foreach ($connection->fetchFirstColumn($sqlExtraTerms) as $term) {
+                $usedFields[$term] ??= [];
+                $usedFields[$term] += ['_txt' => true, '_ss' => true];
+            }
         }
 
         // 4. Get existing maps for this core.
@@ -1992,9 +2022,15 @@ class CoreController extends AbstractActionController
 
         // Summary line.
         $totalExisting = count($existingMaps);
+        $scopeLabels = [
+            'configs' => 'search configs', // @translate
+            'used' => 'search configs + used properties', // @translate
+            'templates' => 'search configs + resource templates', // @translate
+        ];
         $this->messenger()->addSuccess(new PsrMessage(
-            'Sync complete. Properties collected from configs: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
+            'Sync complete (scope: {scope}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
             [
+                'scope' => $scopeLabels[$scope],
                 'props' => count($usedFields),
                 'before' => $totalExisting,
                 'deleted' => count($deleted),
