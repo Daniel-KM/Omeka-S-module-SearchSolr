@@ -156,6 +156,14 @@ matching type:
 - "_s" and "_ss" are used to store whole string.
 - "_i" and "_is" are used to store integers.
 - "_dt" and "_dts" are used to store dates.
+- "_fold_s" is a folded single string (lowercased, without diacritics), used
+  for sorts and alphabetical comparisons following the database collation
+  (see below).
+- "_link_ss" stores the linked resource ids (or uris, or values) for the
+  bounce links; "_link_is" stores the linked resource ids as integers for the
+  query types on linked resources (see below).
+- "_year_is" stores the years of a date (formatter "edtf_year"), used by the
+  year query types (yreq, yrgte…).
 - "_ancestor_path" and "_descendent_path" are used to store structures.
 
 The choice of type depends on what you need for a metadata:
@@ -163,7 +171,9 @@ The choice of type depends on what you need for a metadata:
 - For global searches, indices should be "_t" and "_txt".
 - For simple filters and facets, indices should be a multiple whole values
   ("_ss", "_is" and "_dts").
-- For sort, it should be a single value ("_s", "_i" and "_dt").
+- For sort, it should be a single value ("_s", "_i" and "_dt"). For an
+  alphabetical sort following the database collation, use the folded variant
+  "_fold_s" (see below).
 - For bounce links, it should be multiple values formatted for linking ("_link_ss").
 - For main autocompletion ("à-la-google search"), "_txt" should be used. There
   is a default field "suggest_txt" that groups "_txt" fields. By default, it
@@ -181,6 +191,20 @@ The choice of type depends on what you need for a metadata:
 Other indices are available for complex cases. Solr should be configured first
 if more types are needed.
 
+### Sorts and collation (`_fold_s`)
+
+A plain string field ("_s") sorts and compares in the byte order of Solr, so
+"Zèbre" comes before "abc" and accented values are pushed at the end, unlike
+the database collation, which is case and diacritics insensitive. The folded
+variant fixes it: the field type `string_folded` keeps the value as a single
+term (KeywordTokenizer), lowercased and ascii-folded, and the dynamic field
+`*_fold_s` is declared "uninvertible", since a text field without docValues is
+not sortable since Solr 8. Both are pushed to the schema automatically by the
+maps sync, which creates the folded variant of the sort fields; the querier
+then prefers `*_fold_s` for the sorts and the alphabetical comparisons
+(lt/lte/gte/gt) when the map exists, and folds the query bounds the same way.
+Without folded maps, the plain string fields keep working, in byte order.
+
 ### Has media and digital objects
 
 The source "Item: Has media" indexes a boolean ("has_media_b") that is true when
@@ -195,10 +219,23 @@ available when both media and digital objects need to be distinguished.
 
 When indexing linked resources (local resource with another item, for example
 when [Custom Vocab] is used, or external resource with an uri, for example for
-values from module [Value Suggest]), it is recommended to add an index formatted
+values from module [Value Suggest]), it is recommended to add a map formatted
 as "link" for it and to name it as `*_link_ss` to simplify the browsing with
 bounce links. Automatic bounce links can be added via the module [Advanced Resource Template]
 and manual bounce links can be added manually via the theme or pages.
+
+The part "link" stores, for each value of the property, the linked resource id
+as a string, else the uri, else the literal value. The field is multivalued
+on purpose: a property often holds several linked values on one resource (two
+creators, three linked subjects…), and a single-valued field would index only
+one of them, so the bounce from the other linked values would not find the
+resource back.
+
+The maps sync also creates, for every property holding at least one linked
+resource, an integer index of the linked resource ids (`*_link_is`, part
+"link" with the integer formatter, which drops uris and literals). It is used
+by the query types on linked resources (res/nres); without it, the ids are
+compared as strings on the `*_link_ss` index.
 
 ### Indexation with third party
 
@@ -1084,6 +1121,15 @@ TODO
 - [ ] Disable `buildOnCommit` for suggester during batch reindexation to avoid costly intermediate rebuilds, then re-enable and rebuild once at the end.
 - [ ] Create suggest_txt to regroup all suggesters into a single index for performance.
 - [ ] Create a single suggest field approach automatically.
+- [ ] Decide the automatic triggering of the maps sync and of the reindex.
+  Currently, after saving a search config bound to a Solr engine, a sidebar
+  recommends them with the actions (sync with opt-in cleaning, reindex behind
+  confirmation), which should suffice. Options considered:
+  - a. Status quo: recommendation sidebar with manual actions (current).
+  - b. Automatic sync (scope configs) after saving a config, reindex manual
+    with a warning.
+  - c. Automatic sync and automatic reindex job.
+  - d. An admin setting to choose between a, b and c.
 
 
 Warning
