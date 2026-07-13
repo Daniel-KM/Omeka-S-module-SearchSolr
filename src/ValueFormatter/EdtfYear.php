@@ -30,9 +30,9 @@ namespace SearchSolr\ValueFormatter;
  */
 class EdtfYear extends Edtf
 {
-    protected $label = 'EDTF (year)'; // @translate
+    protected $label = 'Date / EDTF (year)'; // @translate
 
-    protected $comment = 'Parse EDTF values, return signed integer year.'; // @translate
+    protected $comment = 'Parse dates and extended date time values and return the signed integer year. Common patterns are managed natively; the full EDTF (seasons, uncertainty…) requires the module Data Type EDTF.'; // @translate
 
     public function format($value): array
     {

@@ -16,9 +16,9 @@ namespace SearchSolr\ValueFormatter;
  */
 class EdtfDate extends Edtf
 {
-    protected $label = 'EDTF (date only)'; // @translate
+    protected $label = 'Date / EDTF (date only)'; // @translate
 
-    protected $comment = 'Parse EDTF values, return ISO 8601 date (time dropped).'; // @translate
+    protected $comment = 'Parse dates and extended date time values and return ISO 8601 date (time dropped). Common patterns are managed natively; the full EDTF (seasons, uncertainty…) requires the module Data Type EDTF.'; // @translate
 
     protected bool $dateOnly = true;
 }

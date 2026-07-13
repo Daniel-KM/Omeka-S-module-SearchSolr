@@ -41,10 +41,9 @@ use Omeka\Api\Representation\ValueRepresentation;
  */
 class Edtf extends AbstractValueFormatter
 {
-    protected $label = 'EDTF (date + time)'; // @translate
+    protected $label = 'Date / EDTF (date + time)'; // @translate
 
-    protected $comment = 'Parse EDTF values, return ISO 8601 date-time (min, max, or both).'; // @translate
-
+    protected $comment = 'Parse dates and extended date time values and return ISO 8601 date-time (min, max, or both). Common patterns are managed natively; the full EDTF (seasons, uncertainty…) requires the module Data Type EDTF.'; // @translate
     /**
      * When true, time components are dropped (date-only indexing).
      */
