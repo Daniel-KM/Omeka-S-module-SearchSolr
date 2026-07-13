@@ -456,6 +456,48 @@ class SolariumIndexer extends AbstractIndexer
         return $this;
     }
 
+    /**
+     * Called by the indexing job after a full reindex, to finalize pending
+     * migrations of this core.
+     *
+     * Finalizes the is_public_i → is_public_b transition: the full reindex has
+     * cleared the core and repopulated every document with both fields, so the
+     * legacy integer map can be dropped and the querier switches to the boolean
+     * field. Guarded by a doc count so nothing is removed when is_public_b was
+     * not actually populated (e.g. Solr unreachable) or coverage is partial.
+     */
+    public function onFullReindexed(): self
+    {
+        $solrCore = $this->getSolrCore();
+
+        $isPublicI = null;
+        $hasIsPublicB = false;
+        foreach ($solrCore->mapsBySource('is_public', 'generic') as $map) {
+            if ($map->fieldName() === 'is_public_i') {
+                $isPublicI = $map;
+            } elseif ($map->fieldName() === 'is_public_b') {
+                $hasIsPublicB = true;
+            }
+        }
+        if (!$isPublicI || !$hasIsPublicB) {
+            return $this;
+        }
+        // Only drop the legacy map once every document carrying is_public_i
+        // also carries is_public_b (full coverage), so nothing is hidden.
+        $docsB = $solrCore->fieldDocCount('is_public_b');
+        $docsI = $solrCore->fieldDocCount('is_public_i');
+        if ($docsB === null || $docsI === null || $docsB <= 0 || $docsB < $docsI) {
+            return $this;
+        }
+
+        $this->getServiceLocator()->get('Omeka\ApiManager')->delete('solr_maps', $isPublicI->id());
+        $this->getLogger()->info(
+            'SearchSolr: Visibility migration finalized: legacy map "is_public_i" removed after full reindex.' // @translate
+        );
+
+        return $this;
+    }
+
     public function deleteResource(string $resourceName, $resourceId): IndexerInterface
     {
         // Some values should be init to get the document id.

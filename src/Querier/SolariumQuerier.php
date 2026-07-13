@@ -2486,6 +2486,11 @@ class SolariumQuerier extends AbstractQuerier
     {
         if (!array_key_exists($source, $this->solrCoreFieldCache)) {
             $maps = $this->solrCore->mapsBySource($source, 'generic');
+            // When several maps share a source (e.g. during the is_public_i →
+            // is_public_b transition), pick the oldest one deterministically:
+            // it is the field currently populated, so the switch to the new
+            // field happens only once the legacy map is removed.
+            usort($maps, fn ($a, $b) => $a->id() <=> $b->id());
             $this->solrCoreFieldCache[$source] = $maps
                 ? (reset($maps))->fieldName()
                 : null;

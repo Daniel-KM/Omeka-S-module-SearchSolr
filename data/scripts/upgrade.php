@@ -1109,7 +1109,7 @@ if (version_compare($oldVersion, '3.5.64', '<')) {
     $requiredMapsBySource = [
         ['source' => 'resource_name', 'field_name' => 'resource_name_s', 'alias' => 'resource_name', 'settings' => ['label' => 'Resource type']],
         ['source' => 'o:id', 'field_name' => 'id_i', 'alias' => 'id', 'settings' => ['label' => 'Internal id']],
-        ['source' => 'is_public', 'field_name' => 'is_public_i', 'alias' => 'is_public', 'settings' => ['parts' => ['main'], 'formatter' => 'boolean', 'label' => 'Public']],
+        ['source' => 'is_public', 'field_name' => 'is_public_b', 'alias' => 'is_public', 'settings' => ['parts' => ['main'], 'formatter' => 'boolean', 'label' => 'Public']],
         ['source' => 'owner/o:id', 'field_name' => 'owner_id_i', 'alias' => 'owner_id', 'settings' => ['label' => 'Owner']],
         ['source' => 'site/o:id', 'field_name' => 'site_id_is', 'alias' => 'site_id', 'settings' => ['label' => 'Site']],
     ];
@@ -1443,5 +1443,140 @@ if (version_compare($oldVersion, '3.5.69', '<')) {
 
     $messenger->addSuccess(new PsrMessage(
         'The map source "Item: Has media" has a new option "Include digital objects": when set, an item with no native media but linked to at least one digital object (module Digital Object) is also indexed as having media.' // @translate
+    ));
+}
+
+// Ensure the Solr engines exist for the core: public-capped, admin and api. The
+// call is idempotent (each engine is created only when missing by name), so it
+// adds the engines absent from installs predating the public/admin/api split,
+// without touching any legacy engine or suggester.
+$solrCoreId = (int) $connection->fetchOne('SELECT `id` FROM `solr_core` ORDER BY `id` ASC');
+if ($solrCoreId) {
+    $this->createDefaultSearchEngines($connection, $solrCoreId, $messenger, $url);
+}
+
+// Standardize the visibility map on the boolean field "is_public_b" (like the
+// other boolean field "has_media_b"; the two are separate indexes) instead of
+// the integer "is_public_i", with a zero-downtime, two-phase migration.
+//
+// Phase 1: add "is_public_b" next to "is_public_i" (a clone of the same source)
+// and relaunch indexing. Both fields get populated; the querier keeps using the
+// older "is_public_i" (see SolariumQuerier::solrCoreField), so public search is
+// never interrupted.
+$isPublicToAdd = $connection->fetchAllAssociative(<<<'SQL'
+    SELECT `i`.`solr_core_id` AS `core_id`, `i`.`alias`, `i`.`pool`, `i`.`settings`
+    FROM `solr_map` `i`
+    LEFT JOIN `solr_map` `b`
+        ON `b`.`solr_core_id` = `i`.`solr_core_id`
+        AND `b`.`source` = 'is_public'
+        AND `b`.`field_name` = 'is_public_b'
+    WHERE `i`.`source` = 'is_public'
+        AND `i`.`field_name` = 'is_public_i'
+        AND `b`.`id` IS NULL;
+    SQL);
+$addedCoreIds = [];
+foreach ($isPublicToAdd as $row) {
+    $connection->executeStatement(
+        'INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `alias`, `source`, `pool`, `settings`) VALUES (?, ?, ?, ?, ?, ?, ?);',
+        [(int) $row['core_id'], 'generic', 'is_public_b', $row['alias'], 'is_public', $row['pool'], $row['settings']]
+    );
+    $addedCoreIds[$row['core_id']] = (int) $row['core_id'];
+}
+if ($addedCoreIds) {
+    $engineByCore = [];
+    foreach ($connection->fetchAllAssociative("SELECT `id`, `settings` FROM `search_engine` WHERE `adapter` = 'solarium'") as $engineRow) {
+        $engineSettings = json_decode($engineRow['settings'], true) ?: [];
+        $coreId = $engineSettings['engine_adapter']['solr_core_id'] ?? null;
+        if ($coreId && isset($addedCoreIds[$coreId]) && !isset($engineByCore[$coreId])) {
+            $engineByCore[$coreId] = (int) $engineRow['id'];
+        }
+    }
+    if ($engineByCore) {
+        $services->get('Omeka\Job\Dispatcher')->dispatch(
+            \AdvancedSearch\Job\IndexSearch::class,
+            ['search_engine_ids' => array_values($engineByCore)]
+        );
+    }
+    $messenger->addNotice(new PsrMessage(
+        'A boolean visibility index "is_public_b" was added and indexing relaunched. The legacy "is_public_i" stays active until the reindex completes, then it is removed automatically on a later upgrade (no interruption).' // @translate
+    ));
+}
+
+// Phase 2: once "is_public_b" is populated in Solr, drop the legacy
+// "is_public_i" so the querier switches to the boolean field, and align the
+// rare search configs referencing the raw field name. Resilient: a core that is
+// unreachable or not yet reindexed is skipped and retried on the next upgrade.
+$finalized = false;
+// By construction, the "solr_cores" api resource is not available during an
+// upgrade, so the cores are read with direct sql and the document count is
+// queried on Solr from the stored client settings (passwords decrypted at
+// rest), without the api adapter nor the representation.
+$cipher = $services->get('Omeka\Cipher');
+$decryptPassword = function ($value) use ($cipher) {
+    if ($value === null || $value === '') {
+        return (string) $value;
+    }
+    try {
+        return $cipher->decrypt((string) $value);
+    } catch (\Throwable $e) {
+        // Legacy clear value stored before encryption at rest.
+        return (string) $value;
+    }
+};
+$fieldDocCount = function (array $client, string $field) use ($decryptPassword): ?int {
+    $scheme = $client['scheme'] ?? null;
+    $host = $client['host'] ?? null;
+    $core = $client['core'] ?? null;
+    if (!$scheme || !$host || !$core) {
+        return null;
+    }
+    $base = $scheme . '://' . $host . (empty($client['port']) ? '' : ':' . $client['port']) . '/solr/' . $core;
+    $header = null;
+    if (!empty($client['username'])) {
+        $header = 'Authorization: Basic ' . base64_encode($client['username'] . ':' . $decryptPassword($client['password'] ?? ''));
+    }
+    $response = @file_get_contents(
+        $base . '/admin/luke?numTerms=0&fl=' . urlencode($field),
+        false,
+        stream_context_create(['http' => ['timeout' => 10, 'header' => $header]])
+    );
+    if ($response === false) {
+        return null;
+    }
+    $luke = json_decode($response, true);
+    if (!is_array($luke) || !isset($luke['fields'])) {
+        return null;
+    }
+    return (int) ($luke['fields'][$field]['docs'] ?? 0);
+};
+foreach ($connection->fetchAllAssociative('SELECT `id`, `settings` FROM `solr_core`') as $coreRow) {
+    $coreId = (int) $coreRow['id'];
+    $coreSettings = json_decode((string) $coreRow['settings'], true) ?: [];
+    $client = $coreSettings['client'] ?? [];
+    $mapsByField = [];
+    foreach ($connection->fetchAllAssociative(
+        "SELECT `id`, `field_name` FROM `solr_map` WHERE `solr_core_id` = ? AND `source` = 'is_public' AND `field_name` IN ('is_public_i', 'is_public_b')",
+        [$coreId]
+    ) as $mapRow) {
+        $mapsByField[$mapRow['field_name']] = (int) $mapRow['id'];
+    }
+    if (!isset($mapsByField['is_public_i'], $mapsByField['is_public_b'])) {
+        continue;
+    }
+    $docs = $fieldDocCount($client, 'is_public_b');
+    if ($docs !== null && $docs > 0) {
+        $connection->executeStatement('DELETE FROM `solr_map` WHERE `id` = ?;', [$mapsByField['is_public_i']]);
+        $finalized = true;
+    }
+}
+if ($finalized) {
+    // Aliases stay "is_public" and are untouched; "has_media_b" never matched.
+    $connection->executeStatement(<<<'SQL'
+        UPDATE `search_config`
+        SET `settings` = REPLACE(`settings`, 'is_public_i', 'is_public_b')
+        WHERE `settings` LIKE '%is_public_i%';
+        SQL);
+    $messenger->addSuccess(new PsrMessage(
+        'The visibility index switched to "is_public_b"; the legacy "is_public_i" was removed.' // @translate
     ));
 }

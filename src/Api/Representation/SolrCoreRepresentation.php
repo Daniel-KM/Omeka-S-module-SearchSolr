@@ -1300,6 +1300,31 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
     }
 
     /**
+     * Number of documents holding a field, via the luke api.
+     *
+     * Returns null when the core is unreachable or the field is absent, so the
+     * caller can tell "not populated yet" (0) from "cannot check" (null).
+     */
+    public function fieldDocCount(string $field): ?int
+    {
+        $lukeUrl = $this->clientUrl() . '/admin/luke?numTerms=0&fl=' . urlencode($field);
+        $authHeader = $this->basicAuthHeader();
+        $response = @file_get_contents($lukeUrl, false,
+            stream_context_create(['http' => [
+                'timeout' => 10,
+                'header' => $authHeader ? trim($authHeader) : null,
+            ]]));
+        if ($response === false) {
+            return null;
+        }
+        $luke = json_decode($response, true);
+        if (!is_array($luke) || !isset($luke['fields'])) {
+            return null;
+        }
+        return (int) ($luke['fields'][$field]['docs'] ?? 0);
+    }
+
+    /**
      * Get Solr config via API.
      */
     protected function getSolrConfig(): ?array
