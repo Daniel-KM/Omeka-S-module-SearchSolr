@@ -162,7 +162,7 @@ class MapController extends AbstractActionController
         $solrCoreId = $this->params('core-id');
         $resourceName = $this->params('resource-name');
         $url = $this->url()->fromRoute(
-            'admin/search/solr/core-id',
+            'admin/search-manager/solr/core-id',
             ['id' => $solrCoreId]
         );
         return $this->redirect()
@@ -207,7 +207,7 @@ class MapController extends AbstractActionController
 
                 return $this->redirect()->toUrl(
                     $this->url()->fromRoute(
-                        'admin/search/solr/core-id',
+                        'admin/search-manager/solr/core-id',
                         ['id' => $solrCoreId]
                     ) . '?resource_type=' . urlencode(
                         $data['o:resource_name'] ?? $resourceName
@@ -286,7 +286,7 @@ class MapController extends AbstractActionController
 
                 return $this->redirect()->toUrl(
                     $this->url()->fromRoute(
-                        'admin/search/solr/core-id',
+                        'admin/search-manager/solr/core-id',
                         ['id' => $solrCoreId]
                     ) . '?resource_type=' . urlencode(
                         $data['o:resource_name'] ?? $resourceName
@@ -364,7 +364,7 @@ class MapController extends AbstractActionController
             }
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $map->solrCore()->id()]);
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $map->solrCore()->id()]);
     }
 
     protected function getSolrSchema($solrCoreId)

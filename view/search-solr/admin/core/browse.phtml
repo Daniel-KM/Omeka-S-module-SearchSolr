@@ -48,11 +48,11 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores browse');
 <?= $this->pageTitle($translate('Solr cores')) ?>
 
 <div id="page-actions">
-    <a class="button" href="<?= $url('admin/search/solr/core', ['action' => 'add']) ?>"><?= $translate('Add new core') ?></a>
+    <a class="button" href="<?= $url('admin/search-manager/solr/core', ['action' => 'add']) ?>"><?= $translate('Add new core') ?></a>
 </div>
 
 <nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
-    <?= $hyperlink($translate('Search'), $url('admin/search')) ?>
+    <?= $hyperlink($translate('Search'), $url('admin/search-manager')) ?>
     <span aria-current="page"><?= $translate('Solr cores') ?></span>
 </nav>
 

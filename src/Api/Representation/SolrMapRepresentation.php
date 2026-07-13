@@ -74,7 +74,7 @@ class SolrMapRepresentation extends AbstractEntityRepresentation
         $options = [
             'force_canonical' => $canonical,
         ];
-        return $url('admin/search/solr/core-id-map-resource-id', $params, $options);
+        return $url('admin/search-manager/solr/core-id-map-resource-id', $params, $options);
     }
 
     public function solrCore(): ?SolrCoreRepresentation

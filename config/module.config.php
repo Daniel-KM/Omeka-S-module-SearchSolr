@@ -51,37 +51,38 @@ return [
         ],
     ],
     'navigation' => [
-        'AdvancedSearchSolr' => [
-            'search' => [
-                // Copy of the first level of navigation from the config of the module Search.
-                // It avoids an error when Advanced Search is automatically disabled for upgrading. This errors occurs one time only anyway.
+        // Use the "Solr" page of the existing "Search manager" of the module AdvancedSearch.
+        // The first level of navigation is copied to avoids an error when Advanced Search
+        // is automatically disabled for upgrading. This errors occurs one time only anyway.
+        'AdminModule' => [
+            'advanced-search' => [
                 'label' => 'Search manager', // @translate
-                'route' => 'admin/search',
+                'route' => 'admin/search-manager',
                 'resource' => \AdvancedSearch\Controller\Admin\IndexController::class,
                 'privilege' => 'browse',
                 'class' => 'o-icon-search',
                 'pages' => [
                     [
                         'label' => 'Solr', // @translate
-                        'route' => 'admin/search/solr',
+                        'route' => 'admin/search-manager/solr',
                         'resource' => Controller\Admin\CoreController::class,
                         'privilege' => 'browse',
                         // 'class' => 'o-icon-search',
                         'pages' => [
                             [
-                                'route' => 'admin/search/solr/core',
+                                'route' => 'admin/search-manager/solr/core',
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/search/solr/core-id',
+                                'route' => 'admin/search-manager/solr/core-id',
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/search/solr/core-id-map-resource',
+                                'route' => 'admin/search-manager/solr/core-id-map-resource',
                                 'visible' => false,
                             ],
                             [
-                                'route' => 'admin/search/solr/core-id-map-resource-id',
+                                'route' => 'admin/search-manager/solr/core-id-map-resource-id',
                                 'visible' => false,
                             ],
                         ],
@@ -94,7 +95,10 @@ return [
         'routes' => [
             'admin' => [
                 'child_routes' => [
-                    'search' => [
+                    // The solr specific routes are merged under routes of module AdvancedSearch.
+                    // The first level of routing is copied to avoids an error when Advanced Search
+                    // is automatically disabled for upgrading. This errors occurs one time only anyway.
+                    'search-manager' => [
                         'type' => \Laminas\Router\Http\Literal::class,
                         'options' => [
                             'route' => '/search-manager',

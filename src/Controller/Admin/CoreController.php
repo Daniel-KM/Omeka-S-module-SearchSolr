@@ -139,7 +139,7 @@ class CoreController extends AbstractActionController
             'Solr core "{solr_core_name}" created.', // @translate
             ['solr_core_name' => $solrCore->name()]
         ));
-        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $solrCore->id(), 'action' => 'edit']);
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $solrCore->id(), 'action' => 'edit']);
     }
 
     public function editAction()
@@ -276,7 +276,7 @@ class CoreController extends AbstractActionController
             ));
         }
 
-        return $this->redirect()->toRoute('admin/search');
+        return $this->redirect()->toRoute('admin/search-manager');
     }
 
     public function showAction()
@@ -391,7 +391,7 @@ class CoreController extends AbstractActionController
                 $this->messenger()->addError('Solr core could not be deleted'); // @translate
             }
         }
-        return $this->redirect()->toRoute('admin/search/solr');
+        return $this->redirect()->toRoute('admin/search-manager/solr');
     }
 
     public function importAction()
@@ -454,7 +454,7 @@ class CoreController extends AbstractActionController
             ]);
             // Messages are already appended.
             if ($result) {
-                return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+                return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
             }
         }
 
@@ -889,7 +889,7 @@ class CoreController extends AbstractActionController
                 'The catchall field "_text_" already exists in core "{solr_core_name}".', // @translate
                 ['solr_core_name' => $solrCore->name()]
             ));
-            return $this->redirect()->toRoute('admin/search/solr/core-id', [
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
                 'id' => $id,
                 'action' => 'show',
             ]);
@@ -936,7 +936,7 @@ class CoreController extends AbstractActionController
             ));
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
             'id' => $id,
             'action' => 'show',
         ]);
@@ -958,7 +958,7 @@ class CoreController extends AbstractActionController
                 'The catchall field "_text_" does not exist in core "{solr_core_name}".', // @translate
                 ['solr_core_name' => $solrCore->name()]
             ));
-            return $this->redirect()->toRoute('admin/search/solr/core-id', [
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
                 'id' => $id,
                 'action' => 'show',
             ]);
@@ -1005,7 +1005,7 @@ class CoreController extends AbstractActionController
             ));
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
             'id' => $id,
             'action' => 'show',
         ]);
@@ -1058,7 +1058,7 @@ class CoreController extends AbstractActionController
             ));
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
             'id' => $id,
             'action' => 'show',
         ]);
@@ -1108,7 +1108,7 @@ class CoreController extends AbstractActionController
         $this->messenger()->addSuccess($message);
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id',
+            'admin/search-manager/solr/core-id',
             ['id' => $id]
         );
     }
@@ -1131,7 +1131,7 @@ class CoreController extends AbstractActionController
                 'The core "{core}" already exists on the server; it is used as is, nothing was created.', // @translate
                 ['core' => $coreName]
             ));
-            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
         if (!$coreAdmin->createCore($connection, $coreName, $configSet)) {
@@ -1139,7 +1139,7 @@ class CoreController extends AbstractActionController
                 'Failed to create the core "{core}" on the Solr server. Check the logs: the config set "{config_set}" must exist in SOLR_HOME/configsets on the server.', // @translate
                 ['core' => $coreName, 'config_set' => $configSet]
             ));
-            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
         // Provision the schema field types and field used for suggestions.
@@ -1160,7 +1160,7 @@ class CoreController extends AbstractActionController
     {
         $id = $this->params('id');
         if (!$this->getRequest()->isPost()) {
-            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
         /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
@@ -1179,7 +1179,7 @@ class CoreController extends AbstractActionController
                     'The core "{core}" is shared (an engine sets index_name); deletion on the server is refused.', // @translate
                     ['core' => $coreName]
                 ));
-                return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+                return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
             }
         }
 
@@ -1196,7 +1196,7 @@ class CoreController extends AbstractActionController
                 ['core' => $coreName]
             ));
         }
-        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
     }
 
     /**
@@ -1227,7 +1227,7 @@ class CoreController extends AbstractActionController
             $this->messenger()->addError(new PsrMessage(
                 'The public core has no name; cannot derive the admin and api core names.' // @translate
             ));
-            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
         // Index existing solr cores by their Solr core name, to stay
@@ -1283,7 +1283,7 @@ class CoreController extends AbstractActionController
             'Cores "{base}_admin" and "{base}_api" were scaffolded from the public core and their engines repointed. Maps are being created in background; reindex each engine afterwards.', // @translate
             ['base' => $base]
         ));
-        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
     }
 
     public function recommendedMapsAction()
@@ -1344,7 +1344,7 @@ class CoreController extends AbstractActionController
         $this->messenger()->addSuccess($message);
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id',
+            'admin/search-manager/solr/core-id',
             ['id' => $id]
         );
     }
@@ -1402,7 +1402,7 @@ class CoreController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id', ['id' => $id]
+            'admin/search-manager/solr/core-id', ['id' => $id]
         );
     }
 
@@ -1418,7 +1418,7 @@ class CoreController extends AbstractActionController
                 'Unable to determine the Solr maxFields limit.' // @translate
             );
             return $this->redirect()->toRoute(
-                'admin/search/solr/core-id', ['id' => $id]
+                'admin/search-manager/solr/core-id', ['id' => $id]
             );
         }
 
@@ -1432,7 +1432,7 @@ class CoreController extends AbstractActionController
         );
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id', ['id' => $id]
+            'admin/search-manager/solr/core-id', ['id' => $id]
         );
     }
 
@@ -1528,7 +1528,7 @@ class CoreController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id', ['id' => $id]
+            'admin/search-manager/solr/core-id', ['id' => $id]
         );
     }
 
@@ -1573,7 +1573,7 @@ class CoreController extends AbstractActionController
                     'This core is used by a shared engine (index_name is set). Sync is not supported for shared engines.' // @translate
                 );
                 return $this->redirect()->toRoute(
-                    'admin/search/solr/core-id', ['id' => $id]
+                    'admin/search-manager/solr/core-id', ['id' => $id]
                 );
             }
         }
@@ -2154,7 +2154,7 @@ class CoreController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id', ['id' => $id]
+            'admin/search-manager/solr/core-id', ['id' => $id]
         );
     }
 
@@ -2364,7 +2364,7 @@ class CoreController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id',
+            'admin/search-manager/solr/core-id',
             ['id' => $id, 'action' => 'show']
         );
     }
@@ -2399,7 +2399,7 @@ class CoreController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id',
+            'admin/search-manager/solr/core-id',
             ['id' => $id, 'action' => 'show']
         );
     }
@@ -2440,7 +2440,7 @@ class CoreController extends AbstractActionController
             $this->messenger()->addSuccess(new PsrMessage(
                 'Query relevance settings saved. Catchall analyzer unchanged.' // @translate
             ));
-            return $this->redirect()->toRoute('admin/search/solr/core-id', [
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
                 'id' => $id,
                 'action' => 'show',
             ]);
@@ -2490,7 +2490,7 @@ class CoreController extends AbstractActionController
                         ['lang' => $lang]
                     ));
                     return $this->redirect()->toRoute(
-                        'admin/search/solr/core-id',
+                        'admin/search-manager/solr/core-id',
                         ['id' => $id, 'action' => 'show']
                     );
                 }
@@ -2546,7 +2546,7 @@ class CoreController extends AbstractActionController
                             ['error' => $error]
                         ));
                         return $this->redirect()->toRoute(
-                            'admin/search/solr/core-id',
+                            'admin/search-manager/solr/core-id',
                             ['id' => $id, 'action' => 'show']
                         );
                     }
@@ -2594,7 +2594,7 @@ class CoreController extends AbstractActionController
             ));
         }
 
-        return $this->redirect()->toRoute('admin/search/solr/core-id', [
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
             'id' => $id,
             'action' => 'show',
         ]);
@@ -2706,7 +2706,7 @@ class CoreController extends AbstractActionController
         $core = $entityManager->find(\SearchSolr\Entity\SolrCore::class, $id);
         if (!$core) {
             $this->messenger()->addError('Solr core not found.'); // @translate
-            return $this->redirect()->toRoute('admin/search/solr');
+            return $this->redirect()->toRoute('admin/search-manager/solr');
         }
 
         $backups = $core->getBackupMaps() ?? [];
@@ -2716,7 +2716,7 @@ class CoreController extends AbstractActionController
                 'Snapshot not found.' // @translate
             );
             return $this->redirect()->toRoute(
-                'admin/search/solr/core-id', ['id' => $id]
+                'admin/search-manager/solr/core-id', ['id' => $id]
             );
         }
 
@@ -2770,7 +2770,7 @@ class CoreController extends AbstractActionController
         );
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id', ['id' => $id]
+            'admin/search-manager/solr/core-id', ['id' => $id]
         );
     }
 
@@ -2788,7 +2788,7 @@ class CoreController extends AbstractActionController
         $core = $entityManager->find(\SearchSolr\Entity\SolrCore::class, $id);
         if (!$core) {
             $this->messenger()->addError('Solr core not found.'); // @translate
-            return $this->redirect()->toRoute('admin/search/solr');
+            return $this->redirect()->toRoute('admin/search-manager/solr');
         }
 
         $backups = $core->getBackupMaps() ?? ['snapshots' => []];
@@ -2808,7 +2808,7 @@ class CoreController extends AbstractActionController
         }
 
         return $this->redirect()->toRoute(
-            'admin/search/solr/core-id', ['id' => $id]
+            'admin/search-manager/solr/core-id', ['id' => $id]
         );
     }
 }

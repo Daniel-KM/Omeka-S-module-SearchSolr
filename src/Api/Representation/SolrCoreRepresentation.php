@@ -81,7 +81,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
             'force_canonical' => $canonical,
         ];
 
-        return $url('admin/search/solr/core-id', $params, $options);
+        return $url('admin/search-manager/solr/core-id', $params, $options);
     }
 
     public function name(): string
@@ -331,7 +331,7 @@ class SolrCoreRepresentation extends AbstractEntityRepresentation
         $options = [
             'force_canonical' => $canonical,
         ];
-        return $url('admin/search/solr/core-id-map-resource', $params, $options);
+        return $url('admin/search-manager/solr/core-id-map-resource', $params, $options);
     }
 
     /**
