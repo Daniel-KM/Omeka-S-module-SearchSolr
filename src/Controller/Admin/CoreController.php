@@ -1175,6 +1175,93 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
     }
 
+    /**
+     * Scaffold the dedicated admin and api cores from the current public core.
+     *
+     * The current core is treated as the public one; its connection is cloned
+     * to "{base}_admin" and "{base}_api" (base = the public core name without a
+     * trailing _public/_admin/_api). Each clone registers a SolrCore, creates
+     * and provisions the core on the server, and the matching "Solr (admin)"/
+     * "Solr (api)" engine is repointed to it. Idempotent: an existing core,
+     * connection or server core is reused.
+     */
+    public function scaffoldCoresAction()
+    {
+        $id = $this->params('id');
+        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $publicCore */
+        $publicCore = $this->api()->read('solr_cores', $id)->getContent();
+        $services = $publicCore->getServiceLocator();
+        $connection = $services->get('Omeka\Connection');
+        $coreAdmin = new \SearchSolr\Solr\CoreAdmin($services->get('Omeka\Logger'));
+
+        $publicSettings = $publicCore->settings();
+        $publicConn = $publicCore->clientSettings();
+        $publicName = (string) ($publicConn['core'] ?? '');
+        $configSet = trim((string) ($publicConn['config_set'] ?? '')) ?: '_default';
+        $base = preg_replace('/_(public|admin|api)$/', '', $publicName);
+        if ($base === '') {
+            $this->messenger()->addError(new PsrMessage(
+                'The public core has no name; cannot derive the admin and api core names.' // @translate
+            ));
+            return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+        }
+
+        // Index existing solr cores by their Solr core name, to stay
+        // idempotent.
+        $coresByName = [];
+        foreach ($this->api()->search('solr_cores')->getContent() as $core) {
+            $coresByName[(string) ($core->clientSettings()['core'] ?? '')] = $core;
+        }
+
+        foreach (['admin' => 'Solr (admin)', 'api' => 'Solr (api)'] as $suffix => $engineName) {
+            $coreName = $base . '_' . $suffix;
+
+            // 1. Register the connection (clone of the public one) if missing.
+            $core = $coresByName[$coreName] ?? null;
+            if (!$core) {
+                $settings = $publicSettings;
+                $settings['client']['core'] = $coreName;
+                $core = $this->api()->create('solr_cores', [
+                    'o:name' => $coreName,
+                    'o:settings' => $settings,
+                ])->getContent();
+            }
+
+            // 2. Create and provision the core on the server.
+            $conn = $core->clientSettings();
+            if (!$coreAdmin->coreExists($conn, $coreName)) {
+                $coreAdmin->createCore($conn, $coreName, $configSet);
+            }
+            $core->ensureSuggestFieldType();
+            $core->ensureSuggestFoldedFieldType();
+            $core->ensureSuggestField();
+            $this->jobDispatcher()->dispatch(
+                \SearchSolr\Job\CompleteSolrMaps::class,
+                ['solr_core_id' => $core->id(), 'resource_name' => 'items', 'mode' => 'complete']
+            );
+
+            // 3. Repoint the matching engine to the new core.
+            $engineRow = $connection->fetchAssociative(
+                "SELECT `id`, `settings` FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` = ?",
+                [$engineName]
+            );
+            if ($engineRow) {
+                $engineSettings = json_decode($engineRow['settings'], true) ?: [];
+                $engineSettings['engine_adapter']['solr_core_id'] = $core->id();
+                $connection->executeStatement(
+                    'UPDATE `search_engine` SET `settings` = ?, `modified` = NOW() WHERE `id` = ?',
+                    [json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $engineRow['id']]
+                );
+            }
+        }
+
+        $this->messenger()->addSuccess(new PsrMessage(
+            'Cores "{base}_admin" and "{base}_api" were scaffolded from the public core and their engines repointed. Maps are being created in background; reindex each engine afterwards.', // @translate
+            ['base' => $base]
+        ));
+        return $this->redirect()->toRoute('admin/search/solr/core-id', ['id' => $id]);
+    }
+
     public function recommendedMapsAction()
     {
         return $this->dispatchCompleteMapsJob('recommended');
