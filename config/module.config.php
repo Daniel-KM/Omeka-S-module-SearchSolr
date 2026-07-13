@@ -62,11 +62,13 @@ return [
                 'class' => 'o-icon-search',
                 'pages' => [
                     [
-                        'label' => 'Solr', // @translate
+                        // The cores are managed in the table of the search
+                        // engines: no visible entry, but the hierarchy keeps
+                        // the menu active on the solr pages.
                         'route' => 'admin/search-manager/solr',
                         'resource' => Controller\Admin\CoreController::class,
                         'privilege' => 'browse',
-                        // 'class' => 'o-icon-search',
+                        'visible' => false,
                         'pages' => [
                             [
                                 'route' => 'admin/search-manager/solr/core',
