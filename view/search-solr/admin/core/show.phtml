@@ -113,6 +113,22 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
     <span aria-current="page"><?= $escape($solrCore->name()) ?></span>
 </nav>
 
+<?php
+// Warn when another core points to the same Solr url: two cores on the same
+// physical core share one index and schema, so one overwrites the other and a
+// reindex wipes both.
+$thisUrl = $solrCore->clientUrlAdmin();
+$sharedWith = [];
+foreach ($this->api()->search('solr_cores')->getContent() as $otherCore) {
+    if ($otherCore->id() !== $solrCore->id() && $otherCore->clientUrlAdmin() === $thisUrl) {
+        $sharedWith[] = $otherCore->name();
+    }
+}
+?>
+<?php if ($sharedWith): ?>
+<p class="messages"><span class="message warning"><?= $escape(sprintf($translate('This core points to the same Solr url as: %s. They share one physical index and schema, so one overwrites the other and a reindex wipes both. Give each core its own physical Solr core (a distinct core name in the url).'), implode(', ', $sharedWith))) ?></span></p>
+<?php endif; ?>
+
 <?php if ($solrCore->userIsAllowed('update') && $solrCore->schema()->checkDefaultField()): ?>
 <details id="search-config">
     <summary><?= $translate('Search configuration') ?></summary>

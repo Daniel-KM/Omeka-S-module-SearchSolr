@@ -34,11 +34,25 @@
 
 $plugins = $this->getHelperPluginManager();
 $escape = $plugins->get('escapeHtml');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
 $translate = $plugins->get('translate');
 $hyperlink = $plugins->get('hyperlink');
+
+// Count how many cores share each endpoint url: two cores on the same physical
+// core write to the same index and schema, so one clobbers the other and a
+// reindex wipes both. It is almost always a misconfiguration.
+$coreUrlUsage = [];
+foreach ($solrCores as $solrCore) {
+    $coreUrlUsage[$solrCore->clientUrlAdmin()] = ($coreUrlUsage[$solrCore->clientUrlAdmin()] ?? 0) + 1;
+}
+$hasSharedCoreUrl = (bool) array_filter($coreUrlUsage, fn ($n) => $n > 1);
 ?>
 
 <h3 id="table-cores-caption"><?= $translate('Solr cores') ?></h3>
+
+<?php if ($hasSharedCoreUrl): ?>
+<p class="messages"><span class="message warning"><?= $translate('Several cores point to the same Solr url: they share one physical index and schema, so one overwrites the other and a reindex wipes both. Give each core its own physical Solr core (a distinct core name in the url).') ?></span></p>
+<?php endif; ?>
 
 <?php if (count($solrCores)): ?>
 <table aria-labelledby="table-cores-caption" class="tablesaw" data-tablesaw-mode="stack">
@@ -88,7 +102,13 @@ $hyperlink = $plugins->get('hyperlink');
                         </li>
                     </ul>
                 </td>
-                <td><?= $solrCore->clientUrlAdmin() ?></td>
+                <td>
+                    <?= $escape($solrCore->clientUrlAdmin()) ?>
+                    <?php if (($coreUrlUsage[$solrCore->clientUrlAdmin()] ?? 0) > 1): ?>
+                    <span class="field-generic o-icon-warning"
+                        title="<?= $escapeAttr($translate('This url is shared by another core. Two cores on the same physical core conflict on the schema and the reindex.')) ?>"><?= $escape($translate('shared url')) ?></span>
+                    <?php endif; ?>
+                </td>
                 <td><?= $solrCore->status(true) ?></td>
             </tr>
         <?php endforeach; ?>

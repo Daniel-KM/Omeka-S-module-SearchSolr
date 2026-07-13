@@ -97,5 +97,44 @@ class SolrCoreAdapter extends AbstractEntityAdapter
         if (!trim($entity->getName() ?? '')) {
             $errorStore->addError('o:name', 'The name cannot be empty.'); // @translate
         }
+
+        // Forbid two cores on the same endpoint: they write to the same
+        // physical index and schema, so one overwrites the other and a reindex
+        // wipes both. The endpoint is scheme + host + port + core.
+        $endpoint = $this->endpointKey($entity->getSettings()['client'] ?? []);
+        if ($endpoint !== '') {
+            foreach ($this->getEntityManager()->getRepository(\SearchSolr\Entity\SolrCore::class)->findAll() as $other) {
+                if ($other->getId() === $entity->getId()) {
+                    continue;
+                }
+                if ($this->endpointKey($other->getSettings()['client'] ?? []) === $endpoint) {
+                    $errorStore->addError('o:settings', new \Omeka\Stdlib\Message(
+                        'The core "%s" already uses this Solr endpoint. Give each core its own physical Solr core (a distinct core name in the url).', // @translate
+                        $other->getName()
+                    ));
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Normalized endpoint of a core client settings: scheme + host + port +
+     * core. Empty when the host or the core is missing.
+     */
+    protected function endpointKey(array $client): string
+    {
+        $host = trim((string) ($client['host'] ?? ''));
+        $core = trim((string) ($client['core'] ?? ''));
+        if ($host === '' || $core === '') {
+            return '';
+        }
+        return strtolower(sprintf(
+            '%s://%s:%s/%s',
+            $client['scheme'] ?? '',
+            $host,
+            $client['port'] ?? '',
+            $core
+        ));
     }
 }
