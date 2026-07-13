@@ -1707,6 +1707,13 @@ class CoreController extends AbstractActionController
             $requiredMaps[] = ['generic', 'group_id_is', 'group_id', ['label' => 'Groups (module Group)']];
         }
 
+        // Module Access: index the effective access level, in particular when
+        // mode "property" is not used, or to hide records when the filter is
+        // used.
+        if (class_exists(\Access\Module::class, false)) {
+            $requiredMaps[] = ['generic', 'access_level_s', 'access_level', ['label' => 'Access level (module Access)']];
+        }
+
         $existingMapsByField = [];
         foreach ($existingMaps as $map) {
             $existingMapsByField[$map->fieldName()] = $map;

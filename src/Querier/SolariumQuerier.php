@@ -909,7 +909,9 @@ class SolariumQuerier extends AbstractQuerier
         // Since version of module Access 3.4.17, the access level is a standard
         // filter that may be enable or not.
 
-        // Visibility.
+        // Visibility (is_public + module Group).
+        // In module Access, is_public and the access level are independent: a
+        // public resource may still be access-restricted.
         if ($this->query->getIsPublic() && ($field = $this->solrCoreField('is_public'))) {
             $val = $this->fieldIsBool($field) ? 'true' : '1';
             $publicClause = "$field:$val";
@@ -920,6 +922,21 @@ class SolariumQuerier extends AbstractQuerier
             $this->select->addFilterQuery([
                 'key' => 'is_public',
                 'query' => $groupClause ? "($publicClause OR $groupClause)" : $publicClause,
+            ]);
+        }
+
+        // Access level (module Access).
+        // A public resource (is_public) may still be hidden from public lists
+        // when its access level is "protected" or "forbidden" AND Access is
+        // configured to hide them from listings (Doctrine filter "access_level"
+        // enabled).
+        if ($this->query->getIsPublic()
+            && ($field = $this->solrCoreField('access_level'))
+            && $this->isAccessLevelFilterEnabled()
+        ) {
+            $this->select->addFilterQuery([
+                'key' => 'access_level',
+                'query' => "-$field:(protected OR forbidden)",
             ]);
         }
 
@@ -2503,6 +2520,21 @@ class SolariumQuerier extends AbstractQuerier
             ['id' => $user->getId()]
         )->fetchFirstColumn();
         return $this->buildGroupClause($field, $groupIds);
+    }
+
+    /**
+     * Whether module Access hides "protected"/"forbidden" resources from public
+     * lists, i.e. its Doctrine filter "access_level" is registered and enabled.
+     * When it is not (notice stays listed, only the file is gated), the Solr
+     * count must keep these resources, so the caller skips the access filter.
+     */
+    protected function isAccessLevelFilterEnabled(): bool
+    {
+        if (!class_exists(\Access\Module::class, false)) {
+            return false;
+        }
+        $filters = $this->services->get('Omeka\EntityManager')->getFilters();
+        return $filters->isEnabled('access_level');
     }
 
     /**
