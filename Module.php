@@ -176,6 +176,14 @@ class Module extends AbstractModule
             [$this, 'appendBrowseCores']
         );
 
+        // An engine is a real backend: forbid two solarium engines on the
+        // same solr core.
+        $sharedEventManager->attach(
+            \AdvancedSearch\Api\Adapter\SearchEngineAdapter::class,
+            'api.hydrate.post',
+            [$this, 'validateSingleEnginePerCore']
+        );
+
         // Handle suggester form for Solr engines.
         $sharedEventManager->attach(
             \AdvancedSearch\Form\Admin\SearchSuggesterForm::class,
@@ -262,6 +270,41 @@ class Module extends AbstractModule
         echo $view->partial('search-solr/admin/core/browse-table', [
             'solrCores' => $solrCores,
         ]);
+    }
+
+    /**
+     * Forbid two solarium engines on the same solr core: an engine is a real
+     * backend, so one engine per core. The visibility is a property of the
+     * query context, not of the engine.
+     */
+    public function validateSingleEnginePerCore(Event $event): void
+    {
+        /** @var \AdvancedSearch\Entity\SearchEngine $entity */
+        $entity = $event->getParam('entity');
+        if ($entity->getAdapter() !== 'solarium') {
+            return;
+        }
+        $settings = $entity->getSettings() ?: [];
+        $solrCoreId = (int) ($settings['engine_adapter']['solr_core_id'] ?? 0);
+        if (!$solrCoreId) {
+            return;
+        }
+        /** @var \Omeka\Stdlib\ErrorStore $errorStore */
+        $errorStore = $event->getParam('errorStore');
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        foreach ($entityManager->getRepository(\AdvancedSearch\Entity\SearchEngine::class)->findBy(['adapter' => 'solarium']) as $other) {
+            if ($other->getId() === $entity->getId()) {
+                continue;
+            }
+            $otherSettings = $other->getSettings() ?: [];
+            if ((int) ($otherSettings['engine_adapter']['solr_core_id'] ?? 0) === $solrCoreId) {
+                $errorStore->addError('o:settings', new \Omeka\Stdlib\Message(
+                    'The engine "%s" already uses this Solr core: an engine is a real backend, so one engine per core.', // @translate
+                    $other->getName()
+                ));
+                break;
+            }
+        }
     }
 
     /**
@@ -854,14 +897,13 @@ class Module extends AbstractModule
     }
 
     /**
-     * Create the Solr search engines sharing a core, and a suggester.
+     * Create the single Solr search engine of a core, a suggester and the api
+     * config.
      *
-     * Three engines share the same core: a public-capped one (never exposes
-     * private resources, even to an admin), an admin one (follows the acl), and
-     * an api one for fast admin queries replacing the live sql search. Each
-     * engine is created only when missing by name, so the call is idempotent
-     * and usable both at install and upgrade. The suggester is attached to the
-     * public engine.
+     * An engine is a real backend: one engine per core. The visibility (public
+     * on sites, user rights in admin and api) is a property of the query
+     * context, applied by the querier, not of the engine. Idempotent, usable
+     * both at install and upgrade.
      */
     protected function createDefaultSearchEngines(
         \Doctrine\DBAL\Connection $connection,
@@ -869,131 +911,71 @@ class Module extends AbstractModule
         $messenger,
         $urlHelper
     ): void {
-        $existing = (int) $connection->fetchOne(
-            "SELECT COUNT(*) FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` IN ('Solr (public)', 'Solr (admin)', 'Solr (api)')"
-        );
-
-        // Repurpose the legacy single Solr engine as the public one, keeping
-        // its id, so the search configs already pointing at it keep working and
-        // point to the public engine, instead of leaving it as a fourth engine.
-        $this->repurposeLegacySolrEngineAsPublic($connection);
-
-        $publicEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (public)', 'public');
-        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (admin)', 'all');
-        $apiEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (api)', 'all');
-        if ($publicEngineId) {
-            $this->createDefaultSuggester($connection, $publicEngineId, $messenger);
+        $engineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr');
+        if (!$engineId) {
+            return;
         }
+        $this->createDefaultSuggester($connection, $engineId, $messenger);
 
-        // A minimal search config bound to the api engine, so the admin only
-        // has to select it in the main settings (advancedsearch_api_config) to
+        // A minimal search config bound to the engine, so the admin only has
+        // to select it in the main settings (advancedsearch_api_config) to
         // redirect the api searches to Solr, once the core is indexed. The api
         // queries are normalized generically, so the config carries nothing but
         // the engine. Idempotent by slug; the setting is never set
         // automatically.
-        if ($apiEngineId) {
-            $apiConfigId = (int) $connection->fetchOne(
-                "SELECT `id` FROM `search_config` WHERE `slug` = 'api'"
+        $apiConfigId = (int) $connection->fetchOne(
+            "SELECT `id` FROM `search_config` WHERE `slug` = 'api'"
+        );
+        if (!$apiConfigId) {
+            $connection->executeStatement(
+                "INSERT INTO `search_config` (`engine_id`, `name`, `slug`, `form_adapter`, `settings`, `created`) VALUES (?, 'Api', 'api', 'main', '{}', NOW());",
+                [$engineId]
             );
-            if (!$apiConfigId) {
-                $connection->executeStatement(
-                    "INSERT INTO `search_config` (`engine_id`, `name`, `slug`, `form_adapter`, `settings`, `created`) VALUES (?, 'Api', 'api', 'main', '{}', NOW());",
-                    [$apiEngineId]
-                );
-                $message = new \Omeka\Stdlib\Message(
-                    'A search config "Api" bound to the engine "Solr (api)" has been created. To speed up the admin api searches (for example the linked resources sidebar), select it in the %1$smain settings%2$s once the core is indexed.', // @translate
-                    sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin') . '/setting#advancedsearch_api_config')),
-                    '</a>'
-                );
-                $message->setEscapeHtml(false);
-                $messenger->addSuccess($message);
-            }
+            $message = new \Omeka\Stdlib\Message(
+                'A search config "Api" bound to the Solr engine has been created. To speed up the admin api searches (for example the linked resources sidebar), select it in the %1$smain settings%2$s once the core is indexed.', // @translate
+                sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin') . '/setting#advancedsearch_api_config')),
+                '</a>'
+            );
+            $message->setEscapeHtml(false);
+            $messenger->addSuccess($message);
         }
 
-        // Recommend dedicated cores when at least one engine was just created.
-        // The three engines share the default core and differ only by the
-        // query-time visibility, so the core holds private data and the public
-        // search is protected only by the query filter (and the suggester, also
-        // built from the shared core, may expose private terms). A dedicated
-        // core per engine, with the public one indexed from public resources
-        // only, is the sole protection independent of the query filters. On a
-        // shared core, reindex through the admin engine only: a reindex clears
-        // and rebuilds the whole core.
-        if ($existing < 3) {
-            $messenger->addWarning(new \Omeka\Stdlib\Message(
-                'Three Solr engines (public, admin, api) were set on the default core. For a strong protection against private metadata leak, it is recommended to give each engine its own core (three cores) and to index the public engine on a core holding only public resources. On a shared core, reindex through the admin engine only and do not reindex the public or api engine, as a reindex rebuilds the whole shared core.' // @translate
-            ));
-        }
+        // For a strong protection against private metadata leak on public
+        // sites, recommend a dedicated public core: the shared core holds
+        // private data and the public search (and the suggester, built from
+        // the same index) is protected only by the query filter. A second core
+        // indexed from public resources only, with its own engine, is the sole
+        // protection independent of the query filters.
+        $messenger->addNotice(new \Omeka\Stdlib\Message(
+            'The public search is protected by the query filter. For a strong protection against private metadata leak, you can create a second core indexed from public resources only, with its own engine, and use it for the public search pages and suggesters.' // @translate
+        ));
     }
 
     /**
-     * Create a Solr search engine with a visibility, idempotent by name.
-     *
-     * Visibility "public" caps the engine to public resources (even for an
-     * admin), "all" follows the user rights, "private" limits to private.
+     * Create the Solr search engine of a core, idempotent: an engine is a real
+     * backend, so any existing engine on the core is reused, whatever its
+     * name.
      *
      * @return int The search engine id.
      */
-    /**
-     * Rename the legacy single Solr engine as "Solr (public)", keeping its id.
-     *
-     * On the split into public/admin/api engines, the original engine must
-     * become the public one so the configs referencing it keep working, rather
-     * than staying as a leftover fourth engine next to the three new ones.
-     * Idempotent: does nothing once a "Solr (public)" engine exists.
-     */
-    protected function repurposeLegacySolrEngineAsPublic(
-        \Doctrine\DBAL\Connection $connection
-    ): void {
-        $hasPublic = (int) $connection->fetchOne(
-            "SELECT `id` FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` = 'Solr (public)'"
-        );
-        if ($hasPublic) {
-            return;
-        }
-        // Match the exact legacy default name (see search_engine.solr.php), so
-        // a user-created engine is never repurposed.
-        $legacyId = (int) $connection->fetchOne(
-            "SELECT `id` FROM `search_engine`
-            WHERE `adapter` = 'solarium' AND `name` = 'Solr'
-            ORDER BY `id` ASC
-            LIMIT 1"
-        );
-        if (!$legacyId) {
-            return;
-        }
-        $settings = json_decode(
-            (string) $connection->fetchOne('SELECT `settings` FROM `search_engine` WHERE `id` = ?', [$legacyId]),
-            true
-        ) ?: [];
-        $settings['visibility'] = 'public';
-        $connection->executeStatement(
-            "UPDATE `search_engine` SET `name` = 'Solr (public)', `settings` = ?, `modified` = NOW() WHERE `id` = ?",
-            [json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $legacyId]
-        );
-    }
-
     protected function createSolrSearchEngine(
         \Doctrine\DBAL\Connection $connection,
         int $solrCoreId,
         $messenger,
         $urlHelper,
-        string $name,
-        string $visibility
+        string $name
     ): int {
-        $existingId = (int) $connection->fetchOne(
-            "SELECT `id` FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` = ? ORDER BY `id` ASC",
-            [$name]
-        );
-        if ($existingId) {
-            return $existingId;
+        foreach ($connection->fetchAllAssociative("SELECT `id`, `settings` FROM `search_engine` WHERE `adapter` = 'solarium' ORDER BY `id` ASC") as $row) {
+            $rowSettings = json_decode((string) $row['settings'], true) ?: [];
+            if ((int) ($rowSettings['engine_adapter']['solr_core_id'] ?? 0) === $solrCoreId) {
+                return (int) $row['id'];
+            }
         }
 
         // Load default search engine config.
         $searchEngineData = require __DIR__ . '/data/configs/search_engine.solr.php';
         $searchEngineSettings = $searchEngineData['o:settings'];
         $searchEngineSettings['engine_adapter']['solr_core_id'] = $solrCoreId;
-        $searchEngineSettings['visibility'] = $visibility;
 
         $connection->executeStatement(
             'INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`) VALUES (?, ?, ?, NOW(), NOW());',

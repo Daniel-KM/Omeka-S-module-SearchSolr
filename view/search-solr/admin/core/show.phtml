@@ -65,9 +65,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Create core on server'), $solrCore->adminUrl('create-core-on-server'), [
                     'class' => 'link',
                     'title' => $translate('Create and initialize the core on Solr. The config set must exist in SOLR_HOME/configsets on the server.')]) ?></li>
-                <li><?= $hyperlink($translate('Scaffold admin and api cores'), $solrCore->adminUrl('scaffold-cores'), [
-                    'class' => 'link',
-                    'title' => $translate('Treat this core as the public one and create dedicated "{base}_admin" and "{base}_api" cores cloned from it, then repoint the matching engines. Provides full isolation per engine.')]) ?></li>
                 <li>
                     <form method="post" action="<?= $escapeAttr($solrCore->adminUrl('delete-core-on-server')) ?>" style="display: inline;" onsubmit="return confirm('<?= $escapeAttr($translate('Delete this core on the Solr server? Its index and data are removed. The connection stays registered in Omeka.')) ?>');">
                         <button type="submit" class="link"><?= $translate('Delete core on server') ?></button>
