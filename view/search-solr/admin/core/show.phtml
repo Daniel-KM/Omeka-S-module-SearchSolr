@@ -399,6 +399,18 @@ ksort($usedResourceTypes);
                                                 <li>
                                                     <span class="field-generic"><?= $map->resourceName() ?></span>
                                                 </li>
+                                                <?php $mapOrigin = $map->setting('origin'); ?>
+                                                <?php if ($mapOrigin): ?>
+                                                <li>
+                                                    <span class="field-generic map-origin map-origin-<?= $escapeAttr($mapOrigin) ?>"
+                                                        title="<?= $escapeAttr($mapOrigin === 'manual'
+                                                            ? $translate('Created or edited by hand: never removed by the maps sync.')
+                                                            : ($mapOrigin === 'system'
+                                                                ? $translate('Required map, managed by the module.')
+                                                                : $translate('Created by the maps sync.'))) ?>"
+                                                    ><?= $escape($mapOrigin) ?></span>
+                                                </li>
+                                                <?php endif; ?>
                                                 <li>
                                                     <?= $hyperlink('', $map->adminUrl('edit'), [
                                                         'class' => 'o-icon-edit',

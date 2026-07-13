@@ -1843,7 +1843,12 @@ class CoreController extends AbstractActionController
                 continue;
             }
             foreach ($maps as $map) {
-                if ($this->isCustomizedMap($map)) {
+                // Explicit provenance first: a map created or edited by hand
+                // is never removed; then the customization heuristic protects
+                // the legacy maps without provenance.
+                if ($map->setting('origin') === 'manual'
+                    || $this->isCustomizedMap($map)
+                ) {
                     $kept[] = $map->fieldName();
                     continue;
                 }
@@ -1980,7 +1985,7 @@ class CoreController extends AbstractActionController
                     'o:field_name' => $fieldName,
                     'o:source' => $term,
                     'o:settings' => $mapSettings
-                        + ['label' => $term],
+                        + ['label' => $term, 'origin' => 'sync'],
                 ]);
                 $created[] = $fieldName;
                 $existingFieldNames[] = $fieldName;
@@ -2068,7 +2073,7 @@ class CoreController extends AbstractActionController
                     'o:resource_name' => $scope,
                     'o:field_name' => $fieldName,
                     'o:source' => $source,
-                    'o:settings' => $mapSettings,
+                    'o:settings' => $mapSettings + ['origin' => 'system'],
                 ]);
                 $created[] = $fieldName;
                 $existingFieldNames[] = $fieldName;

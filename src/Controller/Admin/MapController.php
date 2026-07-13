@@ -192,6 +192,9 @@ class MapController extends AbstractActionController
                 $data['o:source'] = $this->sourceArrayToString($data['o:source'] ?? []);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
+                // Explicit provenance: a map created by hand is never removed
+                // by the maps sync.
+                $data['o:settings']['origin'] = 'manual';
                 $this->api()->create('solr_maps', $data);
 
                 // Ideally, the update of the core should be done via event.
@@ -267,6 +270,8 @@ class MapController extends AbstractActionController
                 $data['o:source'] = $this->sourceArrayToString($data['o:source'] ?? []);
                 $data['o:solr_core']['o:id'] = $solrCoreId;
                 $data['o:resource_name'] = $resourceName;
+                // A map edited by hand becomes manual, whatever its origin.
+                $data['o:settings']['origin'] = 'manual';
                 $this->api()->update('solr_maps', $id, $data);
 
                 // Ideally, the update of the core should be done via an event.
