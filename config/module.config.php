@@ -5,7 +5,6 @@ namespace SearchSolr;
 return [
     'api_adapters' => [
         'invokables' => [
-            'solr_cores' => Api\Adapter\SolrCoreAdapter::class,
             'solr_maps' => Api\Adapter\SolrMapAdapter::class,
         ],
     ],

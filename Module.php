@@ -98,10 +98,8 @@ class Module extends AbstractModule
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $acl
             ->allow(null, [
-                \SearchSolr\Api\Adapter\SolrCoreAdapter::class,
                 \SearchSolr\Api\Adapter\SolrMapAdapter::class,
-            ])
-            ->allow(null, [\SearchSolr\Entity\SolrCore::class], 'read');
+            ]);
     }
 
     protected function preInstall(): void
@@ -208,11 +206,6 @@ class Module extends AbstractModule
         );
 
         $sharedEventManager->attach(
-            Api\Adapter\SolrCoreAdapter::class,
-            'api.delete.post',
-            [$this, 'deletePostSolrCore']
-        );
-        $sharedEventManager->attach(
             Api\Adapter\SolrMapAdapter::class,
             'api.update.pre',
             [$this, 'preSolrMap']
@@ -292,9 +285,12 @@ class Module extends AbstractModule
         if ($entity->getAdapter() !== 'solarium') {
             return;
         }
-        $settings = $entity->getSettings() ?: [];
-        $solrCoreId = (int) ($settings['engine_adapter']['solr_core_id'] ?? 0);
-        if (!$solrCoreId) {
+        // An engine is a real backend: forbid two engines on the same
+        // physical Solr core (same scheme, host, port and core name), since
+        // they would write to one index and schema, so one overwrites the
+        // other and a reindex wipes both.
+        $endpoint = $this->engineEndpointKey($entity->getSettings() ?: []);
+        if ($endpoint === '') {
             return;
         }
         /** @var \Omeka\Stdlib\ErrorStore $errorStore */
@@ -304,15 +300,35 @@ class Module extends AbstractModule
             if ($other->getId() === $entity->getId()) {
                 continue;
             }
-            $otherSettings = $other->getSettings() ?: [];
-            if ((int) ($otherSettings['engine_adapter']['solr_core_id'] ?? 0) === $solrCoreId) {
+            if ($this->engineEndpointKey($other->getSettings() ?: []) === $endpoint) {
                 $errorStore->addError('o:settings', new \Omeka\Stdlib\Message(
-                    'The engine "%s" already uses this Solr core: an engine is a real backend, so one engine per core.', // @translate
+                    'The engine "%s" already uses this Solr endpoint. Give each engine its own physical Solr core (a distinct core name in the url).', // @translate
                     $other->getName()
                 ));
                 break;
             }
         }
+    }
+
+    /**
+     * Normalized Solr endpoint of an engine: scheme + host + port + core.
+     * Empty when the host or the core is missing.
+     */
+    protected function engineEndpointKey(array $engineSettings): string
+    {
+        $client = $engineSettings['solr']['client'] ?? [];
+        $host = trim((string) ($client['host'] ?? ''));
+        $core = trim((string) ($client['core'] ?? ''));
+        if ($host === '' || $core === '') {
+            return '';
+        }
+        return strtolower(sprintf(
+            '%s://%s:%s/%s',
+            $client['scheme'] ?? '',
+            $host,
+            $client['port'] ?? '',
+            $core
+        ));
     }
 
     /**
@@ -536,18 +552,6 @@ class Module extends AbstractModule
         }
 
         return $fields;
-    }
-
-    public function deletePostSolrCore(Event $event): void
-    {
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $request = $event->getParam('request');
-        $id = $request->getId();
-        $searchEngines = $this->searchSearchEnginesByCoreId($id);
-        if (empty($searchEngines)) {
-            return;
-        }
-        $api->batchDelete('search_engines', array_keys($searchEngines), [], ['continueOnError' => true]);
     }
 
     public function preSolrMap(Event $event): void
@@ -782,27 +786,6 @@ class Module extends AbstractModule
     }
 
     /**
-     * Find all search indexes related to a specific solr core.
-     *
-     * @todo Factorize searchSearchEngines() from core with CoreController.
-     * @param int $solrCoreId
-     * @return SearchEngineRepresentation[] Result is indexed by id.
-     */
-    protected function searchSearchEnginesByCoreId($solrCoreId)
-    {
-        // A core is a facet of its engine (1:1): the core id is the engine id.
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        try {
-            $searchEngine = $api->read('search_engines', $solrCoreId)->getContent();
-        } catch (\Throwable $e) {
-            return [];
-        }
-        return $searchEngine->engineAdapterName() === 'solarium'
-            ? [$searchEngine->id() => $searchEngine]
-            : [];
-    }
-
-    /**
      * Find all search pages that use a specific solr core id.
      *
      * @todo Factorize searchSearchConfigs() from core with CoreController.
@@ -811,15 +794,12 @@ class Module extends AbstractModule
      */
     protected function searchSearchConfigsByCoreId($solrCoreId)
     {
-        // TODO Use entity manager to simplify search of pages from core.
+        // A core is a facet of its engine (1:1): the core id is the engine id.
         $result = [];
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $searchEngines = $this->searchSearchEnginesByCoreId($solrCoreId);
-        foreach ($searchEngines as $searchEngine) {
-            $searchConfigs = $api->search('search_configs', ['engine_id' => $searchEngine->id()])->getContent();
-            foreach ($searchConfigs as $searchConfig) {
-                $result[$searchConfig->id()] = $searchConfig;
-            }
+        $searchConfigs = $api->search('search_configs', ['engine_id' => (int) $solrCoreId])->getContent();
+        foreach ($searchConfigs as $searchConfig) {
+            $result[$searchConfig->id()] = $searchConfig;
         }
         return $result;
     }
@@ -842,13 +822,14 @@ class Module extends AbstractModule
         /** @var \Doctrine\DBAL\Connection $connection */
         $connection = $services->get('Omeka\Connection');
 
-        // Check if the internal index exists.
-        $sqlSolrCoreId = <<<'SQL'
+        // Check if a solarium engine exists (a core is a facet of it).
+        $sqlEngineId = <<<'SQL'
             SELECT `id`
-            FROM `solr_core`
+            FROM `search_engine`
+            WHERE `adapter` = 'solarium'
             ORDER BY `id` ASC
             SQL;
-        $solrCoreId = (int) $connection->fetchOne($sqlSolrCoreId);
+        $solrCoreId = (int) $connection->fetchOne($sqlEngineId);
         if ($solrCoreId) {
             return;
         }
@@ -859,24 +840,23 @@ class Module extends AbstractModule
         $serverId = strtolower(substr(strtr(base64_encode(random_bytes(128)), ['+' => '', '/' => '', '=' => '']), 0, 6));
         $settings->set('searchsolr_server_id', $serverId);
 
-        // Install a default config.
-        $sql = <<<'SQL'
-            INSERT INTO `solr_core` (`name`, `settings`)
-            VALUES (?, ?);
-            SQL;
+        // Install the default engine, whose settings carry the connection
+        // under "solr".
         $solrCoreData = require __DIR__ . '/data/configs/solr_core.default.php';
-        $connection->executeStatement($sql, [
-            $solrCoreData['o:name'],
-            json_encode($solrCoreData['o:settings'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-        ]);
-        $solrCoreId = (int) $connection->fetchOne($sqlSolrCoreId);
+        $searchEngineData = require __DIR__ . '/data/configs/search_engine.solr.php';
+        $engineSettings = $searchEngineData['o:settings'];
+        $engineSettings['solr'] = $solrCoreData['o:settings'];
+        $connection->executeStatement(
+            'INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`) VALUES (?, ?, ?, NOW(), NOW());',
+            [$solrCoreData['o:name'], 'solarium', json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]
+        );
+        $solrCoreId = (int) $connection->lastInsertId();
 
         // Install a default mapping.
         $sql = <<<'SQL'
-            INSERT INTO `solr_map` (`solr_core_id`, `resource_name`, `field_name`, `alias`, `source`, `pool`, `settings`)
+            INSERT INTO `solr_map` (`engine_id`, `resource_name`, `field_name`, `alias`, `source`, `pool`, `settings`)
             VALUES (?, ?, ?, ?, ?, ?, ?);
             SQL;
-        // $defaultMaps = require __DIR__ . '/config/default_mappings.php';
         $defaultMaps = require __DIR__ . '/config/default_mappings.php';
         foreach ($defaultMaps as $map) {
             $connection->executeStatement($sql, [
@@ -915,11 +895,10 @@ class Module extends AbstractModule
      */
     protected function createDefaultSearchEngines(
         \Doctrine\DBAL\Connection $connection,
-        int $solrCoreId,
+        int $engineId,
         $messenger,
         $urlHelper
     ): void {
-        $engineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr');
         if (!$engineId) {
             return;
         }
@@ -957,53 +936,6 @@ class Module extends AbstractModule
         $messenger->addNotice(new \Omeka\Stdlib\Message(
             'The public search is protected by the query filter. For a strong protection against private metadata leak, you can create a second core indexed from public resources only, with its own engine, and use it for the public search pages and suggesters.' // @translate
         ));
-    }
-
-    /**
-     * Create the Solr search engine of a core, idempotent: an engine is a real
-     * backend, so any existing engine on the core is reused, whatever its
-     * name.
-     *
-     * @return int The search engine id.
-     */
-    protected function createSolrSearchEngine(
-        \Doctrine\DBAL\Connection $connection,
-        int $solrCoreId,
-        $messenger,
-        $urlHelper,
-        string $name
-    ): int {
-        foreach ($connection->fetchAllAssociative("SELECT `id`, `settings` FROM `search_engine` WHERE `adapter` = 'solarium' ORDER BY `id` ASC") as $row) {
-            $rowSettings = json_decode((string) $row['settings'], true) ?: [];
-            if ((int) ($rowSettings['engine_adapter']['solr_core_id'] ?? 0) === $solrCoreId) {
-                return (int) $row['id'];
-            }
-        }
-
-        // Load default search engine config.
-        $searchEngineData = require __DIR__ . '/data/configs/search_engine.solr.php';
-        $searchEngineSettings = $searchEngineData['o:settings'];
-        $searchEngineSettings['engine_adapter']['solr_core_id'] = $solrCoreId;
-
-        $connection->executeStatement(
-            'INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`) VALUES (?, ?, ?, NOW(), NOW());',
-            [$name, $searchEngineData['o:engine_adapter'], json_encode($searchEngineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]
-        );
-        $searchEngineId = (int) $connection->fetchOne(
-            "SELECT `id` FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` = ? ORDER BY `id` ASC",
-            [$name]
-        );
-
-        $message = new \Omeka\Stdlib\Message(
-            'The Solr search engine "%1$s" has been created. Configure it in the %2$ssearch manager%3$s.', // @translate
-            $name,
-            sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin') . '/search-manager/engine/' . $searchEngineId . '/edit')),
-            '</a>'
-        );
-        $message->setEscapeHtml(false);
-        $messenger->addSuccess($message);
-
-        return $searchEngineId;
     }
 
     /**

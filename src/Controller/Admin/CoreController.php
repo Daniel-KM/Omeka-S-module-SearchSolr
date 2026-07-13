@@ -2741,7 +2741,6 @@ class CoreController extends AbstractActionController
         array $existingMaps
     ): void {
         $services = $this->getEvent()->getApplication()->getServiceManager();
-        $entityManager = $services->get('Omeka\EntityManager');
         $authService = $services->get('Omeka\AuthenticationService');
 
         $userId = null;
@@ -2772,23 +2771,16 @@ class CoreController extends AbstractActionController
             'maps' => $maps,
         ];
 
-        /** @var \SearchSolr\Entity\SolrCore $core */
-        $core = $entityManager->find(
-            \SearchSolr\Entity\SolrCore::class,
-            $solrCore->id()
-        );
-        if (!$core) {
-            return;
-        }
-        $backups = $core->getBackupMaps() ?? ['snapshots' => []];
+        // The snapshots live in the engine settings, under solr.backup_maps.
+        $solrSettings = $solrCore->settings();
+        $backups = $solrSettings['backup_maps'] ?? ['snapshots' => []];
         if (!isset($backups['snapshots']) || !is_array($backups['snapshots'])) {
             $backups['snapshots'] = [];
         }
         array_unshift($backups['snapshots'], $snapshot);
         $backups['snapshots'] = array_slice($backups['snapshots'], 0, 3);
-
-        $core->setBackupMaps($backups);
-        $entityManager->flush();
+        $solrSettings['backup_maps'] = $backups;
+        $this->updateSolrSettings($solrCore->id(), $solrSettings);
     }
 
     /**
@@ -2802,16 +2794,8 @@ class CoreController extends AbstractActionController
         $id = (int) $this->params('id');
         $index = (int) $this->params()->fromQuery('index', 0);
 
-        $services = $this->getEvent()->getApplication()->getServiceManager();
-        $entityManager = $services->get('Omeka\EntityManager');
-        /** @var \SearchSolr\Entity\SolrCore $core */
-        $core = $entityManager->find(\SearchSolr\Entity\SolrCore::class, $id);
-        if (!$core) {
-            $this->messenger()->addError('Solr core not found.'); // @translate
-            return $this->redirect()->toRoute('admin/search-manager/solr');
-        }
-
-        $backups = $core->getBackupMaps() ?? [];
+        $solrCore = $this->solrCore((int) $id);
+        $backups = $solrCore->backupMaps() ?? [];
         $snapshots = $backups['snapshots'] ?? [];
         if (!isset($snapshots[$index])) {
             $this->messenger()->addError(
@@ -2821,8 +2805,6 @@ class CoreController extends AbstractActionController
                 'admin/search-manager/solr/core-id', ['id' => $id]
             );
         }
-
-        $solrCore = $this->solrCore((int) $id);
 
         // Snapshot the current state before restoring.
         $this->snapshotMaps($solrCore, $solrCore->maps());
@@ -2884,16 +2866,9 @@ class CoreController extends AbstractActionController
         $id = (int) $this->params('id');
         $index = (int) $this->params()->fromQuery('index', -1);
 
-        $services = $this->getEvent()->getApplication()->getServiceManager();
-        $entityManager = $services->get('Omeka\EntityManager');
-        /** @var \SearchSolr\Entity\SolrCore $core */
-        $core = $entityManager->find(\SearchSolr\Entity\SolrCore::class, $id);
-        if (!$core) {
-            $this->messenger()->addError('Solr core not found.'); // @translate
-            return $this->redirect()->toRoute('admin/search-manager/solr');
-        }
-
-        $backups = $core->getBackupMaps() ?? ['snapshots' => []];
+        $solrCore = $this->solrCore((int) $id);
+        $solrSettings = $solrCore->settings();
+        $backups = $solrSettings['backup_maps'] ?? ['snapshots' => []];
         $snapshots = $backups['snapshots'] ?? [];
         if (!isset($snapshots[$index])) {
             $this->messenger()->addError(
@@ -2902,8 +2877,12 @@ class CoreController extends AbstractActionController
         } else {
             array_splice($snapshots, $index, 1);
             $backups['snapshots'] = $snapshots;
-            $core->setBackupMaps($snapshots ? $backups : null);
-            $entityManager->flush();
+            if ($snapshots) {
+                $solrSettings['backup_maps'] = $backups;
+            } else {
+                unset($solrSettings['backup_maps']);
+            }
+            $this->updateSolrSettings((int) $id, $solrSettings);
             $this->messenger()->addSuccess(
                 'Snapshot deleted.' // @translate
             );

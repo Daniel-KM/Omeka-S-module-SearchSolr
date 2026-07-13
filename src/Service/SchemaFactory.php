@@ -40,7 +40,7 @@ class SchemaFactory implements FactoryInterface
 
     public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
-        /** @var \SearchSolr\Api\Representation\SolrCoreRepresentation $solrCore */
+        /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
         $solrCore = $options['solr_core'];
 
         if (!isset($this->schemas[$solrCore->id()])) {

@@ -708,10 +708,10 @@ class SolrCore
      * @todo Merge queryValues() of SolariumQuerier with SolrRepresentation.
      *
      * Adapted:
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValues()
+     * @see \SearchSolr\Stdlib\SolrCore::queryValues()
      * @see \SearchSolr\Querier\SolariumQuerier::queryValues()
      *
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValuesCount()
+     * @see \SearchSolr\Stdlib\SolrCore::queryValuesCount()
      *
      * {@inheritDoc}
      * @see \AdvancedSearch\Querier\AbstractQuerier::queryValues()
@@ -745,7 +745,7 @@ class SolrCore
      * @todo Merge queryValuesCount() of SolariumQuerier with SolrRepresentation.
      *
      * Adapted:
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValuesCount()
+     * @see \SearchSolr\Stdlib\SolrCore::queryValuesCount()
      * @see \SearchSolr\Querier\SolariumQuerier::queryValuesCount()
      */
     public function queryValuesCount(?string $field, ?string $sort = 'index asc'): array
@@ -835,7 +835,7 @@ class SolrCore
      * Check if all required maps are managed by the core.
      *
      * List of fields, adapted:
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::missingRequiredMaps()
+     * @see \SearchSolr\Stdlib\SolrCore::missingRequiredMaps()
      * @see \SearchSolr\Job\ReduceSolrFields::perform()
      */
     public function missingRequiredMaps(): ?array

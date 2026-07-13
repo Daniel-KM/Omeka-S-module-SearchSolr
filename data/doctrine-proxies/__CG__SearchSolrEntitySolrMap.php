@@ -67,10 +67,10 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', 'id', 'solrCore', 'resourceName', 'fieldName', 'source', 'alias', 'pool', 'settings'];
+            return ['__isInitialized__', 'id', 'engine', 'resourceName', 'fieldName', 'source', 'alias', 'pool', 'settings'];
         }
 
-        return ['__isInitialized__', 'id', 'solrCore', 'resourceName', 'fieldName', 'source', 'alias', 'pool', 'settings'];
+        return ['__isInitialized__', 'id', 'engine', 'resourceName', 'fieldName', 'source', 'alias', 'pool', 'settings'];
     }
 
     /**
@@ -133,7 +133,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
      * {@inheritDoc}
      * @internal generated method: use only when explicitly handling proxy specific loading logic
      */
-    public function __setInitializer(\Closure $initializer = null): void
+    public function __setInitializer(?\Closure $initializer = null): void
     {
         $this->__initializer__ = $initializer;
     }
@@ -151,7 +151,7 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
      * {@inheritDoc}
      * @internal generated method: use only when explicitly handling proxy specific loading logic
      */
-    public function __setCloner(\Closure $cloner = null): void
+    public function __setCloner(?\Closure $cloner = null): void
     {
         $this->__cloner__ = $cloner;
     }
@@ -195,23 +195,23 @@ class SolrMap extends \SearchSolr\Entity\SolrMap implements \Doctrine\ORM\Proxy\
     /**
      * {@inheritDoc}
      */
-    public function setSolrCore(\SearchSolr\Entity\SolrCore $solrCore): \SearchSolr\Entity\SolrMap
+    public function setEngine(\AdvancedSearch\Entity\SearchEngine $engine): \SearchSolr\Entity\SolrMap
     {
 
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setSolrCore', [$solrCore]);
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setEngine', [$engine]);
 
-        return parent::setSolrCore($solrCore);
+        return parent::setEngine($engine);
     }
 
     /**
      * {@inheritDoc}
      */
-    public function getSolrCore(): \SearchSolr\Entity\SolrCore
+    public function getEngine(): \AdvancedSearch\Entity\SearchEngine
     {
 
-        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getSolrCore', []);
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getEngine', []);
 
-        return parent::getSolrCore();
+        return parent::getEngine();
     }
 
     /**

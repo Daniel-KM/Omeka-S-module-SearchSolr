@@ -340,7 +340,7 @@ class SolariumQuerier extends AbstractQuerier
      * @todo Merge queryDocuments() of SolariumQuerier with SolrRepresentation.
      *
      * Adapted:
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryDocuments()
+     * @see \SearchSolr\Stdlib\SolrCore::queryDocuments()
      * @see \SearchSolr\Querier\SolariumQuerier::queryDocuments()
      */
     public function queryDocuments(string $resourceType, array $ids): array
@@ -375,7 +375,7 @@ class SolariumQuerier extends AbstractQuerier
      * @todo Merge queryValues() of SolariumQuerier with SolrRepresentation.
      *
      * Adapted:
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValues()
+     * @see \SearchSolr\Stdlib\SolrCore::queryValues()
      * @see \SearchSolr\Querier\SolariumQuerier::queryValues()
      *
      * {@inheritDoc}
@@ -526,7 +526,7 @@ class SolariumQuerier extends AbstractQuerier
      * @todo Merge queryValuesCount() of SolariumQuerier with SolrRepresentation.
      *
      * Adapted:
-     * @see \SearchSolr\Api\Representation\SolrCoreRepresentation::queryValuesCount()
+     * @see \SearchSolr\Stdlib\SolrCore::queryValuesCount()
      * @see \SearchSolr\Querier\SolariumQuerier::queryValuesCount()
      */
     public function queryValuesCount($fields, ?string $sort = 'index asc'): array
