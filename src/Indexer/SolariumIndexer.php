@@ -153,6 +153,14 @@ class SolariumIndexer extends AbstractIndexer
     protected $mapsByResourceNameCache = [];
 
     /**
+     * Byte limit of a value in an exact-value string field (lazy, from
+     * config).
+     *
+     * @var int|null
+     */
+    protected $stringValueMaxBytes;
+
+    /**
      * Counter for soft commit threshold.
      *
      * @var int
@@ -683,6 +691,15 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
+            // An oversized value in an exact-value string field would make
+            // Solr reject the whole document (docValues limit): skip the
+            // single value, with a log; the document and its other fields,
+            // in particular the full text _txt, are kept.
+            $formattedValues = $this->skipOversizedStringValues($resource, $solrField, $formattedValues);
+            if (!count($formattedValues)) {
+                continue;
+            }
+
             if ($this->isSingleValuedFields[$solrField]) {
                 // Store single fields one time only (checked above).
                 if (empty($isSingleFieldFilled[$solrField])) {
@@ -883,6 +900,42 @@ class SolariumIndexer extends AbstractIndexer
             $this->serverId = $this->getSolrCore()->setting('server_id') ?: false;
         }
         return $this->serverId;
+    }
+
+    /**
+     * Skip the values too large for an exact-value string field, with a log.
+     *
+     * An exact value has no use beyond the configured limit, and Solr rejects
+     * the whole document beyond 32766 bytes (docValues): the single value is
+     * skipped instead, so the document and its other fields (in particular
+     * the full text _txt) are kept.
+     */
+    protected function skipOversizedStringValues($resource, string $solrField, array $values): array
+    {
+        if (!preg_match('~_(ss|s|fold_s|link_ss)$~', $solrField)) {
+            return $values;
+        }
+        if ($this->stringValueMaxBytes === null) {
+            $config = $this->getServiceLocator()->get('Config')['searchsolr']['config'] ?? [];
+            $this->stringValueMaxBytes = (int) ($config['searchsolr_string_value_max_bytes'] ?? 1000);
+        }
+        $max = $this->stringValueMaxBytes;
+        foreach ($values as $key => $value) {
+            if (is_string($value) && strlen($value) > $max) {
+                unset($values[$key]);
+                $this->getLogger()->warn(
+                    'Indexing resource {resource_name} #{resource_id}: value of {bytes} bytes skipped for the field "{field}" (limit {max} bytes); the full text fields are kept.', // @translate
+                    [
+                        'resource_name' => $resource->resourceName(),
+                        'resource_id' => $resource->id(),
+                        'bytes' => strlen($value),
+                        'field' => $solrField,
+                        'max' => $max,
+                    ]
+                );
+            }
+        }
+        return array_values($values);
     }
 
     protected function prepareIndexFieldAndName()

@@ -247,6 +247,16 @@ return [
             'searchsolr_solarium_timeout' => 5,
             // Allow to share a server between multiple tools (drupal).
             'searchsolr_server_id' => null,
+            // At sync, a property whose average value length exceeds this gets
+            // only a full text index (_txt), without exact-value index
+            // (_ss/_s), useless for facets and filters on long texts.
+            'searchsolr_text_only_average_length' => 100,
+            // Byte limit of a value in an exact-value string field: beyond it,
+            // the sync excludes the property and the indexer skips the single
+            // value with a log (the document and its _txt fields are kept).
+            // Solr rejects the whole document beyond 32766 bytes (docValues),
+            // but an exact value has no use far below that limit.
+            'searchsolr_string_value_max_bytes' => 1000,
         ],
     ],
     'searchsolr_value_extractors' => [

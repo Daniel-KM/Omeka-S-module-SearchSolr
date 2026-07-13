@@ -1825,7 +1825,11 @@ class CoreController extends AbstractActionController
         // is useless on long texts and Solr rejects the whole document beyond
         // 32766 bytes in a docValues string. The static list is completed by
         // a data-driven detection on the real corpus: any value over the hard
-        // limit, or an average length beyond an exact-value usefulness.
+        // byte limit, or an average length beyond an exact-value usefulness.
+        // Both thresholds are configurable (["searchsolr"]["config"]).
+        $configModule = $services->get('Config')['searchsolr']['config'] ?? [];
+        $textOnlyAverage = (int) ($configModule['searchsolr_text_only_average_length'] ?? 100);
+        $stringMaxBytes = (int) ($configModule['searchsolr_string_value_max_bytes'] ?? 1000);
         $longValueProperties = include dirname(__DIR__, 3)
             . '/config/metadata_text.php';
         $longValueProperties = array_unique(array_merge(
@@ -1837,8 +1841,8 @@ class CoreController extends AbstractActionController
                 INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
                 WHERE v.value IS NOT NULL
                 GROUP BY v.property_id
-                HAVING MAX(CHAR_LENGTH(v.value)) > 30000
-                    OR AVG(CHAR_LENGTH(v.value)) > 1000'
+                HAVING MAX(LENGTH(v.value)) > ' . $stringMaxBytes . '
+                    OR AVG(CHAR_LENGTH(v.value)) > ' . $textOnlyAverage
             )
         ));
 
