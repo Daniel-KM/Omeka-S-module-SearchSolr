@@ -158,7 +158,30 @@ class SolrCoreForm extends Form
                 'attributes' => [
                     'id' => 'password',
                     'required' => false,
-                    'placeholder' => '******',
+                ],
+            ])
+            ->add([
+                'name' => 'admin_username',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr admin user (core operations)', // @translate
+                    'info' => 'Used only to create or delete cores on the server, which requires admin rights. Leave empty to reuse the Solr user above it it has admin rights.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'admin_username',
+                    'required' => false,
+                ],
+            ])
+            ->add([
+                'name' => 'admin_password',
+                'type' => Element\Text::class,
+                'options' => [
+                    'label' => 'Solr admin password (core operations)', // @translate
+                    'info' => 'Note: the password is saved clear in the database, so it is recommended to create a specific user.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'admin_password',
+                    'required' => false,
                 ],
             ])
             ->add([

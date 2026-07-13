@@ -174,10 +174,18 @@ class CoreAdmin
         $base = ($connection['scheme'] ?? 'http') . '://'
             . ($connection['host'] ?? 'localhost') . ':'
             . ($connection['port'] ?? 8983);
+        // Core operations need admin rights, so prefer the dedicated admin
+        // credentials and fall back to the query user (often read-only).
+        if (!empty($connection['admin_username'])) {
+            $user = $connection['admin_username'];
+            $pass = $connection['admin_password'] ?? '';
+        } else {
+            $user = $connection['username'] ?? '';
+            $pass = $connection['password'] ?? '';
+        }
         $header = null;
-        if (!empty($connection['username'])) {
-            $credentials = $connection['username'] . ':' . ($connection['password'] ?? '');
-            $header = 'Authorization: Basic ' . base64_encode($credentials);
+        if (!empty($user)) {
+            $header = 'Authorization: Basic ' . base64_encode($user . ':' . $pass);
         }
         $context = stream_context_create([
             'http' => [
