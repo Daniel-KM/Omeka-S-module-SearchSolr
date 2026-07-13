@@ -873,6 +873,11 @@ class Module extends AbstractModule
             "SELECT COUNT(*) FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` IN ('Solr (public)', 'Solr (admin)', 'Solr (api)')"
         );
 
+        // Repurpose the legacy single Solr engine as the public one, keeping
+        // its id, so the search configs already pointing at it keep working and
+        // point to the public engine, instead of leaving it as a fourth engine.
+        $this->repurposeLegacySolrEngineAsPublic($connection);
+
         $publicEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (public)', 'public');
         $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (admin)', 'all');
         $apiEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (api)', 'all');
@@ -929,6 +934,45 @@ class Module extends AbstractModule
      *
      * @return int The search engine id.
      */
+    /**
+     * Rename the legacy single Solr engine as "Solr (public)", keeping its id.
+     *
+     * On the split into public/admin/api engines, the original engine must
+     * become the public one so the configs referencing it keep working, rather
+     * than staying as a leftover fourth engine next to the three new ones.
+     * Idempotent: does nothing once a "Solr (public)" engine exists.
+     */
+    protected function repurposeLegacySolrEngineAsPublic(
+        \Doctrine\DBAL\Connection $connection
+    ): void {
+        $hasPublic = (int) $connection->fetchOne(
+            "SELECT `id` FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` = 'Solr (public)'"
+        );
+        if ($hasPublic) {
+            return;
+        }
+        // Match the exact legacy default name (see search_engine.solr.php), so
+        // a user-created engine is never repurposed.
+        $legacyId = (int) $connection->fetchOne(
+            "SELECT `id` FROM `search_engine`
+            WHERE `adapter` = 'solarium' AND `name` = 'Solr'
+            ORDER BY `id` ASC
+            LIMIT 1"
+        );
+        if (!$legacyId) {
+            return;
+        }
+        $settings = json_decode(
+            (string) $connection->fetchOne('SELECT `settings` FROM `search_engine` WHERE `id` = ?', [$legacyId]),
+            true
+        ) ?: [];
+        $settings['visibility'] = 'public';
+        $connection->executeStatement(
+            "UPDATE `search_engine` SET `name` = 'Solr (public)', `settings` = ?, `modified` = NOW() WHERE `id` = ?",
+            [json_encode($settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $legacyId]
+        );
+    }
+
     protected function createSolrSearchEngine(
         \Doctrine\DBAL\Connection $connection,
         int $solrCoreId,
