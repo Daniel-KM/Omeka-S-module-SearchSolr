@@ -849,56 +849,95 @@ class Module extends AbstractModule
         $message->setEscapeHtml(false);
         $messenger->addSuccess($message);
 
-        // Create a default search engine using Solr adapter.
-        $searchEngineId = $this->createDefaultSearchEngine($connection, $solrCoreId, $messenger, $urlHelper);
-        if ($searchEngineId) {
-            // Create a default suggester for the search engine.
-            $this->createDefaultSuggester($connection, $searchEngineId, $messenger);
-        }
+        // Create the Solr engines sharing the core and a suggester.
+        $this->createDefaultSearchEngines($connection, $solrCoreId, $messenger, $urlHelper);
     }
 
     /**
-     * Create a default search engine using Solr adapter.
+     * Create the Solr search engines sharing a core, and a suggester.
      *
-     * @return int|null The search engine ID or null on failure.
+     * Three engines share the same core: a public-capped one (never exposes
+     * private resources, even to an admin), an admin one (follows the acl), and
+     * an api one for fast admin queries replacing the live sql search. Each
+     * engine is created only when missing by name, so the call is idempotent
+     * and usable both at install and upgrade. The suggester is attached to the
+     * public engine.
      */
-    protected function createDefaultSearchEngine(
+    protected function createDefaultSearchEngines(
         \Doctrine\DBAL\Connection $connection,
         int $solrCoreId,
         $messenger,
         $urlHelper
-    ): ?int {
-        // Check if a Solr search engine already exists.
-        $sqlSearchEngineId = <<<'SQL'
-            SELECT `id`
-            FROM `search_engine`
-            WHERE `adapter` = 'solarium'
-            ORDER BY `id` ASC
-            SQL;
-        $searchEngineId = (int) $connection->fetchOne($sqlSearchEngineId);
-        if ($searchEngineId) {
-            return $searchEngineId;
+    ): void {
+        $existing = (int) $connection->fetchOne(
+            "SELECT COUNT(*) FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` IN ('Solr (public)', 'Solr (admin)', 'Solr (api)')"
+        );
+
+        $publicEngineId = $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (public)', 'public');
+        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (admin)', 'all');
+        $this->createSolrSearchEngine($connection, $solrCoreId, $messenger, $urlHelper, 'Solr (api)', 'all');
+        if ($publicEngineId) {
+            $this->createDefaultSuggester($connection, $publicEngineId, $messenger);
+        }
+
+        // Recommend dedicated cores when at least one engine was just created.
+        // The three engines share the default core and differ only by the
+        // query-time visibility, so the core holds private data and the public
+        // search is protected only by the query filter (and the suggester, also
+        // built from the shared core, may expose private terms). A dedicated
+        // core per engine, with the public one indexed from public resources
+        // only, is the sole protection independent of the query filters. On a
+        // shared core, reindex through the admin engine only: a reindex clears
+        // and rebuilds the whole core.
+        if ($existing < 3) {
+            $messenger->addWarning(new \Omeka\Stdlib\Message(
+                'Three Solr engines (public, admin, api) were set on the default core. For a strong protection against private metadata leak, it is recommended to give each engine its own core (three cores) and to index the public engine on a core holding only public resources. On a shared core, reindex through the admin engine only and do not reindex the public or api engine, as a reindex rebuilds the whole shared core.' // @translate
+            ));
+        }
+    }
+
+    /**
+     * Create a Solr search engine with a visibility, idempotent by name.
+     *
+     * Visibility "public" caps the engine to public resources (even for an
+     * admin), "all" follows the user rights, "private" limits to private.
+     *
+     * @return int The search engine id.
+     */
+    protected function createSolrSearchEngine(
+        \Doctrine\DBAL\Connection $connection,
+        int $solrCoreId,
+        $messenger,
+        $urlHelper,
+        string $name,
+        string $visibility
+    ): int {
+        $existingId = (int) $connection->fetchOne(
+            "SELECT `id` FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` = ? ORDER BY `id` ASC",
+            [$name]
+        );
+        if ($existingId) {
+            return $existingId;
         }
 
         // Load default search engine config.
         $searchEngineData = require __DIR__ . '/data/configs/search_engine.solr.php';
         $searchEngineSettings = $searchEngineData['o:settings'];
         $searchEngineSettings['engine_adapter']['solr_core_id'] = $solrCoreId;
+        $searchEngineSettings['visibility'] = $visibility;
 
-        $sql = <<<'SQL'
-            INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`)
-            VALUES (?, ?, ?, NOW(), NOW());
-            SQL;
-        $connection->executeStatement($sql, [
-            $searchEngineData['o:name'],
-            $searchEngineData['o:engine_adapter'],
-            json_encode($searchEngineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-        ]);
-
-        $searchEngineId = (int) $connection->fetchOne($sqlSearchEngineId);
+        $connection->executeStatement(
+            'INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`) VALUES (?, ?, ?, NOW(), NOW());',
+            [$name, $searchEngineData['o:engine_adapter'], json_encode($searchEngineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]
+        );
+        $searchEngineId = (int) $connection->fetchOne(
+            "SELECT `id` FROM `search_engine` WHERE `adapter` = 'solarium' AND `name` = ? ORDER BY `id` ASC",
+            [$name]
+        );
 
         $message = new \Omeka\Stdlib\Message(
-            'A default Solr search engine has been created. Configure it in the %1$ssearch manager%2$s.', // @translate
+            'The Solr search engine "%1$s" has been created. Configure it in the %2$ssearch manager%3$s.', // @translate
+            $name,
             sprintf('<a href="%s">', htmlspecialchars($urlHelper('admin') . '/search-manager/engine/' . $searchEngineId . '/edit')),
             '</a>'
         );
