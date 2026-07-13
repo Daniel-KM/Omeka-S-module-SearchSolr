@@ -1588,6 +1588,11 @@ class SolariumQuerier extends AbstractQuerier
                 $flat[$field] = $values;
                 continue;
             }
+            // The whole keyed structure of "numeric" is one arg.
+            if ($field === 'numeric') {
+                $flat['numeric'] = $values;
+                continue;
+            }
             foreach ($values as $value) {
                 if (is_array($value) && !empty($value['type'])) {
                     $advanced[$field][] = $value;
@@ -1680,6 +1685,10 @@ class SolariumQuerier extends AbstractQuerier
                     'Solr: the arg "{arg}" is not supported by the solr querier and is ignored.', // @translate
                     ['arg' => $fieldName]
                 );
+                continue;
+            }
+            if ($fieldName === 'numeric') {
+                $this->processNumericArgs(is_array($values) ? $values : []);
                 continue;
             }
             if ($fieldName === 'search') {
@@ -1782,6 +1791,126 @@ class SolariumQuerier extends AbstractQuerier
      * The api uses numeric ids for classes and templates while the mapped Solr
      * fields store the term or the label; boolean fields store true/false.
      */
+    /**
+     * Translate the arg "numeric" of the module NumericDataTypes into range
+     * filter queries on the mapped fields of each property: timestamps need a
+     * date map (suffix _dt) or, in fallback, a year map (suffix _year_is);
+     * integers need an integer map (suffix _i or _is). Durations and
+     * intervals are not translated and are logged.
+     */
+    protected function processNumericArgs(array $numeric): void
+    {
+        $fieldFor = function (int $pid, array $suffixes, array $exclude = []): ?string {
+            $term = $this->easyMeta->propertyTerm($pid);
+            if (!$term) {
+                return null;
+            }
+            $base = strtr($term, ':', '_') . '_';
+            foreach ($this->usedSolrFields([], $suffixes, []) as $field) {
+                if (strncmp($field, $base, strlen($base)) !== 0) {
+                    continue;
+                }
+                foreach ($exclude as $suffix) {
+                    if (str_ends_with($field, $suffix)) {
+                        continue 2;
+                    }
+                }
+                return $field;
+            }
+            return null;
+        };
+
+        // Bounds of a partial date, via the edtf formatter (fallback parser
+        // included when the edtf-php library is missing).
+        $dateBound = function (string $value, bool $isMax): ?string {
+            static $formatters = [];
+            $key = $isMax ? 'max' : 'min';
+            if (!isset($formatters[$key])) {
+                $formatters[$key] = $this->services
+                    ->get('SearchSolr\ValueFormatterManager')
+                    ->get('edtf');
+                $formatters[$key]->setSettings(['part' => $key]);
+            }
+            $result = $formatters[$key]->format($value);
+            return $result ? (string) reset($result) : null;
+        };
+
+        foreach ($numeric['ts'] ?? [] as $operator => $row) {
+            $pid = (int) ($row['pid'] ?? 0);
+            $value = trim((string) ($row['val'] ?? ''));
+            if (!$pid || $value === '' || !in_array($operator, ['gt', 'gte', 'lt', 'lte'], true)) {
+                continue;
+            }
+            $isUpperBound = in_array($operator, ['gt', 'lte'], true);
+            $bound = $dateBound($value, $isUpperBound);
+            if ($bound === null) {
+                continue;
+            }
+            $dateField = $fieldFor($pid, ['_dt', '_dts'], []);
+            if ($dateField) {
+                $iso = $this->normalizeDate($bound);
+                $ranges = [
+                    'gt' => '{' . $iso . ' TO *]',
+                    'gte' => '[' . $iso . ' TO *]',
+                    'lt' => '[* TO ' . $iso . '}',
+                    'lte' => '[* TO ' . $iso . ']',
+                ];
+                $this->select
+                    ->createFilterQuery('numeric_ts_' . ++$this->appendToKey)
+                    ->setQuery($dateField . ':' . $ranges[$operator]);
+                continue;
+            }
+            // Fallback on the year index, with a year precision.
+            $yearField = $fieldFor($pid, ['_year_is', '_year_i'], []);
+            if ($yearField) {
+                $year = (int) explode('-', ltrim($bound, '-'), 2)[0] * (strncmp($bound, '-', 1) === 0 ? -1 : 1);
+                $ranges = [
+                    'gt' => '{' . $year . ' TO *]',
+                    'gte' => '[' . $year . ' TO *]',
+                    'lt' => '[* TO ' . $year . '}',
+                    'lte' => '[* TO ' . $year . ']',
+                ];
+                $this->select
+                    ->createFilterQuery('numeric_ts_' . ++$this->appendToKey)
+                    ->setQuery($yearField . ':' . $ranges[$operator]);
+                continue;
+            }
+            $this->getLogger()->warn(
+                'Solr: the numeric timestamp filter needs a date map (suffix _dt) or a year map (suffix _year_is) of the property #{property}; the filter is ignored.', // @translate
+                ['property' => $pid]
+            );
+        }
+
+        foreach ($numeric['int'] ?? [] as $operator => $row) {
+            $pid = (int) ($row['pid'] ?? 0);
+            $value = $row['val'] ?? '';
+            if (!$pid || !is_numeric($value) || !in_array($operator, ['gt', 'lt'], true)) {
+                continue;
+            }
+            $intField = $fieldFor($pid, ['_i', '_is'], ['_link_is', '_year_is', '_min_i', '_max_i']);
+            if (!$intField) {
+                $this->getLogger()->warn(
+                    'Solr: the numeric integer filter needs an integer map (suffix _i) of the property #{property}; the filter is ignored.', // @translate
+                    ['property' => $pid]
+                );
+                continue;
+            }
+            $int = (int) $value;
+            $this->select
+                ->createFilterQuery('numeric_int_' . ++$this->appendToKey)
+                ->setQuery($intField . ':' . ($operator === 'gt' ? '{' . $int . ' TO *]' : '[* TO ' . $int . '}'));
+        }
+
+        foreach (['dur', 'ivl'] as $unsupported) {
+            if (!empty($numeric[$unsupported])) {
+                $this->getLogger()->warn(
+                    'Solr: the numeric arg "{arg}" is not supported by the solr querier and is ignored.', // @translate
+                    ['arg' => $unsupported]
+                );
+            }
+        }
+    }
+
     protected function convertStandardFilterValues(string $fieldName, string $solrField, array $values): array
     {
         if ($fieldName === 'resource_class_id') {
