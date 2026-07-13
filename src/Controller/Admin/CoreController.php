@@ -1900,6 +1900,12 @@ class CoreController extends AbstractActionController
             ['items', 'item_set_id_is', 'item_set/o:id', ['label' => 'Item set id']],
             ['items', 'item_set_dcterms_title_ss', 'item_set/dcterms:title', ['label' => 'Item set']],
             ['items', 'has_media_b', 'has_media', ['formatter' => 'boolean', 'label' => 'Has media']],
+            ['items', 'media_type_ss', 'media/o:media_type', ['label' => 'Media types']],
+            // Media.
+            ['media', 'media_type_s', 'o:media_type', ['label' => 'Media type']],
+            ['media', 'media_item_id_i', 'item/o:id', ['label' => 'Item id']],
+            // Item sets.
+            ['item_sets', 'is_open_b', 'is_open', ['formatter' => 'boolean', 'label' => 'Is open']],
         ];
 
         // Module Group: index the ids of the groups a resource is reserved to,

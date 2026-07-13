@@ -1647,18 +1647,41 @@ class SolariumQuerier extends AbstractQuerier
                 }
                 continue;
             }
-            if ($fieldName === 'in_sites') {
-                $siteField = $this->solrCoreField('site/o:id');
-                if ($siteField) {
+            // Presence args: the criterion is the existence of a related
+            // index (a boolean arg on a non boolean concept).
+            static $presenceArgs = [
+                'in_sites' => 'site/o:id',
+                'has_asset' => 'asset',
+                'has_original' => 'url_original',
+                'has_thumbnails' => 'url_thumbnail_large',
+            ];
+            if (isset($presenceArgs[$fieldName])) {
+                $maps = $this->solrCore->mapsBySource($presenceArgs[$fieldName]);
+                $presenceField = $maps ? (reset($maps))->fieldName() : null;
+                if ($presenceField) {
                     $value = is_array($values) ? reset($values) : $values;
                     $this->select
-                        ->createFilterQuery('in_sites_' . ++$this->appendToKey)
+                        ->createFilterQuery('presence_' . ++$this->appendToKey)
                         ->setQuery(
                             filter_var($value, FILTER_VALIDATE_BOOLEAN)
-                                ? "$siteField:[* TO *]"
-                                : "-$siteField:[* TO *]"
+                                ? "$presenceField:[* TO *]"
+                                : "-$presenceField:[* TO *]"
                         );
+                } else {
+                    $this->getLogger()->warn(
+                        'Solr: the arg "{arg}" needs a map of the source "{source}"; the filter is ignored.', // @translate
+                        ['arg' => $fieldName, 'source' => $presenceArgs[$fieldName]]
+                    );
                 }
+                continue;
+            }
+            // Known args without solr equivalent: ignored explicitly (the api
+            // itself ignores unknown args), with a log.
+            if (in_array($fieldName, ['sort_ids', 'site_attachments_only'], true)) {
+                $this->getLogger()->warn(
+                    'Solr: the arg "{arg}" is not supported by the solr querier and is ignored.', // @translate
+                    ['arg' => $fieldName]
+                );
                 continue;
             }
             if ($fieldName === 'search') {
@@ -1674,7 +1697,22 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
 
-            $name = $this->fieldToIndex($fieldName) ?? $fieldName;
+            $resolved = $this->fieldToIndex($fieldName);
+            $name = $resolved ?? $fieldName;
+
+            // An unknown arg without resolution nor index suffix is ignored
+            // like the api ignores unknown args (a raw filter on a nonexistent
+            // field would match nothing and silently diverge).
+            if ($resolved === null
+                && strpos($fieldName, ':') === false
+                && !preg_match('~_(txt|ss|s|is|i|b|dt|dts|ls|l|fold_s|link_ss|link_is)$~', $fieldName)
+            ) {
+                $this->getLogger()->warn(
+                    'Solr: unknown arg "{arg}" ignored.', // @translate
+                    ['arg' => $fieldName]
+                );
+                continue;
+            }
 
             // A property term (with ":") that was not resolved to a Solr field
             // means the field is not indexed.
@@ -2025,12 +2063,13 @@ class SolariumQuerier extends AbstractQuerier
                     $query = count($subClauses) === 1
                         ? reset($subClauses)
                         : '(' . implode(' OR ', $subClauses) . ')';
-                } elseif (!$isAbsence) {
-                    // No resolvable field for a positive condition: the clause
-                    // matches nothing.
-                    $query = '(NOT *:*)';
-                } else {
+                } elseif ($isAbsence || $isNegative) {
+                    // No resolvable field: an absence or a negative condition
+                    // (nex, neq…) is true on a missing field.
                     $query = '*:*';
+                } else {
+                    // A positive condition on a missing field matches nothing.
+                    $query = '(NOT *:*)';
                 }
 
                 if ($joiner === 'OR') {
@@ -2440,6 +2479,11 @@ class SolariumQuerier extends AbstractQuerier
             'resource_template_id' => 'resource_template/o:label',
             'item_set_id' => 'item_set/o:id',
             'has_media' => 'has_media',
+            'media_type' => 'o:media_type',
+            'media_types' => 'media/o:media_type',
+            'item_id' => 'item/o:id',
+            'is_open' => 'is_open',
+            'asset_id' => 'asset',
             // Pseudo-field for "any property" rows and the arg "search".
             'property_values' => 'property_values',
             // Standard sort keys.
