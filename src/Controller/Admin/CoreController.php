@@ -1089,6 +1089,11 @@ class CoreController extends AbstractActionController
         );
     }
 
+    public function dataTypesMapsAction()
+    {
+        return $this->dispatchCompleteMapsJob('datatypes');
+    }
+
     public function recommendedMapsAction()
     {
         return $this->dispatchCompleteMapsJob('recommended');
