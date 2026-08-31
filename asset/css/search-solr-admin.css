@@ -142,6 +142,34 @@
         margin-top: 1em;
     }
 
+    /* Snapshots of the maps in the sidebar: a compact list, one line each. */
+    .solr-cores #sidebar-confirm .map-snapshots-heading {
+        margin: 1.5em 0 0.25em;
+    }
+    .solr-cores #sidebar-confirm .map-snapshots {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .solr-cores #sidebar-confirm .map-snapshots > li {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        padding: 0.35em 0;
+        border-bottom: 1px solid #dfdfdf;
+    }
+    .solr-cores #sidebar-confirm .map-snapshots > li:last-child {
+        border-bottom: none;
+    }
+    .solr-cores #sidebar-confirm .map-snapshot-meta {
+        color: #676767;
+        font-size: 0.9em;
+        flex: 1;
+    }
+    .solr-cores #sidebar-confirm .map-snapshots .actions {
+        margin: 0 0 0 auto;
+    }
+
     /* Grey info icons for the real usages of an index (facet, filter, sort,
        query, suggester, settings), distinct from the red action icons. */
     .solr-cores .map-usages {

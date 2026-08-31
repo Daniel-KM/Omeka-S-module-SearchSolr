@@ -943,9 +943,95 @@ class SolrCore
             ) {
                 $usages[$map->fieldName()]['system']['module'] = true;
             }
+            // A map created or edited by hand is never removed by the sync.
+            if ($map->setting('origin') === 'manual') {
+                $usages[$map->fieldName()]['manual']['user'] = true;
+            }
+            // A language index serves the facets and filters of the sites of
+            // its locale, created by the multilingual option of the sync.
+            $languages = $map->pool('filter_languages');
+            if ($languages) {
+                $usages[$map->fieldName()]['language'][implode(', ', (array) $languages)] = true;
+            }
         }
 
         return array_map(fn ($fieldUsages) => array_map('array_keys', $fieldUsages), $usages);
+    }
+
+    /**
+     * List the maps that serve nothing: referenced by no usage (facet, filter,
+     * sort, query, suggester, settings), neither required nor system, and not
+     * manual nor customized. They can be removed safely.
+     *
+     * @return \SearchSolr\Api\Representation\SolrMapRepresentation[] By id.
+     */
+    public function listUnusedMaps(): array
+    {
+        $usages = $this->listFieldUsages();
+        $unused = [];
+        foreach ($this->maps() as $map) {
+            if (isset($usages[$map->fieldName()])) {
+                continue;
+            }
+            // Only the property maps: a metadata map is a system one anyway.
+            $source = $map->source();
+            if (strpos($source, ':') === false || strpos($source, '/') !== false) {
+                continue;
+            }
+            if ($this->isCustomizedMap($map)) {
+                continue;
+            }
+            $unused[$map->id()] = $map;
+        }
+        return $unused;
+    }
+
+    /**
+     * Whether a map was customized by hand: a formatter other than text, a
+     * normalization, a boost, a pool filter, a visibility, or a renamed field.
+     * Such a map is never removed automatically.
+     */
+    public function isCustomizedMap(\SearchSolr\Api\Representation\SolrMapRepresentation $map): bool
+    {
+        $settings = $map->settings();
+        $pool = $map->pool() ?? [];
+        if ($map->setting('origin') === 'manual') {
+            return true;
+        }
+        $formatter = $settings['formatter'] ?? '';
+        if ($formatter !== '' && $formatter !== 'text') {
+            return true;
+        }
+        if (!empty($settings['normalization'])) {
+            return true;
+        }
+        if (!empty($settings['boost']) && (float) $settings['boost'] !== 1.0) {
+            return true;
+        }
+        if (!empty($pool['filter_values'])
+            || !empty($pool['filter_uris'])
+            || !empty($pool['filter_resources'])
+            || !empty($pool['filter_value_resources'])
+            || !empty($pool['data_types'])
+            || !empty($pool['data_types_exclude'])
+            || !empty($pool['filter_languages'])
+        ) {
+            return true;
+        }
+        $visibility = $pool['filter_visibility'] ?? '';
+        if ($visibility !== '' && $visibility !== 'default') {
+            return true;
+        }
+        // A field name that does not follow the pattern derived from the
+        // source was renamed by hand.
+        $source = $map->source();
+        if (strpos($source, ':') !== false) {
+            $expectedPrefix = strtr($source, ':', '_') . '_';
+            if (strpos($map->fieldName(), $expectedPrefix) !== 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

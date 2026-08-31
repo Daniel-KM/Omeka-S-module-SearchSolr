@@ -20,8 +20,8 @@ class SolrCoreSyncForm extends Form
         'configs' => 'Search configs (facets, filters, sorts, suggesters)', // @translate
         'settings' => 'Main settings (bounce links)', // @translate
         'site_settings' => 'Site settings (bounce links)', // @translate
-        'templates' => 'Resource templates (used templates)', // @translate
-        'used' => 'Used properties (every property with a value)', // @translate
+        'templates' => 'Resource templates: a text and an exact index for every property of the used templates', // @translate
+        'used' => 'Used properties: a text and an exact index for every property with a value', // @translate
     ];
 
     public function init(): void
@@ -70,10 +70,12 @@ class SolrCoreSyncForm extends Form
                 ],
             ]);
 
-        // Default: every source checked and the unused maps removed (the
-        // widest, self-cleaning coverage). A multicheckbox reads its checked
-        // options from the element value, not from an attribute.
-        $this->get('sync_sources')->setValue(array_keys($this->sourceList));
+        // Default: the maps follow the real usages (configs and settings) and
+        // the unused maps are removed. The exploratory sources (templates,
+        // used properties) index every property and stay an explicit choice.
+        // A multicheckbox reads its checked options from the element value,
+        // not from an attribute.
+        $this->get('sync_sources')->setValue(['configs', 'settings', 'site_settings']);
         $this->get('multilingual')->setValue(true);
         $this->get('clean')->setValue(true);
     }

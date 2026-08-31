@@ -1,0 +1,33 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Stdlib\SolrCore $solrCore
+ * @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $unused
+ *
+ * Confirmation of the removal of the unused maps, loaded into the core page
+ * sidebar.
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+?>
+
+<div id="sidebar-confirm">
+    <h3><?= $escape($translate('Remove unused maps')) ?></h3>
+    <p class="explanation"><?= $escape($translate('The maps referenced by no facet, filter, sort, query, suggester or setting, that are neither required, system, manual nor customized. A snapshot is taken first.')) ?></p>
+    <?php if ($unused): ?>
+    <p><strong><?= $escape(sprintf($translate('%d unused maps'), count($unused))) ?></strong></p>
+    <ul class="clean-maps-list">
+        <?php foreach ($unused as $map): ?>
+        <li><?= $escape($map->fieldName()) ?> <span class="field-generic"><?= $escape($map->source()) ?></span></li>
+        <?php endforeach; ?>
+    </ul>
+    <form method="post" action="<?= $escapeAttr($solrCore->adminUrl('clean-maps')) ?>">
+        <button type="submit" class="button delete"><?= $escape($translate('Remove')) ?></button>
+    </form>
+    <?php else: ?>
+    <p><?= $escape($translate('No unused map: every map is used, required, system or customized.')) ?></p>
+    <?php endif; ?>
+</div>

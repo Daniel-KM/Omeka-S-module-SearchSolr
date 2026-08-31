@@ -74,36 +74,40 @@ $multilingual = $form->get('multilingual');
     $snapshots = $backups['snapshots'] ?? [];
     ?>
     <?php if ($snapshots): ?>
-    <h3><?= $escape(sprintf($translate('Map snapshots (%d)'), count($snapshots))) ?></h3>
-    <p class="explanation"><?= $escape($translate('A snapshot is taken before each maps alignment. The 3 most recent snapshots are kept on this core.')) ?></p>
-    <table class="tablesaw" data-tablesaw-mode="stack">
-        <thead>
-            <tr>
-                <th><?= $escape($translate('Date')) ?></th>
-                <th><?= $escape($translate('Author')) ?></th>
-                <th><?= $escape($translate('Maps')) ?></th>
-                <th><?= $escape($translate('Actions')) ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($snapshots as $i => $snap): ?>
-            <tr>
-                <td><?= $escape((string) ($snap['datetime'] ?? '')) ?></td>
-                <td><?= $escape((string) ($snap['user_name'] ?? '')) ?></td>
-                <td><?= (int) ($snap['count'] ?? 0) ?></td>
-                <td>
-                    <?= $this->hyperlink($translate('Restore'), $solrCore->adminUrl('restore-backup') . '?index=' . $i, [
-                        'class' => 'button',
-                        'onclick' => 'return confirm("' . $escapeAttr($translate('Restore this snapshot? Current maps will be replaced. The current state is itself snapshotted before restore.')) . '");',
-                    ]) ?>
-                    <?= $this->hyperlink($translate('Delete'), $solrCore->adminUrl('delete-backup') . '?index=' . $i, [
-                        'class' => 'button delete',
-                        'onclick' => 'return confirm("' . $escapeAttr($translate('Delete this snapshot?')) . '");',
-                    ]) ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+    <?php $i18n = $plugins->get('i18n'); ?>
+    <h4 class="map-snapshots-heading"><?= $escape(sprintf($translate('Map snapshots (%d)'), count($snapshots))) ?></h4>
+    <p class="explanation"><?= $escape($translate('A snapshot is taken before each maps alignment. The 5 most recent snapshots are kept on this core.')) ?></p>
+    <ul class="map-snapshots">
+        <?php foreach ($snapshots as $i => $snap): ?>
+        <?php
+        $date = null;
+        if (!empty($snap['datetime'])) {
+            try {
+                $date = $i18n->dateFormat(new \DateTime($snap['datetime']), 'medium', 'short');
+            } catch (\Exception $e) {
+                $date = (string) $snap['datetime'];
+            }
+        }
+        ?>
+        <li>
+            <span class="map-snapshot-date"><?= $escape((string) $date) ?></span>
+            <span class="map-snapshot-meta"><?= $escape(sprintf($translate('%1$d maps · %2$s'), (int) ($snap['count'] ?? 0), (string) ($snap['user_name'] ?? ''))) ?></span>
+            <ul class="actions">
+                <li><?= $this->hyperlink('', $solrCore->adminUrl('restore-backup') . '?index=' . $i, [
+                    'class' => 'o-icon- fas fa-undo',
+                    'aria-label' => $translate('Restore'),
+                    'title' => $translate('Restore this snapshot: the current maps are replaced (the current state is snapshotted first).'),
+                    'onclick' => 'return confirm("' . $escapeAttr($translate('Restore this snapshot? Current maps will be replaced. The current state is itself snapshotted before restore.')) . '");',
+                ]) ?></li>
+                <li><?= $this->hyperlink('', $solrCore->adminUrl('delete-backup') . '?index=' . $i, [
+                    'class' => 'o-icon-delete',
+                    'aria-label' => $translate('Delete'),
+                    'title' => $translate('Delete this snapshot'),
+                    'onclick' => 'return confirm("' . $escapeAttr($translate('Delete this snapshot?')) . '");',
+                ]) ?></li>
+            </ul>
+        </li>
+        <?php endforeach; ?>
+    </ul>
     <?php endif; ?>
 </div>

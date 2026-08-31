@@ -71,21 +71,29 @@ class CoreController extends AbstractActionController
         'pool:data_types',
         'pool:data_types_exclude',
         'pool:filter_languages',
+        'pool:filter_languages_no_lang',
         'pool:filter_visibility',
         // Settings.
         'settings:label',
+        'settings:origin',
+        'settings:boost',
         'settings:parts',
+        'settings:resource_title_language',
+        'settings:include_digital_object',
         'settings:formatter',
-        'settings:normalization',
-        'settings:max_length',
+        'settings:date_mode',
+        'settings:date_out',
         'settings:place_mode',
-        'settings:table',
-        'settings:table_mode',
-        'settings:table_index_original',
-        'settings:table_index_strict',
         'settings:thesaurus_resources',
         'settings:thesaurus_self',
         'settings:thesaurus_metadata',
+        'settings:normalization',
+        'settings:max_length',
+        'settings:truncate_at',
+        'settings:table',
+        'settings:table_mode',
+        'settings:table_index_original',
+        'settings:table_check_strict',
         'settings:finalization',
     ];
 
@@ -684,22 +692,32 @@ class CoreController extends AbstractActionController
                         'data_types_exclude' => empty($row['pool:data_types_exclude']) ? [] : $cleanArray($row['pool:data_types_exclude']),
                         // Don't filter array to keep values without language.
                         'filter_languages' => empty($row['pool:filter_languages']) ? [] : $cleanArray($row['pool:filter_languages']),
+                        'filter_languages_no_lang' => !empty($row['pool:filter_languages_no_lang']) ?: null,
                         'filter_visibility' => empty($row['pool:filter_visibility']) || !in_array($row['pool:filter_visibility'], ['public', 'private']) ? null : $row['pool:filter_visibility'],
                     ]),
                     'o:settings' => $this->arrayFilterRecursiveEmptyValue([
                         'label' => $row['settings:label'],
+                        // The provenance is kept, else the maps of an export
+                        // are all seen as manual; an unknown one is manual.
+                        'origin' => in_array($row['settings:origin'] ?? '', ['sync', 'system', 'manual'], true) ? $row['settings:origin'] : 'manual',
+                        'boost' => empty($row['settings:boost']) ? null : (float) $row['settings:boost'],
                         'parts' => empty($row['settings:parts']) ? [] : $cleanArray($row['settings:parts']),
+                        'resource_title_language' => empty($row['settings:resource_title_language']) ? null : trim($row['settings:resource_title_language']),
+                        'include_digital_object' => !empty($row['settings:include_digital_object']) ?: null,
                         'formatter' => $row['settings:formatter'],
-                        'normalization' => empty($row['settings:normalization']) ? [] : $cleanArray($row['settings:normalization']),
-                        'max_length' => empty($row['settings:max_length']) ? null : (int) $row['settings:max_length'],
+                        'date_mode' => empty($row['settings:date_mode']) ? null : trim($row['settings:date_mode']),
+                        'date_out' => empty($row['settings:date_out']) ? null : trim($row['settings:date_out']),
                         'place_mode' => empty($row['settings:place_mode']) ? null : trim($row['settings:place_mode']),
-                        'table' => empty($row['settings:table']) ? null : trim($row['settings:table']),
-                        'table_mode' => empty($row['settings:table_mode']) ? null : trim($row['settings:table_mode']),
-                        'table_index_original' => !empty($row['settings:table_index_original']) ?: null,
-                        'table_index_strict' => !empty($row['settings:table_index_strict']) ?: null,
                         'thesaurus_resources' => empty($row['settings:thesaurus_resources']) ? null : $row['settings:thesaurus_resources'],
                         'thesaurus_self' => !empty($row['settings:thesaurus_self']) ?: null,
                         'thesaurus_metadata' => empty($row['settings:thesaurus_metadata']) ? [] : $cleanArray($row['settings:thesaurus_metadata']),
+                        'normalization' => empty($row['settings:normalization']) ? [] : $cleanArray($row['settings:normalization']),
+                        'max_length' => empty($row['settings:max_length']) ? null : (int) $row['settings:max_length'],
+                        'truncate_at' => empty($row['settings:truncate_at']) ? null : trim($row['settings:truncate_at']),
+                        'table' => empty($row['settings:table']) ? null : trim($row['settings:table']),
+                        'table_mode' => empty($row['settings:table_mode']) ? null : trim($row['settings:table_mode']),
+                        'table_index_original' => !empty($row['settings:table_index_original']) ?: null,
+                        'table_check_strict' => !empty($row['settings:table_check_strict']) ?: null,
                         'finalization' => empty($row['settings:finalization']) ? [] : $cleanArray($row['settings:finalization']),
                     ]),
                 ];
@@ -778,21 +796,29 @@ class CoreController extends AbstractActionController
                     implode(' | ', $map->pool('data_types', [])),
                     implode(' | ', $map->pool('data_types_exclude', [])),
                     implode(' | ', $map->pool('filter_languages', [])),
+                    $map->pool('filter_languages_no_lang') ? '1' : '',
                     (string) $map->pool('filter_visibility'),
                     // Settings.
                     (string) $map->setting('label', ''),
+                    (string) $map->setting('origin', ''),
+                    (string) $map->setting('boost', ''),
                     implode(' | ', $map->setting('parts', [])),
+                    (string) $map->setting('resource_title_language', ''),
+                    $map->setting('include_digital_object') ? '1' : '',
                     (string) $map->setting('formatter', ''),
+                    (string) $map->setting('date_mode', ''),
+                    (string) $map->setting('date_out', ''),
+                    (string) $map->setting('place_mode', ''),
+                    (string) $map->setting('thesaurus_resources', ''),
+                    $map->setting('thesaurus_self') ? '1' : '',
+                    implode(' | ', $map->setting('thesaurus_metadata', [])),
                     implode(' | ', $map->setting('normalization', [])),
                     (string) $map->setting('max_length', ''),
-                    (string) $map->setting('place_mode', ''),
+                    (string) $map->setting('truncate_at', ''),
                     (string) $map->setting('table', ''),
                     (string) $map->setting('table_mode', ''),
-                    (string) $map->setting('table_index_original', ''),
-                    (string) $map->setting('table_index_strict', ''),
-                    (string) $map->setting('thesaurus_resources', ''),
-                    (string) $map->setting('thesaurus_self', ''),
-                    implode(' | ', $map->setting('thesaurus_metadata', [])),
+                    $map->setting('table_index_original') ? '1' : '',
+                    $map->setting('table_check_strict') ? '1' : '',
                     implode(' | ', $map->setting('finalization', [])),
                 ];
                 $this->appendTsvRow($stream, $mapping);
@@ -1311,59 +1337,49 @@ class CoreController extends AbstractActionController
 
     public function cleanMapsAction()
     {
-        $api = $this->api();
-        $id = $this->params('id');
-        $solrCore = $this->solrCore((int) $id);
+        $id = (int) $this->params('id');
+        $solrCore = $this->solrCore($id);
 
-        $maps = $solrCore->maps();
-        $mapList = [];
-        foreach ($maps as $map) {
-            $mapList[$map->id()] = $map->source();
+        // The maps that serve nothing, according to the real usages (facets,
+        // filters, sorts, queries, suggesters, settings), the required and
+        // system ones and the manual or customized ones being kept.
+        $unused = $solrCore->listUnusedMaps();
+
+        // Confirm first: the sidebar lists the maps to remove.
+        if (!$this->getRequest()->isPost()) {
+            if (!$this->getRequest()->isXmlHttpRequest()) {
+                return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+            }
+            return (new ViewModel([
+                'solrCore' => $solrCore,
+                'unused' => $unused,
+            ]))
+                ->setTerminal(true)
+                ->setTemplate('search-solr/admin/core/clean-maps-sidebar');
         }
 
-        $result = [];
-        $properties = $api->search('properties')->getContent();
-        $connection = $this->getEvent()->getApplication()
-            ->getServiceManager()->get('Omeka\Connection');
-        $usedPropertyIds = $connection
-            ->executeQuery(
-                'SELECT DISTINCT property_id FROM value'
-            )
-            ->fetchFirstColumn();
-
-        foreach ($properties as $property) {
-            if (in_array($property->id(), $usedPropertyIds)) {
-                continue;
-            }
-            $term = $property->term();
-            if (!in_array($term, $mapList)) {
-                continue;
-            }
-            $ids = array_keys(
-                array_filter($mapList, fn ($v) => $v === $term)
-            );
-            $api->batchDelete('solr_maps', $ids);
-            $result[] = $term;
-        }
-
-        if ($result) {
-            $this->updateFieldsBoost($solrCore);
-            $this->messenger()->addSuccess(new PsrMessage(
-                '{count} maps deleted: {list}.', // @translate
-                [
-                    'count' => count($result),
-                    'list' => implode(', ', $result),
-                ]
-            ));
-        } else {
+        if (!$unused) {
             $this->messenger()->addWarning(
-                'No maps deleted.' // @translate
+                'No unused map.' // @translate
             );
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
-        return $this->redirect()->toRoute(
-            'admin/search-manager/solr/core-id', ['id' => $id]
-        );
+        // Snapshot first, so the removal can be restored.
+        $this->snapshotMaps($solrCore, $solrCore->maps());
+
+        $this->api()->batchDelete('solr_maps', array_keys($unused));
+        $this->updateFieldsBoost($this->solrCore($id));
+
+        $this->messenger()->addSuccess(new PsrMessage(
+            '{count} unused maps deleted: {list}.', // @translate
+            [
+                'count' => count($unused),
+                'list' => implode(', ', array_map(fn ($map) => $map->fieldName(), $unused)),
+            ]
+        ));
+
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
     }
 
     public function reduceMapsAction()
@@ -1841,34 +1857,32 @@ class CoreController extends AbstractActionController
 
         // 4b. Snapshot the current configuration before any modification, so
         // that it can be restored from the core page if the sync produces an
-        // unwanted result. The last 3 snapshots are kept per core.
+        // unwanted result. The last 5 snapshots are kept per core.
         $this->snapshotMaps($solrCore, $existingMaps);
 
-        // 5. Delete property maps not referenced by any config, when asked.
-        // Keep maps with custom settings (formatter, pool filters,
-        // normalization, boost, etc.).
+        // 5. Delete the property maps that serve nothing, when asked: the
+        // same rule as the action "Remove unused maps", based on the real
+        // usages; the manual or customized maps are kept and listed.
         $deleted = [];
         $kept = [];
-        foreach ($clean ? $existingBySource : [] as $source => $maps) {
-            if (in_array($source, $systemSources)
-                || strpos($source, '/') !== false
-                || strpos($source, ':') === false
-                || isset($usedFields[$source])
-            ) {
-                continue;
-            }
-            foreach ($maps as $map) {
-                // Explicit provenance first: a map created or edited by hand
-                // is never removed; then the customization heuristic protects
-                // the legacy maps without provenance.
-                if ($map->setting('origin') === 'manual'
-                    || $this->isCustomizedMap($map)
-                ) {
-                    $kept[] = $map->fieldName();
-                    continue;
-                }
+        if ($clean) {
+            foreach ($solrCore->listUnusedMaps() as $map) {
                 $api->delete('solr_maps', $map->id());
                 $deleted[] = $map->fieldName();
+            }
+            foreach ($existingBySource as $source => $maps) {
+                if (in_array($source, $systemSources)
+                    || strpos($source, '/') !== false
+                    || strpos($source, ':') === false
+                    || isset($usedFields[$source])
+                ) {
+                    continue;
+                }
+                foreach ($maps as $map) {
+                    if (!in_array($map->fieldName(), $deleted, true)) {
+                        $kept[] = $map->fieldName();
+                    }
+                }
             }
         }
 
@@ -2299,51 +2313,6 @@ class CoreController extends AbstractActionController
      *
      * Indices with specific names are kept too.
      */
-    protected function isCustomizedMap(
-        \SearchSolr\Api\Representation\SolrMapRepresentation $map
-    ): bool {
-        $settings = $map->settings();
-        $pool = $map->pool() ?? [];
-        // Non-empty formatter (other than default empty).
-        if (!empty($settings['formatter'])) {
-            return true;
-        }
-        // Any normalization.
-        if (!empty($settings['normalization'])) {
-            return true;
-        }
-        // Boost other than default.
-        if (!empty($settings['boost']) && (float) $settings['boost'] !== 1.0) {
-            return true;
-        }
-        // Any pool filter.
-        if (!empty($pool['filter_values'])
-            || !empty($pool['filter_uris'])
-            || !empty($pool['filter_resources'])
-            || !empty($pool['filter_value_resources'])
-            || !empty($pool['data_types'])
-            || !empty($pool['data_types_exclude'])
-            || !empty($pool['filter_languages'])
-        ) {
-            return true;
-        }
-        // Explicit visibility override.
-        $vis = $pool['filter_visibility'] ?? '';
-        if ($vis !== '' && $vis !== 'default') {
-            return true;
-        }
-        // Non-standard field name: if the field name does not follow the
-        // pattern derived from the source, it was renamed manually.
-        $source = $map->source();
-        if (strpos($source, ':') !== false) {
-            $expectedPrefix = strtr($source, ':', '_') . '_';
-            if (strpos($map->fieldName(), $expectedPrefix) !== 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * Add a field reference to the used fields list with its required suffixes.
      *
@@ -2808,7 +2777,7 @@ class CoreController extends AbstractActionController
 
     /**
      * Store a snapshot of the current Solr maps on the core entity. Keeps the
-     * last 3 snapshots in column `solr_core.backup_maps`.
+     * last 5 snapshots in column `solr_core.backup_maps`.
      *
      * @param \SearchSolr\Api\Representation\SolrMapRepresentation[] $existingMaps
      */
@@ -2854,7 +2823,7 @@ class CoreController extends AbstractActionController
             $backups['snapshots'] = [];
         }
         array_unshift($backups['snapshots'], $snapshot);
-        $backups['snapshots'] = array_slice($backups['snapshots'], 0, 3);
+        $backups['snapshots'] = array_slice($backups['snapshots'], 0, 5);
         $solrSettings['backup_maps'] = $backups;
         $this->updateSolrSettings($solrCore->id(), $solrSettings);
     }

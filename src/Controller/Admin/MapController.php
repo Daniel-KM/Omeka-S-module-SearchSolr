@@ -485,20 +485,46 @@ class MapController extends AbstractActionController
         return array_map(fn ($v) => ['source' => $v], explode('/', $source));
     }
 
+    /**
+     * Remove the settings specific to another formatter or normalization,
+     * so a map stores only what applies to it.
+     */
     protected function cleanMapSettings(array $data): array
     {
         $formatter = $data['o:settings']['formatter'] ?? '';
-        if ($formatter !== 'place') {
-            unset(
-                $data['o:settings']['place_mode']
-            );
+        $specificByFormatter = [
+            'date' => ['date_mode', 'date_out'],
+            'place' => ['place_mode'],
+            'thesaurus' => ['thesaurus_resources', 'thesaurus_self', 'thesaurus_metadata'],
+        ];
+        foreach ($specificByFormatter as $formatterName => $keys) {
+            if ($formatter !== $formatterName) {
+                foreach ($keys as $key) {
+                    unset($data['o:settings'][$key]);
+                }
+            }
         }
-        if ($formatter !== 'thesaurus_self') {
-            unset(
-                $data['o:settings']['thesaurus_resources'],
-                $data['o:settings']['thesaurus_self'],
-                $data['o:settings']['thesaurus_metadata']
-            );
+        // The unchecked checkboxes post "0": store nothing.
+        foreach (['include_digital_object', 'thesaurus_self', 'table_index_original', 'table_check_strict'] as $key) {
+            if (empty($data['o:settings'][$key])) {
+                unset($data['o:settings'][$key]);
+            }
+        }
+        if (empty($data['o:pool']['filter_languages_no_lang'])) {
+            unset($data['o:pool']['filter_languages_no_lang']);
+        }
+        $normalizations = $data['o:settings']['normalization'] ?? [];
+        $specificByNormalization = [
+            'max_length' => ['max_length'],
+            'truncate' => ['truncate_at'],
+            'table' => ['table', 'table_mode', 'table_index_original', 'table_check_strict'],
+        ];
+        foreach ($specificByNormalization as $normalization => $keys) {
+            if (!in_array($normalization, $normalizations, true)) {
+                foreach ($keys as $key) {
+                    unset($data['o:settings'][$key]);
+                }
+            }
         }
         return $data;
     }
