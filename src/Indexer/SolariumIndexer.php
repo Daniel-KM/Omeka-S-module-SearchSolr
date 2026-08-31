@@ -92,6 +92,13 @@ class SolariumIndexer extends AbstractIndexer
     protected $isSingleValuedFields = [];
 
     /**
+     * Fields of the maps that are not in the schema of the Solr core.
+     *
+     * @var array
+     */
+    protected $unknownFields = [];
+
+    /**
      * @var int[]
      */
     protected $siteIds;
@@ -630,6 +637,13 @@ class SolariumIndexer extends AbstractIndexer
         /** @var \SearchSolr\Api\Representation\SolrMapRepresentation $solrMap */
         foreach ($this->getMapsByResourceName($resourceName) as $solrMap) {
             $solrField = $solrMap->fieldName();
+
+            // A field that is not in the schema would make Solr reject the
+            // whole document, so skip it. It is logged one time for all the
+            // documents, when the fields are prepared.
+            if (isset($this->unknownFields[$solrField])) {
+                continue;
+            }
             $source = $solrMap->source();
 
             // Required fields (resource name, visibility, etc.) are already
@@ -994,11 +1008,32 @@ class SolariumIndexer extends AbstractIndexer
     protected function prepareSingleValuedFields(): void
     {
         $schema = $this->getSolrCore()->schema();
+
+        // Without the schema, every field would look unknown and multivalued,
+        // so the documents would be sent with multiple values to single valued
+        // fields and Solr would reject them: the index would be silently
+        // incomplete. So let the exception stop the indexation.
+        $schema->getSchema();
+
         $this->isSingleValuedFields = [];
+        $this->unknownFields = [];
         foreach ($this->getSolrCore()->maps() as $solrMap) {
             $solrField = $solrMap->fieldName();
             $schemaField = $schema->getField($solrField);
-            $this->isSingleValuedFields[$solrField] = $schemaField && !$schemaField->isMultivalued();
+            if (!$schemaField) {
+                // A field that is neither in the schema nor matched by a
+                // dynamic field would make Solr reject the whole document.
+                $this->unknownFields[$solrField] = true;
+                continue;
+            }
+            $this->isSingleValuedFields[$solrField] = !$schemaField->isMultivalued();
+        }
+
+        if ($this->unknownFields) {
+            $this->logger->warn(
+                'These fields are not in the schema of the Solr core, so they are not indexed: {fields}. Check the maps of the core.', // @translate
+                ['fields' => implode(', ', array_keys($this->unknownFields))]
+            );
         }
     }
 
