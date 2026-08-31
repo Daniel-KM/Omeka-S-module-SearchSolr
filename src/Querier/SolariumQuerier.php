@@ -2858,10 +2858,20 @@ class SolariumQuerier extends AbstractQuerier
             return false;
         }
 
+        // Schema::getField() returns null when the schema is unavailable, like
+        // when Solr restarts, so check the schema itself first: else every
+        // field would look unknown and all the facets and the filters would be
+        // removed from a page that works.
+        try {
+            $this->getSolrCore()->schema()->getSchema();
+        } catch (\Throwable $e) {
+            return true;
+        }
+
         try {
             return (bool) $this->getSchemaField($field);
         } catch (\Throwable $e) {
-            return false;
+            return true;
         }
     }
 
