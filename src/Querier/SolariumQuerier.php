@@ -811,6 +811,13 @@ class SolariumQuerier extends AbstractQuerier
             return $this;
         }
 
+        // Solarium asks "*,score" by default, so Solr returns every stored
+        // field, including the full text of the ocr: a page of results could
+        // weigh hundreds of megabytes, exhausting the heap of Solr and the
+        // memory of php, while only the id is read from the documents.
+        /** @see \SearchSolr\Querier\SolariumQuerier::hydrateResponse() */
+        $this->select->setFields(['id', 'score']);
+
         $this->select->addParam('defType', 'edismax')->addParam('sow', 'false');
         $dismax = $this->select->getDisMax();
 
