@@ -22,6 +22,7 @@ $sources = $form->get('sync_sources');
 $sourcesChecked = array_map('strval', (array) $sources->getValue());
 $clean = $form->get('clean');
 $multilingual = $form->get('multilingual');
+$maxCardinality = $form->get('max_cardinality');
 ?>
 
 <div id="sidebar-confirm">
@@ -38,6 +39,17 @@ $multilingual = $form->get('multilingual');
                 <?= $escape($translate($label)) ?>
             </label>
             <?php endforeach; ?>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend><?= $escape($translate('Exact indexes')) ?></legend>
+        <p class="explanation"><?= $escape($translate('A property with more distinct values than this limit gets no exact index (_ss): such a facet or filter is unusable. A property used by a facet or a filter of a search page keeps its index anyway. Set 0 to skip this check.')) ?></p>
+        <div class="inputs">
+            <label>
+                <?= $escape($translate('Maximum number of distinct values')) ?>
+                <input type="number" name="max_cardinality" min="0" step="1" value="<?= $escapeAttr($maxCardinality->getValue()) ?>">
+            </label>
         </div>
     </fieldset>
 

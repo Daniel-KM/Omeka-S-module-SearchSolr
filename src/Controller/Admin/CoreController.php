@@ -61,6 +61,11 @@ class CoreController extends AbstractActionController
     const PARITY_MAX_IDS = 100;
 
     /**
+     * Terms used by a facet or a filter of a search config, as term => true.
+     */
+    protected $fieldsFromConfigs = [];
+
+    /**
      * The structure should be the same in import and export.
      *
      * @see self::importSolrMapping()
@@ -1900,6 +1905,7 @@ class CoreController extends AbstractActionController
             }
             $clean = (bool) $this->params()->fromQuery('clean');
             $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
+            $maxCardinality = (int) $this->params()->fromQuery('max_cardinality', 100);
         } else {
             $form->setData($this->params()->fromPost());
             if (!$form->isValid()) {
@@ -1910,6 +1916,7 @@ class CoreController extends AbstractActionController
             $sources = $data['sync_sources'] ?: ['configs'];
             $clean = (bool) ($data['clean'] ?? false);
             $multilingual = (bool) ($data['multilingual'] ?? false);
+            $maxCardinality = (int) ($data['max_cardinality'] ?? 100);
         }
         if (in_array('all', $sources, true)) {
             $sources = ['configs', 'settings', 'site_settings', 'templates', 'used'];
@@ -1974,7 +1981,7 @@ class CoreController extends AbstractActionController
                     $this->collectFieldAsProperty($f['field_end'], $usedFields, []);
                 } else {
                     $this->collectFieldAsProperty(
-                        $v, $usedFields, [$isRange ? '_i' : '_ss']
+                        $v, $usedFields, [$isRange ? '_i' : '_ss'], true
                     );
                 }
             }
@@ -1994,7 +2001,7 @@ class CoreController extends AbstractActionController
                     $this->collectFieldAsProperty($f['field_end'], $usedFields, []);
                 } else {
                     $this->collectFieldAsProperty(
-                        $v, $usedFields, [$isRange ? '_i' : '_ss']
+                        $v, $usedFields, [$isRange ? '_i' : '_ss'], true
                     );
                 }
             }
@@ -2212,6 +2219,27 @@ class CoreController extends AbstractActionController
             )
         ));
 
+        // An exact index (_ss) is useless when the property has too many
+        // distinct values: such a facet or filter cannot be browsed. The
+        // properties used by a facet or a filter of a search page are kept,
+        // since the choice is explicit.
+        $highCardinalityProperties = [];
+        if ($maxCardinality > 0) {
+            $highCardinalityProperties = $connection->fetchFirstColumn(
+                'SELECT CONCAT(vo.prefix, ":", pr.local_name)
+                FROM value v
+                INNER JOIN property pr ON pr.id = v.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                WHERE v.value IS NOT NULL
+                GROUP BY v.property_id
+                HAVING COUNT(DISTINCT v.value) > ' . $maxCardinality
+            );
+            $highCardinalityProperties = array_diff(
+                $highCardinalityProperties,
+                array_keys($this->fieldsFromConfigs)
+            );
+        }
+
         // Settings templates per suffix.
         $suffixSettings = [
             '_txt' => ['formatter' => ''],
@@ -2288,12 +2316,17 @@ class CoreController extends AbstractActionController
             }
             $base = strtr($term, ':', '_');
             $isLong = in_array($term, $longValueProperties);
+            $isHighCardinality = in_array($term, $highCardinalityProperties);
 
             foreach (array_keys($requiredSuffixes) as $suffix) {
                 // Skip _ss/_s for long-value properties.
                 if ($isLong
                     && in_array($suffix, ['_ss', '_s', '_fold_s', '_i'])
                 ) {
+                    continue;
+                }
+                // The sort (_s) stays useful whatever the number of values.
+                if ($isHighCardinality && $suffix === '_ss') {
                     continue;
                 }
                 $fieldName = $base . $suffix;
@@ -2324,7 +2357,7 @@ class CoreController extends AbstractActionController
             // Language indexes, for facets and filters by language, so a site
             // displays the values of its own locale. They are built on the
             // exact-value index, skipped for long values like the plain one.
-            if ($isLong || !isset($requiredSuffixes['_ss'])) {
+            if ($isLong || $isHighCardinality || !isset($requiredSuffixes['_ss'])) {
                 continue;
             }
             foreach ($langsByTerm[$term] ?? [] as $lang => $langCodes) {
@@ -2620,7 +2653,8 @@ class CoreController extends AbstractActionController
     protected function collectFieldAsProperty(
         string $value,
         array &$usedFields,
-        array $suffixes = []
+        array $suffixes = [],
+        bool $isFromConfig = false
     ): void {
         $term = null;
         if (strpos($value, ':') !== false) {
@@ -2646,6 +2680,9 @@ class CoreController extends AbstractActionController
         }
         if (!isset($usedFields[$term])) {
             $usedFields[$term] = [];
+        }
+        if ($isFromConfig) {
+            $this->fieldsFromConfigs[$term] = true;
         }
         foreach ($suffixes as $suffix) {
             $usedFields[$term][$suffix] = true;

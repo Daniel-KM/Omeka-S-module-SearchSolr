@@ -2,6 +2,7 @@
 
 namespace SearchSolr\Form\Admin;
 
+use Laminas\Form\Element;
 use Laminas\Form\Form;
 
 /**
@@ -38,6 +39,20 @@ class SolrCoreSyncForm extends Form
                 ],
                 'attributes' => [
                     'id' => 'sync_sources',
+                ],
+            ])
+            ->add([
+                'name' => 'max_cardinality',
+                'type' => Element\Number::class,
+                'options' => [
+                    'label' => 'Maximum number of distinct values for an exact index', // @translate
+                    'info' => 'A property with more distinct values than this limit gets no exact index (_ss): such a facet or filter is unusable. A property used by a facet or a filter of a search page keeps its index anyway. Set 0 to skip this check.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'max_cardinality',
+                    'min' => '0',
+                    'step' => '1',
+                    'value' => '100',
                 ],
             ])
             ->add([
