@@ -2269,6 +2269,10 @@ class CoreController extends AbstractActionController
         // instead of a string one: the sort follows the numeric order and the
         // facets can use a range. A few values may not be numbers, so the
         // formatter drops them, else Solr would reject the whole document.
+        // A property with geographic coordinates gets a spatial index, so it
+        // can be used for a search by area or by distance. It is known by the
+        // data type of its values, or by their form when they are literal.
+        $geographicProperties = [];
         $numericProperties = [];
         if ($wantDatatypes) {
             $numericRatio = (float) ($configModule['searchsolr_numeric_ratio'] ?? 0.95);
@@ -2277,7 +2281,9 @@ class CoreController extends AbstractActionController
                 'SELECT CONCAT(vo.prefix, ":", pr.local_name) AS term,
                     COUNT(*) AS total,
                     SUM(v.value REGEXP "^ *-?[0-9]+ *$") AS integers,
-                    SUM(v.value REGEXP "^ *-?[0-9]+([.,][0-9]+)? *$") AS decimals
+                    SUM(v.value REGEXP "^ *-?[0-9]+([.,][0-9]+)? *$") AS decimals,
+                    SUM(v.value REGEXP "^ *-?[0-9.]+ *, *-?[0-9.]+ *$"
+                        AND v.value LIKE "%.%") AS coordinates
                 FROM value v
                 INNER JOIN property pr ON pr.id = v.property_id
                 INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
@@ -2289,7 +2295,12 @@ class CoreController extends AbstractActionController
                 if (!$total) {
                     continue;
                 }
-                if ((int) $row['integers'] >= $total * $numericRatio) {
+                // A pair of numbers with a decimal point is a couple of
+                // coordinates, not a number: a decimal comma alone, like "3,4",
+                // stays a decimal value.
+                if ((int) $row['coordinates'] >= $total * $numericRatio) {
+                    $geographicProperties[] = $row['term'];
+                } elseif ((int) $row['integers'] >= $total * $numericRatio) {
                     $numericProperties[$row['term']] = 'integer';
                 } elseif ((int) $row['decimals'] >= $total * $numericRatio) {
                     $numericProperties[$row['term']] = 'decimal';
@@ -2297,20 +2308,21 @@ class CoreController extends AbstractActionController
             }
         }
 
-        // A property with geographic coordinates gets a spatial index, so it
-        // can be used for a search by area or by distance. The data type
-        // "geometry" is not included: only a point is managed by Solr here.
-        $geographicProperties = [];
+        // The data type "geometry" is not included: only a point is managed
+        // by Solr here, and a geometry is usually a shape.
         if ($wantDatatypes) {
-            $geographicProperties = $connection->fetchFirstColumn(
-                'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
-                FROM value v
-                INNER JOIN property pr ON pr.id = v.property_id
-                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
-                WHERE v.type = "place"
-                    OR v.type = "geography"
-                    OR v.type LIKE "geography:%"'
-            );
+            $geographicProperties = array_unique(array_merge(
+                $geographicProperties,
+                $connection->fetchFirstColumn(
+                    'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+                    FROM value v
+                    INNER JOIN property pr ON pr.id = v.property_id
+                    INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                    WHERE v.type = "place"
+                        OR v.type = "geography"
+                        OR v.type LIKE "geography:%"'
+                )
+            ));
         }
 
         // Settings templates per suffix.
