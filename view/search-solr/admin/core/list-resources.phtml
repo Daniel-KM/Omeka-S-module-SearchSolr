@@ -6,6 +6,7 @@
  * @var string $resourceName
  * @var bool $missing
  * @var array $resourceTitles
+ * @var string|null $error
  */
 
 $plugins = $this->getHelperPluginManager();
@@ -19,6 +20,11 @@ $baseUrlEscaped = $escapeAttr($url('admin') . '/' . $easyMeta->resourceType($res
 ?>
 
 <h3><?= $escape($translate('Resources')) ?></h3>
+
+<?php if ($error !== null): ?>
+<p class="error"><?= $escape(sprintf($translate('Status: %s'), $error)) ?></p>
+<?php return; ?>
+<?php endif; ?>
 
 <div class="meta-group meta-group-list">
 	<h4><?= sprintf($missing

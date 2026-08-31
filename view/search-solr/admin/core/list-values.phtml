@@ -5,14 +5,14 @@
  * @var \AdvancedSearch\Api\Representation\SearchConfigRepresentation|null $searchConfig
  * @var string $fieldName
  * @var string $sort
+ * @var array $listValues
+ * @var string|null $error
  */
 
 $plugins = $this->getHelperPluginManager();
 $escape = $plugins->get('escapeHtml');
 $translate = $plugins->get('translate');
 $escapeAttr = $plugins->get('escapeHtmlAttr');
-
-$listValues = $solrCore->queryValuesCount($fieldName, $sort);
 
 $row = $translate('%1$s %2$s');
 
@@ -22,6 +22,11 @@ if ($searchConfig) {
 ?>
 
 <h3><?= $escape($fieldName) ?></h3>
+
+<?php if ($error !== null): ?>
+<p class="error"><?= $escape(sprintf($translate('Status: %s'), $error)) ?></p>
+<?php return; ?>
+<?php endif; ?>
 
 <div class="meta-group meta-group-list">
 	<h4><?= sprintf($translate('Total indexed values: %d'), count($listValues)) ?></h4>

@@ -178,30 +178,24 @@
         }
     });
 
-    // --- Simple/full list toggle ---
+    // --- Simple/full list view radios ---
 
-    var viewToggle = document.getElementById('maps-view-toggle');
-    if (viewToggle) {
-        viewToggle.addEventListener('click', function() {
-            var fullList = document.querySelector('.by-solr-index');
-            var simpleList = document.querySelector('.by-source');
-            var toSimple = fullList.style.display !== 'none';
-            fullList.style.display = toSimple ? 'none' : '';
-            simpleList.style.display = toSimple ? '' : 'none';
-            // The button shows the target view.
-            viewToggle.textContent = toSimple
-                ? viewToggle.dataset.labelFull
-                : viewToggle.dataset.labelSimple;
-            // The simple list is the default view.
-            var url = new URL(window.location);
-            if (toSimple) {
-                url.searchParams.delete('view');
-            } else {
-                url.searchParams.set('view', 'full');
-            }
-            history.replaceState(null, '', url);
+    document.querySelectorAll('input[name="maps-view"]')
+        .forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                var toSimple = radio.value === 'simple';
+                document.querySelector('.by-solr-index').style.display = toSimple ? 'none' : '';
+                document.querySelector('.by-source').style.display = toSimple ? '' : 'none';
+                // The simple list is the default view.
+                var url = new URL(window.location);
+                if (toSimple) {
+                    url.searchParams.delete('view');
+                } else {
+                    url.searchParams.set('view', 'full');
+                }
+                history.replaceState(null, '', url);
+            });
         });
-    }
 
     // --- Sortable columns ---
 

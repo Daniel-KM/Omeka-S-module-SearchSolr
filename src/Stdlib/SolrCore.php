@@ -742,6 +742,118 @@ class SolrCore
     }
 
     /**
+     * List the real usages of the indexes of the core.
+     *
+     * The same sources as the maps sync are scanned, but the nature and the
+     * place of each usage are kept, for display.
+     *
+     * @return array Field name => usage (facet, filter, sort, query,
+     * suggester, settings) => list of places.
+     */
+    public function listFieldUsages(): array
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $engineId = $this->searchEngine()->id();
+
+        $existingFields = [];
+        foreach ($this->maps() as $map) {
+            $existingFields[$map->fieldName()] = true;
+        }
+
+        $usages = [];
+        $mark = function ($value, array $suffixes, string $usage, string $place) use (&$usages, $existingFields): void {
+            $value = (string) $value;
+            if ($value === '') {
+                return;
+            }
+            if (isset($existingFields[$value])) {
+                $usages[$value][$usage][$place] = true;
+                return;
+            }
+            if (strpos($value, ':') === false && strpos($value, '/') === false) {
+                return;
+            }
+            $base = strtr($value, [':' => '_', '/' => '_']);
+            foreach ($suffixes as $suffix) {
+                if (isset($existingFields[$base . $suffix])) {
+                    $usages[$base . $suffix][$usage][$place] = true;
+                }
+            }
+        };
+
+        /** @var \AdvancedSearch\Api\Representation\SearchConfigRepresentation $config */
+        foreach ($api->search('search_configs')->getContent() as $config) {
+            $configEngine = $config->searchEngine();
+            if (!$configEngine || $configEngine->id() !== $engineId) {
+                continue;
+            }
+            $place = $config->name();
+            foreach ($config->subSetting('facet', 'facets', []) as $f) {
+                $mark($f['field'] ?? '', ['_ss', '_i'], 'facet', $place);
+                $mark($f['field_end'] ?? '', ['_ss', '_i'], 'facet', $place);
+            }
+            foreach ($config->subSetting('form', 'filters', []) as $f) {
+                $mark($f['field'] ?? '', ['_ss', '_i'], 'filter', $place);
+                $mark($f['field_end'] ?? '', ['_ss', '_i'], 'filter', $place);
+            }
+            foreach ($config->subSetting('results', 'sort_list', []) as $f) {
+                $mark(strtok((string) ($f['name'] ?? ''), ' '), ['_s', '_fold_s'], 'sort', $place);
+            }
+            foreach ($config->subSetting('engine', 'field_boosts', []) as $fieldName => $boost) {
+                if ((float) $boost > 0 && (float) $boost !== 1.0) {
+                    $mark((string) $fieldName, ['_txt'], 'query', $place);
+                }
+            }
+            foreach ($config->subSetting('index', 'aliases', []) as $alias) {
+                foreach ($alias['fields'] ?? [] as $aliasField) {
+                    $mark($aliasField, ['_txt'], 'query', $place);
+                }
+            }
+            $advanced = $config->subSetting('form', 'advanced', []);
+            foreach ($advanced['fields'] ?? [] as $f) {
+                $mark($f['value'] ?? ($f['field'] ?? ''), ['_txt', '_ss'], 'filter', $place);
+            }
+            foreach ($config->subSetting('request', 'hidden_query_filters', []) as $fieldName => $value) {
+                if (is_string($fieldName)) {
+                    $mark($fieldName, ['_ss'], 'filter', $place);
+                }
+            }
+        }
+
+        // Boosts set on the core itself apply to every config using it.
+        // A neutral boost (1) is not a real usage.
+        $corePlace = $this->name();
+        foreach ($this->setting('field_boost') ?: [] as $fieldName => $boost) {
+            if ((float) $boost > 0 && (float) $boost !== 1.0) {
+                $mark((string) $fieldName, ['_txt'], 'query', $corePlace);
+            }
+        }
+
+        /** @var \AdvancedSearch\Api\Representation\SearchSuggesterRepresentation $suggester */
+        foreach ($api->search('search_suggesters')->getContent() as $suggester) {
+            $suggesterEngine = $suggester->searchEngine();
+            if (!$suggesterEngine || $suggesterEngine->id() !== $engineId) {
+                continue;
+            }
+            foreach ($suggester->settings()['fields'] ?? [] as $suggesterField) {
+                $mark($suggesterField, ['_txt'], 'suggester', $suggester->name());
+            }
+        }
+
+        // The resource link indexes come from the bounce links of the main or
+        // site settings and from the pivot query types.
+        foreach (array_keys($existingFields) as $fieldName) {
+            if (substr($fieldName, -8) === '_link_ss') {
+                $usages[$fieldName]['settings']['bounce links'] = true;
+            } elseif (substr($fieldName, -8) === '_link_is') {
+                $usages[$fieldName]['query']['resource query'] = true;
+            }
+        }
+
+        return array_map(fn ($fieldUsages) => array_map('array_keys', $fieldUsages), $usages);
+    }
+
+    /**
      * Warning: unlike queryValues, the field isn't an alias but a real index.
      *
      * @todo Merge queryValuesCount() of SolariumQuerier with SolrRepresentation.

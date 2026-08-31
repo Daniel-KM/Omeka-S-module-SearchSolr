@@ -221,7 +221,22 @@ foreach ($maps as $fieldMaps) {
         $usedResourceTypes[$map->resourceName()] = true;
     }
 }
-ksort($usedResourceTypes);
+// The real names of the resource types, keyed by the name used in the maps, in
+// display order.
+$resourceTypeLabels = [
+    'generic' => $translate('Generic'),
+    'resources' => $translate('Resources (mixed)'),
+    'item_sets' => $translate('Item sets'),
+    'items' => $translate('Items'),
+    'media' => $translate('Media'),
+    'annotations' => $translate('Annotations'),
+    'digital_objects' => $translate('Digital objects'),
+    'concepts' => $translate('Concepts'),
+];
+$usedResourceTypes = array_replace(
+    array_intersect_key($resourceTypeLabels, $usedResourceTypes),
+    array_diff_key($usedResourceTypes, $resourceTypeLabels)
+);
 // Simple list: one row per distinct source, the indexes as edit links.
 $mapsBySource = [];
 foreach ($maps as $fieldMaps) {
@@ -250,6 +265,37 @@ foreach ($mapsBySource as $source => $sourceMaps) {
 }
 // The group "Metadata" first, then the vocabularies alphabetically.
 uksort($mapsByVocab, fn ($a, $b) => ($a === $metadataLabel ? 0 : 1) <=> ($b === $metadataLabel ? 0 : 1) ?: strcasecmp($a, $b));
+// The real usages of each index (facets, filters, sorts, query, suggesters,
+// settings), displayed as grey info icons next to the index name.
+$fieldUsages = $solrCore->listFieldUsages();
+$usageIcons = [
+    'facet' => 'fas fa-layer-group',
+    'filter' => 'fas fa-filter',
+    'sort' => 'fas fa-sort-amount-down',
+    'query' => 'fas fa-sliders-h',
+    'suggester' => 'fas fa-keyboard',
+    'settings' => 'fas fa-cog',
+];
+$usageLabels = [
+    'facet' => $translate('Facet'),
+    'filter' => $translate('Filter'),
+    'sort' => $translate('Sort'),
+    'query' => $translate('Query'),
+    'suggester' => $translate('Suggester'),
+    'settings' => $translate('Settings'),
+];
+$usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $usageLabels, $escapeAttr): string {
+    $html = '';
+    foreach ($fieldUsages[$fieldName] ?? [] as $usage => $places) {
+        $html .= sprintf(
+            '<span class="map-usage o-icon- %1$s" role="img" aria-label="%2$s" title="%3$s"></span>',
+            $usageIcons[$usage],
+            $escapeAttr($usageLabels[$usage]),
+            $escapeAttr($usageLabels[$usage] . ' : ' . implode(', ', $places))
+        );
+    }
+    return $html === '' ? '' : '<span class="map-usages">' . $html . '</span>';
+};
 ?>
 <div class="maps-controls">
     <div class="maps-filters">
@@ -261,15 +307,17 @@ uksort($mapsByVocab, fn ($a, $b) => ($a === $metadataLabel ? 0 : 1) <=> ($b === 
             <select id="filter-resource-type">
                 <option value=""><?= $translate('All') ?></option>
                 <?php foreach (array_keys($usedResourceTypes) as $rType): ?>
-                <option value="<?= $escapeAttr($rType) ?>"<?= $rType === $activeResourceFilter ? ' selected' : '' ?>><?= $escape($rType) ?></option>
+                <option value="<?= $escapeAttr($rType) ?>"<?= $rType === $activeResourceFilter ? ' selected' : '' ?>><?= $escape($resourceTypeLabels[$rType] ?? $rType) ?></option>
                 <?php endforeach; ?>
             </select>
         </span>
     </div>
     <div class="maps-infos">
-        <button type="button" id="maps-view-toggle" class="button"
-            data-label-simple="<?= $escapeAttr($translate('By property')) ?>"
-            data-label-full="<?= $escapeAttr($translate('By index')) ?>"><?= $isSimpleView ? $translate('By index') : $translate('By property') ?></button>
+        <span class="maps-view-choice">
+            <span><?= $translate('Show') ?></span>
+            <label><input type="radio" name="maps-view" value="simple"<?= $isSimpleView ? ' checked' : '' ?>/> <?= $translate('By property') ?></label>
+            <label><input type="radio" name="maps-view" value="full"<?= $isSimpleView ? '' : ' checked' ?>/> <?= $translate('By index') ?></label>
+        </span>
         <span class="maps-count-wrapper">
             <span id="maps-count-label"><?= $translate('Number of maps:') ?></span>
             <span id="maps-count"></span>
@@ -310,20 +358,26 @@ uksort($mapsByVocab, fn ($a, $b) => ($a === $metadataLabel ? 0 : 1) <=> ($b === 
                     <?php foreach ($sourceMaps as $map):
                         $mapSettings = $map->settings();
                         $fieldName = $map->fieldName();
+                        $usageSummary = [];
+                        foreach ($fieldUsages[$fieldName] ?? [] as $usage => $places) {
+                            $usageSummary[] = $usageLabels[$usage] . ' (' . implode(', ', $places) . ')';
+                        }
                         $detailRows = array_filter([
                             $translate('Index') => $fieldName,
                             $translate('Source') => $source,
                             $translate('Label') => !empty($mapSettings['label']) ? $translate($mapSettings['label']) : '',
                             $translate('Type') => $map->resourceName(),
                             $translate('Origin') => (string) $map->setting('origin'),
+                            $translate('Used by') => implode(' · ', $usageSummary),
                         ]);
                     ?>
                     <span class="map-index-line" data-resource-type="<?= $escapeAttr($map->resourceName()) ?>">
-                        <span class="map-alias" tabindex="0" aria-describedby="map-tooltip-<?= $map->id() ?>"><?= $escape($fieldName) ?><span class="map-tooltip" id="map-tooltip-<?= $map->id() ?>" role="tooltip"><dl>
+                        <span class="map-alias" tabindex="0" aria-describedby="map-tooltip-<?= $map->id() ?>"><span class="map-alias-text"><?= $escape($fieldName) ?></span><span class="map-tooltip" id="map-tooltip-<?= $map->id() ?>" role="tooltip"><dl>
                             <?php foreach ($detailRows as $detailLabel => $detailValue): ?>
                             <dt><?= $escape($detailLabel) ?></dt><dd><?= $escape($detailValue) ?></dd>
                             <?php endforeach; ?>
                         </dl></span></span>
+                        <?= $usageIconsHtml($fieldName) ?>
                         <ul class="actions">
                             <li>
                                 <?= $hyperlink('', '#', [
@@ -418,6 +472,7 @@ uksort($mapsByVocab, fn ($a, $b) => ($a === $metadataLabel ? 0 : 1) <=> ($b === 
                 <tr>
                     <td>
                         <span><?= $escape($fieldName) ?></span>
+                        <?= $usageIconsHtml($fieldName) ?>
                         <ul class="actions">
                             <?php if ($aliases): ?>
                             <li class="map-aliases"><span class="map-alias"><?= implode('</span>, <span class="map-alias">', $aliases) ?></span></li>

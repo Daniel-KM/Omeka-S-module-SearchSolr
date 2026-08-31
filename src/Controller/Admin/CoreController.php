@@ -531,7 +531,12 @@ class CoreController extends AbstractActionController
             $ids = explode(',', $ids);
         }
 
-        $documents = $solrCore->queryDocuments($resourceName, $ids);
+        // Solr may be unreachable: return the status instead of an error.
+        try {
+            $documents = $solrCore->queryDocuments($resourceName, $ids);
+        } catch (\Throwable $e) {
+            $documents = ['error' => (string) $solrCore->status(true)];
+        }
 
         return (new JsonModel($documents))
             ->setOption('prettyPrint', true);
@@ -550,11 +555,18 @@ class CoreController extends AbstractActionController
         $resourceName = $this->params()->fromQuery('resource_name');
         $missing = (bool) $this->params()->fromQuery('missing');
 
-        $resourceTitles = $solrCore->queryResourceTitles($resourceName);
-        if ($missing) {
-            // TODO Add a resource filter "not id".
-            $resourceTitlesExisting = $this->api()->search($resourceName, [], ['returnScalar' => 'title'])->getContent();
-            $resourceTitles = array_diff_key($resourceTitlesExisting, $resourceTitles);
+        // Solr may be unreachable: display the status instead of an error.
+        try {
+            $resourceTitles = $solrCore->queryResourceTitles($resourceName);
+            $error = null;
+            if ($missing) {
+                // TODO Add a resource filter "not id".
+                $resourceTitlesExisting = $this->api()->search($resourceName, [], ['returnScalar' => 'title'])->getContent();
+                $resourceTitles = array_diff_key($resourceTitlesExisting, $resourceTitles);
+            }
+        } catch (\Throwable $e) {
+            $resourceTitles = [];
+            $error = (string) $solrCore->status(true);
         }
 
         return (new ViewModel([
@@ -563,6 +575,7 @@ class CoreController extends AbstractActionController
             'resourceName' => $resourceName,
             'missing' => $missing,
             'resourceTitles' => $resourceTitles,
+            'error' => $error,
         ]))->setTerminal(true);
     }
 
@@ -578,11 +591,22 @@ class CoreController extends AbstractActionController
         $fieldName = $this->params()->fromQuery('fieldname');
         $sort = $this->params()->fromQuery('sort');
 
+        // Solr may be unreachable: display the status instead of an error.
+        try {
+            $listValues = $solrCore->queryValuesCount($fieldName, $sort);
+            $error = null;
+        } catch (\Throwable $e) {
+            $listValues = [];
+            $error = (string) $solrCore->status(true);
+        }
+
         return (new ViewModel([
             'solrCore' => $solrCore,
             'searchConfig' => $searchConfig,
             'fieldName' => $fieldName,
             'sort' => $sort,
+            'listValues' => $listValues,
+            'error' => $error,
         ]))->setTerminal(true);
     }
 
@@ -1940,6 +1964,9 @@ class CoreController extends AbstractActionController
         ];
 
         $created = [];
+        // The label of a map is the label of its property, translated at
+        // display; a non-property source keeps its term.
+        $propertyLabels = $this->easyMeta()->propertyLabels();
         // Language indexes are added only when the install is really
         // multilingual: at least two site locales and a property with values in
         // at least two of these languages.
@@ -1985,7 +2012,7 @@ class CoreController extends AbstractActionController
                     'o:field_name' => $fieldName,
                     'o:source' => $term,
                     'o:settings' => $mapSettings
-                        + ['label' => $term, 'origin' => 'sync'],
+                        + ['label' => $propertyLabels[$term] ?? $term, 'origin' => 'sync'],
                 ]);
                 $created[] = $fieldName;
                 $existingFieldNames[] = $fieldName;
@@ -2012,7 +2039,7 @@ class CoreController extends AbstractActionController
                         'filter_languages_no_lang' => true,
                     ],
                     'o:settings' => ($suffixSettings['_ss'] ?? ['formatter' => ''])
-                        + ['label' => $term . ' (' . $lang . ')', 'origin' => 'sync'],
+                        + ['label' => ($propertyLabels[$term] ?? $term) . ' (' . $lang . ')', 'origin' => 'sync'],
                 ]);
                 $created[] = $fieldName;
                 $existingFieldNames[] = $fieldName;

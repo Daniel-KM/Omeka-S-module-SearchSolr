@@ -94,10 +94,18 @@
         margin-bottom: 0.25em;
     }
     .solr-cores .maps-controls .maps-filter-type,
-    .solr-cores .maps-controls .maps-count-wrapper {
+    .solr-cores .maps-controls .maps-count-wrapper,
+    .solr-cores .maps-controls .maps-view-choice {
         display: flex;
         align-items: center;
         gap: 0.5em;
+    }
+    .solr-cores .maps-controls .maps-view-choice label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25em;
+        margin: 0;
+        white-space: nowrap;
     }
     .solr-cores .maps-controls #maps-filter-text {
         flex: 1;
@@ -115,6 +123,30 @@
     }
     .solr-cores .by-source .map-index-line .actions {
         margin: 0 0 0 auto;
+        flex-shrink: 0;
+    }
+    /* Grey info icons for the real usages of an index (facet, filter, sort,
+       query, suggester, settings), distinct from the red action icons. */
+    .solr-cores .map-usages {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    .solr-cores .map-usage {
+        color: #676767;
+        font-size: 0.85em;
+        margin-left: 0.35em;
+    }
+    /* On narrow screens, the end of a long index name is hidden instead of
+       pushing the actions. The clipping is on an inner span, so the tooltip
+       is not clipped. */
+    .solr-cores .by-source .map-index-line .map-alias {
+        min-width: 0;
+        flex: 0 1 auto;
+    }
+    .solr-cores .by-source .map-alias .map-alias-text {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .solr-cores .by-source .map-index-line .field-generic {
         margin-left: 0;
@@ -184,8 +216,9 @@
     }
 }
 
-/* In the stacked mode (mobile), the vocabulary heading spans the whole
-   width. */
+/* In the stacked mode (mobile), the vocabulary heading and the source span
+   the whole width, and the general header is useless: the stacked cells
+   carry their own labels. */
 @media only screen and (max-width: 39.9375em) {
     .solr-cores .by-source .map-voc-group,
     .solr-cores .by-source .map-voc-group th {
@@ -193,6 +226,24 @@
         width: 100%;
         box-sizing: border-box;
     }
+    .solr-cores .by-source > table > thead,
+    .solr-cores .by-solr-index > table > thead {
+        display: none;
+    }
+    .solr-cores .by-source td:first-child,
+    .solr-cores.show.solr-core-map-browse .by-solr-index > table > tbody > tr > td:first-child {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    /* The stacked mode injects the concatenated column labels into the
+       vocabulary heading. */
+    .solr-cores .by-source .map-voc-group .tablesaw-cell-label {
+        display: none;
+    }
+}
+
+@media all {
     .solr-cores .map-aliases .map-alias,
     .solr-cores.show.solr-core-map-browse .field-generic,
     .solr-map.browse .field-generic {
