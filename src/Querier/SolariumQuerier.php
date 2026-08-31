@@ -1196,11 +1196,17 @@ class SolariumQuerier extends AbstractQuerier
                 // related to the facet.
                 // see: https://yonik.com/multi-select-faceting/
                 /** @var \Solarium\Component\Facet\FieldValueParametersInterface $facet */
+                // A facet joined with "and" narrows the results, so its own
+                // filter is kept in the domain of the counts: else a value
+                // would promise results that the "and" cannot return.
+                $isAnd = ($data['join'] ?? $data['options']['join'] ?? 'or') === 'and';
                 $excludeTag = strtoupper($name . '-facet');
                 $facet = $facetSet->createJsonFacetTerms($name)
                     ->setField($data['field'])
-                    ->setSort($orders[$data['order'] ?? 'default'] ?? $orders['default'])
-                    ->setOptions(['domain' => ['excludeTags' => [$excludeTag]]]);
+                    ->setSort($orders[$data['order'] ?? 'default'] ?? $orders['default']);
+                if (!$isAnd) {
+                    $facet->setOptions(['domain' => ['excludeTags' => [$excludeTag]]]);
+                }
 
                 if (isset($data['limit']) && $data['limit'] > 0) {
                     $facet
@@ -1296,7 +1302,12 @@ class SolariumQuerier extends AbstractQuerier
                 // using 'query', add the tag in the query statement.
                 $key = $fname . '-facet';
                 $tag = strtoupper($key);
-                $escaped = $this->escapePhraseValue($values, 'OR');
+                // With the joiner "and", a resource must match all the selected
+                // values, so each new value narrows the results.
+                $joiner = ($facetData['join'] ?? $facetData['options']['join'] ?? 'or') === 'and'
+                    ? 'AND'
+                    : 'OR';
+                $escaped = $this->escapePhraseValue($values, $joiner);
                 $this->select->addFilterQuery([
                     'key' => $key,
                     'query' => "{!tag=$tag}$startField:$escaped",
