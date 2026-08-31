@@ -1126,10 +1126,10 @@ TODO
   recommends them with the actions (sync with opt-in cleaning, reindex behind
   confirmation), which should suffice. Options considered:
   - a. Status quo: recommendation sidebar with manual actions (current).
-  - b. Automatic sync (scope configs) after saving a config, reindex manual
-    with a warning.
+  - b. Automatic sync (scope configs) after saving a config, reindex manual with a warning.
   - c. Automatic sync and automatic reindex job.
   - d. An admin setting to choose between a, b and c.
+- [ ] Batch edit in solr map page. But without it, it incitates to do it via automatic commands in maintenance.
 
 
 Warning
