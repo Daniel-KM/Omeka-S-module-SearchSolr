@@ -587,6 +587,42 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
+     * List the fields a visitor may target in the query itself.
+     *
+     * @see https://solr.apache.org/guide/solr/latest/query-guide/edismax-query-parser.html
+     *
+     * @return string The value of the param "uf": the fields, else "-*".
+     */
+    protected function userFields(): string
+    {
+        $fields = [];
+
+        // The fields of the maps of the core: they are the indexed ones.
+        try {
+            foreach ($this->getSolrCore()->maps() as $solrMap) {
+                $fieldName = $solrMap->fieldName();
+                if ($fieldName) {
+                    $fields[$fieldName] = true;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Without the maps, no field is allowed.
+        }
+
+        // The aliases of the search config point to these fields, but they may
+        // be used by their own name too.
+        foreach (array_keys($this->query->getAliases() ?: []) as $alias) {
+            if (is_string($alias) && $alias !== '') {
+                $fields[$alias] = true;
+            }
+        }
+
+        return $fields
+            ? implode(' ', array_keys($fields))
+            : '-*';
+    }
+
+    /**
      * Get the min and the max of some fields, without listing their values.
      *
      * The component "stats" of Solr computes them in a single pass, unlike a
@@ -818,7 +854,16 @@ class SolariumQuerier extends AbstractQuerier
         /** @see \SearchSolr\Querier\SolariumQuerier::hydrateResponse() */
         $this->select->setFields(['id', 'score']);
 
-        $this->select->addParam('defType', 'edismax')->addParam('sow', 'false');
+        $this->select
+            ->addParam('defType', 'edismax')
+            ->addParam('sow', 'false')
+            // Restrict the fields a visitor may target with the syntax
+            // "field:value" in the query: by default, edismax allows any field
+            // of the index, including fields that store data indexed whatever
+            // the visibility. Only the mapped fields and the aliases are
+            // allowed, and none when there is no map.
+            ->addParam('uf', $this->userFields());
+
         $dismax = $this->select->getDisMax();
 
         // Use catchall field _text_ if available.
