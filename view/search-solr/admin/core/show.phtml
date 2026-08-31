@@ -207,6 +207,8 @@ uksort($mapsByVocab, fn ($a, $b) => ($a === $metadataLabel ? 0 : 1) <=> ($b === 
 // settings), displayed as grey info icons next to the index name.
 $fieldUsages = $solrCore->listFieldUsages();
 $usageIcons = [
+    'required' => 'fas fa-lock',
+    'system' => 'fas fa-cogs',
     'facet' => 'fas fa-layer-group',
     'filter' => 'fas fa-filter',
     'sort' => 'fas fa-sort-amount-down',
@@ -215,6 +217,8 @@ $usageIcons = [
     'settings' => 'fas fa-cog',
 ];
 $usageLabels = [
+    'required' => $translate('Required'),
+    'system' => $translate('System'),
     'facet' => $translate('Facet'),
     'filter' => $translate('Filter'),
     'sort' => $translate('Sort'),
@@ -222,14 +226,30 @@ $usageLabels = [
     'suggester' => $translate('Suggester'),
     'settings' => $translate('Settings'),
 ];
-$usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $usageLabels, $escapeAttr): string {
+// One sentence by usage; the places are listed when there are some.
+$usageSentences = [
+    'required' => $translate('Required for Solr'),
+    'system' => $translate('Needed by Advanced Search or the modules'),
+    'facet' => $translate('Used in facets: %s'),
+    'filter' => $translate('Used in filters: %s'),
+    'sort' => $translate('Used in sorts: %s'),
+    'query' => $translate('Used in queries: %s'),
+    'suggester' => $translate('Used in suggesters: %s'),
+    'settings' => $translate('Used in settings: %s'),
+];
+$usageTitle = function (string $usage, array $places) use ($usageSentences): string {
+    return strpos($usageSentences[$usage], '%s') === false
+        ? $usageSentences[$usage]
+        : sprintf($usageSentences[$usage], implode(', ', $places));
+};
+$usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $usageLabels, $usageTitle, $escapeAttr): string {
     $html = '';
     foreach ($fieldUsages[$fieldName] ?? [] as $usage => $places) {
         $html .= sprintf(
             '<span class="map-usage o-icon- %1$s" role="img" aria-label="%2$s" title="%3$s"></span>',
             $usageIcons[$usage],
             $escapeAttr($usageLabels[$usage]),
-            $escapeAttr($usageLabels[$usage] . ' : ' . implode(', ', $places))
+            $escapeAttr($usageTitle($usage, $places))
         );
     }
     return $html === '' ? '' : '<span class="map-usages">' . $html . '</span>';
@@ -304,7 +324,7 @@ $usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $
                         $fieldName = $map->fieldName();
                         $usageSummary = [];
                         foreach ($fieldUsages[$fieldName] ?? [] as $usage => $places) {
-                            $usageSummary[] = $usageLabels[$usage] . ' (' . implode(', ', $places) . ')';
+                            $usageSummary[] = $usageTitle($usage, $places);
                         }
                         $detailRows = array_filter([
                             $translate('Index') => $fieldName,

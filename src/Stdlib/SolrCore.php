@@ -50,6 +50,78 @@ use Solarium\QueryType\Select\Query\Query as SolariumQuery;
 class SolrCore
 {
     /**
+     * The sources of the maps required by the module to work at all: without
+     * them, a resource cannot be identified, filtered by visibility, owner or
+     * site.
+     *
+     * @var string[]
+     */
+    const REQUIRED_SOURCES = [
+        'resource_name',
+        'o:id',
+        'is_public',
+        'owner/o:id',
+        'site/o:id',
+    ];
+
+    /**
+     * The sources of the system maps: the metadata indexes created and managed
+     * by the module (identity, visibility, dates, typing, structure, contents,
+     * urls…), used by the queriers and the views even when no search page
+     * references them. They are never removed by the maps sync. A composed
+     * source ("owner/o:id") is matched by its root.
+     *
+     * @var string[]
+     */
+    const SYSTEM_SOURCES = [
+        // Identity.
+        'resource_name',
+        'o:id',
+        'o:title',
+        // Visibility and ownership.
+        'is_public',
+        'owner',
+        'site',
+        'access_level',
+        'group_id',
+        // Dates.
+        'created',
+        'modified',
+        // Typing.
+        'resource_class',
+        'resource_template',
+        // Structure.
+        'item_set',
+        'item_sets_tree',
+        'item',
+        'media',
+        'has_media',
+        'has_original',
+        'has_thumbnails',
+        'o:media_type',
+        'asset',
+        'is_open',
+        // Contents.
+        'content',
+        'value',
+        'property_values',
+        'annotation',
+        'value_annotations',
+        // Selections.
+        'selection_id',
+        'selection_public_id',
+        // Urls.
+        'url_api',
+        'url_admin',
+        'url_site',
+        'url_asset',
+        'url_original',
+        'url_thumbnail_large',
+        'url_thumbnail_medium',
+        'url_thumbnail_square',
+    ];
+
+    /**
      * @var SearchEngineRepresentation
      */
     protected $engine;
@@ -857,6 +929,22 @@ class SolrCore
             }
         }
 
+        // The system maps are used by the module itself, even when no page
+        // references them: flag them by provenance or by source; the required
+        // ones are flagged apart.
+        foreach ($this->maps() as $map) {
+            $source = $map->source();
+            $rootSource = strtok($source, '/');
+            if (in_array($source, self::REQUIRED_SOURCES, true)) {
+                $usages[$map->fieldName()]['required']['module'] = true;
+            } elseif ($map->setting('origin') === 'system'
+                || in_array($source, self::SYSTEM_SOURCES, true)
+                || in_array($rootSource, self::SYSTEM_SOURCES, true)
+            ) {
+                $usages[$map->fieldName()]['system']['module'] = true;
+            }
+        }
+
         return array_map(fn ($fieldUsages) => array_map('array_keys', $fieldUsages), $usages);
     }
 
@@ -961,21 +1049,8 @@ class SolrCore
      */
     public function missingRequiredMaps(): ?array
     {
-        // Check if the specified fields are available.
-        // Value is "is required", but not used for now.
-        $fields = [
-            // In fact, only resource name and id are really required.
-            'resource_name' => true,
-            'o:id' => true,
-            // Public, owner and site are used in many cases.
-            'is_public' => true,
-            'owner/o:id' => true,
-            'site/o:id' => true,
-            // 'search_index' => false,
-        ];
-
         $unavailableFields = [];
-        foreach (array_keys($fields) as $source) {
+        foreach (self::REQUIRED_SOURCES as $source) {
             /** @var \SearchSolr\Api\Representation\SolrMapRepresentation[] $maps */
             $maps = $this->mapsBySource($source);
             if (!count($maps)) {

@@ -1626,40 +1626,7 @@ class CoreController extends AbstractActionController
         }
 
         // Sources that must never be deleted.
-        $systemSources = [
-            'resource_name',
-            'o:id',
-            'o:title',
-            'is_public',
-            'owner',
-            'site',
-            'created',
-            'modified',
-            'resource_class',
-            'resource_template',
-            'has_media',
-            'asset',
-            'content',
-            'item_set',
-            'item_sets_tree',
-            'media',
-            'is_open',
-            'value',
-            'annotation',
-            'value_annotations',
-            'access_level',
-            'property_values',
-            'selection_id',
-            'selection_public_id',
-            'url_api',
-            'url_admin',
-            'url_site',
-            'url_asset',
-            'url_original',
-            'url_thumbnail_large',
-            'url_thumbnail_medium',
-            'url_thumbnail_square',
-        ];
+        $systemSources = SolrCoreRepresentation::SYSTEM_SOURCES;
 
         $services = $this->getEvent()->getApplication()
             ->getServiceManager();
