@@ -296,6 +296,14 @@ class Module extends AbstractModule
             [$this, 'handleSuggesterFormAddElements']
         );
 
+        // Append the tab "Solr" to the form of a search page bound to a
+        // solarium engine (query relevance settings).
+        $sharedEventManager->attach(
+            \AdvancedSearch\Form\Admin\SearchConfigConfigureForm::class,
+            'form.add_elements',
+            [$this, 'handleSearchConfigFormAddElements']
+        );
+
         // Handle suggester save for Solr engines.
         $sharedEventManager->attach(
             \AdvancedSearch\Controller\Admin\SearchSuggesterController::class,
@@ -487,6 +495,77 @@ class Module extends AbstractModule
     /**
      * Add Solr-specific fields to the suggester form.
      */
+    public function handleSearchConfigFormAddElements(Event $event): void
+    {
+        /** @var \AdvancedSearch\Form\Admin\SearchConfigConfigureForm $form */
+        $form = $event->getTarget();
+
+        /** @var \AdvancedSearch\Api\Representation\SearchConfigRepresentation $searchConfig */
+        $searchConfig = $form->getOption('search_config');
+        if (!$searchConfig
+            || $searchConfig->searchEngine()->engineAdapterName() !== 'solarium'
+        ) {
+            return;
+        }
+
+        // The fieldset name "engine" is the reserved section for the engine
+        // specific settings of a search page; it is displayed as a tab.
+        $fieldset = new \Laminas\Form\Fieldset('engine');
+        $fieldset
+            ->setLabel('Solr') // @translate
+            ->add([
+                'name' => 'field_boosts',
+                'type' => \Omeka\Form\Element\ArrayTextarea::class,
+                'options' => [
+                    'label' => 'Boost multipliers by index', // @translate
+                    'as_key_value' => true,
+                ],
+                'attributes' => [
+                    'id' => 'engine_field_boosts',
+                    'required' => false,
+                    'rows' => 12,
+                    'placeholder' => <<<'STRING'
+                        dcterms_creator_ss = 100
+                        dcterms_creator_txt = 50
+                        dcterms_subject_ss = 10
+                        dcterms_subject_txt = 5
+                        dcterms_description_txt = 0.01
+                        bibo_content_txt = 0.001
+                        STRING,
+                ],
+            ])
+            ->add([
+                'name' => 'minimum_match',
+                'type' => \Laminas\Form\Element\Text::class,
+                'options' => [
+                    'label' => 'Minimum match (or/and)', // @translate
+                    'info' => 'Integer "1" means "OR", "100%" means "AND". Complex expressions are possible, like "3<80%". If empty, the solrconfig.xml config is used.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'engine_minimum_match',
+                    'required' => false,
+                    'placeholder' => '3<80%',
+                ],
+            ])
+            ->add([
+                'name' => 'tie_breaker',
+                'type' => \Common\Form\Element\OptionalNumber::class,
+                'options' => [
+                    'label' => 'Tie breaker', // @translate
+                    'info' => 'Increase score according to the number of matched fields. If empty, the solrconfig.xml config is used.', // @translate
+                ],
+                'attributes' => [
+                    'id' => 'engine_tie_breaker',
+                    'required' => false,
+                    'placeholder' => '0.15',
+                    'min' => '0.0',
+                    'max' => '1.0',
+                    'step' => '0.01',
+                ],
+            ]);
+        $form->add($fieldset);
+    }
+
     public function handleSuggesterFormAddElements(Event $event): void
     {
         /** @var \AdvancedSearch\EngineAdapter\EngineAdapterInterface $engineAdapter */

@@ -983,15 +983,15 @@ class SolariumQuerier extends AbstractQuerier
             $this->select->setQuery($refineEscaped);
         }
 
-        // Set settings used for main search.
-        $cfg = array_filter($this->solrCore->settings()['query'] ?? []);
-        if ($cfg) {
-            // TODO These options and other DisMax ones can be passed directly as options. Even the query is an option.
+        // The query relevance settings are a facet of the query context, so
+        // they are set by search page in its config.
+        // TODO These options and other DisMax ones can be passed directly as options. Even the query is an option.
+        $minimumMatch = $this->query->getMinimumMatch();
+        $tieBreaker = $this->query->getTieBreaker();
+        if ($minimumMatch !== '' || $tieBreaker !== '') {
             $dismax = $this->select->getDisMax();
-            isset($cfg['minimum_match'])
-                && $dismax->setMinimumMatch($cfg['minimum_match']);
-            isset($cfg['tie_breaker'])
-                && $dismax->setTie((float) $cfg['tie_breaker']);
+            $minimumMatch === '' || $dismax->setMinimumMatch($minimumMatch);
+            $tieBreaker === '' || $dismax->setTie((float) $tieBreaker);
         }
 
         return $this;

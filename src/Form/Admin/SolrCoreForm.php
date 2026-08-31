@@ -298,6 +298,8 @@ class SolrCoreForm extends Form
             ->setEmptyOption(null);
         */
 
+        // The query relevance settings (minimum match, tie breaker) are a facet
+        // of the query context: they are set by search page in its config.
         $querySettingsFieldset = new Fieldset('query');
         $querySettingsFieldset
             ->setLabel('Query settings'); // @translate
@@ -330,11 +332,6 @@ class SolrCoreForm extends Form
                     ],
                 ]);
         }
-
-        // Query relevance settings (minimum match, tie breaker) were moved to
-        // the "Search configuration" section on the core show page, with the
-        // catchall analyzer, since they tune search behaviour rather than the
-        // connection/indexing defined here.
 
         // TODO Other fields (boost...) requires multiple fields. See https://secure.php.net/manual/en/class.solrdismaxquery.php.
 

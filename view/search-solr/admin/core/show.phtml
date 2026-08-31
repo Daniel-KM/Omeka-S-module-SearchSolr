@@ -198,21 +198,6 @@ try {
                 </select>
             </div>
         </div>
-        <?php $querySettings = $solrCore->settings()['query'] ?? []; ?>
-        <div class="field">
-            <label for="minimum_match"><?= $translate('Minimum match (or/and)') ?></label>
-            <div class="inputs">
-                <input id="minimum_match" name="minimum_match" type="text" value="<?= $escape($querySettings['minimum_match'] ?? '') ?>" placeholder="3&lt;80%">
-                <span class="explanation"><?= $translate('Integer "1" means "OR", "100%" means "AND". Complex expressions are possible, like "3<80%". If empty, the solrconfig.xml config is used.') ?></span>
-            </div>
-        </div>
-        <div class="field">
-            <label for="tie_breaker"><?= $translate('Tie breaker') ?></label>
-            <div class="inputs">
-                <input id="tie_breaker" name="tie_breaker" type="number" min="0.0" max="1.0" step="0.01" value="<?= $escape($querySettings['tie_breaker'] ?? '') ?>" placeholder="0.15">
-                <span class="explanation"><?= $translate('Increase score according to the number of matched fields. If empty, the solrconfig.xml config is used.') ?></span>
-            </div>
-        </div>
         <button type="submit"><?= $translate('Apply') ?></button>
     </form>
 </details>

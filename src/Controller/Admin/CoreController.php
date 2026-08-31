@@ -238,14 +238,10 @@ class CoreController extends AbstractActionController
         $data['o:settings']['resource_languages'] = implode(' ', array_unique(array_filter(explode(' ', $data['o:settings']['resource_languages']))));
         $data['o:settings']['field_boost'] = $this->prepareFieldsBoost($solrCore);
 
-        // Query relevance settings (minimum_match, tie_breaker) are edited on
-        // the show page, not in this form: preserve them so a full save here
-        // does not wipe them.
-        $existingQuery = $solrCore->settings()['query'] ?? [];
-        foreach (['minimum_match', 'tie_breaker'] as $key) {
-            if (isset($existingQuery[$key]) && $existingQuery[$key] !== '') {
-                $data['o:settings']['query'][$key] = $existingQuery[$key];
-            }
+        // The catchall info is a display-only element of the form.
+        unset($data['o:settings']['query']['copy_field_info']);
+        if (empty($data['o:settings']['query'])) {
+            unset($data['o:settings']['query']);
         }
 
         // Passwords are stored encrypted at rest; an empty submission keeps
@@ -1663,7 +1659,7 @@ class CoreController extends AbstractActionController
             // Boosts are applied to the query fields, so a boost set on a bare
             // property term needs the fulltext index; when the field name
             // carries a suffix, that suffix is used instead.
-            foreach ($config->subSetting('index', 'field_boosts', []) as $fieldName => $boost) {
+            foreach ($config->subSetting('engine', 'field_boosts', []) as $fieldName => $boost) {
                 $this->collectFieldAsProperty(
                     (string) $fieldName,
                     $usedFields,
@@ -2512,14 +2508,9 @@ class CoreController extends AbstractActionController
         $id = $this->params('id');
         $solrCore = $this->solrCore((int) $id);
 
-        // Persist query relevance settings, moved here from the core edit form:
-        // they tune search behaviour like the catchall analyzer below. Empty
-        // values are dropped by the adapter (fallback to solrconfig.xml).
-        $settings = $solrCore->settings();
-        $settings['query']['minimum_match'] = trim((string) $this->params()->fromPost('minimum_match', ''));
-        $settings['query']['tie_breaker'] = trim((string) $this->params()->fromPost('tie_breaker', ''));
-        $this->updateSolrSettings((int) $id, $settings);
-
+        // The query relevance settings (minimum match, tie breaker) are edited
+        // on the core form; this action only manages the catchall analyzer
+        // schema.
         $searchConfig = $this->params()->fromPost('search_config', 'keep');
 
         // Combine linguistic + language into one value.
@@ -2528,11 +2519,9 @@ class CoreController extends AbstractActionController
             $searchConfig = $lang ? 'linguistic:' . $lang : 'keep';
         }
 
-        // Option "keep": only the query relevance settings above were saved;
-        // the catchall analyzer schema is left untouched.
         if ($searchConfig === 'keep') {
             $this->messenger()->addSuccess(new PsrMessage(
-                'Query relevance settings saved. Catchall analyzer unchanged.' // @translate
+                'Catchall analyzer unchanged.' // @translate
             ));
             return $this->redirect()->toRoute('admin/search-manager/solr/core-id', [
                 'id' => $id,
