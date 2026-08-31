@@ -1903,6 +1903,9 @@ class CoreController extends AbstractActionController
             } elseif ($scopeQuery === 'used') {
                 $sources[] = 'used';
             }
+            if ($this->params()->fromQuery('media')) {
+                $sources[] = 'media';
+            }
             $clean = (bool) $this->params()->fromQuery('clean');
             $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
             $maxCardinality = (int) $this->params()->fromQuery('max_cardinality', 100);
@@ -1919,13 +1922,14 @@ class CoreController extends AbstractActionController
             $maxCardinality = (int) ($data['max_cardinality'] ?? 100);
         }
         if (in_array('all', $sources, true)) {
-            $sources = ['configs', 'settings', 'site_settings', 'templates', 'used'];
+            $sources = ['configs', 'settings', 'site_settings', 'templates', 'used', 'media'];
         }
         $wantConfigs = in_array('configs', $sources, true);
         $wantSettings = in_array('settings', $sources, true);
         $wantSiteSettings = in_array('site_settings', $sources, true);
         $wantTemplates = in_array('templates', $sources, true);
         $wantUsed = in_array('used', $sources, true);
+        $wantMedia = in_array('media', $sources, true);
 
         // Check for shared engine (index_name).
         // Sync cannot work reliably when multiple Omeka instances share a core.
@@ -2382,6 +2386,48 @@ class CoreController extends AbstractActionController
                     ],
                     'o:settings' => ($suffixSettings['_ss'] ?? ['formatter' => ''])
                         + ['label' => ($propertyLabels[$term] ?? $term) . ' (' . $lang . ')', 'origin' => 'sync'],
+                ]);
+                $created[] = $fieldName;
+                $existingFieldNames[] = $fieldName;
+            }
+        }
+
+        // 7b. Values of the media, indexed on the document of their item, so a
+        // search matching the record of a media returns the item. The field is
+        // distinct from the one of the item: merging them would fill the facets
+        // and the sorts of the item with the values of its files.
+        // Only a text index is created: aggregating the values of n media in an
+        // exact-value index would be meaningless for a facet or a sort.
+        if ($wantMedia) {
+            $mediaTerms = $connection->fetchFirstColumn(
+                'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+                FROM value v
+                INNER JOIN property pr ON pr.id = v.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                INNER JOIN resource r ON r.id = v.resource_id
+                WHERE r.resource_type = ?',
+                [\Omeka\Entity\Media::class]
+            );
+            foreach ($mediaTerms as $term) {
+                // A long value (ocr, transcription) would copy the whole text
+                // of every media into the document of the item.
+                if (in_array($term, $longValueProperties)) {
+                    continue;
+                }
+                $fieldName = 'media_' . strtr($term, ':', '_') . '_txt';
+                if (in_array($fieldName, $existingFieldNames)) {
+                    continue;
+                }
+                $isAudit || $api->create('solr_maps', [
+                    'o:solr_core' => ['o:id' => $id],
+                    'o:resource_name' => 'items',
+                    'o:field_name' => $fieldName,
+                    'o:source' => 'media/' . $term,
+                    'o:settings' => ['formatter' => '']
+                        + [
+                            'label' => ($propertyLabels[$term] ?? $term) . ' (media)',
+                            'origin' => 'sync',
+                        ],
                 ]);
                 $created[] = $fieldName;
                 $existingFieldNames[] = $fieldName;

@@ -23,6 +23,7 @@ class SolrCoreSyncForm extends Form
         'site_settings' => 'Site settings (bounce links)', // @translate
         'templates' => 'Resource templates: a text and an exact index for every property of the used templates', // @translate
         'used' => 'Used properties: a text and an exact index for every property with a value', // @translate
+        'media' => 'Media values: a text index on the item for every property used by its media, so a search matching a media returns the item', // @translate
     ];
 
     public function init(): void
