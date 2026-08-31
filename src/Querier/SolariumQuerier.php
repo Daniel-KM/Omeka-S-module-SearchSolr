@@ -1407,6 +1407,12 @@ class SolariumQuerier extends AbstractQuerier
                     $this->select->addSort($idField, $solariumOrder);
                 }
             }
+        } else {
+            // Without an explicit sort, the most recent resources come first.
+            $idField = $this->fieldToIndex('id');
+            if ($idField) {
+                $this->select->addSort($idField, SelectQuery::SORT_DESC);
+            }
         }
 
         return $this;
