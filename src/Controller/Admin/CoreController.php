@@ -1906,6 +1906,9 @@ class CoreController extends AbstractActionController
             if ($this->params()->fromQuery('media')) {
                 $sources[] = 'media';
             }
+            if ($this->params()->fromQuery('media_long')) {
+                $sources[] = 'media_long';
+            }
             $clean = (bool) $this->params()->fromQuery('clean');
             $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
             $maxCardinality = (int) $this->params()->fromQuery('max_cardinality', 100);
@@ -1929,7 +1932,9 @@ class CoreController extends AbstractActionController
         $wantSiteSettings = in_array('site_settings', $sources, true);
         $wantTemplates = in_array('templates', $sources, true);
         $wantUsed = in_array('used', $sources, true);
-        $wantMedia = in_array('media', $sources, true);
+        $wantMediaLong = in_array('media_long', $sources, true);
+        // The long values are useless without the media values themselves.
+        $wantMedia = $wantMediaLong || in_array('media', $sources, true);
 
         // Check for shared engine (index_name).
         // Sync cannot work reliably when multiple Omeka instances share a core.
@@ -2409,9 +2414,10 @@ class CoreController extends AbstractActionController
                 [\Omeka\Entity\Media::class]
             );
             foreach ($mediaTerms as $term) {
-                // A long value (ocr, transcription) would copy the whole text
-                // of every media into the document of the item.
-                if (in_array($term, $longValueProperties)) {
+                // A long value (ocr, transcription) copies the whole text of
+                // every media into the document of the item, so it is included
+                // only on an explicit request.
+                if (!$wantMediaLong && in_array($term, $longValueProperties)) {
                     continue;
                 }
                 $fieldName = 'media_' . strtr($term, ':', '_') . '_txt';

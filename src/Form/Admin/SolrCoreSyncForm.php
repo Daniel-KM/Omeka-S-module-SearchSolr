@@ -24,6 +24,7 @@ class SolrCoreSyncForm extends Form
         'templates' => 'Resource templates: a text and an exact index for every property of the used templates', // @translate
         'used' => 'Used properties: a text and an exact index for every property with a value', // @translate
         'media' => 'Media values: a text index on the item for every property used by its media, so a search matching a media returns the item', // @translate
+        'media_long' => 'Media long values (ocr, transcription): include them in the index of the item. Warning: the whole text of every media is copied in the document of its item, so the index may become very large', // @translate
     ];
 
     public function init(): void
