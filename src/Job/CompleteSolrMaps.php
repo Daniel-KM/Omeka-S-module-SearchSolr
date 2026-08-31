@@ -199,22 +199,43 @@ class CompleteSolrMaps extends AbstractJob
 
         // Load properties and filter to used ones.
         $properties = $api->search('properties')->getContent();
-        $usedPropertyIds = $this->listUsedPropertyIds(
-            $connection, $resourceName
-        );
+	if ($mode == 'datatypes') {
+            $usedProperties = $this->analyseUsedPropertyIds(
+		$connection, $resourceName
+            );
+	} else {
+            $usedProperties = $this->listUsedPropertyIds(
+		$connection, $resourceName
+            );
+	}
 
         $newMaps = [];
 
         foreach ($properties as $property) {
-            if (!in_array($property->id(), $usedPropertyIds)) {
+            if (!array_key_exists($property->id(), $usedProperties)) {
                 continue;
             }
 
             $term = $property->term();
             $label = $property->label();
 
-            // _txt: fulltext search.
+	    $solrFieldType = 's';
             $name = strtr($term, ':', '_') . '_txt';
+
+	    if ($mode == 'datatypes') {
+		$stats = $usedProperties[$property->id()];
+
+		if ($stats['z'] >= 0.998 * $stats['used']) {
+	            // integer
+	            $name = strtr($term, ':', '_') . '_is';
+	            $solrFieldType = 'i';
+		} elseif ($stats['r'] >= 0.998 * $stats['used']) {
+	            // floating point
+	            $name = strtr($term, ':', '_') . '_ds';
+	            $solrFieldType = 'd';
+		}
+	    }
+
             if ($this->createMap(
                 $api, $solrCoreId, $resourceName,
                 $name, $term, null, [],
@@ -253,21 +274,28 @@ class CompleteSolrMaps extends AbstractJob
             $skipStringFields = $mode === 'recommended'
                 && in_array($term, $longProperties);
 
+	    // In datatypes mode, skip _ss for fields with too many distinct
+	    // values.
+	    $skipManyValues = $mode === 'datatypes'
+		&& sqrt((int)$stats['used']) * 5 < $stats['numval'];
+
             if (!$skipStringFields) {
-                // _ss: filters and facets.
-                $name = strtr($term, ':', '_') . '_ss';
-                if ($this->createMap(
-                    $api, $solrCoreId, $resourceName,
-                    $name, $term, $term, [],
-                    ['formatter' => '', 'parts' => ['main'],
-                        'label' => $label],
-                    $existingFields
-                )) {
-                    $newMaps[] = $name;
-                }
+		if ($solrFieldType == 's' && !$skipManyValues) {
+                    // _ss: filters and facets.
+                    $name = strtr($term, ':', '_') . '_ss';
+                    if ($this->createMap(
+			$api, $solrCoreId, $resourceName,
+			$name, $term, $term, [],
+			['formatter' => '', 'parts' => ['main'],
+                            'label' => $label],
+			$existingFields
+                    )) {
+			$newMaps[] = $name;
+                    }
+		}
 
                 // _s: sort.
-                $name = strtr($term, ':', '_') . '_s';
+                $name = strtr($term, ':', '_') . '_' . $solrFieldType;
                 if ($this->createMap(
                     $api, $solrCoreId, $resourceName,
                     $name, $term, null, [],
@@ -375,7 +403,46 @@ class CompleteSolrMaps extends AbstractJob
             ->orderBy('value.property_id', 'ASC');
         return $connection
             ->executeQuery($qb->getSQL(), $qb->getParameters())
-            ->fetchFirstColumn();
+            ->fetchAllAssociativeIndexed();
+    }
+
+    protected function analyseUsedPropertyIds(
+        \Doctrine\DBAL\Connection $connection,
+        string $resourceName
+    ): array {
+        $resourceTypes = [
+            'items' => \Omeka\Entity\Item::class,
+            'item_sets' => \Omeka\Entity\ItemSet::class,
+            'media' => \Omeka\Entity\Media::class,
+        ];
+        if (class_exists('DigitalObject\Module', false)) {
+            $resourceTypes['digital_objects'] = \DigitalObject\Entity\DigitalObject::class;
+        }
+        if (!isset($resourceTypes[$resourceName])) {
+            return [];
+        }
+        $qb = $connection->createQueryBuilder()
+            ->select(array(
+		'value.property_id',
+                'COUNT(*) used',
+                'COUNT(DISTINCT value.value) numval',
+                'SUM(value.value RLIKE \'^-?\\\\d+(\\\\.\\\\d+)?$\') r',
+                'SUM(value.value RLIKE \'^-?\\\\d+$\') z'
+            ))
+            ->from('value', 'value')
+            ->innerJoin(
+                'value', 'resource', 'resource',
+                'resource.id = value.resource_id'
+            )
+	    ->groupBy('value.property_id')
+            ->where('resource.resource_type = :resource_type')
+            ->setParameter(
+                'resource_type', $resourceTypes[$resourceName]
+            )
+            ->orderBy('value.property_id', 'ASC');
+        return $connection
+            ->executeQuery($qb->getSQL(), $qb->getParameters())
+            ->fetchAllAssociativeIndexed();
     }
 
     protected function listLongValueProperties(

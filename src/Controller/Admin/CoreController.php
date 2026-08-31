@@ -1221,6 +1221,11 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
     }
 
+    public function dataTypesMapsAction()
+    {
+        return $this->dispatchCompleteMapsJob('datatypes');
+    }
+
     public function recommendedMapsAction()
     {
         return $this->dispatchCompleteMapsJob('recommended');
