@@ -19,7 +19,10 @@
         var hasStale = false;
         Object.keys(types).forEach(function (type) {
             var row = types[type];
-            var detail = type + ': ' + row.total_api + ' / ' + row.total_index;
+            // The indexed documents come first, as a progress: "14300/70010
+            // indexed", clearer than two numbers separated by a slash.
+            var detail = type + ': ' + row.total_index + '/' + row.total_api
+                + ' ' + element.dataset.labelIndexed;
             if (row.total_stale) {
                 hasStale = true;
                 detail += ' + ' + row.total_stale + ' ' + element.dataset.labelStale;

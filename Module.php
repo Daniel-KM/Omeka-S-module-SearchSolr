@@ -428,14 +428,15 @@ class Module extends AbstractModule
             // milliseconds, too much for each display of the search manager, so
             // it is filled by javascript from the cached result.
             $statusHtml = $escape((string) $solrCore->status(true)) . ' '
-                . sprintf('<span class="solr-parity" data-url="%1$s" data-label-ok="%2$s" data-label-mismatch="%3$s" data-label-error="%4$s" data-label-stale="%5$s" data-label-stale-only="%6$s" title="%7$s"></span>',
+                . sprintf('<span class="solr-parity" data-url="%1$s" data-label-ok="%2$s" data-label-mismatch="%3$s" data-label-error="%4$s" data-label-stale="%5$s" data-label-stale-only="%6$s" data-label-indexed="%8$s" title="%7$s"></span>',
                     $escapeAttr($solrCore->adminUrl('check-parity')),
                     $escapeAttr($translate('index complete')), // @translate
                     $escapeAttr($translate('index incomplete')), // @translate
                     $escapeAttr($translate('index unreachable')), // @translate
                     $escapeAttr($translate('outdated')), // @translate
                     $escapeAttr($translate('index complete but outdated')), // @translate
-                    $escapeAttr($translate('Resources of the api compared with the documents of the index: total of the api / total of the index, and the documents that were not reindexed after a change of their resource. An indirect change, through a linked resource or an item set, is not detected: only a full reindexation fixes such documents.')) // @translate
+                    $escapeAttr($translate('Documents of the index compared with the resources of the api: total of the index / total of the api, and the documents that were not reindexed after a change of their resource. An indirect change, through a linked resource or an item set, is not detected: only a full reindexation fixes such documents.')), // @translate
+                    $escapeAttr($translate('indexed')) // @translate
                 );
             $details[$engineId] = [
                 'url' => $urlHtml,
