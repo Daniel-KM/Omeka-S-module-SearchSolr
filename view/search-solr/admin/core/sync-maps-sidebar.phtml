@@ -21,6 +21,7 @@ $form->prepare();
 $sources = $form->get('sync_sources');
 $sourcesChecked = array_map('strval', (array) $sources->getValue());
 $clean = $form->get('clean');
+$mode = $form->get('mode');
 $multilingual = $form->get('multilingual');
 $maxCardinality = $form->get('max_cardinality');
 ?>
@@ -28,6 +29,19 @@ $maxCardinality = $form->get('max_cardinality');
 <div id="sidebar-confirm">
     <h3><?= $escape($translate('Align the maps')) ?></h3>
     <?= $this->form()->openTag($form) ?>
+
+    <fieldset>
+        <legend><?= $escape($translate('Mode')) ?></legend>
+        <p class="explanation"><?= $escape($translate('The audit reports the maps that would be created or removed, and the fields used by a config that cannot be mapped, for example a name that is neither a property nor an index.')) ?></p>
+        <div class="inputs">
+            <?php foreach ($mode->getValueOptions() as $value => $label): ?>
+            <label>
+                <input type="radio" name="mode" value="<?= $escapeAttr($value) ?>"<?= $mode->getValue() === $value ? ' checked="checked"' : '' ?>>
+                <?= $escape($translate($label)) ?>
+            </label>
+            <?php endforeach; ?>
+        </div>
+    </fieldset>
 
     <fieldset>
         <legend><?= $escape($translate('Sources of the properties to map')) ?></legend>
@@ -88,7 +102,7 @@ $maxCardinality = $form->get('max_cardinality');
     <?php if ($snapshots): ?>
     <?php $i18n = $plugins->get('i18n'); ?>
     <h4 class="map-snapshots-heading"><?= $escape(sprintf($translate('Map snapshots (%d)'), count($snapshots))) ?></h4>
-    <p class="explanation"><?= $escape($translate('A snapshot is taken before each maps alignment. The 5 most recent snapshots are kept on this core.')) ?></p>
+    <p class="explanation"><?= $escape($translate('A snapshot is taken before each maps alignment. Only the 20 most recent snapshots are kept on this core.')) ?></p>
     <ul class="map-snapshots">
         <?php foreach ($snapshots as $i => $snap): ?>
         <?php

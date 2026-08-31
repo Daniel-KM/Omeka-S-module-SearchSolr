@@ -1077,8 +1077,16 @@ class SolrCore
     {
         $settings = $map->settings();
         $pool = $map->pool() ?? [];
-        if ($map->setting('origin') === 'manual') {
+        // An explicit provenance wins over the heuristic below, that only
+        // guesses the provenance of the maps that have none: a map given back
+        // to the automatic management is managed by the alignment, whatever
+        // its settings, else the flag could never be cleared.
+        $origin = $map->setting('origin');
+        if ($origin === 'manual') {
             return true;
+        }
+        if ($origin === 'sync' || $origin === 'system') {
+            return false;
         }
         $formatter = $settings['formatter'] ?? '';
         if ($formatter !== '' && $formatter !== 'text') {

@@ -65,6 +65,14 @@ class CoreController extends AbstractActionController
      */
     protected $fieldsFromConfigs = [];
 
+   /**
+     * Fields used by a config that cannot be mapped, filled during the
+     * collection of the alignment and reported by the audit.
+     *
+     * @var array
+     */
+    protected $fieldsUnresolved = [];
+
     /**
      * The structure should be the same in import and export.
      *
@@ -1433,9 +1441,14 @@ class CoreController extends AbstractActionController
             if (!$this->getRequest()->isXmlHttpRequest()) {
                 return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
             }
+            // Same rule as below: the flag and the heuristic freeze a map
+            // the same way, so both are counted.
             $totalManual = 0;
             foreach ($solrCore->maps() as $map) {
-                if ($map->setting('origin') === 'manual') {
+                $origin = $map->setting('origin');
+                if ($origin === 'manual'
+                    || (!$origin && $solrCore->isCustomizedMap($map))
+                ) {
                     ++$totalManual;
                 }
             }
@@ -1458,7 +1471,13 @@ class CoreController extends AbstractActionController
 
         $updated = [];
         foreach ($solrCore->maps() as $map) {
-            if ($map->setting('origin') !== 'manual') {
+            // A customized map without provenance is a map edited by hand too:
+            // the heuristic protects it exactly like the flag, so the task
+            // takes it in charge as well, else it would stay frozen.
+            $origin = $map->setting('origin');
+            $isFrozen = $origin === 'manual'
+                || (!$origin && $solrCore->isCustomizedMap($map));
+            if (!$isFrozen) {
                 continue;
             }
             $settings = $map->settings();
@@ -1468,6 +1487,17 @@ class CoreController extends AbstractActionController
         }
 
         if ($updated) {
+            // The maps lose the protection against the alignment, that may
+            // remove them later, so keep a trace out of the session.
+            $this->logger()->notice(
+                'Solr core #{solr_core_id} ("{solr_core_name}"): {count} maps are managed automatically again: {maps}.', // @translate
+                [
+                    'solr_core_id' => $id,
+                    'solr_core_name' => $solrCore->name(),
+                    'count' => count($updated),
+                    'maps' => implode(', ', $updated),
+                ]
+            );
             $this->messenger()->addSuccess(new PsrMessage(
                 '{count} maps are managed automatically again: {maps}. They now follow the sources of the alignment, and the unused ones can be removed.', // @translate
                 ['count' => count($updated), 'maps' => implode(', ', $updated)]
@@ -1490,7 +1520,7 @@ class CoreController extends AbstractActionController
         $connection = $solrCore->clientSettings();
         $coreName = (string) ($connection['core'] ?? '');
         $configSet = trim((string) ($connection['config_set'] ?? '')) ?: '_default';
-        $logger = $solrCore->getServiceLocator()->get('Omeka\Logger');
+        $logger = $this->logger();
         $coreAdmin = new \SearchSolr\Solr\CoreAdmin($logger);
 
         // A core created manually on the server is reused without creation.
@@ -1546,7 +1576,7 @@ class CoreController extends AbstractActionController
             return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
-        $logger = $solrCore->getServiceLocator()->get('Omeka\Logger');
+        $logger = $this->logger();
         $coreAdmin = new \SearchSolr\Solr\CoreAdmin($logger);
         if ($coreAdmin->deleteCore($connection, $coreName)) {
             $this->messenger()->addSuccess(new PsrMessage(
@@ -1918,6 +1948,7 @@ class CoreController extends AbstractActionController
             $clean = (bool) $this->params()->fromQuery('clean');
             $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
             $maxCardinality = (int) $this->params()->fromQuery('max_cardinality', 100);
+            $isAudit = $this->params()->fromQuery('mode') === 'audit';
         } else {
             $form->setData($this->params()->fromPost());
             if (!$form->isValid()) {
@@ -1929,6 +1960,7 @@ class CoreController extends AbstractActionController
             $clean = (bool) ($data['clean'] ?? false);
             $multilingual = (bool) ($data['multilingual'] ?? false);
             $maxCardinality = (int) ($data['max_cardinality'] ?? 100);
+            $isAudit = ($data['mode'] ?? 'sync') === 'audit';
         }
         if (in_array('all', $sources, true)) {
             $sources = ['configs', 'settings', 'site_settings', 'templates', 'used', 'media', 'datatypes'];
@@ -2013,6 +2045,15 @@ class CoreController extends AbstractActionController
                     continue;
                 }
                 $type = $f['type'] ?? '';
+                // The advanced filter is not an index: it is a row where the
+                // user picks one of the indexes it lists, so these are the
+                // used ones. They need "_txt" for the search on words.
+                if ($type === 'Advanced' || $v === 'advanced') {
+                    foreach (array_keys($f['options']['fields'] ?? $f['fields'] ?? []) as $advancedField) {
+                        $this->collectFieldAsProperty((string) $advancedField, $usedFields, ['_txt']);
+                    }
+                    continue;
+                }
                 $isRange = in_array($type, ['Range', 'RangeDouble']);
                 $hasEnd = $isRange && !empty($f['field_end']);
                 if ($hasEnd) {
@@ -2173,8 +2214,8 @@ class CoreController extends AbstractActionController
 
         // 4b. Snapshot the current configuration before any modification, so
         // that it can be restored from the core page if the sync produces an
-        // unwanted result. The last 5 snapshots are kept per core.
-        $this->snapshotMaps($solrCore, $existingMaps);
+        // unwanted result. The last snapshots are kept per core.
+        $isAudit || $this->snapshotMaps($solrCore, $existingMaps);
 
         // 5. Delete the property maps that serve nothing, when asked: the
         // same rule as the action "Remove unused maps", based on the real
@@ -2183,7 +2224,7 @@ class CoreController extends AbstractActionController
         $kept = [];
         if ($clean) {
             foreach ($solrCore->listUnusedMaps() as $map) {
-                $api->delete('solr_maps', $map->id());
+                $isAudit || $api->delete('solr_maps', $map->id());
                 $deleted[] = $map->fieldName();
             }
             foreach ($existingBySource as $source => $maps) {
@@ -2450,15 +2491,15 @@ class CoreController extends AbstractActionController
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
                 }
-                if ($suffix === '_fold_s') {
+                // An audit does not modify the schema: the fields are only
+                // pushed on a real sync.
+                if ($suffix === '_fold_s' && !$isAudit) {
                     $foldedSchemaReady ??= $solrCore->ensureFoldedFieldType()
                         && $solrCore->ensureFoldedDynamicField();
                     if (!$foldedSchemaReady) {
                         continue;
                     }
                 }
-                // An audit does not modify the schema, so the field is only
-                // pushed on a real sync.
                 if ($suffix === '_ps' && !$isAudit) {
                     $pointSchemaReady ??= $solrCore->ensurePointDynamicField();
                     if (!$pointSchemaReady) {
@@ -2467,7 +2508,7 @@ class CoreController extends AbstractActionController
                 }
                 $mapSettings = $suffixSettings[$suffix]
                     ?? ['formatter' => ''];
-                $api->create('solr_maps', [
+                $isAudit || $api->create('solr_maps', [
                     'o:solr_core' => ['o:id' => $id],
                     'o:resource_name' => 'resources',
                     'o:field_name' => $fieldName,
@@ -2490,7 +2531,7 @@ class CoreController extends AbstractActionController
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
                 }
-                $api->create('solr_maps', [
+                $isAudit || $api->create('solr_maps', [
                     'o:solr_core' => ['o:id' => $id],
                     'o:resource_name' => 'resources',
                     'o:field_name' => $fieldName,
@@ -2619,7 +2660,7 @@ class CoreController extends AbstractActionController
             if (isset($existingMapsByField[$fieldName])) {
                 $existing = $existingMapsByField[$fieldName];
                 if ($existing->resourceName() !== $scope) {
-                    $api->update(
+                    $isAudit || $api->update(
                         'solr_maps',
                         $existing->id(),
                         ['o:resource_name' => $scope],
@@ -2629,7 +2670,7 @@ class CoreController extends AbstractActionController
                     $created[] = $fieldName . ' (fixed scope)';
                 }
             } else {
-                $api->create('solr_maps', [
+                $isAudit || $api->create('solr_maps', [
                     'o:solr_core' => ['o:id' => $id],
                     'o:resource_name' => $scope,
                     'o:field_name' => $fieldName,
@@ -2649,7 +2690,7 @@ class CoreController extends AbstractActionController
                 === \Omeka\Module\Manager::STATE_ACTIVE
             && !in_array('selection_public_is', $existingFieldNames)
         ) {
-            $api->create('solr_maps', [
+            $isAudit || $api->create('solr_maps', [
                 'o:solr_core' => ['o:id' => $id],
                 'o:resource_name' => 'resources',
                 'o:field_name' => 'selection_public_is',
@@ -2667,6 +2708,44 @@ class CoreController extends AbstractActionController
 
         // Summary line.
         $totalExisting = count($existingMaps);
+
+        // The audit changed nothing: the counts are what an alignment would do.
+        if ($isAudit) {
+            $this->messenger()->addNotice(new PsrMessage(
+                'Audit (sources: {sources}, cleaning: {cleaning}), nothing was changed. Properties collected: {props}. Maps: {before}, that would be removed: {deleted}, kept as customized: {kept}, created: {created}.', // @translate
+                [
+                    'sources' => implode(', ', $sources),
+                    'cleaning' => $clean ? 'on' : 'off',
+                    'props' => count($usedFields),
+                    'before' => $totalExisting,
+                    'deleted' => count($deleted),
+                    'kept' => count($kept),
+                    'created' => count($created),
+                ]
+            ));
+            if ($created) {
+                $this->messenger()->addNotice(new PsrMessage(
+                    'Maps that would be created: {list}.', // @translate
+                    ['list' => implode(', ', $created)]
+                ));
+            }
+            if ($deleted) {
+                $this->messenger()->addWarning(new PsrMessage(
+                    'Maps that would be removed: {list}.', // @translate
+                    ['list' => implode(', ', $deleted)]
+                ));
+            }
+            // The real value of the audit: a config may use a field that the
+            // alignment cannot map, so it is never created and the search fails
+            // on an undefined field, silently until then.
+            $this->messageFieldsDangling($existingFieldNames);
+            return $this->redirect()->toRoute(
+                'admin/search-manager/solr/core-id', ['id' => $id]
+            );
+        }
+
+        $this->messageFieldsDangling($existingFieldNames);
+
         $this->messenger()->addSuccess(new PsrMessage(
             'Sync complete (sources: {sources}, cleaning: {cleaning}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
             [
@@ -2727,6 +2806,30 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute(
             'admin/search-manager/solr/core-id', ['id' => $id]
         );
+    }
+
+    /**
+     * Warn about the fields used by a config that no map can provide.
+     *
+     * A field that is neither a property term nor an index built on one cannot
+     * be created by the alignment, that ignores it silently. It is a real issue
+     * only when no map provides it: the field is then absent from the index and
+     * Solr answers "undefined field" as soon as the facet or the filter is
+     * used. The system fields, that are mapped without being built on a
+     * property, are not concerned.
+     *
+     * @param string[] $existingFieldNames
+     */
+    protected function messageFieldsDangling(array $existingFieldNames): void
+    {
+        $fieldsDangling = array_diff(array_keys($this->fieldsUnresolved), $existingFieldNames);
+        if (!$fieldsDangling) {
+            return;
+        }
+        $this->messenger()->addError(new PsrMessage(
+            'Fields used by a config but provided by no map: {list}. They cannot be created by the alignment, since they are neither a property nor an index built on one, and a query on them fails on an undefined field.', // @translate
+            ['list' => implode(', ', $fieldsDangling)]
+        ));
     }
 
     /**
@@ -2841,9 +2944,18 @@ class CoreController extends AbstractActionController
                 $suffixes = ['_' . $m[3]];
             }
         }
-        // Alias names are ignored here: they are resolved via the aliases
-        // config which lists their constituent fields.
+        // The score of the engine is a sort key, not an index of the schema.
+        if ($value === 'relevance' || $value === 'score') {
+            return;
+        }
+
+        // A name that is neither a property term nor an index built on one
+        // cannot be mapped: the alignment ignores it silently, so it is kept
+        // to be reported by the audit.
         if ($term === null) {
+            if ($value !== '') {
+                $this->fieldsUnresolved[$value] = true;
+            }
             return;
         }
         if (!isset($usedFields[$term])) {
@@ -3275,7 +3387,7 @@ class CoreController extends AbstractActionController
 
     /**
      * Store a snapshot of the current Solr maps on the core entity. Keeps the
-     * last 5 snapshots in column `solr_core.backup_maps`.
+     * last snapshots in column `solr_core.backup_maps`.
      *
      * @param \SearchSolr\Api\Representation\SolrMapRepresentation[] $existingMaps
      */
@@ -3321,7 +3433,7 @@ class CoreController extends AbstractActionController
             $backups['snapshots'] = [];
         }
         array_unshift($backups['snapshots'], $snapshot);
-        $backups['snapshots'] = array_slice($backups['snapshots'], 0, 5);
+        $backups['snapshots'] = array_slice($backups['snapshots'], 0, 20);
         $solrSettings['backup_maps'] = $backups;
         $this->updateSolrSettings($solrCore->id(), $solrSettings);
     }

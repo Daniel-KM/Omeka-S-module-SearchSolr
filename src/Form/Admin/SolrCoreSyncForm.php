@@ -34,6 +34,21 @@ class SolrCoreSyncForm extends Form
         $this
             ->setAttribute('id', 'solr-core-sync-form')
             ->add([
+                'name' => 'mode',
+                'type' => 'radio',
+                'options' => [
+                    'label' => 'Mode', // @translate
+                    'value_options' => [
+                        'sync' => 'Align the maps', // @translate
+                        'audit' => 'Audit only: report what would change', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'sync_mode',
+                    'value' => 'sync',
+                ],
+            ])
+            ->add([
                 'name' => 'sync_sources',
                 'type' => 'multicheckbox',
                 'options' => [
