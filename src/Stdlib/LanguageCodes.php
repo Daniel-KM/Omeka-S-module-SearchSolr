@@ -100,4 +100,110 @@ class LanguageCodes
         $lang = strtolower(strtok((string) $lang, '-_') ?: '');
         return self::ISO_639_2_TO_1[$lang] ?? $lang;
     }
+
+    /**
+     * Language codes to the suffix of the matching Solr analyzer field type.
+     *
+     * These are the field types shipped by the default Solr schema, so the
+     * suffix is not always the language code: Czech is "cz" and the Chinese,
+     * Japanese and Korean share the "cjk" analyzer.
+     */
+    const SOLR_SUFFIXES = [
+        'cjk' => 'cjk',
+        'zh' => 'cjk',
+        'zho' => 'cjk',
+        'chi' => 'cjk',
+        // 'ja' => 'cjk', 'jpn' => 'cjk', 'ko' => 'cjk', 'kor' => 'cjk',
+        'en' => 'en',
+        'eng' => 'en',
+        'ar' => 'ar',
+        'ara' => 'ar',
+        'bg' => 'bg',
+        'bul' => 'bg',
+        'ca' => 'ca',
+        'cat' => 'ca',
+        'cz' => 'cz',
+        'ces' => 'cz',
+        'cze' => 'cz',
+        'da' => 'da',
+        'dan' => 'da',
+        'de' => 'de',
+        'deu' => 'de',
+        'ger' => 'de',
+        'el' => 'el',
+        'ell' => 'el',
+        'gre' => 'el',
+        'es' => 'es',
+        'spa' => 'es',
+        'et' => 'et',
+        'est' => 'et',
+        'eu' => 'eu',
+        'eus' => 'eu',
+        'baq' => 'eu',
+        'fa' => 'fa',
+        'fas' => 'fa',
+        'per' => 'fa',
+        'fi' => 'fi',
+        'fin' => 'fi',
+        'fr' => 'fr',
+        'fra' => 'fr',
+        'fre' => 'fr',
+        'ga' => 'ga',
+        'gle' => 'ga',
+        'gl' => 'gl',
+        'glg' => 'gl',
+        'hi' => 'hi',
+        'hin' => 'hi',
+        'hu' => 'hu',
+        'hun' => 'hu',
+        'hy' => 'hy',
+        'hye' => 'hy',
+        'arm' => 'hy',
+        'id' => 'id',
+        'ind' => 'id',
+        'it' => 'it',
+        'ita' => 'it',
+        'ja' => 'ja',
+        'jpn' => 'ja',
+        'ko' => 'ko',
+        'kor' => 'ko',
+        'lv' => 'lv',
+        'lav' => 'lv',
+        'nl' => 'nl',
+        'nld' => 'nl',
+        'dut' => 'nl',
+        'no' => 'no',
+        'nor' => 'no',
+        'pt' => 'pt',
+        'por' => 'pt',
+        'ro' => 'ro',
+        'ron' => 'ro',
+        'rum' => 'ro',
+        'ru' => 'ru',
+        'rus' => 'ru',
+        'sv' => 'sv',
+        'swe' => 'sv',
+        'th' => 'th',
+        'tha' => 'th',
+        'tr' => 'tr',
+        'tur' => 'tr',
+    ];
+
+    /**
+     * Get the Solr analyzer suffix of a language, else an empty string.
+     */
+    public static function toSolrSuffix(?string $lang): string
+    {
+        return self::SOLR_SUFFIXES[strtolower((string) $lang)] ?? '';
+    }
+
+    /**
+     * Get all the language codes indexed by a Solr analyzer suffix.
+     *
+     * @return string[]
+     */
+    public static function codesForSolrSuffix(string $suffix): array
+    {
+        return array_keys(self::SOLR_SUFFIXES, $suffix);
+    }
 }

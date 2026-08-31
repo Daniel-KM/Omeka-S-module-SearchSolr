@@ -4,6 +4,7 @@ namespace SearchSolr\Job;
 
 use Common\Stdlib\PsrMessage;
 use Omeka\Job\AbstractJob;
+use SearchSolr\Stdlib\LanguageCodes;
 
 /**
  * Create Solr maps for all used properties.
@@ -21,88 +22,6 @@ class CompleteSolrMaps extends AbstractJob
      */
     protected $logger;
 
-    /**
-     * Solr language mappings (ISO-639 → Solr suffix).
-     */
-    protected $solrLangs = [
-        'cjk' => 'cjk',
-        'zh' => 'cjk',
-        'zho' => 'cjk',
-        'chi' => 'cjk',
-        'en' => 'en',
-        'eng' => 'en',
-        'ar' => 'ar',
-        'ara' => 'ar',
-        'bg' => 'bg',
-        'bul' => 'bg',
-        'ca' => 'ca',
-        'cat' => 'ca',
-        'cz' => 'cz',
-        'ces' => 'cz',
-        'cze' => 'cz',
-        'da' => 'da',
-        'dan' => 'da',
-        'de' => 'de',
-        'deu' => 'de',
-        'ger' => 'de',
-        'el' => 'el',
-        'ell' => 'el',
-        'gre' => 'el',
-        'es' => 'es',
-        'spa' => 'es',
-        'et' => 'et',
-        'est' => 'et',
-        'eu' => 'eu',
-        'eus' => 'eu',
-        'baq' => 'eu',
-        'fa' => 'fa',
-        'fas' => 'fa',
-        'per' => 'fa',
-        'fi' => 'fi',
-        'fin' => 'fi',
-        'fr' => 'fr',
-        'fra' => 'fr',
-        'fre' => 'fr',
-        'ga' => 'ga',
-        'gle' => 'ga',
-        'gl' => 'gl',
-        'glg' => 'gl',
-        'hi' => 'hi',
-        'hin' => 'hi',
-        'hu' => 'hu',
-        'hun' => 'hu',
-        'hy' => 'hy',
-        'hye' => 'hy',
-        'arm' => 'hy',
-        'id' => 'id',
-        'ind' => 'id',
-        'it' => 'it',
-        'ita' => 'it',
-        'ja' => 'ja',
-        'jpn' => 'ja',
-        'ko' => 'ko',
-        'kor' => 'ko',
-        'lv' => 'lv',
-        'lav' => 'lv',
-        'nl' => 'nl',
-        'nld' => 'nl',
-        'dut' => 'nl',
-        'no' => 'no',
-        'nor' => 'no',
-        'pt' => 'pt',
-        'por' => 'pt',
-        'ro' => 'ro',
-        'ron' => 'ro',
-        'rum' => 'ro',
-        'ru' => 'ru',
-        'rus' => 'ru',
-        'sv' => 'sv',
-        'swe' => 'sv',
-        'th' => 'th',
-        'tha' => 'th',
-        'tr' => 'tr',
-        'tur' => 'tr',
-    ];
 
     public function perform(): void
     {
@@ -247,17 +166,20 @@ class CompleteSolrMaps extends AbstractJob
 
             // _txt with language suffix.
             foreach ($langsByProperties[$term] ?? [] as $language) {
-                if (!isset($this->solrLangs[$language])) {
+                $suffix = LanguageCodes::toSolrSuffix($language);
+                if ($suffix === '') {
                     continue;
                 }
-                $suffix = $this->solrLangs[$language];
                 $name = strtr($term, ':', '_') . '_txt_' . $suffix;
                 if ($this->createMap(
                     $api, $solrCoreId, $resourceName,
                     $name, $term, null,
-                    ['filter_languages' => array_keys(
-                        $this->solrLangs, $suffix
-                    )],
+                    [
+                        'filter_languages' => LanguageCodes::codesForSolrSuffix($suffix),
+                        // A value without language is language neutral, so it
+                        // belongs to each language index.
+                        'filter_languages_no_lang' => true,
+                    ],
                     ['formatter' => '', 'label' => $label],
                     $existingFields
                 )) {

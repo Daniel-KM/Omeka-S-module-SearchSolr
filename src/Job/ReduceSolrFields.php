@@ -383,46 +383,20 @@ class ReduceSolrFields extends AbstractJob
 
         foreach ($solrCore->searchConfigs() as $searchConfig) {
             $settings = $searchConfig->settings();
-            // Facets.
+            // Facets: all the stored facets are enabled.
             foreach ($settings['facet']['facets'] ?? [] as $facet) {
-                if (!empty($facet['enabled'])
-                    && !empty($facet['field'])
-                ) {
+                if (!empty($facet['field'])) {
                     $usedFields[] = $facet['field'];
                 }
             }
-            // Sorts.
-            $sorts = $settings['results']['sort_list']
-                ?? $settings['sort']['sort_list']
-                ?? [];
-            foreach ($sorts as $sort) {
-                if (!empty($sort['enabled'])
-                    && !empty($sort['name'])
-                ) {
-                    $usedFields[] = strtok($sort['name'], ' ');
-                }
+            // Sorts: the list is flat ("name asc/desc" => label).
+            foreach (array_keys($settings['results']['sort_list'] ?? []) as $sortName) {
+                $usedFields[] = strtok((string) $sortName, ' ');
             }
-            // Filters.
+            // Filters: all the stored filters are enabled.
             foreach ($settings['form']['filters'] ?? [] as $filter) {
-                if (!empty($filter['enabled'])
-                    && !empty($filter['field'])
-                ) {
+                if (!empty($filter['field'])) {
                     $usedFields[] = $filter['field'];
-                }
-            }
-            // Generic enabled fields scan.
-            foreach ($settings as $value) {
-                if (!is_array($value)) {
-                    continue;
-                }
-                foreach ($value as $fieldName => $fieldConf) {
-                    if (is_array($fieldConf)
-                        && !empty($fieldConf['enabled'])
-                    ) {
-                        $usedFields[] = preg_replace(
-                            '/ (asc|desc)$/', '', $fieldName
-                        );
-                    }
                 }
             }
         }

@@ -1710,8 +1710,9 @@ class CoreController extends AbstractActionController
             }
             // Sorts need _s, plus the folded variant so the order follows
             // the database collation (case and diacritics insensitive).
-            foreach ($config->subSetting('results', 'sort_list', []) as $f) {
-                $v = strtok($f['name'] ?? '', ' ');
+            // The sort selector is a flat list "name => label".
+            foreach (array_keys($config->subSetting('results', 'sort_list', [])) as $sortName) {
+                $v = strtok((string) $sortName, ' ');
                 if ($v) {
                     $this->collectFieldAsProperty(
                         $v, $usedFields, ['_s', '_fold_s']
@@ -1737,8 +1738,7 @@ class CoreController extends AbstractActionController
                 }
             }
             // Advanced filter fields need _txt + _ss.
-            $advancedFields = $config
-                ->subSetting('form', 'advanced', []);
+            $advancedFields = $config->advancedFilterSettings();
             foreach ($advancedFields['fields'] ?? [] as $f) {
                 $v = $f['value'] ?? ($f['field'] ?? null);
                 if ($v) {

@@ -875,8 +875,9 @@ class SolrCore
                 $mark($f['field'] ?? '', ['_ss', '_i'], 'filter', $place);
                 $mark($f['field_end'] ?? '', ['_ss', '_i'], 'filter', $place);
             }
-            foreach ($config->subSetting('results', 'sort_list', []) as $f) {
-                $mark(strtok((string) ($f['name'] ?? ''), ' '), ['_s', '_fold_s'], 'sort', $place);
+            // The sort selector is a flat list "name => label".
+            foreach (array_keys($config->subSetting('results', 'sort_list', [])) as $sortName) {
+                $mark(strtok((string) $sortName, ' '), ['_s', '_fold_s'], 'sort', $place);
             }
             foreach ($config->subSetting('engine', 'field_boosts', []) as $fieldName => $boost) {
                 if ((float) $boost > 0 && (float) $boost !== 1.0) {
@@ -888,7 +889,7 @@ class SolrCore
                     $mark($aliasField, ['_txt'], 'query', $place);
                 }
             }
-            $advanced = $config->subSetting('form', 'advanced', []);
+            $advanced = $config->advancedFilterSettings();
             foreach ($advanced['fields'] ?? [] as $f) {
                 $mark($f['value'] ?? ($f['field'] ?? ''), ['_txt', '_ss'], 'filter', $place);
             }
