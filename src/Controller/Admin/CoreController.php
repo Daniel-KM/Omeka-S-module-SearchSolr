@@ -1912,6 +1912,9 @@ class CoreController extends AbstractActionController
             if ($this->params()->fromQuery('datatypes')) {
                 $sources[] = 'datatypes';
             }
+            if ($this->params()->fromQuery('datatypes_text')) {
+                $sources[] = 'datatypes_text';
+            }
             $clean = (bool) $this->params()->fromQuery('clean');
             $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
             $maxCardinality = (int) $this->params()->fromQuery('max_cardinality', 100);
@@ -1935,7 +1938,10 @@ class CoreController extends AbstractActionController
         $wantSiteSettings = in_array('site_settings', $sources, true);
         $wantTemplates = in_array('templates', $sources, true);
         $wantUsed = in_array('used', $sources, true);
-        $wantDatatypes = in_array('datatypes', $sources, true);
+        // The text index of a numeric property is useless in most cases, but
+        // the numbers and the coordinates may be searched in the main field.
+        $wantDatatypesText = in_array('datatypes_text', $sources, true);
+        $wantDatatypes = $wantDatatypesText || in_array('datatypes', $sources, true);
         $wantMediaLong = in_array('media_long', $sources, true);
         // The long values are useless without the media values themselves.
         $wantMedia = $wantMediaLong || in_array('media', $sources, true);
@@ -2382,6 +2388,12 @@ class CoreController extends AbstractActionController
             // index would sort 10 before 9.
             if ($numericType) {
                 $requiredSuffixes[$numericType === 'decimal' ? '_d' : '_i'] = true;
+                // The text index of a number is kept only on request: it
+                // allows to find it in the main field, that queries the text
+                // indexes, but it is useless for most numeric properties.
+                if (!$wantDatatypesText) {
+                    $numericSuffixes['_txt'] = $numericType === 'decimal' ? '_ds' : '_is';
+                }
             }
 
             foreach (array_keys($requiredSuffixes) as $suffix) {
