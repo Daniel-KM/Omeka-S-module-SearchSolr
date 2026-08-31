@@ -2427,8 +2427,8 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function buildAdvancedFilterQuery(string $type, $val, string $field, string $wrap, string $end): string
     {
-        // Equal.
         switch ($type) {
+            // Equal.
             case 'neq':
             case 'eq':
             // list/nlist are deprecated, since eq/neq supports array.
@@ -2584,6 +2584,8 @@ class SolariumQuerier extends AbstractQuerier
                 $val = ($type === '<' || $type === '>') ? (($type === '<') ? --$val : ++$val) : $val;
                 return ($type === '<' || $type === '≤') ? "$field:[* TO $val]" : "$field:[$val TO *]";
 
+            // Specific check for years.
+            // TODO Check if query types for year are still useful (yreq, yrite, yrgt…).
             case 'nyreq':
             case 'yreq':
                 // The casting to integer is the simplest way to get the year:

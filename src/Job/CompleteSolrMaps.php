@@ -373,7 +373,7 @@ class CompleteSolrMaps extends AbstractJob
                 'value', 'resource', 'resource',
                 'resource.id = value.resource_id'
             )
-	    ->groupBy('value.property_id')
+            ->groupBy('value.property_id')
             ->where('resource.resource_type = :resource_type')
             ->setParameter(
                 'resource_type', $resourceTypes[$resourceName]
