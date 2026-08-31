@@ -188,4 +188,25 @@ class SolrMapAdapter extends AbstractEntityAdapter
         $engine = $this->getAdapter('search_engines')->findEntity($engineId);
         $entity->setEngine($engine);
     }
+
+    public function validateEntity(EntityInterface $entity, ErrorStore $errorStore): void
+    {
+        // Solr refuses a field whose name does not follow its rules, but only
+        // when a document is sent, so the map is checked at once. The names
+        // that start and end with "_" are reserved by Solr.
+        /** @see https://solr.apache.org/guide/solr/latest/indexing-guide/fields.html */
+        $fieldName = (string) $entity->getFieldName();
+        if ($fieldName === '') {
+            $errorStore->addError('o:field_name', 'The name of the index cannot be empty.'); // @translate
+        } elseif (!preg_match('~^[a-zA-Z_][a-zA-Z0-9_]*$~', $fieldName)) {
+            $errorStore->addError('o:field_name', 'The name of the index must start with a letter or "_", then letters, digits or "_" only.'); // @translate
+        } elseif (mb_substr($fieldName, 0, 1) === '_' && mb_substr($fieldName, -1) === '_') {
+            $errorStore->addError('o:field_name', 'A name of index starting and ending with "_" is reserved by Solr.'); // @translate
+        }
+
+        if (!$entity->getSource()) {
+            $errorStore->addError('o:source', 'The source cannot be empty.'); // @translate
+        }
+    }
+
 }

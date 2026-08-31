@@ -11,6 +11,11 @@ use Solarium\Exception\HttpException as SolariumException;
 class Schema
 {
     /**
+     * Seconds to wait for the schema of the core.
+     */
+    const TIMEOUT = 10;
+
+    /**
      * @var string
      */
     protected $schemaUrl;
@@ -58,16 +63,35 @@ class Schema
     public function getSchema(): array
     {
         if (!isset($this->schema)) {
-            $contents = @file_get_contents($this->schemaUrl);
+            // Without an explicit timeout, an unavailable Solr would block the
+            // page until "default_socket_timeout" (60s by default), and the
+            // schema is read by many admin pages.
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => self::TIMEOUT,
+                    'ignore_errors' => true,
+                ],
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ],
+            ]);
+            $contents = @file_get_contents($this->schemaUrl, false, $context);
 
-            if ($contents === false) {
-                // False result might be because file_get_contents is disabled, trying with curl
+            // Retry with curl only when the function is disabled: else the
+            // two timeouts would add up on an unavailable Solr.
+            $isRemoteDisabled = !function_exists('file_get_contents')
+                || !filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN);
+            if ($contents === false && $isRemoteDisabled) {
                 if (function_exists('curl_init')) {
                     $curl = curl_init();
                     curl_setopt_array($curl, [
                         CURLOPT_RETURNTRANSFER => 1,
                         CURLOPT_URL => $this->schemaUrl,
                         CURLOPT_USERAGENT => 'curl/' . curl_version()['version'],
+                        CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+                        CURLOPT_TIMEOUT => self::TIMEOUT,
+                        CURLOPT_SSL_VERIFYPEER => false,
                     ]);
                     $contents = curl_exec($curl);
                     curl_close($curl);
