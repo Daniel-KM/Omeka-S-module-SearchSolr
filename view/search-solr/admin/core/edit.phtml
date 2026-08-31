@@ -54,12 +54,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores create edit');
 </div>
 
 <?php // The engine itself (name, resources) is edited on its own page. ?>
-<nav class="section-nav">
-    <ul>
-        <li><a href="<?= $escape($url('admin/search-manager/engine-id', ['id' => $solrCore->id(), 'action' => 'edit'])) ?>"><?= $translate('Search engine') ?></a></li>
-        <li class="active"><a href="<?= $escape($url('admin/search-manager/solr/core-id', ['id' => $solrCore->id(), 'action' => 'edit'])) ?>" aria-current="page"><?= $translate('Solr core') ?></a></li>
-    </ul>
-</nav>
+<?= $this->partial('search-solr/admin/core/section-nav', ['solrCore' => $solrCore, 'active' => 'core']) ?>
 
 <?= $this->form()->openTag($form) ?>
 

@@ -1481,6 +1481,32 @@ class CoreController extends AbstractActionController
      * plus the properties of the resource templates (curated
      *   middle ground between configs and all used properties).
      */
+    public function suggestConfigAction()
+    {
+        $id = (int) $this->params('id');
+        $solrCore = $this->solrCore($id);
+
+        // The panel only makes sense in the core page sidebar (xhr); a direct
+        // visit just goes back to the core page.
+        if (!$this->getRequest()->isXmlHttpRequest()) {
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+        }
+
+        try {
+            $hasSuggestTxt = (bool) $solrCore->schema()->getField('suggest_txt');
+        } catch (\Throwable $e) {
+            // Solr unreachable: the status is unknown.
+            $hasSuggestTxt = null;
+        }
+
+        return (new ViewModel([
+            'solrCore' => $solrCore,
+            'hasSuggestTxt' => $hasSuggestTxt,
+        ]))
+            ->setTerminal(true)
+            ->setTemplate('search-solr/admin/core/suggest-config-sidebar');
+    }
+
     public function syncMapsAction()
     {
         $api = $this->api();

@@ -25,6 +25,8 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 
 <?= $this->pageTitle($solrCore->name(), 1, $translate('Solr core')) ?>
 
+<?= $partial('search-solr/admin/core/section-nav', ['solrCore' => $solrCore, 'active' => 'indexes']) ?>
+
 <div id="page-actions">
     <?php // $this->trigger('view.show.page_actions', ['resource' => $solrCore]); ?>
     <div class="page-action-menu">
@@ -36,6 +38,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
             <ul class="collapsible">
                 <li class="separator"><span><?= $translate('Maps') ?></span></li>
                 <li><?= $hyperlink($translate('Align the maps…'), '#', [
+                    'data-sidebar-selector' => '#sidebar',
                     'class' => 'link sidebar-content',
                     'data-sidebar-content-url' => $solrCore->adminUrl('sync-maps'),
                     'title' => $translate('Create the maps for the sources you choose (search configs, settings, resource templates, used properties), and optionally remove the unused ones. System maps are kept; a snapshot allows to restore.')]) ?></li>
@@ -43,6 +46,11 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     'class' => 'link',
                     'title' => $translate('Add one map by hand for a special source or with custom settings (formatter, pool filters, boost). The resource scope is chosen in the form.')]) ?></li>
                 <li class="separator"><span><?= $translate('Schema and core') ?></span></li>
+                <li><?= $hyperlink($translate('Suggest configuration…'), '#', [
+                    'data-sidebar-selector' => '#sidebar',
+                    'class' => 'link sidebar-content',
+                    'data-sidebar-content-url' => $solrCore->adminUrl('suggest-config'),
+                    'title' => $translate('Configure the "suggest_txt" field used for autocompletion.')]) ?></li>
                 <li><?= $hyperlink($translate('Reduce to max fields'), $solrCore->adminUrl('reduce-maps'), [
                     'class' => 'link',
                     'title' => $translate('Remove extra maps to stay within Solr maxFields limit.')]) ?></li>
@@ -110,11 +118,6 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
         <?php // TODO Add button to reindex. ?>
     </div>
 </div>
-
-<nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
-    <?= $hyperlink($translate('Search'), $url('admin/search-manager')) ?>
-    <span aria-current="page"><?= $escape($solrCore->name()) ?></span>
-</nav>
 
 <?php
 // Warn when another core points to the same Solr url: two cores on the same
@@ -203,79 +206,13 @@ try {
 </details>
 <?php endif; ?>
 
-<?php if ($solrCore->userIsAllowed('update')): ?>
-<?php $hasSuggestTxt = (bool) $solrCore->schema()->getField('suggest_txt'); ?>
-<details id="suggest-config">
-    <summary><?= $translate('Suggest configuration') ?></summary>
-    <p class="explanation"><?= $translate('Configure the "suggest_txt" field used for autocompletion. This field aggregates copyFields from _txt mapped fields.') ?></p>
-    <?php if ($hasSuggestTxt): ?>
-    <p class="explanation"><strong><?= $translate('Current status: suggest_txt exists.') ?></strong></p>
-    <?php else: ?>
-    <p class="explanation"><strong><?= $translate('Current status: suggest_txt does not exist.') ?></strong></p>
-    <?php endif; ?>
-    <p class="explanation"><?= $translate('By default, "suggest_txt" uses a language-neutral folded type (lowercase + ASCII folding, preserveOriginal), so suggestions are case- and diacritics-insensitive. Use the "diacritics-sensitive" variants to keep type "text_general" instead.') ?></p>
-    <ul>
-        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt' : 'Create suggest_txt'), $solrCore->adminUrl('create-suggest-field'), [
-            'class' => 'button',
-            'title' => $translate('Create the "suggest_txt" field with copyFields from short-value _txt fields for autocompletion.')]) ?></li>
-        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (with long texts)' : 'Create suggest_txt (with long texts)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1', [
-            'class' => 'button',
-            'title' => $translate('Create "suggest_txt" including long-value properties (OCR, descriptions, etc.).')]) ?></li>
-        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (diacritics-sensitive)' : 'Create suggest_txt (diacritics-sensitive)'), $solrCore->adminUrl('create-suggest-field') . '?keep_diacritics=1', [
-            'class' => 'button',
-            'title' => $translate('Create "suggest_txt" with type "text_general" (case-insensitive only).')]) ?></li>
-        <li><?= $hyperlink($translate($hasSuggestTxt ? 'Recreate suggest_txt (with long texts, diacritics-sensitive)' : 'Create suggest_txt (with long texts, diacritics-sensitive)'), $solrCore->adminUrl('create-suggest-field') . '?include_long_texts=1&keep_diacritics=1', [
-            'class' => 'button',
-            'title' => $translate('Create "suggest_txt" including long-value properties with type "text_general".')]) ?></li>
-    </ul>
-</details>
-<?php endif; ?>
-
-<?php
-$backups = $solrCore->backupMaps();
-$snapshots = $backups['snapshots'] ?? [];
-?>
-<?php if ($solrCore->userIsAllowed('update') && $snapshots): ?>
-<details id="solr-core-backups">
-    <summary><?= sprintf($translate('Map snapshots (%d)'), count($snapshots)) ?></summary>
-    <p class="explanation"><?= $translate('A snapshot is taken before each maps alignment. The 3 most recent snapshots are kept on this core.') ?></p>
-    <table class="tablesaw" data-tablesaw-mode="stack">
-        <thead>
-            <tr>
-                <th><?= $translate('Date') ?></th>
-                <th><?= $translate('Author') ?></th>
-                <th><?= $translate('Maps') ?></th>
-                <th><?= $translate('Actions') ?></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($snapshots as $i => $snap): ?>
-            <tr>
-                <td><?= $escape((string) ($snap['datetime'] ?? '')) ?></td>
-                <td><?= $escape((string) ($snap['user_name'] ?? '')) ?></td>
-                <td><?= (int) ($snap['count'] ?? 0) ?></td>
-                <td>
-                    <?= $hyperlink($translate('Restore'), $solrCore->adminUrl('restore-backup') . '?index=' . $i, [
-                        'class' => 'button',
-                        'onclick' => 'return confirm("' . $escapeAttr($translate('Restore this snapshot? Current maps will be replaced. The current state is itself snapshotted before restore.')) . '");',
-                    ]) ?>
-                    <?= $hyperlink($translate('Delete'), $solrCore->adminUrl('delete-backup') . '?index=' . $i, [
-                        'class' => 'button delete',
-                        'onclick' => 'return confirm("' . $escapeAttr($translate('Delete this snapshot?')) . '");',
-                    ]) ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-</details>
-<?php endif; ?>
-
 <?= $partial('search-solr/admin/core/help-index-names') ?>
 
 <?php
-// Determine active resource type filter from query string.
+// Determine active resource type filter and view from query string.
 $activeResourceFilter = $_GET['resource_type'] ?? '';
+// The simple list is the default view.
+$isSimpleView = ($_GET['view'] ?? '') !== 'full';
 $maps = $solrCore->mapsByFieldName();
 // Collect all resource types used in maps.
 $usedResourceTypes = [];
@@ -285,20 +222,168 @@ foreach ($maps as $fieldMaps) {
     }
 }
 ksort($usedResourceTypes);
+// Simple list: one row per distinct source, the indexes as edit links.
+$mapsBySource = [];
+foreach ($maps as $fieldMaps) {
+    foreach ($fieldMaps as $map) {
+        $mapsBySource[$map->source()][] = $map;
+    }
+}
+ksort($mapsBySource);
+// Group the sources by vocabulary; the non-property indexes (id, is_public,
+// resource_name…) go into the group "Metadata".
+$vocabLabels = [];
+foreach ($this->api()->search('vocabularies')->getContent() as $vocab) {
+    $vocabLabels[$vocab->prefix()] = $vocab->label();
+}
+$metadataLabel = $translate('Metadata');
+$mapsByVocab = [];
+$sourceVocabs = [];
+foreach ($mapsBySource as $source => $sourceMaps) {
+    $prefix = strpos($source, ':') !== false ? strtok($source, ':') : '';
+    // A composed source ("owner/o:id") is a metadata index too.
+    $vocabLabel = $prefix !== '' && strpos($source, '/') === false && isset($vocabLabels[$prefix])
+        ? $vocabLabels[$prefix]
+        : $metadataLabel;
+    $mapsByVocab[$vocabLabel][$source] = $sourceMaps;
+    $sourceVocabs[$source] = $vocabLabel;
+}
+// The group "Metadata" first, then the vocabularies alphabetically.
+uksort($mapsByVocab, fn ($a, $b) => ($a === $metadataLabel ? 0 : 1) <=> ($b === $metadataLabel ? 0 : 1) ?: strcasecmp($a, $b));
 ?>
-<div class="maps-filter" style="display: flex; justify-content: flex-end; align-items: center; gap: .5em; margin-bottom: .5em;">
-    <span id="maps-count-label"><?= $translate('Number of maps:') ?></span>
-    <span id="maps-count"></span>
-    <label for="filter-resource-type"><?= $translate('Filter by resource type') ?></label>
-    <select id="filter-resource-type">
-        <option value=""><?= $translate('All') ?></option>
-        <?php foreach (array_keys($usedResourceTypes) as $rType): ?>
-        <option value="<?= $escapeAttr($rType) ?>"<?= $rType === $activeResourceFilter ? ' selected' : '' ?>><?= $escape($rType) ?></option>
-        <?php endforeach; ?>
-    </select>
+<div class="maps-controls">
+    <div class="maps-filters">
+        <input type="search" id="maps-filter-text"
+            placeholder="<?= $escapeAttr($translate('Filter maps…')) ?>"
+            aria-label="<?= $escapeAttr($translate('Filter maps…')) ?>"/>
+        <span class="maps-filter-type">
+            <label for="filter-resource-type"><?= $translate('Filter by type') ?></label>
+            <select id="filter-resource-type">
+                <option value=""><?= $translate('All') ?></option>
+                <?php foreach (array_keys($usedResourceTypes) as $rType): ?>
+                <option value="<?= $escapeAttr($rType) ?>"<?= $rType === $activeResourceFilter ? ' selected' : '' ?>><?= $escape($rType) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </span>
+    </div>
+    <div class="maps-infos">
+        <button type="button" id="maps-view-toggle" class="button"
+            data-label-simple="<?= $escapeAttr($translate('By property')) ?>"
+            data-label-full="<?= $escapeAttr($translate('By index')) ?>"><?= $isSimpleView ? $translate('By index') : $translate('By property') ?></button>
+        <span class="maps-count-wrapper">
+            <span id="maps-count-label"><?= $translate('Number of maps:') ?></span>
+            <span id="maps-count"></span>
+        </span>
+    </div>
 </div>
 
-<div class="by-solr-index">
+<div class="by-source"<?= $isSimpleView ? '' : ' style="display: none;"' ?>>
+<?php if (count($mapsBySource)): ?>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $translate('Source Omeka') ?></th>
+                <th><?= $translate('Label') ?></th>
+                <th><?= $translate('Indexes') ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($mapsByVocab as $vocabLabel => $vocabSources): ?>
+            <tr class="map-voc-group">
+                <th colspan="3"><?= $escape($vocabLabel) ?></th>
+            </tr>
+            <?php foreach ($vocabSources as $source => $sourceMaps):
+                $rowResourceTypes = [];
+                $rowLabel = '';
+                foreach ($sourceMaps as $map) {
+                    $rowResourceTypes[$map->resourceName()] = true;
+                    if ($rowLabel === '' && $map->setting('label')) {
+                        $rowLabel = $map->setting('label');
+                    }
+                }
+                ksort($rowResourceTypes);
+            ?>
+            <tr data-resource-types="<?= $escapeAttr(implode(' ', array_keys($rowResourceTypes))) ?>">
+                <td><?= $escape($source) ?></td>
+                <td><?= $rowLabel !== '' ? $escape($translate($rowLabel)) : '' ?></td>
+                <td class="map-index-links">
+                    <?php foreach ($sourceMaps as $map):
+                        $mapSettings = $map->settings();
+                        $fieldName = $map->fieldName();
+                        $detailRows = array_filter([
+                            $translate('Index') => $fieldName,
+                            $translate('Source') => $source,
+                            $translate('Label') => !empty($mapSettings['label']) ? $translate($mapSettings['label']) : '',
+                            $translate('Type') => $map->resourceName(),
+                            $translate('Origin') => (string) $map->setting('origin'),
+                        ]);
+                    ?>
+                    <span class="map-index-line" data-resource-type="<?= $escapeAttr($map->resourceName()) ?>">
+                        <span class="map-alias" tabindex="0" aria-describedby="map-tooltip-<?= $map->id() ?>"><?= $escape($fieldName) ?><span class="map-tooltip" id="map-tooltip-<?= $map->id() ?>" role="tooltip"><dl>
+                            <?php foreach ($detailRows as $detailLabel => $detailValue): ?>
+                            <dt><?= $escape($detailLabel) ?></dt><dd><?= $escape($detailValue) ?></dd>
+                            <?php endforeach; ?>
+                        </dl></span></span>
+                        <ul class="actions">
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index asc'),
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'class' => 'o-icon- fas fa-sort-alpha-down sidebar-content',
+                                    'title' => $translate('List indexed values alphabetically'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index desc'),
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'class' => 'o-icon- fas fa-sort-alpha-down-alt sidebar-content',
+                                    'title' => $translate('List indexed values alphabetically (reverse)'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count asc'),
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'class' => 'o-icon- fas fa-sort-numeric-down sidebar-content',
+                                    'title' => $translate('List indexed values by count'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', '#', [
+                                    'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count desc'),
+                                    'data-sidebar-selector' => '#sidebar',
+                                    'class' => 'o-icon- fas fa-sort-numeric-down-alt sidebar-content',
+                                    'title' => $translate('List indexed values by count (reverse)'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <?= $hyperlink('', $map->adminUrl('edit'), [
+                                    'class' => 'o-icon-edit',
+                                    'title' => $translate('Edit'),
+                                ]) ?>
+                            </li>
+                            <li>
+                                <a href="#"
+                                data-sidebar-content-url="<?= $escape($map->url('delete-confirm')) ?>"
+                                data-sidebar-selector="#sidebar"
+                                class="o-icon-delete sidebar-content"
+                                aria-label="<?= $escape($translate('Delete')) ?>"
+                                title="<?= $escape($translate('Delete')) ?>"></a>
+                            </li>
+                        </ul>
+                    </span>
+                    <?php endforeach; ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php endif; ?>
+</div>
+
+<div class="by-solr-index"<?= $isSimpleView ? ' style="display: none;"' : '' ?>>
 <?php if (count($maps)): ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
@@ -340,6 +425,7 @@ ksort($usedResourceTypes);
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index asc'),
+                                    'data-sidebar-selector' => '#sidebar',
                                     'class' => 'o-icon- fas fa-sort-alpha-down sidebar-content',
                                     'title' => $translate('List indexed values alphabetically'),
                                 ]) ?>
@@ -347,6 +433,7 @@ ksort($usedResourceTypes);
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('index desc'),
+                                    'data-sidebar-selector' => '#sidebar',
                                     'class' => 'o-icon- fas fa-sort-alpha-down-alt sidebar-content',
                                     'title' => $translate('List indexed values alphabetically (reverse)'),
                                 ]) ?>
@@ -354,6 +441,7 @@ ksort($usedResourceTypes);
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count asc'),
+                                    'data-sidebar-selector' => '#sidebar',
                                     'class' => 'o-icon- fas fa-sort-numeric-down sidebar-content',
                                     'title' => $translate('List indexed values by count'),
                                 ]) ?>
@@ -361,6 +449,7 @@ ksort($usedResourceTypes);
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-content-url' => $solrCore->adminUrl('list-values') . '?fieldname=' . rawurlencode($fieldName) . '&sort=' . rawurlencode('count desc'),
+                                    'data-sidebar-selector' => '#sidebar',
                                     'class' => 'o-icon- fas fa-sort-numeric-down-alt sidebar-content',
                                     'title' => $translate('List indexed values by count (reverse)'),
                                 ]) ?>
@@ -411,6 +500,7 @@ ksort($usedResourceTypes);
                                                 <li>
                                                     <a href="#"
                                                     data-sidebar-content-url="<?= $escape($map->url('delete-confirm')) ?>"
+                                                    data-sidebar-selector="#sidebar"
                                                     class="o-icon-delete sidebar-content"
                                                     aria-label="<?= $escape($translate('Delete')) ?>"
                                                     title="<?= $escape($translate('Delete')) ?>"></a>
@@ -476,7 +566,7 @@ ksort($usedResourceTypes);
 
 
 
-<div class="sidebar">
+<div id="sidebar" class="sidebar">
     <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
     <div class="sidebar-content"></div>
 </div>

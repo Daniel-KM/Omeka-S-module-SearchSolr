@@ -1,0 +1,29 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Stdlib\SolrCore $solrCore
+ * @var string $active "engine", "core", "indexes" or "stats".
+ *
+ * Tabs between the pages of a solarium engine and its core.
+ */
+
+$plugins = $this->getHelperPluginManager();
+$url = $plugins->get('url');
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+
+$tabs = [
+    'engine' => [$translate('General'), $url('admin/search-manager/engine-id', ['id' => $solrCore->id(), 'action' => 'edit'])],
+    'core' => [$translate('Solr core'), $url('admin/search-manager/solr/core-id', ['id' => $solrCore->id(), 'action' => 'edit'])],
+    'indexes' => [$translate('Indexes'), $url('admin/search-manager/solr/core-id', ['id' => $solrCore->id(), 'action' => 'show'])],
+    'stats' => [$translate('Stats'), $url('admin/search-manager/solr/core-id', ['id' => $solrCore->id(), 'action' => 'show-indexing-stats'])],
+];
+?>
+
+<nav class="section-nav">
+    <ul>
+        <?php foreach ($tabs as $key => [$label, $tabUrl]): ?>
+        <li<?= $key === $active ? ' class="active"' : '' ?>><a href="<?= $escape($tabUrl) ?>"<?= $key === $active ? ' aria-current="page"' : '' ?>><?= $label ?></a></li>
+        <?php endforeach; ?>
+    </ul>
+</nav>

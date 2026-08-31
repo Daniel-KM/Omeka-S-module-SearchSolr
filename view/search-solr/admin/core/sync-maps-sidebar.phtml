@@ -68,4 +68,42 @@ $multilingual = $form->get('multilingual');
     <?= $this->formRow($form->get('csrf')) ?>
     <button type="submit" class="button"><?= $escape($translate('Align the maps')) ?></button>
     <?= $this->form()->closeTag() ?>
+
+    <?php
+    $backups = $solrCore->backupMaps();
+    $snapshots = $backups['snapshots'] ?? [];
+    ?>
+    <?php if ($snapshots): ?>
+    <h3><?= $escape(sprintf($translate('Map snapshots (%d)'), count($snapshots))) ?></h3>
+    <p class="explanation"><?= $escape($translate('A snapshot is taken before each maps alignment. The 3 most recent snapshots are kept on this core.')) ?></p>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+            <tr>
+                <th><?= $escape($translate('Date')) ?></th>
+                <th><?= $escape($translate('Author')) ?></th>
+                <th><?= $escape($translate('Maps')) ?></th>
+                <th><?= $escape($translate('Actions')) ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($snapshots as $i => $snap): ?>
+            <tr>
+                <td><?= $escape((string) ($snap['datetime'] ?? '')) ?></td>
+                <td><?= $escape((string) ($snap['user_name'] ?? '')) ?></td>
+                <td><?= (int) ($snap['count'] ?? 0) ?></td>
+                <td>
+                    <?= $this->hyperlink($translate('Restore'), $solrCore->adminUrl('restore-backup') . '?index=' . $i, [
+                        'class' => 'button',
+                        'onclick' => 'return confirm("' . $escapeAttr($translate('Restore this snapshot? Current maps will be replaced. The current state is itself snapshotted before restore.')) . '");',
+                    ]) ?>
+                    <?= $this->hyperlink($translate('Delete'), $solrCore->adminUrl('delete-backup') . '?index=' . $i, [
+                        'class' => 'button delete',
+                        'onclick' => 'return confirm("' . $escapeAttr($translate('Delete this snapshot?')) . '");',
+                    ]) ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
 </div>

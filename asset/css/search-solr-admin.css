@@ -80,6 +80,119 @@
     .solr-cores .map-aliases {
         margin-left: auto;
     }
+    /* The controls above the lists of the maps: the filters on the first
+       line, the view toggle and the count on the second, spread left and
+       right. */
+    .solr-cores .maps-controls {
+        margin-bottom: 0.5em;
+    }
+    .solr-cores .maps-controls > div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5em;
+        margin-bottom: 0.25em;
+    }
+    .solr-cores .maps-controls .maps-filter-type,
+    .solr-cores .maps-controls .maps-count-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+    .solr-cores .maps-controls #maps-filter-text {
+        flex: 1;
+        margin: 0;
+    }
+
+    /* Simple list: one row per source, one line per index with its compact
+       actions. */
+    .solr-cores .by-source .map-index-line {
+        display: flex;
+        align-items: center;
+        gap: 0.25em;
+        white-space: nowrap;
+        width: 100%;
+    }
+    .solr-cores .by-source .map-index-line .actions {
+        margin: 0 0 0 auto;
+    }
+    .solr-cores .by-source .map-index-line .field-generic {
+        margin-left: 0;
+        min-width: 5em;
+    }
+    .solr-cores .by-source .map-alias {
+        display: inline-block;
+        font-size: 0.85em;
+        margin: 0 0.5em 0 0;
+        white-space: nowrap;
+        position: relative;
+    }
+    /* Custom tooltip with aligned values on the index name. The cells of the
+       core admin theme are positioned, so the hovered cell must raise above
+       the next rows. */
+    .solr-cores .by-source .map-tooltip {
+        display: none;
+    }
+    .solr-cores .by-source td:hover,
+    .solr-cores .by-source td:focus-within,
+    .solr-cores .by-source .map-alias:hover,
+    .solr-cores .by-source .map-alias:focus {
+        z-index: 101;
+    }
+    /* The theme clips the cells, what would crop the tooltip. */
+    .solr-cores .by-source td.map-index-links {
+        overflow: visible;
+    }
+    .solr-cores .by-source .map-alias:hover .map-tooltip,
+    .solr-cores .by-source .map-alias:focus .map-tooltip {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 100;
+        background-color: #fff;
+        border: 1px solid #dfdfdf;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        padding: 0.5em 0.75em;
+        font-style: normal;
+    }
+    .solr-cores .by-source .map-tooltip dl {
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: 0 0.75em;
+        margin: 0;
+    }
+    .solr-cores .by-source .map-tooltip dt {
+        font-weight: bold;
+    }
+    .solr-cores .by-source .map-tooltip dd {
+        margin: 0;
+        white-space: nowrap;
+    }
+    .solr-cores .by-source td {
+        vertical-align: top;
+    }
+    /* Override the 50% width of the first column of the core admin theme. */
+    .solr-cores .by-source td:first-child,
+    .solr-cores .by-source th:first-child {
+        width: 20%;
+    }
+    .solr-cores .by-source .map-voc-group th {
+        background-color: rgba(0, 0, 0, 0.04);
+        text-align: left;
+        font-weight: bold;
+    }
+}
+
+/* In the stacked mode (mobile), the vocabulary heading spans the whole
+   width. */
+@media only screen and (max-width: 39.9375em) {
+    .solr-cores .by-source .map-voc-group,
+    .solr-cores .by-source .map-voc-group th {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
     .solr-cores .map-aliases .map-alias,
     .solr-cores.show.solr-core-map-browse .field-generic,
     .solr-map.browse .field-generic {

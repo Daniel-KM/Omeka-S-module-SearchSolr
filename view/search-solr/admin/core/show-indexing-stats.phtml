@@ -26,10 +26,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 
 <?= $this->pageTitle($solrCore->name(), 1, $translate('Solr core')) ?>
 
-<nav class="breadcrumbs" aria-label="<?= $translate('Breadcrumb') ?>">
-    <?= $hyperlink($translate('Search'), $url('admin/search-manager')) ?>
-    <span aria-current="page"><?= $escape($solrCore->name()) ?></span>
-</nav>
+<?= $partial('search-solr/admin/core/section-nav', ['solrCore' => $solrCore, 'active' => 'stats']) ?>
 
 <h3><?= $translate('By resource') ?></h3>
 
@@ -51,6 +48,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName,
+                                    'data-sidebar-selector' => '#sidebar',
                                     'class' => 'o-icon- fas fa-spell-check sidebar-content',
                                     'title' => $translate('List indexed resources'),
                                 ]) ?>
@@ -58,6 +56,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                             <li>
                                 <?= $hyperlink('', '#', [
                                     'data-sidebar-content-url' => $solrCore->adminUrl('list-resources') . '?resource_name=' . $resourceName . '&missing=1',
+                                    'data-sidebar-selector' => '#sidebar',
                                     'class' => 'o-icon- fas fa-times-circle sidebar-content',
                                     'title' => $translate('List non-indexed resources'),
                                 ]) ?>
@@ -88,7 +87,7 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
 
 
 
-<div class="sidebar">
+<div id="sidebar" class="sidebar">
     <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
     <div class="sidebar-content"></div>
 </div>
