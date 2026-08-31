@@ -2011,6 +2011,48 @@ class SolrCore
      * The field is a single string_folded term, indexed only. TextField has no
      * docValues, so sorting requires "uninvertible" (checked on Solr 10).
      */
+    /**
+     * Ensure the dynamic field "*_ps" exists in the Solr schema.
+     *
+     * A location is not multivalued by default and there is no plural type for
+     * it, unlike "strings" for a string, so the field is declared multivalued:
+     * a resource may have many places.
+     */
+    public function ensurePointDynamicField(): bool
+    {
+        try {
+            $dynamicFields = $this->schema()->getSchema()['dynamicFields'] ?? [];
+            foreach ($dynamicFields as $dynamicField) {
+                if (($dynamicField['name'] ?? '') === '*_ps') {
+                    return true;
+                }
+            }
+        } catch (\Exception $e) {
+            // Schema not readable; try to create the field anyway.
+        }
+
+        $fieldDef = [
+            'name' => '*_ps',
+            'type' => 'location',
+            'indexed' => true,
+            'stored' => true,
+            'multiValued' => true,
+        ];
+        $result = $this->postToSolrConfig(
+            $this->clientUrl() . '/schema',
+            json_encode(['add-dynamic-field' => $fieldDef])
+        );
+        if ($result === true || (is_string($result) && stripos($result, 'already exists') !== false)) {
+            return true;
+        }
+
+        $this->getServiceLocator()->get('Omeka\Logger')->err(
+            'SearchSolr: Cannot create the dynamic field *_ps: {error}', // @translate
+            ['error' => $result]
+        );
+        return false;
+    }
+
     public function ensureFoldedDynamicField(): bool
     {
         try {

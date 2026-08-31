@@ -2297,6 +2297,22 @@ class CoreController extends AbstractActionController
             }
         }
 
+        // A property with geographic coordinates gets a spatial index, so it
+        // can be used for a search by area or by distance. The data type
+        // "geometry" is not included: only a point is managed by Solr here.
+        $geographicProperties = [];
+        if ($wantDatatypes) {
+            $geographicProperties = $connection->fetchFirstColumn(
+                'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
+                FROM value v
+                INNER JOIN property pr ON pr.id = v.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                WHERE v.type = "place"
+                    OR v.type = "geography"
+                    OR v.type LIKE "geography:%"'
+            );
+        }
+
         // Settings templates per suffix.
         $suffixSettings = [
             '_txt' => ['formatter' => ''],
@@ -2305,6 +2321,8 @@ class CoreController extends AbstractActionController
             '_i' => ['formatter' => 'integer'],
             '_is' => ['formatter' => 'integer'],
             '_d' => ['formatter' => 'decimal'],
+            // A point is "latitude,longitude", the format of a Solr location.
+            '_ps' => ['formatter' => 'point'],
             '_ds' => ['formatter' => 'decimal'],
             // Folded sort/comparison variant (see ensureFoldedFieldType).
             '_fold_s' => ['formatter' => 'text', 'parts' => ['main']],
@@ -2368,6 +2386,7 @@ class CoreController extends AbstractActionController
         // pushed once, on the first folded map to create. On failure the folded
         // maps are skipped: sorts keep using the plain string field.
         $foldedSchemaReady = null;
+        $pointSchemaReady = null;
         foreach ($usedFields as $term => $requiredSuffixes) {
             if (!is_array($requiredSuffixes)
                 || empty($requiredSuffixes)
@@ -2386,6 +2405,9 @@ class CoreController extends AbstractActionController
             // A numeric property gets a single-valued index too, so it can be
             // sorted as a number even when no sort is configured yet: a string
             // index would sort 10 before 9.
+            if (in_array($term, $geographicProperties)) {
+                $requiredSuffixes['_ps'] = true;
+            }
             if ($numericType) {
                 $requiredSuffixes[$numericType === 'decimal' ? '_d' : '_i'] = true;
                 // The text index of a number is kept only on request: it
@@ -2420,6 +2442,14 @@ class CoreController extends AbstractActionController
                     $foldedSchemaReady ??= $solrCore->ensureFoldedFieldType()
                         && $solrCore->ensureFoldedDynamicField();
                     if (!$foldedSchemaReady) {
+                        continue;
+                    }
+                }
+                // An audit does not modify the schema, so the field is only
+                // pushed on a real sync.
+                if ($suffix === '_ps' && !$isAudit) {
+                    $pointSchemaReady ??= $solrCore->ensurePointDynamicField();
+                    if (!$pointSchemaReady) {
                         continue;
                     }
                 }
@@ -2789,7 +2819,7 @@ class CoreController extends AbstractActionController
             // Compound interval suffixes (_min_i / _max_i / _min_l / _max_l)
             // are matched before the simple suffixes thanks to the alternation
             // order: longest alternatives first.
-            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|link_is|fold_s|txt|ss|s|dt|is|ls|i|l|b)$/',
+            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|link_is|fold_s|txt|ss|s|dt|is|ls|i|l|b|ps)$/',
             $value,
             $m
         )) {

@@ -13,42 +13,50 @@ class Point extends AbstractValueFormatter
     public function format($value): array
     {
         if ($value instanceof ValueRepresentation) {
-            switch ($value->type()) {
-                // Less check, because it is already formatted.
-                case 'geometry:geography':
-                case 'geography':
-                    $val = (string) $value;
-                    return strpos($val, 'POINT(') === 0
-                        ? [preg_replace('~[^\d.]~', ',', $val)]
-                        : [];
-
-                case 'place':
-                    // TODO Remove json_decode? No, this is the value.
-                    $val = json_decode($value->value(), true);
-                    if (!$val || !is_array($val) || !array_key_exists('latitude', $val) || !array_key_exists('longitude', $val)) {
-                        return [];
-                    }
-                    return [$val['latitude'] . ',' . $val['longitude']];
-
-                case 'geometry:geometry':
-                case 'geometry':
-                    // Geometry should be checked as any other data, because
-                    // only latitude and longitude are managed by Solr point.
-                default:
-                    $value = (string) $value;
-                    break;
+            // The value of a place is a json with the coordinates apart.
+            if ($value->type() === 'place') {
+                $val = json_decode((string) $value->value(), true);
+                return is_array($val)
+                    && isset($val['latitude'])
+                    && isset($val['longitude'])
+                    ? $this->point((string) $val['latitude'], (string) $val['longitude'])
+                    : [];
             }
+            // A geometry is checked like any other value: only a point can be
+            // indexed as a location by Solr.
+            $value = (string) $value;
         }
 
-        $val = array_filter(explode(' ', preg_replace('~[^\d.]~', ' ', $value)));
+        $value = trim((string) $value);
+
+        // A well-known text orders the coordinates as "longitude latitude",
+        // unlike a location of Solr.
+        if (preg_match('~^POINT\s*\(\s*(-?[\d.]+)[\s,]+(-?[\d.]+)\s*\)$~i', $value, $matches)) {
+            return $this->point($matches[2], $matches[1]);
+        }
+
+        $val = array_values(array_filter(
+            preg_split('~[^-\d.]+~', $value) ?: [],
+            fn ($v) => $v !== '' && is_numeric($v)
+        ));
+
         return count($val) === 2
-            && is_numeric($val[0])
-            && is_numeric($val[1])
-            && $val[0] >= -90
-            && $val[0] <= 90
-            && $val[1] >= -180
-            && $val[1] <= 180
-            ? [$val[0] . ',' . $val[1]]
+            ? $this->point($val[0], $val[1])
+            : [];
+    }
+
+    /**
+     * Format a latitude and a longitude as a location of Solr, when valid.
+     */
+    protected function point(string $latitude, string $longitude): array
+    {
+        return is_numeric($latitude)
+            && is_numeric($longitude)
+            && $latitude >= -90
+            && $latitude <= 90
+            && $longitude >= -180
+            && $longitude <= 180
+            ? [$latitude . ',' . $longitude]
             : [];
     }
 }
