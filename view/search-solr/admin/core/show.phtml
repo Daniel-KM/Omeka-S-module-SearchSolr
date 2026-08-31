@@ -126,6 +126,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Map all'), $solrCore->adminUrl('complete-maps'), [
                     'class' => 'link',
                     'title' => $translate('Add indices (_txt, _ss, _s) to all missing and used properties.')]) ?></li>
+                <li><?= $hyperlink($translate('Map all, observing data types'), $solrCore->adminUrl('data-types-maps'), [
+                    'class' => 'link',
+                    'title' => $translate('Add indices to all missing and used properties, determining types (_txt, _ss, _s, _is, _i, _ds, _d) by examining data.')]) ?></li>
                 <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->adminUrl('add-annotation-maps'), [
                     'class' => 'link',
                     'title' => $translate('Create maps for value annotations.')]) ?></li>

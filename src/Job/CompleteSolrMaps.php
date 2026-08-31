@@ -18,6 +18,17 @@ use SearchSolr\Stdlib\LanguageCodes;
 class CompleteSolrMaps extends AbstractJob
 {
     /**
+     * Minimum ratio of numeric values for a property to get a numeric index.
+     */
+    const DATATYPE_RATIO = 0.998;
+
+    /**
+     * A property gets no exact index when its number of distinct values is
+     * greater than this factor multiplied by the square root of its total.
+     */
+    const DATATYPE_CARDINALITY_FACTOR = 5;
+
+    /**
      * @var \Laminas\Log\Logger
      */
     protected $logger;
@@ -118,7 +129,7 @@ class CompleteSolrMaps extends AbstractJob
 
         // Load properties and filter to used ones.
         $properties = $api->search('properties')->getContent();
-        if ($mode == 'datatypes') {
+        if ($mode === 'datatypes') {
             $usedProperties = $this->analyseUsedPropertyIds(
                 $connection, $resourceName
             );
@@ -140,25 +151,30 @@ class CompleteSolrMaps extends AbstractJob
 
             $solrFieldType = 's';
             $name = strtr($term, ':', '_') . '_txt';
+            $stats = $usedProperties[$property->id()] ?? [];
+            // A typed index requires its formatter: a few values may not be
+            // numbers, and Solr rejects the whole document when one of them is
+            // sent as is, so the formatter drops them.
+            $formatter = '';
 
-            if ($mode == 'datatypes') {
-                $stats = $usedProperties[$property->id()];
-
-                if ($stats['z'] >= 0.998 * $stats['used']) {
+            if ($mode === 'datatypes') {
+                if ($stats['z'] >= self::DATATYPE_RATIO * $stats['used']) {
                     // integer
                     $name = strtr($term, ':', '_') . '_is';
                     $solrFieldType = 'i';
-                } elseif ($stats['r'] >= 0.998 * $stats['used']) {
+                    $formatter = 'integer';
+                } elseif ($stats['r'] >= self::DATATYPE_RATIO * $stats['used']) {
                     // floating point
                     $name = strtr($term, ':', '_') . '_ds';
                     $solrFieldType = 'd';
+                    $formatter = 'decimal';
                 }
             }
 
             if ($this->createMap(
                 $api, $solrCoreId, $resourceName,
                 $name, $term, null, [],
-                ['formatter' => '', 'label' => $label],
+                ['formatter' => $formatter, 'label' => $label],
                 $existingFields
             )) {
                 $newMaps[] = $name;
@@ -195,9 +211,10 @@ class CompleteSolrMaps extends AbstractJob
             $skipStringFields = $mode === 'recommended'
                 && in_array($term, $longProperties);
 
-	    // In datatypes mode, skip _ss for fields with too many distinct values.
-	    $skipManyValues = $mode === 'datatypes'
-		&& sqrt((int)$stats['used']) * 5 < $stats['numval'];
+            // In datatypes mode, skip _ss for fields with too many distinct
+            // values: such a facet or filter cannot be browsed.
+            $skipManyValues = $mode === 'datatypes'
+                && sqrt((int) $stats['used']) * self::DATATYPE_CARDINALITY_FACTOR < $stats['numval'];
 
             if (!$skipStringFields) {
                 // _ss: filters and facets.
@@ -212,12 +229,13 @@ class CompleteSolrMaps extends AbstractJob
                     $newMaps[] = $name;
                 }
 
-                // _s: sort.
-                $name = strtr($term, ':', '_') . '_s';
+                // _s: sort. A numeric property sorts as a number: a string
+                // index would sort 10 before 9.
+                $name = strtr($term, ':', '_') . '_' . $solrFieldType;
                 if ($this->createMap(
                     $api, $solrCoreId, $resourceName,
                     $name, $term, null, [],
-                    ['formatter' => 'text', 'parts' => ['main'],
+                    ['formatter' => $formatter ?: 'text', 'parts' => ['main'],
                         'label' => $label],
                     $existingFields
                 )) {
@@ -336,17 +354,20 @@ class CompleteSolrMaps extends AbstractJob
         if (class_exists('DigitalObject\Module', false)) {
             $resourceTypes['digital_objects'] = \DigitalObject\Entity\DigitalObject::class;
         }
+        if (class_exists('Thesaurus\Module', false)) {
+            $resourceTypes['concepts'] = \Thesaurus\Entity\Concept::class;
+        }
         if (!isset($resourceTypes[$resourceName])) {
             return [];
         }
         $qb = $connection->createQueryBuilder()
-            ->select(array(
-		'value.property_id',
+            ->select([
+                'value.property_id',
                 'COUNT(*) used',
                 'COUNT(DISTINCT value.value) numval',
                 'SUM(value.value RLIKE \'^-?\\\\d+(\\\\.\\\\d+)?$\') r',
                 'SUM(value.value RLIKE \'^-?\\\\d+$\') z'
-            ))
+            ])
             ->from('value', 'value')
             ->innerJoin(
                 'value', 'resource', 'resource',
