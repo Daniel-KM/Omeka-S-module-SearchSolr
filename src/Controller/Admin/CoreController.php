@@ -2203,37 +2203,43 @@ class CoreController extends AbstractActionController
         $configModule = $services->get('Config')['searchsolr']['config'] ?? [];
         $textOnlyAverage = (int) ($configModule['searchsolr_text_only_average_length'] ?? 100);
         $stringMaxBytes = (int) ($configModule['searchsolr_string_value_max_bytes'] ?? 1000);
+        // The lengths and the number of distinct values are collected in a
+        // single pass: on a big base, a second scan of the values costs some
+        // minutes. The distinct values are counted on a checksum, much cheaper
+        // to sort than the whole text, and exact enough for a threshold.
         $longValueProperties = include dirname(__DIR__, 3)
             . '/config/metadata_text.php';
-        $longValueProperties = array_unique(array_merge(
-            $longValueProperties,
-            $connection->fetchFirstColumn(
-                'SELECT CONCAT(vo.prefix, ":", pr.local_name)
-                FROM value v
-                INNER JOIN property pr ON pr.id = v.property_id
-                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
-                WHERE v.value IS NOT NULL
-                GROUP BY v.property_id
-                HAVING MAX(LENGTH(v.value)) > ' . $stringMaxBytes . '
-                    OR AVG(CHAR_LENGTH(v.value)) > ' . $textOnlyAverage
-            )
-        ));
+        $highCardinalityProperties = [];
+        $rowsLengths = $connection->fetchAllAssociative(
+            'SELECT CONCAT(vo.prefix, ":", pr.local_name) AS term,
+                MAX(LENGTH(v.value)) AS max_length,
+                AVG(CHAR_LENGTH(v.value)) AS average_length,
+                COUNT(DISTINCT CRC32(v.value)) AS distinct_values
+            FROM value v
+            INNER JOIN property pr ON pr.id = v.property_id
+            INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+            WHERE v.value IS NOT NULL
+            GROUP BY v.property_id'
+        );
+        foreach ($rowsLengths as $rowLengths) {
+            if ($rowLengths['max_length'] > $stringMaxBytes
+                || $rowLengths['average_length'] > $textOnlyAverage
+            ) {
+                $longValueProperties[] = $rowLengths['term'];
+            }
+            if ($maxCardinality > 0
+                && $rowLengths['distinct_values'] > $maxCardinality
+            ) {
+                $highCardinalityProperties[] = $rowLengths['term'];
+            }
+        }
+        $longValueProperties = array_unique($longValueProperties);
 
         // An exact index (_ss) is useless when the property has too many
         // distinct values: such a facet or filter cannot be browsed. The
         // properties used by a facet or a filter of a search page are kept,
         // since the choice is explicit.
-        $highCardinalityProperties = [];
-        if ($maxCardinality > 0) {
-            $highCardinalityProperties = $connection->fetchFirstColumn(
-                'SELECT CONCAT(vo.prefix, ":", pr.local_name)
-                FROM value v
-                INNER JOIN property pr ON pr.id = v.property_id
-                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
-                WHERE v.value IS NOT NULL
-                GROUP BY v.property_id
-                HAVING COUNT(DISTINCT v.value) > ' . $maxCardinality
-            );
+        if ($highCardinalityProperties) {
             $highCardinalityProperties = array_diff(
                 $highCardinalityProperties,
                 array_keys($this->fieldsFromConfigs)
