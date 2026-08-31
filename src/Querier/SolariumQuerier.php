@@ -25,6 +25,11 @@ use Solarium\QueryType\Select\Result\Result as SolariumResult;
  */
 class SolariumQuerier extends AbstractQuerier
 {
+    /**
+     * Max number of buckets of a range facet without an explicit step.
+     */
+    const FACET_RANGE_MAX_BUCKETS = 1000;
+
     protected Response $response;
     protected int $appendToKey = 0;
     protected bool $byResourceType = false;
@@ -581,6 +586,70 @@ class SolariumQuerier extends AbstractQuerier
         return $result;
     }
 
+    /**
+     * Get the min and the max of some fields, without listing their values.
+     *
+     * The component "stats" of Solr computes them in a single pass, unlike a
+     * terms query, that returns every distinct value only to keep two of them:
+     * a field with a high cardinality could exhaust the java heap.
+     *
+     * @return array Min and max by field, when the field has values.
+     */
+    public function queryFieldsMinMax(array $fields): array
+    {
+        if (!$fields) {
+            return [];
+        }
+
+        $this->getClient();
+        $this->appendCoreAliasesToQuery();
+
+        $query = $this->solariumClient->createSelect();
+        $query
+            ->setQuery('*:*')
+            ->setRows(0)
+            ->setFields(['id']);
+
+        $stats = $query->getStats();
+        foreach ($fields as $field) {
+            $stats->createField($field);
+        }
+
+        try {
+            $resultSet = $this->solariumClient->select($query);
+        } catch (\Throwable $e) {
+            if ($this->logger) {
+                $this->logger->err(
+                    'Solr query failed to get the bounds of the fields {fields}: {message}', // @translate
+                    ['fields' => implode(', ', $fields), 'message' => $e->getMessage()]
+                );
+            }
+            return [];
+        }
+
+        $statsResult = $resultSet->getStats();
+        if (!$statsResult) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($fields as $field) {
+            $fieldResult = $statsResult->getResult($field);
+            if (!$fieldResult) {
+                continue;
+            }
+            $min = $fieldResult->getMin();
+            $max = $fieldResult->getMax();
+            // A field without any value has no bounds, or null ones.
+            if ($min === null || $max === null) {
+                continue;
+            }
+            $result[$field] = ['min' => $min, 'max' => $max];
+        }
+
+        return $result;
+    }
+
     public function queryAllResourceIds(?string $resourceType = null, bool $byResourceType = false): array
     {
         // Build the current query if needed.
@@ -1029,6 +1098,23 @@ class SolariumQuerier extends AbstractQuerier
                 $max = $data['max'] ?? ($fieldRanges[$name]['max'] ?? 0);
                 $step = (int) ($data['step'] ?? 1);
 
+                // Without a step, the default one is 1, so a field with a wide
+                // range, like a timestamp, would build one bucket by unit and
+                // exhaust the memory of Solr. So the step is adapted to keep a
+                // number of buckets that a facet can display.
+                if (empty($data['step'])) {
+                    $amplitude = (int) $max - (int) $min;
+                    if ($amplitude > self::FACET_RANGE_MAX_BUCKETS) {
+                        $step = (int) ceil($amplitude / self::FACET_RANGE_MAX_BUCKETS);
+                        if ($this->logger) {
+                            $this->logger->notice(
+                                'Facet "{facet_name}": the range from {min} to {max} has no step, so the step is set to {step} to limit the number of buckets. Set it in the search page.', // @translate
+                                ['facet_name' => $name, 'min' => $min, 'max' => $max, 'step' => $step]
+                            );
+                        }
+                    }
+                }
+
                 // Solr upper bounds are excluded by default, so add step to max.
                 /** @see https://solr.apache.org/guide/solr/latest/query-guide/faceting.html */
                 if ($max) {
@@ -1202,7 +1288,7 @@ class SolariumQuerier extends AbstractQuerier
                 array_values($nameToField),
                 array_values($nameToFieldEnd)
             ));
-            $all = $this->queryValuesCount($solrFields);
+            $all = $this->queryFieldsMinMax($solrFields);
 
             // Map results back to facet names. For interval mode, min comes
             // from the start field and max from the end field.
@@ -1210,14 +1296,10 @@ class SolariumQuerier extends AbstractQuerier
                 $field = $nameToField[$name] ?? null;
                 $fieldEnd = $nameToFieldEnd[$name] ?? null;
                 if ($field && isset($all[$field])) {
-                    $startValues = array_keys(array_filter($all[$field]));
-                    $range['min'] = $startValues ? min($startValues) : 0;
-                    if ($fieldEnd && isset($all[$fieldEnd])) {
-                        $endValues = array_keys(array_filter($all[$fieldEnd]));
-                        $range['max'] = $endValues ? max($endValues) : 0;
-                    } else {
-                        $range['max'] = $startValues ? max($startValues) : 0;
-                    }
+                    $range['min'] = $all[$field]['min'];
+                    $range['max'] = $fieldEnd && isset($all[$fieldEnd])
+                        ? $all[$fieldEnd]['max']
+                        : $all[$field]['max'];
                 } else {
                     $range['min'] = 0;
                     $range['max'] = 0;
