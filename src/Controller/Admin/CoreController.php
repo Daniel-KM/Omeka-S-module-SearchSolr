@@ -1004,11 +1004,7 @@ class CoreController extends AbstractActionController
                 ],
             ]);
 
-            $httpClient = new \Laminas\Http\Client($url, [
-                'timeout' => 30,
-            ]);
-            $httpClient->setMethod('POST');
-            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $httpClient = $this->solrHttpClient($solrCore, $url);
             $httpClient->setRawBody($data);
             $response = $httpClient->send();
 
@@ -1073,11 +1069,7 @@ class CoreController extends AbstractActionController
                 ],
             ]);
 
-            $httpClient = new \Laminas\Http\Client($url, [
-                'timeout' => 30,
-            ]);
-            $httpClient->setMethod('POST');
-            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $httpClient = $this->solrHttpClient($solrCore, $url);
             $httpClient->setRawBody($data);
             $response = $httpClient->send();
 
@@ -1126,11 +1118,7 @@ class CoreController extends AbstractActionController
                 ],
             ]);
 
-            $httpClient = new \Laminas\Http\Client($url, [
-                'timeout' => 30,
-            ]);
-            $httpClient->setMethod('POST');
-            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $httpClient = $this->solrHttpClient($solrCore, $url);
             $httpClient->setRawBody($data);
             $response = $httpClient->send();
 
@@ -3208,11 +3196,7 @@ class CoreController extends AbstractActionController
             $endpoint = $solariumClient->getEndpoint();
             $url = $endpoint->getBaseUri() . 'schema';
 
-            $httpClient = new \Laminas\Http\Client($url, [
-                'timeout' => 30,
-            ]);
-            $httpClient->setMethod('POST');
-            $httpClient->setHeaders(['Content-Type' => 'application/json']);
+            $httpClient = $this->solrHttpClient($solrCore, $url);
 
             $fieldType = 'text_general';
 
@@ -3546,5 +3530,27 @@ class CoreController extends AbstractActionController
         return $this->redirect()->toRoute(
             'admin/search-manager/solr/core-id', ['id' => $id]
         );
+    }
+    /**
+     * Get a http client to post json to the Solr api, with credentials if any.
+     *
+     * The Solarium client cannot be used for the schema and config apis, but
+     * the credentials of the endpoint are required when Solr uses BasicAuth,
+     * else Solr returns a 401 error.
+     */
+    protected function solrHttpClient(SolrCoreRepresentation $solrCore, string $url): \Laminas\Http\Client
+    {
+        $httpClient = new \Laminas\Http\Client($url, [
+            'timeout' => 30,
+        ]);
+        $httpClient->setMethod('POST');
+        $httpClient->setHeaders(['Content-Type' => 'application/json']);
+
+        $endpoint = $solrCore->clientSettings();
+        if (!empty($endpoint['username'])) {
+            $httpClient->setAuth($endpoint['username'], (string) ($endpoint['password'] ?? ''));
+        }
+
+        return $httpClient;
     }
 }
