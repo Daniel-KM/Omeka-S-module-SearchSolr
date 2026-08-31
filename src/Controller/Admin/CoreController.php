@@ -1909,6 +1909,9 @@ class CoreController extends AbstractActionController
             if ($this->params()->fromQuery('media_long')) {
                 $sources[] = 'media_long';
             }
+            if ($this->params()->fromQuery('datatypes')) {
+                $sources[] = 'datatypes';
+            }
             $clean = (bool) $this->params()->fromQuery('clean');
             $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
             $maxCardinality = (int) $this->params()->fromQuery('max_cardinality', 100);
@@ -1925,13 +1928,14 @@ class CoreController extends AbstractActionController
             $maxCardinality = (int) ($data['max_cardinality'] ?? 100);
         }
         if (in_array('all', $sources, true)) {
-            $sources = ['configs', 'settings', 'site_settings', 'templates', 'used', 'media'];
+            $sources = ['configs', 'settings', 'site_settings', 'templates', 'used', 'media', 'datatypes'];
         }
         $wantConfigs = in_array('configs', $sources, true);
         $wantSettings = in_array('settings', $sources, true);
         $wantSiteSettings = in_array('site_settings', $sources, true);
         $wantTemplates = in_array('templates', $sources, true);
         $wantUsed = in_array('used', $sources, true);
+        $wantDatatypes = in_array('datatypes', $sources, true);
         $wantMediaLong = in_array('media_long', $sources, true);
         // The long values are useless without the media values themselves.
         $wantMedia = $wantMediaLong || in_array('media', $sources, true);
@@ -2255,12 +2259,47 @@ class CoreController extends AbstractActionController
             );
         }
 
+        // A property whose values are almost all numbers gets a numeric index
+        // instead of a string one: the sort follows the numeric order and the
+        // facets can use a range. A few values may not be numbers, so the
+        // formatter drops them, else Solr would reject the whole document.
+        $numericProperties = [];
+        if ($wantDatatypes) {
+            $numericRatio = (float) ($configModule['searchsolr_numeric_ratio'] ?? 0.95);
+            $numericRatio = $numericRatio > 0 && $numericRatio <= 1 ? $numericRatio : 0.95;
+            $rows = $connection->fetchAllAssociative(
+                'SELECT CONCAT(vo.prefix, ":", pr.local_name) AS term,
+                    COUNT(*) AS total,
+                    SUM(v.value REGEXP "^ *-?[0-9]+ *$") AS integers,
+                    SUM(v.value REGEXP "^ *-?[0-9]+([.,][0-9]+)? *$") AS decimals
+                FROM value v
+                INNER JOIN property pr ON pr.id = v.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                WHERE v.value IS NOT NULL AND v.value != ""
+                GROUP BY v.property_id'
+            );
+            foreach ($rows as $row) {
+                $total = (int) $row['total'];
+                if (!$total) {
+                    continue;
+                }
+                if ((int) $row['integers'] >= $total * $numericRatio) {
+                    $numericProperties[$row['term']] = 'integer';
+                } elseif ((int) $row['decimals'] >= $total * $numericRatio) {
+                    $numericProperties[$row['term']] = 'decimal';
+                }
+            }
+        }
+
         // Settings templates per suffix.
         $suffixSettings = [
             '_txt' => ['formatter' => ''],
             '_ss' => ['formatter' => 'text', 'parts' => ['main']],
             '_s' => ['formatter' => 'text', 'parts' => ['main']],
             '_i' => ['formatter' => 'integer'],
+            '_is' => ['formatter' => 'integer'],
+            '_d' => ['formatter' => 'decimal'],
+            '_ds' => ['formatter' => 'decimal'],
             // Folded sort/comparison variant (see ensureFoldedFieldType).
             '_fold_s' => ['formatter' => 'text', 'parts' => ['main']],
             '_link_ss' => [
@@ -2332,6 +2371,12 @@ class CoreController extends AbstractActionController
             $base = strtr($term, ':', '_');
             $isLong = in_array($term, $longValueProperties);
             $isHighCardinality = in_array($term, $highCardinalityProperties);
+            // A numeric property sorts and filters as a number, so the string
+            // indexes are replaced by their numeric equivalent.
+            $numericType = $numericProperties[$term] ?? null;
+            $numericSuffixes = $numericType === 'decimal'
+                ? ['_s' => '_d', '_fold_s' => '_d', '_ss' => '_ds']
+                : ['_s' => '_i', '_fold_s' => '_i', '_ss' => '_is'];
 
             foreach (array_keys($requiredSuffixes) as $suffix) {
                 // Skip _ss/_s for long-value properties.
@@ -2340,9 +2385,14 @@ class CoreController extends AbstractActionController
                 ) {
                     continue;
                 }
-                // The sort (_s) stays useful whatever the number of values.
-                if ($isHighCardinality && $suffix === '_ss') {
+                // The sort (_s) stays useful whatever the number of values, and
+                // a numeric index is used for a range facet or a sort, not for
+                // a list of values to check, so it is kept too.
+                if ($isHighCardinality && $suffix === '_ss' && !$numericType) {
                     continue;
+                }
+                if ($numericType && isset($numericSuffixes[$suffix])) {
+                    $suffix = $numericSuffixes[$suffix];
                 }
                 $fieldName = $base . $suffix;
                 if (in_array($fieldName, $existingFieldNames)) {

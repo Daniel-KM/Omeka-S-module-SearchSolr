@@ -222,6 +222,11 @@ return [
             // only a full text index (_txt), without exact-value index
             // (_ss/_s), useless for facets and filters on long texts.
             'searchsolr_text_only_average_length' => 100,
+            // Minimum ratio of numeric values for a property to get a
+            // numeric index (_i/_is or _d/_ds) instead of a string one, with
+            // the source "datatypes" of the sync. The few values that are not
+            // numbers are dropped by the formatter.
+            'searchsolr_numeric_ratio' => 0.95,
             // Byte limit of a value in an exact-value string field: beyond it,
             // the sync excludes the property and the indexer skips the single
             // value with a log (the document and its _txt fields are kept).
@@ -244,6 +249,7 @@ return [
             'text' => ValueFormatter\Text::class,
             'boolean' => ValueFormatter\Boolean::class,
             'integer' => ValueFormatter\Integer::class,
+            'decimal' => ValueFormatter\Decimal::class,
             'date' => ValueFormatter\Date::class,
             'place' => ValueFormatter\Place::class,
             'point' => ValueFormatter\Point::class,
