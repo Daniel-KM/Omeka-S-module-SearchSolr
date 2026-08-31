@@ -1,0 +1,73 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Stdlib\SolrCore $solrCore
+ * @var bool|null $hasCatchall Null when the schema is unreachable.
+ * @var string|null $textFieldType
+ *
+ * Configuration of the analyzer of the catchall field, loaded into the core
+ * page sidebar.
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
+
+$solrLanguages = include dirname(__DIR__, 4) . '/config/solr_languages.php';
+
+$currentLabel = null;
+if ($textFieldType) {
+    if ($textFieldType === 'text_search') {
+        $currentLabel = $translate('optimized (Google-like search via EdgeNGram)');
+    } elseif (preg_match('/^text_search_(\w+)$/', $textFieldType, $m) && isset($solrLanguages[$m[1]])) {
+        $currentLabel = sprintf($translate('linguistic (%s)'), $solrLanguages[$m[1]]['label']);
+    } else {
+        $currentLabel = sprintf($translate('default (strict matching via "%s")'), $textFieldType);
+    }
+}
+?>
+
+<div id="sidebar-confirm">
+    <h3><?= $escape($translate('Search configuration')) ?></h3>
+    <p class="explanation"><?= $translate('The analyzer of the catchall field "_text_" defines how search queries match the indexed content.') ?></p>
+    <?php if ($currentLabel !== null): ?>
+    <p class="explanation"><strong><?= $escape(sprintf($translate('Current configuration: %s.'), $currentLabel)) ?></strong></p>
+    <?php elseif ($hasCatchall === false): ?>
+    <p class="explanation"><strong><?= $translate('The catchall field "_text_" does not exist: create it first (menu Maintenance).') ?></strong></p>
+    <?php else: ?>
+    <p class="explanation"><strong><?= $translate('Current status: unknown (the Solr schema is unreachable).') ?></strong></p>
+    <?php endif; ?>
+
+    <form method="post" action="<?= $escapeAttr($solrCore->adminUrl('configure-search')) ?>">
+        <fieldset>
+            <legend><?= $escape($translate('Analyzer')) ?></legend>
+            <div class="inputs">
+                <label>
+                    <input type="radio" name="search_config" value="keep" checked="checked"/>
+                    <?= $escape($translate('Keep current configuration')) ?>
+                </label>
+                <label>
+                    <input type="radio" name="search_config" value="default"/>
+                    <?= $escape($translate('Default (strict matching)')) ?>
+                </label>
+                <label>
+                    <input type="radio" name="search_config" value="optimized"/>
+                    <?= $escape($translate('Optimized (Google-like search)')) ?>
+                </label>
+                <label>
+                    <input type="radio" name="search_config" value="linguistic"/>
+                    <?= $escape($translate('Linguistic (language-specific)')) ?>
+                </label>
+                <select name="search_language">
+                    <?php foreach ($solrLanguages as $langCode => $langDef): ?>
+                    <option value="<?= $escapeAttr($langCode) ?>"<?= $langCode === 'fr' ? ' selected' : '' ?>><?= $escape($langDef['label']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <p class="explanation"><?= $escape($translate('Optimized: prefix and accent-insensitive matching for all languages ("napo" finds "napoléon"). Linguistic: stemmer and stopwords of one language. Default: exact words only.')) ?></p>
+        </fieldset>
+
+        <button type="submit" class="button"><?= $escape($translate('Apply')) ?></button>
+    </form>
+</div>

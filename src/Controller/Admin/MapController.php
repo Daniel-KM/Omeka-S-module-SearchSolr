@@ -181,6 +181,13 @@ class MapController extends AbstractActionController
             'resource_name' => $resourceName,
         ]);
 
+        // Prefill the source when given, e.g. from the "+" of the lists of the
+        // maps of the core page.
+        $sourceQuery = (string) $this->params()->fromQuery('source');
+        if ($sourceQuery !== '' && !$this->getRequest()->isPost()) {
+            $form->setData(['o:source' => $this->sourceStringToArray($sourceQuery)]);
+        }
+
         if ($this->getRequest()->isPost()) {
             $data = $this->params()->fromPost();
             $form->setData($data);

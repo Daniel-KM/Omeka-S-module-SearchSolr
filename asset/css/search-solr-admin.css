@@ -100,6 +100,10 @@
         align-items: center;
         gap: 0.5em;
     }
+    /* The count sticks to the right, before the help button. */
+    .solr-cores .maps-controls .maps-count-wrapper {
+        margin-left: auto;
+    }
     .solr-cores .maps-controls .maps-view-choice label {
         display: inline-flex;
         align-items: center;
@@ -125,6 +129,19 @@
         margin: 0 0 0 auto;
         flex-shrink: 0;
     }
+    /* Tighten the sidebars of the core page (suggest configuration, maps
+       alignment): the default margins of the explanations are too large and
+       the submit button sticks to the last option. */
+    .solr-cores #sidebar-confirm .explanation {
+        margin: 0.5em 0;
+    }
+    .solr-cores #sidebar-confirm fieldset {
+        margin-bottom: 1em;
+    }
+    .solr-cores #sidebar-confirm form button[type="submit"] {
+        margin-top: 1em;
+    }
+
     /* Grey info icons for the real usages of an index (facet, filter, sort,
        query, suggester, settings), distinct from the red action icons. */
     .solr-cores .map-usages {

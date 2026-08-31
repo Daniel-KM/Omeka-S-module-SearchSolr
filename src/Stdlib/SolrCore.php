@@ -64,6 +64,11 @@ class SolrCore
      */
     protected $solariumClient;
 
+    /**
+     * @var Schema
+     */
+    protected $schema;
+
     public function __construct(SearchEngineRepresentation $engine, ServiceLocatorInterface $services)
     {
         $this->engine = $engine;
@@ -392,9 +397,11 @@ class SolrCore
     /**
      * Get the schema for the core.
      */
-    public function schema():Schema
+    public function schema(): Schema
     {
-        return $this->getServiceLocator()
+        // Memoized: the schema instance caches the remote fetch, so the many
+        // checks of a page do a single request.
+        return $this->schema ??= $this->getServiceLocator()
             ->build(Schema::class, ['solr_core' => $this]);
     }
 

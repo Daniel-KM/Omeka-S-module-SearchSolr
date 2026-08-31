@@ -1505,6 +1505,35 @@ class CoreController extends AbstractActionController
      * plus the properties of the resource templates (curated
      *   middle ground between configs and all used properties).
      */
+    public function analyzerConfigAction()
+    {
+        $id = (int) $this->params('id');
+        $solrCore = $this->solrCore($id);
+
+        // The panel only makes sense in the core page sidebar (xhr); a direct
+        // visit just goes back to the core page.
+        if (!$this->getRequest()->isXmlHttpRequest()) {
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+        }
+
+        try {
+            $hasCatchall = $solrCore->schema()->checkDefaultField();
+            $textFieldType = $solrCore->schema()->getFieldsByName()['_text_']['type'] ?? null;
+        } catch (\Throwable $e) {
+            // Solr unreachable: the status is unknown.
+            $hasCatchall = null;
+            $textFieldType = null;
+        }
+
+        return (new ViewModel([
+            'solrCore' => $solrCore,
+            'hasCatchall' => $hasCatchall,
+            'textFieldType' => $textFieldType,
+        ]))
+            ->setTerminal(true)
+            ->setTemplate('search-solr/admin/core/analyzer-config-sidebar');
+    }
+
     public function suggestConfigAction()
     {
         $id = (int) $this->params('id');
@@ -2520,15 +2549,45 @@ class CoreController extends AbstractActionController
         $id = $this->params('id');
         $solrCore = $this->solrCore((int) $id);
 
-        $includeLongTexts = (bool) $this->params()
-            ->fromQuery('include_long_texts');
-        $keepDiacritics = (bool) $this->params()
-            ->fromQuery('keep_diacritics');
-        $alreadyExists = (bool) $solrCore->schema()
-            ->getField('suggest_txt');
-        $fieldType = $keepDiacritics ? 'text_general' : null;
-        $result = $solrCore
-            ->ensureSuggestField($includeLongTexts, $fieldType);
+        // Check that Solr is reachable first, so the message is the real
+        // status, not a creation failure.
+        if (!$solrCore->status()) {
+            $this->messenger()->addError(new PsrMessage(
+                'Solr is unreachable: {status}', // @translate
+                ['status' => (string) $solrCore->status(true)]
+            ));
+            return $this->redirect()->toRoute(
+                'admin/search-manager/solr/core-id',
+                ['id' => $id, 'action' => 'show']
+            );
+        }
+
+        $isPost = $this->getRequest()->isPost();
+        $includeLongTexts = (bool) ($isPost
+            ? $this->params()->fromPost('long_texts')
+            : $this->params()->fromQuery('include_long_texts'));
+        $keepDiacritics = (bool) ($isPost
+            ? $this->params()->fromPost('diacritics')
+            : $this->params()->fromQuery('keep_diacritics'));
+
+        // Store the choices, so the form displays the current configuration.
+        $solrSettings = $solrCore->settings();
+        $solrSettings['suggest'] = [
+            'long_texts' => $includeLongTexts,
+            'diacritics' => $keepDiacritics,
+        ];
+        $this->updateSolrSettings((int) $id, $solrSettings);
+
+        try {
+            $alreadyExists = (bool) $solrCore->schema()
+                ->getField('suggest_txt');
+            $fieldType = $keepDiacritics ? 'text_general' : null;
+            $result = $solrCore
+                ->ensureSuggestField($includeLongTexts, $fieldType);
+        } catch (\Throwable $e) {
+            $result = (string) $solrCore->status(true);
+            $alreadyExists = false;
+        }
         if ($result === true) {
             $this->messenger()->addSuccess($alreadyExists
                 ? 'Field "suggest_txt" recreated. Reindex required.' // @translate
@@ -2560,6 +2619,19 @@ class CoreController extends AbstractActionController
     {
         $id = $this->params('id');
         $solrCore = $this->solrCore((int) $id);
+
+        // Check that Solr is reachable first, so the message is the real
+        // status, not a schema failure.
+        if (!$solrCore->status()) {
+            $this->messenger()->addError(new PsrMessage(
+                'Solr is unreachable: {status}', // @translate
+                ['status' => (string) $solrCore->status(true)]
+            ));
+            return $this->redirect()->toRoute(
+                'admin/search-manager/solr/core-id',
+                ['id' => $id, 'action' => 'show']
+            );
+        }
 
         // The query relevance settings (minimum match, tie breaker) are edited
         // on the core form; this action only manages the catchall analyzer

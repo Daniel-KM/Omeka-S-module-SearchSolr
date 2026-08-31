@@ -15,9 +15,11 @@ $escapeAttr = $plugins->get('escapeHtmlAttr');
 
 $this->headLink()
     ->appendStylesheet($assetUrl('css/common-page-action-menu.css', 'Common'))
+    ->appendStylesheet($assetUrl('css/common-dialog-admin.css', 'Common'))
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()
     ->appendFile($assetUrl('js/common-page-action-menu.js', 'Common'), 'text/javascript', ['defer' => 'defer'])
+    ->appendFile($assetUrl('js/common-dialog.js', 'Common'), 'text/javascript', ['defer' => 'defer'])
     ->appendFile($assetUrl('js/search-solr-admin.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
 $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-map-browse browse');
@@ -46,6 +48,11 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     'class' => 'link',
                     'title' => $translate('Add one map by hand for a special source or with custom settings (formatter, pool filters, boost). The resource scope is chosen in the form.')]) ?></li>
                 <li class="separator"><span><?= $translate('Schema and core') ?></span></li>
+                <li><?= $hyperlink($translate('Search configuration…'), '#', [
+                    'data-sidebar-selector' => '#sidebar',
+                    'class' => 'link sidebar-content',
+                    'data-sidebar-content-url' => $solrCore->adminUrl('analyzer-config'),
+                    'title' => $translate('Configure the analyzer of the catchall field "_text_" used for the full-text search.')]) ?></li>
                 <li><?= $hyperlink($translate('Suggest configuration…'), '#', [
                     'data-sidebar-selector' => '#sidebar',
                     'class' => 'link sidebar-content',
@@ -138,75 +145,6 @@ foreach ($this->api()->search('search_engines')->getContent() as $otherEngine) {
 <?php if ($sharedWith): ?>
 <p class="messages"><span class="message warning"><?= $escape(sprintf($translate('This core points to the same Solr url as: %s. They share one physical index and schema, so one overwrites the other and a reindex wipes both. Give each core its own physical Solr core (a distinct core name in the url).'), implode(', ', $sharedWith))) ?></span></p>
 <?php endif; ?>
-
-<?php
-$hasCatchallTop = null;
-try {
-    $hasCatchallTop = $solrCore->schema()->checkDefaultField();
-} catch (\Exception $e) {
-    // Solr unreachable.
-}
-?>
-<?php if ($solrCore->userIsAllowed('update') && $hasCatchallTop): ?>
-<details id="search-config">
-    <summary><?= $translate('Search configuration') ?></summary>
-    <p class="explanation"><?= $translate('Configure the analyzer for the catchall field "_text_". This affects how search queries match indexed content.') ?></p>
-    <?php
-    $textFieldType = $solrCore->schema()->getFieldsByName()['_text_']['type'] ?? null;
-    if ($textFieldType):
-        $solrLanguages = include dirname(__DIR__, 4) . '/config/solr_languages.php';
-        if ($textFieldType === 'text_search') {
-            $currentLabel = $translate('optimized (Google-like search via EdgeNGram)');
-        } elseif (preg_match('/^text_search_(\w+)$/', $textFieldType, $m) && isset($solrLanguages[$m[1]])) {
-            $currentLabel = sprintf($translate('linguistic (%s)'), $solrLanguages[$m[1]]['label']);
-        } else {
-            $currentLabel = sprintf($translate('default (strict matching via "%s")'), $escape($textFieldType));
-        }
-    ?>
-    <p class="explanation"><strong><?= sprintf($translate('Current configuration: %s.'), $currentLabel) ?></strong></p>
-    <?php endif; ?>
-    <form method="post" action="<?= $escape($solrCore->adminUrl('configure-search')) ?>">
-        <div class="field">
-            <div class="inputs">
-                <label>
-                    <input type="radio" name="search_config" value="keep" checked>
-                    <?= $translate('Keep current configuration') ?>
-                    <span class="explanation"><?= $translate('Do not change the Solr schema.') ?></span>
-                </label>
-            </div>
-            <div class="inputs">
-                <label>
-                    <input type="radio" name="search_config" value="default">
-                    <?= $translate('Default (strict matching)') ?>
-                    <span class="explanation"><?= $translate('Use text_general: matches exact words only. "napo" does not find "napoléon".') ?></span>
-                </label>
-            </div>
-            <div class="inputs">
-                <label>
-                    <input type="radio" name="search_config" value="optimized">
-                    <?= $translate('Optimized (Google-like search)') ?>
-                    <span class="explanation"><?= $translate('Use EdgeNGram: prefix matching, accent-insensitive. "napo" finds "napoléon", "cafe" finds "café". Works for all languages.') ?></span>
-                </label>
-            </div>
-            <div class="inputs">
-                <label>
-                    <input type="radio" name="search_config" value="linguistic">
-                    <?= $translate('Linguistic (language-specific)') ?>
-                    <span class="explanation"><?= $translate('Use language stemmer: accent-insensitive, stopwords, light stemming. "chat" does not find "château". Best for single-language collections.') ?></span>
-                </label>
-                <select name="search_language" style="margin-left: 1.5em; max-width: 300px;">
-                    <?php foreach ($solrLanguages as $langCode => $langDef): ?>
-                    <option value="<?= $escape($langCode) ?>"<?= $langCode === 'fr' ? ' selected' : '' ?>><?= $escape($langDef['label']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </div>
-        <button type="submit"><?= $translate('Apply') ?></button>
-    </form>
-</details>
-<?php endif; ?>
-
-<?= $partial('search-solr/admin/core/help-index-names') ?>
 
 <?php
 // Determine active resource type filter and view from query string.
@@ -319,9 +257,15 @@ $usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $
             <label><input type="radio" name="maps-view" value="full"<?= $isSimpleView ? '' : ' checked' ?>/> <?= $translate('By index') ?></label>
         </span>
         <span class="maps-count-wrapper">
-            <span id="maps-count-label"><?= $translate('Number of maps:') ?></span>
+            <span id="maps-count-label"
+                data-label-maps="<?= $escapeAttr($translate('Number of maps:')) ?>"
+                data-label-sources="<?= $escapeAttr($translate('Number of sources:')) ?>"><?= $isSimpleView ? $translate('Number of sources:') : $translate('Number of maps:') ?></span>
             <span id="maps-count"></span>
         </span>
+        <button type="button" class="button button-dialog-common maps-help-button"
+            data-dialog-selector="#dialog-index-names"
+            aria-label="<?= $escapeAttr($translate('About index names')) ?>"
+            title="<?= $escapeAttr($translate('About index names')) ?>">?</button>
     </div>
 </div>
 
@@ -625,4 +569,23 @@ $usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $
     <?= $hyperlink('', '#', ['class' => 'sidebar-close o-icon-close', 'title' => $translate('Close')]) ?>
     <div class="sidebar-content"></div>
 </div>
+
+<dialog id="dialog-index-names" class="dialog-common">
+    <form method="dialog" class="dialog-background">
+        <div class="dialog-panel">
+            <div class="dialog-header">
+                <button type="button" class="dialog-header-close-button">
+                    <span class="dialog-close" aria-hidden="true">🗙</span>
+                    <span class="dialog-close-label"><?= $translate('Close') ?></span>
+                </button>
+            </div>
+            <div class="dialog-contents">
+                <div class="dialog-heading"><h2><?= $translate('About index names') ?></h2></div>
+                <div class="dialog-body">
+                    <?= $partial('search-solr/admin/core/help-index-names-content') ?>
+                </div>
+            </div>
+        </div>
+    </form>
+</dialog>
 

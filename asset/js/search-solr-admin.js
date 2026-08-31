@@ -50,6 +50,7 @@
     }
 
     function filterSimpleList(type, query) {
+        var shown = 0;
         var rows = document.querySelectorAll(
             '.by-source tbody tr:not(.map-voc-group)'
         );
@@ -60,6 +61,7 @@
                 || row.textContent.toLowerCase().indexOf(query) !== -1;
             var match = typeOk && textOk;
             row.style.display = match ? '' : 'none';
+            if (match) shown++;
             highlight(row, match && query ? query : '');
             row.querySelectorAll('[data-resource-type]')
                 .forEach(function(el) {
@@ -81,6 +83,23 @@
                 }
                 group.style.display = hasVisible ? '' : 'none';
             });
+        return { shown: shown, total: rows.length };
+    }
+
+    // The count follows the active view: sources or maps.
+    function updateCount(shownFull, totalFull, simpleCounts, filtered) {
+        if (!countSpan) return;
+        var simpleList = document.querySelector('.by-source');
+        var simpleActive = simpleList && simpleList.style.display !== 'none';
+        var label = document.getElementById('maps-count-label');
+        if (label) {
+            label.textContent = simpleActive
+                ? label.dataset.labelSources
+                : label.dataset.labelMaps;
+        }
+        var shown = simpleActive ? simpleCounts.shown : shownFull;
+        var total = simpleActive ? simpleCounts.total : totalFull;
+        countSpan.textContent = filtered ? shown + ' / ' + total : total;
     }
 
     function filterMaps() {
@@ -114,12 +133,8 @@
             highlight(indexCell, hasVisible && query ? query : '');
             if (hasVisible) shown++;
         });
-        filterSimpleList(type, query);
-        if (countSpan) {
-            countSpan.textContent = type || query
-                ? shown + ' / ' + rows.length
-                : rows.length;
-        }
+        var simpleCounts = filterSimpleList(type, query);
+        updateCount(shown, rows.length, simpleCounts, !!(type || query));
         var url = new URL(window.location);
         if (type) {
             url.searchParams.set('resource_type', type);
@@ -186,6 +201,7 @@
                 var toSimple = radio.value === 'simple';
                 document.querySelector('.by-solr-index').style.display = toSimple ? 'none' : '';
                 document.querySelector('.by-source').style.display = toSimple ? '' : 'none';
+                filterMaps();
                 // The simple list is the default view.
                 var url = new URL(window.location);
                 if (toSimple) {
