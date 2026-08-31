@@ -12,7 +12,7 @@ class MapControllerTest extends SearchSolrControllerTestCase
     protected function isSolrAvailable(): bool
     {
         try {
-            $schema = $this->solrCore->schema();
+            $schema = $this->solrCore($this->searchEngine)->schema();
             $schema->getSchema();
             return true;
         } catch (\Exception $e) {
@@ -87,6 +87,8 @@ class MapControllerTest extends SearchSolrControllerTestCase
             'confirmform_csrf'
         );
         // After deletion, redirects to core page (not to map list).
-        $this->assertRedirectTo($this->solrCore->adminUrl());
+        // The map belongs to the Solr core, whose admin url differs from the
+        // one of its engine.
+        $this->assertRedirectTo($this->solrCore($this->searchEngine)->adminUrl());
     }
 }

@@ -109,32 +109,56 @@ trait SearchSolrTestTrait
     /**
      * Create a Solr core in the database.
      *
+     * A core is a search engine with the adapter "solarium": the settings of
+     * the core are stored under the key "solr" of the engine, and the id of
+     * the core is the id of the engine.
+     *
+     * @see \SearchSolr\Stdlib\SolrCore
+     *
      * @param string $name Core name.
      * @param array $settings Core settings.
-     * @return \SearchSolr\Api\Representation\SolrCoreRepresentation
+     * @return \AdvancedSearch\Api\Representation\SearchEngineRepresentation
      */
     protected function createSolrCore(string $name, array $settings = [])
     {
+        // Each engine must use its own physical core, else the creation is
+        // refused, so the name of the core is unique by default.
+        /** @see \SearchSolr\Module::validateSingleEnginePerCore() */
         $defaultSettings = [
             'client' => [
                 'scheme' => 'http',
                 'host' => 'localhost',
                 'port' => 8983,
                 'path' => '/',
-                'core' => 'omeka',
+                'core' => 'test_' . substr(md5($name . microtime(true)), 0, 12),
             ],
             'resource_languages' => '',
         ];
         $settings = array_merge($defaultSettings, $settings);
 
-        $response = $this->api()->create('solr_cores', [
+        $response = $this->api()->create('search_engines', [
             'o:name' => $name,
-            'o:settings' => $settings,
+            'o:engine_adapter' => 'solarium',
+            'o:settings' => [
+                'resource_types' => ['items', 'item_sets'],
+                'solr' => $settings,
+            ],
         ]);
         $core = $response->getContent();
         $this->createdSolrCores[] = $core->id();
 
         return $core;
+    }
+
+    /**
+     * Get the Solr core of an engine, to check its settings and its maps.
+     */
+    protected function solrCore($engine): \SearchSolr\Stdlib\SolrCore
+    {
+        return new \SearchSolr\Stdlib\SolrCore(
+            $engine,
+            $this->getApplication()->getServiceManager()
+        );
     }
 
     /**
@@ -314,7 +338,7 @@ trait SearchSolrTestTrait
         // Delete created Solr cores.
         foreach ($this->createdSolrCores as $coreId) {
             try {
-                $this->api()->delete('solr_cores', $coreId);
+                $this->api()->delete('search_engines', $coreId);
             } catch (\Exception $e) {
                 // Ignore errors during cleanup.
             }

@@ -311,7 +311,7 @@ class SolariumQuerierSuggesterTest extends TestCase
         // The "auto" field resolution reads the core maps. Provide an empty
         // core so the fallback paths (no field, no config) don't hit a real
         // Solr.
-        $solrCore = $this->createMock(\SearchSolr\Api\Representation\SolrCoreRepresentation::class);
+        $solrCore = $this->createMock(\SearchSolr\Stdlib\SolrCore::class);
         $solrCore->method('mapsOrderedByStructure')->willReturn([]);
         $this->setProperty($querier, 'solrCore', $solrCore);
 

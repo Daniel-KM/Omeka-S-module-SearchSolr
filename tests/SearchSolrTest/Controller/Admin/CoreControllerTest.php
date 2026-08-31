@@ -8,10 +8,12 @@ class CoreControllerTest extends SearchSolrControllerTestCase
 {
     public function testBrowseAction(): void
     {
-        $this->dispatch('/admin/search-manager/solr');
+        // The cores are listed with the engines in the search manager: the
+        // route "/admin/search-manager/solr" only redirects to it.
+        $this->dispatch('/admin/search-manager');
         $this->assertResponseStatusCode(200);
 
-        $this->assertXpathQueryContentRegex('//table//td[1]', '/TestCore/');
+        $this->assertXpathQueryContentRegex('//table//td[1]', '/TestIndex/');
     }
 
     public function testAddGetAction(): void
@@ -59,19 +61,11 @@ class CoreControllerTest extends SearchSolrControllerTestCase
 
     public function testDeleteAction(): void
     {
-        $solrCore3 = $this->api()->create('solr_cores', [
-            'o:name' => 'TestCore3',
-            'o:settings' => [
-                'client' => [
-                    'scheme' => 'http',
-                    'host' => 'localhost',
-                    'port' => '8983',
-                    'path' => '/',
-                    'core' => 'test_core3',
-                ],
-                'resource_name_field' => 'resource_name_s',
-            ],
-        ])->getContent();
+        // A core is a search engine with the adapter "solarium", and each
+        // engine needs its own physical core.
+        $solrCore3 = $this->createSolrCore('TestCore3', [
+            'resource_name_field' => 'resource_name_s',
+        ]);
         $this->dispatchPost(
             $solrCore3->adminUrl('delete'),
             [],
@@ -79,6 +73,6 @@ class CoreControllerTest extends SearchSolrControllerTestCase
             [],
             'confirmform_csrf'
         );
-        $this->assertRedirectTo('/admin/search-manager/solr');
+        $this->assertRedirectTo('/admin/search-manager');
     }
 }

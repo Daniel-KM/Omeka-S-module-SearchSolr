@@ -2,10 +2,13 @@
 
 namespace SearchSolrTest\Controller;
 
+use SearchSolrTest\SearchSolrTestTrait;
 use SearchSolrTest\TestCase;
 
 abstract class SearchSolrControllerTestCase extends TestCase
 {
+    use SearchSolrTestTrait;
+
     protected $solrCore;
     protected $solrMap;
     protected $searchEngine;
@@ -17,24 +20,35 @@ abstract class SearchSolrControllerTestCase extends TestCase
 
         $this->loginAsAdmin();
 
-        $response = $this->api()->create('solr_cores', [
-            'o:name' => 'TestCore',
+        // A core is a search engine with the adapter "solarium": its settings
+        // are stored under the key "solr" of the engine.
+        /** @see \SearchSolr\Stdlib\SolrCore */
+        $response = $this->api()->create('search_engines', [
+            'o:name' => 'TestIndex',
+            'o:engine_adapter' => 'solarium',
             'o:settings' => [
-                'client' => [
-                    'scheme' => 'http',
-                    'host' => 'localhost',
-                    'port' => '8983',
-                    'path' => '/',
-                    'core' => 'test_core',
+                'resource_types' => [
+                    'items',
+                    'item_sets',
                 ],
-                'resource_name_field' => 'resource_name_s',
+                'solr' => [
+                    'client' => [
+                        'scheme' => 'http',
+                        'host' => 'localhost',
+                        'port' => '8983',
+                        'path' => '/',
+                        'core' => 'test_core_' . substr(md5(microtime(true) . random_int(0, PHP_INT_MAX)), 0, 12),
+                    ],
+                    'resource_name_field' => 'resource_name_s',
+                ],
             ],
         ]);
-        $solrCore = $response->getContent();
+        $searchEngine = $response->getContent();
+        $solrCore = $searchEngine;
 
         $response = $this->api()->create('solr_maps', [
-            'o:solr_core' => [
-                'o:id' => $solrCore->id(),
+            'o:engine' => [
+                'o:id' => $searchEngine->id(),
             ],
             'o:resource_name' => 'items',
             'o:field_name' => 'dc_terms_title_t',
@@ -44,21 +58,6 @@ abstract class SearchSolrControllerTestCase extends TestCase
             ],
         ]);
         $solrMap = $response->getContent();
-
-        $response = $this->api()->create('search_engines', [
-            'o:name' => 'TestIndex',
-            'o:engine_adapter' => 'solarium',
-            'o:settings' => [
-                'resources' => [
-                    'items',
-                    'item_sets',
-                ],
-                'adapter' => [
-                    'solr_core_id' => $solrCore->id(),
-                ],
-            ],
-        ]);
-        $searchEngine = $response->getContent();
         $response = $this->api()->create('search_configs', [
             'o:name' => 'TestPage',
             'o:slug' => 'test/search',
@@ -88,10 +87,23 @@ abstract class SearchSolrControllerTestCase extends TestCase
         // Re-authenticate in case test logged out.
         $this->loginAsAdmin();
 
-        $this->api()->delete('search_configs', $this->searchConfig->id());
-        $this->api()->delete('search_engines', $this->searchEngine->id());
-        $this->api()->delete('solr_maps', $this->solrMap->id());
-        $this->api()->delete('solr_cores', $this->solrCore->id());
+        // The configs and the maps are deleted by a cascade of the database
+        // with their engine, so delete the engine last, and ignore what it
+        // already removed.
+        foreach ([
+            ['search_configs', $this->searchConfig ?? null],
+            ['solr_maps', $this->solrMap ?? null],
+            ['search_engines', $this->searchEngine ?? null],
+        ] as [$resource, $representation]) {
+            if (!$representation) {
+                continue;
+            }
+            try {
+                $this->api()->delete($resource, $representation->id());
+            } catch (\Throwable $e) {
+                // Already deleted by the cascade.
+            }
+        }
     }
 
     /**

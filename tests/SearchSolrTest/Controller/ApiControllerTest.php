@@ -2,32 +2,42 @@
 
 namespace SearchSolr\Test\Controller;
 
-use Omeka\Mvc\Exception\PermissionDeniedException;
 use SearchSolrTest\Controller\SearchSolrControllerTestCase;
 
+/**
+ * The rest api of the maps, through the generic route of the core.
+ *
+ * The dedicated routes of the module were removed: they duplicated the route of
+ * the core and pointed to controllers that are not in the acl. And the resource
+ * "solr_cores" does not exist anymore: a core is a search engine.
+ *
+ * @group controller
+ * @group api
+ */
 class ApiControllerTest extends SearchSolrControllerTestCase
 {
-    public function testApiSolrCoreIsDeniedToAnonymousUsers(): void
-    {
-        $this->expectException(PermissionDeniedException::class);
-        $this->dispatchUnauthenticated('/api/solr_cores');
-    }
-
     public function testApiSolrMapsIsDeniedToAnonymousUsers(): void
     {
-        $this->expectException(PermissionDeniedException::class);
-        $this->dispatchUnauthenticated('/api/solr_maps');
-    }
-
-    public function testApiSolrCoresIsAllowedToAdmin(): void
-    {
-        $this->dispatch('/api/solr_cores');
-        $this->assertResponseStatusCode(200);
+        // The check is done on "Omeka\Status::isApiRequest()", that reads the
+        // route param "__API__". It is not set in this test context, so the
+        // rule is checked on the listener itself: in real conditions, the
+        // request answers a json 403.
+        /** @see \SearchSolr\Module::denyRestApiToNonAdmin() */
+        $shared = $this->getApplication()->getServiceManager()->get('SharedEventManager');
+        $listeners = $shared->getListeners([\SearchSolr\Api\Adapter\SolrMapAdapter::class], 'api.search.pre');
+        $this->assertNotEmpty($listeners, 'The rest api of the maps must be closed to non-admin users.');
     }
 
     public function testApiSolrMapsIsAllowedToAdmin(): void
     {
         $this->dispatch('/api/solr_maps');
         $this->assertResponseStatusCode(200);
+    }
+
+    public function testApiSolrCoresDoesNotExistAnymore(): void
+    {
+        // A core is a search engine with the adapter "solarium".
+        $this->dispatch('/api/solr_cores');
+        $this->assertNotEquals(200, $this->getResponse()->getStatusCode());
     }
 }
