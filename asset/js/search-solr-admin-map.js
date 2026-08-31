@@ -88,8 +88,8 @@
             source = source.replace(/[^a-zA-Z0-9]/g, '_');
             fieldName = field.replace('*', source);
 
-            var inputIndexForLink = $('input[name="o:settings[index_for_link]"]');
-            if (inputIndexForLink.is(':checked')) {
+            var inputPartsLink = $('input[name="o:settings[parts][]"][value="link"]');
+            if (inputPartsLink.is(':checked')) {
                 var linkInsertPos = indexOfStar + source.length;
                 fieldName = fieldName.slice(0, linkInsertPos) + '_link' + fieldName.slice(linkInsertPos);
             }
@@ -246,8 +246,6 @@
             'data-placeholder': Omeka.jsTranslate('Choose a field…'),
         });
 
-        var inputIndexForLink = $('input[name="o:settings[index_for_link]"]');
-
         var inputParts = $('input[name="o:settings[parts][]"]');
 
         var emptyOption = $('<option>').val('');
@@ -318,11 +316,9 @@
 
         select.chosen(chosenOptions);
 
-        inputIndexForLink.on('change', function() {
+        // The bounce link part drives the "_link" of the generated name.
+        inputParts.filter('[value="link"]').on('change', function() {
             generateFieldName();
-            if ($(this).is(':checked')) {
-                inputParts.filter('[value="link"]').prop('checked', true);
-            }
         });
 
         var timeout = 0;
@@ -374,8 +370,7 @@
         function toggleSettingsFormatter() {
             const val = $('input[type=radio][name="o:settings[formatter]"]:checked').val();
             $('[data-formatter]:not([data-formatter="' + val +'"])').closest('.field').hide();
-            const shown = $('[data-formatter="' + val +'"]').closest('.field').show();
-            shown.closest('details:not([open])').prop('open', true);
+            $('[data-formatter="' + val +'"]').closest('.field').show();
         }
 
         $('input[type=radio][name="o:settings[formatter]"]')
@@ -403,6 +398,19 @@
             .on('change', toggleSettingsNormalization);
 
         toggleSettingsNormalization();
+
+        // The digital objects option only applies to the source "has_media".
+        // The source fieldset may be rebuilt on scope change, so the select
+        // is targeted by name.
+        function toggleIncludeDigitalObject() {
+            const source = $('select[name="o:source[0][source]"]').val() || '';
+            const field = $('#include_digital_object').closest('.field');
+            source === 'has_media' ? field.show() : field.hide();
+        }
+
+        $(document).on('change', 'select[name="o:source[0][source]"]', toggleIncludeDigitalObject);
+
+        toggleIncludeDigitalObject();
 
         // The "no language" option only makes sense with a language filter.
         function toggleLanguagesNoLang() {

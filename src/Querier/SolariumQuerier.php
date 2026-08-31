@@ -1988,7 +1988,7 @@ class SolariumQuerier extends AbstractQuerier
             if (!isset($formatters[$key])) {
                 $formatters[$key] = $this->services
                     ->get('SearchSolr\ValueFormatterManager')
-                    ->get('edtf');
+                    ->get('date');
                 $formatters[$key]->setSettings(['part' => $key]);
             }
             $result = $formatters[$key]->format($value);

@@ -199,15 +199,15 @@ class CompleteSolrMaps extends AbstractJob
 
         // Load properties and filter to used ones.
         $properties = $api->search('properties')->getContent();
-	if ($mode == 'datatypes') {
+        if ($mode == 'datatypes') {
             $usedProperties = $this->analyseUsedPropertyIds(
-		$connection, $resourceName
+                $connection, $resourceName
             );
-	} else {
+        } else {
             $usedProperties = $this->listUsedPropertyIds(
-		$connection, $resourceName
+                $connection, $resourceName
             );
-	}
+        }
 
         $newMaps = [];
 
@@ -219,22 +219,22 @@ class CompleteSolrMaps extends AbstractJob
             $term = $property->term();
             $label = $property->label();
 
-	    $solrFieldType = 's';
+            $solrFieldType = 's';
             $name = strtr($term, ':', '_') . '_txt';
 
-	    if ($mode == 'datatypes') {
-		$stats = $usedProperties[$property->id()];
+            if ($mode == 'datatypes') {
+                $stats = $usedProperties[$property->id()];
 
-		if ($stats['z'] >= 0.998 * $stats['used']) {
-	            // integer
-	            $name = strtr($term, ':', '_') . '_is';
-	            $solrFieldType = 'i';
-		} elseif ($stats['r'] >= 0.998 * $stats['used']) {
-	            // floating point
-	            $name = strtr($term, ':', '_') . '_ds';
-	            $solrFieldType = 'd';
-		}
-	    }
+                if ($stats['z'] >= 0.998 * $stats['used']) {
+                    // integer
+                    $name = strtr($term, ':', '_') . '_is';
+                    $solrFieldType = 'i';
+                } elseif ($stats['r'] >= 0.998 * $stats['used']) {
+                    // floating point
+                    $name = strtr($term, ':', '_') . '_ds';
+                    $solrFieldType = 'd';
+                }
+            }
 
             if ($this->createMap(
                 $api, $solrCoreId, $resourceName,
@@ -269,37 +269,33 @@ class CompleteSolrMaps extends AbstractJob
                 continue;
             }
 
-            // In recommended mode, skip _ss and _s for long-value
-            // properties.
+            // In recommended mode, skip _ss and _s for long-value properties.
             $skipStringFields = $mode === 'recommended'
                 && in_array($term, $longProperties);
 
-	    // In datatypes mode, skip _ss for fields with too many distinct
-	    // values.
+	    // In datatypes mode, skip _ss for fields with too many distinct values.
 	    $skipManyValues = $mode === 'datatypes'
 		&& sqrt((int)$stats['used']) * 5 < $stats['numval'];
 
             if (!$skipStringFields) {
-		if ($solrFieldType == 's' && !$skipManyValues) {
-                    // _ss: filters and facets.
-                    $name = strtr($term, ':', '_') . '_ss';
-                    if ($this->createMap(
-			$api, $solrCoreId, $resourceName,
-			$name, $term, $term, [],
-			['formatter' => '', 'parts' => ['main'],
-                            'label' => $label],
-			$existingFields
-                    )) {
-			$newMaps[] = $name;
-                    }
-		}
+                // _ss: filters and facets.
+                $name = strtr($term, ':', '_') . '_ss';
+                if ($this->createMap(
+                    $api, $solrCoreId, $resourceName,
+                    $name, $term, $term, [],
+                    ['formatter' => 'text', 'parts' => ['main'],
+                        'label' => $label],
+                    $existingFields
+                )) {
+                    $newMaps[] = $name;
+                }
 
                 // _s: sort.
-                $name = strtr($term, ':', '_') . '_' . $solrFieldType;
+                $name = strtr($term, ':', '_') . '_s';
                 if ($this->createMap(
                     $api, $solrCoreId, $resourceName,
                     $name, $term, null, [],
-                    ['formatter' => '', 'parts' => ['main'],
+                    ['formatter' => 'text', 'parts' => ['main'],
                         'label' => $label],
                     $existingFields
                 )) {
@@ -312,8 +308,8 @@ class CompleteSolrMaps extends AbstractJob
             if ($this->createMap(
                 $api, $solrCoreId, $resourceName,
                 $name, $term, null, [],
-                ['index_for_link' => true, 'parts' => ['link'],
-                    'formatter' => '', 'label' => $label],
+                ['parts' => ['link'],
+                    'formatter' => 'text', 'label' => $label],
                 $existingFields
             )) {
                 $newMaps[] = $name;

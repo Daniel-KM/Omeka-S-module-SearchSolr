@@ -305,9 +305,29 @@
     details {
         margin-bottom: 12px;
     }
+    /* Smaller section headings on the map form (30px by default). */
+    .solr-map h2 {
+        font-size: 24px;
+    }
+
     /* The help button of the map form sticks to the right of its heading. */
     h2 > .maps-help-button {
         float: right;
+    }
+
+    /* Compact inline checkboxes for the parts of the values to extract and
+       the normalizations, whose group headings keep their own inline style. */
+    .map-form-section label:has(input[name="o:settings[normalization][]"]),
+    .map-form-section label:has(input[name="o:settings[parts][]"]) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25em;
+        margin: 0 1.25em 0 0;
+        padding: 0;
+        line-height: 1.5;
+        min-height: 0;
+        white-space: nowrap;
+        width: auto;
     }
 
     /* Folded sections of the map form (value filters, advanced settings). */

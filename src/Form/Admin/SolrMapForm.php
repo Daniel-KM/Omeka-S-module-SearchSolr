@@ -77,7 +77,7 @@ class SolrMapForm extends Form
                 'name' => 'o:resource_name',
                 'type' => Element\Radio::class,
                 'options' => [
-                    'label' => 'Scope', // @translate
+                    'label' => 'Resource type', // @translate
                     'value_options' => $this->getValueExtractorOptions(),
                 ],
                 'attributes' => [
@@ -344,32 +344,70 @@ class SolrMapForm extends Form
                 ],
             ])
 
-            ->add([
-                'name' => 'index_for_link',
-                'type' => Element\Checkbox::class,
-                'options' => [
-                    'label' => 'Index for bounce link (for multi-string "_ss")', // @translate
-                ],
-                'attributes' => [
-                    'id' => 'index_for_link',
-                    'required' => false,
-                ],
-            ])
 
             ->add([
                 'name' => 'parts',
                 'type' => Element\MultiCheckbox::class,
                 'options' => [
                     'label' => 'Values to extract', // @translate
+                    'info' => 'Details on hover. The common cases are "full" for a full text index, "main" for a facet or a sort, and "bounce link" for a link index.', // @translate
                     'value_options' => [
-                        'full' => 'Full (linked resource label, uri label, uri, and value)', // @translate
-                        'main' => 'Single linked resource label, uri label, uri or any extracted value', // @translate
-                        'value' => 'Property values only (as stored in database)', // @translate
-                        'uri' => 'Uri (for values with an uri)', // @translate
-                        'vrid' => 'Id of the linked resource', // @translate
-                        'id' => 'Id of the resource', // @translate
-                        'link' => 'Bounce link (value, uri or linked id)', // @translate
-                        'html' => 'Html (as seen)', // @translate
+                        [
+                            'value' => 'full',
+                            'label' => 'Full', // @translate
+                            'label_attributes' => [
+                                'title' => 'All the parts of the value: the text, the uri and the title of the linked resource.', // @translate
+                            ],
+                        ],
+                        [
+                            'value' => 'main',
+                            'label' => 'Main value', // @translate
+                            'label_attributes' => [
+                                'title' => 'A single part: the text, else the title of the linked resource, else the uri.', // @translate
+                            ],
+                        ],
+                        [
+                            'value' => 'link',
+                            'label' => 'Bounce link', // @translate
+                            'label_attributes' => [
+                                'title' => 'The value formatted for a link: the id of the linked resource, else the uri, else the text.', // @translate
+                            ],
+                        ],
+                        [
+                            'value' => 'value',
+                            'label' => 'Raw value', // @translate
+                            'label_attributes' => [
+                                'title' => 'The text only, as stored in the database.', // @translate
+                            ],
+                        ],
+                        [
+                            'value' => 'uri',
+                            'label' => 'Uri', // @translate
+                            'label_attributes' => [
+                                'title' => 'The uri only, for the values with an uri.', // @translate
+                            ],
+                        ],
+                        [
+                            'value' => 'vrid',
+                            'label' => 'Linked resource id', // @translate
+                            'label_attributes' => [
+                                'title' => 'The id of the linked resource.', // @translate
+                            ],
+                        ],
+                        [
+                            'value' => 'id',
+                            'label' => 'Resource id', // @translate
+                            'label_attributes' => [
+                                'title' => 'The id of the resource itself.', // @translate
+                            ],
+                        ],
+                        [
+                            'value' => 'html',
+                            'label' => 'Html', // @translate
+                            'label_attributes' => [
+                                'title' => 'The value as displayed, with its html.', // @translate
+                            ],
+                        ],
                     ],
                 ],
                 'attributes' => [
@@ -396,13 +434,45 @@ class SolrMapForm extends Form
                 'name' => 'formatter',
                 'type' => Element\Radio::class,
                 'options' => [
-                    'label' => 'Formatter', // @translate
+                    'label' => 'Format', // @translate
                     'value_options' => $this->getFormatterLabelsAndComments(),
-                    'empty_option' => 'None', // @translate
                 ],
                 'attributes' => [
                     'id' => 'formatter',
-                    'value' => '',
+                    'value' => 'text',
+                ],
+            ])
+            ->add([
+                'name' => 'date_mode',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Date: single or interval', // @translate
+                    'value_options' => [
+                        'single' => 'Single date', // @translate
+                        'interval' => 'Interval, like [1914 TO 1918] (for "_dr" fields)', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'date_mode',
+                    'value' => 'single',
+                    'data-formatter' => 'date',
+                ],
+            ])
+            ->add([
+                'name' => 'date_out',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Date: precision of the output', // @translate
+                    'value_options' => [
+                        'year' => 'Year (for "_i", "_is" and "_l" fields)', // @translate
+                        'date' => 'Date (time set to 00:00:00)', // @translate
+                        'datetime' => 'Date and time', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'date_out',
+                    'value' => 'datetime',
+                    'data-formatter' => 'date',
                 ],
             ])
             ->add([
@@ -411,26 +481,47 @@ class SolrMapForm extends Form
                 'options' => [
                     'label' => 'Cleaning and normalization', // @translate
                     'info' => 'The cleaning is processed in the following order.', // @translate'
+                    // Table may be first post normalization or finalization
+                    // too.
+                    // TODO Allow to specify order of normalizations.
                     'value_options' => [
-                        'html_escaped' => 'Escape html', // @translate
-                        'strip_tags' => 'Strip tags', // @translate
-                        'lowercase' => 'Lower case', // @translate
-                        'uppercase' => 'Upper case', // @translate
-                        'ucfirst' => 'Upper case first character', // @translate
-                        'remove_diacritics' => 'Remove diacritics', // @translate
-                        'alphanumeric' => 'Alphanumeric only', // @translate
-                        'alphabetic' => 'Alphabetic only', // @translate
-                        'max_length' => 'Max length', // @translate
-                        'integer' => 'Number', // @translate
-                        'year' => 'Year', // @translate
-                        'year_month' => 'Year-month (YYYYMM)', // @translate
-                        'decade' => 'Decade (round to 10)', // @translate
-                        'century' => 'Century (round to 100)', // @translate
-                        'millennium' => 'Millennium (round to 1000)', // @translate
-                        'truncate' => 'Truncate at separator', // @translate
-                        'table' => 'Map value to a code or code to a value (module Table)', // @translate
-                        // Table may be first post normalization or finalization too.
-                        // TODO Allow to specify order of normalizations.
+                        'html' => [
+                            'label' => 'Html', // @translate
+                            'options' => [
+                                'html_escaped' => 'Escape html', // @translate
+                                'strip_tags' => 'Strip tags', // @translate
+                            ],
+                        ],
+                        'characters' => [
+                            'label' => 'Case and characters', // @translate
+                            'options' => [
+                                'lowercase' => 'Lower case', // @translate
+                                'uppercase' => 'Upper case', // @translate
+                                'ucfirst' => 'Upper case first character', // @translate
+                                'remove_diacritics' => 'Remove diacritics', // @translate
+                                'alphanumeric' => 'Alphanumeric only', // @translate
+                                'alphabetic' => 'Alphabetic only', // @translate
+                            ],
+                        ],
+                        'numbers' => [
+                            'label' => 'Numbers and dates', // @translate
+                            'options' => [
+                                'integer' => 'Number', // @translate
+                                'year' => 'Year', // @translate
+                                'year_month' => 'Year-month (YYYYMM)', // @translate
+                                'decade' => 'Decade (round to 10)', // @translate
+                                'century' => 'Century (round to 100)', // @translate
+                                'millennium' => 'Millennium (round to 1000)', // @translate
+                            ],
+                        ],
+                        'others' => [
+                            'label' => 'Others', // @translate
+                            'options' => [
+                                'max_length' => 'Max length', // @translate
+                                'truncate' => 'Truncate at separator', // @translate
+                                'table' => 'Map value to a code or code to a value (module Table)', // @translate
+                            ],
+                        ],
                     ],
                 ],
                 'attributes' => [

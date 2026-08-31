@@ -1429,7 +1429,7 @@ class CoreController extends AbstractActionController
                 'o:field_name' => $fieldName,
                 'o:source' => 'value_annotations',
                 'o:settings' => [
-                    'formatter' => '',
+                    'formatter' => 'text',
                     'label' => 'Value annotations (all)',
                 ],
             ]);
@@ -1448,7 +1448,7 @@ class CoreController extends AbstractActionController
                     'o:field_name' => $fieldName,
                     'o:source' => $source,
                     'o:settings' => [
-                        'formatter' => '',
+                        'formatter' => 'text',
                         'label' => $term . ' (annotation)',
                     ],
                 ]);
@@ -1463,7 +1463,7 @@ class CoreController extends AbstractActionController
                     'o:field_name' => $fieldName,
                     'o:source' => $source,
                     'o:settings' => [
-                        'formatter' => '',
+                        'formatter' => 'text',
                         'parts' => ['main'],
                         'label' => $term . ' (annotation)',
                     ],
@@ -1944,15 +1944,14 @@ class CoreController extends AbstractActionController
         // Settings templates per suffix.
         $suffixSettings = [
             '_txt' => ['formatter' => ''],
-            '_ss' => ['formatter' => '', 'parts' => ['main']],
-            '_s' => ['formatter' => '', 'parts' => ['main']],
+            '_ss' => ['formatter' => 'text', 'parts' => ['main']],
+            '_s' => ['formatter' => 'text', 'parts' => ['main']],
             '_i' => ['formatter' => 'integer'],
             // Folded sort/comparison variant (see ensureFoldedFieldType).
-            '_fold_s' => ['formatter' => '', 'parts' => ['main']],
+            '_fold_s' => ['formatter' => 'text', 'parts' => ['main']],
             '_link_ss' => [
-                'index_for_link' => true,
                 'parts' => ['link'],
-                'formatter' => '',
+                'formatter' => 'text',
             ],
             // Ids of the linked resources, for the query types res/nres: the
             // part "link" yields the linked resource id (or the uri/literal),
@@ -1965,7 +1964,8 @@ class CoreController extends AbstractActionController
             // value, then aggregate to the smallest year across multivalued
             // sources (e.g. several value annotations).
             '_min_i' => [
-                'formatter' => 'edtf_year',
+                'formatter' => 'date',
+                'date_out' => 'year',
                 'parts' => ['main'],
                 'part' => 'min',
                 'aggregate' => 'min',
@@ -1973,19 +1973,22 @@ class CoreController extends AbstractActionController
             // Interval upper bound: largest year per value, then largest across
             // multivalued sources.
             '_max_i' => [
-                'formatter' => 'edtf_year',
+                'formatter' => 'date',
+                'date_out' => 'year',
                 'parts' => ['main'],
                 'part' => 'max',
                 'aggregate' => 'max',
             ],
             '_min_l' => [
-                'formatter' => 'edtf_year',
+                'formatter' => 'date',
+                'date_out' => 'year',
                 'parts' => ['main'],
                 'part' => 'min',
                 'aggregate' => 'min',
             ],
             '_max_l' => [
-                'formatter' => 'edtf_year',
+                'formatter' => 'date',
+                'date_out' => 'year',
                 'parts' => ['main'],
                 'part' => 'max',
                 'aggregate' => 'max',

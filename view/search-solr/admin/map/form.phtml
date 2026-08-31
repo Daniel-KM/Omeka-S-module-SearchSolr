@@ -40,9 +40,11 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
 // advanced settings are folded, opened when they carry a non-default value.
 $pool = $form->get('o:pool');
 $settings = $form->get('o:settings');
-$mainSettings = ['label', 'formatter'];
+$mainSettings = ['formatter'];
 $defaults = [
     'parts' => ['full'],
+    'date_mode' => 'single',
+    'date_out' => 'datetime',
     'place_mode' => 'country_and_toponym',
     'table_mode' => 'label',
     'thesaurus_metadata' => 'skos:prefLabel',
@@ -63,13 +65,22 @@ $isActive = function ($element) use ($defaults) {
     return $value !== '' && $value !== null && $value !== '0' && $value !== 0 && $value !== false;
 };
 $activePool = count(array_filter(iterator_to_array($pool->getElements()), $isActive));
+// The settings specific to a formatter are displayed under the formatter
+// radios, shown by the script when their formatter is selected; the other
+// settings go to the folded advanced section.
+$formatterSubElements = [];
 $advancedElements = [$form->get('o:alias')];
 foreach ($settings->getElements() as $name => $element) {
-    if (!in_array($name, $mainSettings)) {
+    if (in_array($name, $mainSettings)) {
+        continue;
+    }
+    if ($element->getAttribute('data-formatter')) {
+        $formatterSubElements[] = $element;
+    } else {
         $advancedElements[] = $element;
     }
 }
-$activeAdvanced = count(array_filter($advancedElements, $isActive));
+$activeAdvanced = count(array_filter($advancedElements, fn ($element) => strpos((string) $element->getName(), '[label]') === false && $isActive($element)));
 ?>
 
 <?= $this->form()->openTag($form) ?>
@@ -79,12 +90,9 @@ $activeAdvanced = count(array_filter($advancedElements, $isActive));
     <button type="submit" class="button"><?= $translate('Save') ?></button>
 </div>
 
-<h2><?= $translate('Resource type') ?></h2>
-<p><?= $translate('Fill index with metadata from a type of resource') ?></p>
-<?= $this->formRow($form->get('o:resource_name')) ?>
-
 <h2><?= $translate('Source') ?></h2>
 <p><?= $translate('Metadata to extract from Omeka') ?></p>
+<?= $this->formRow($form->get('o:resource_name')) ?>
 <?= $this->formRow($form->get('o:source')) ?>
 
 <details class="map-form-section"<?= $activePool ? ' open="open"' : '' ?>>
@@ -115,13 +123,43 @@ $activeAdvanced = count(array_filter($advancedElements, $isActive));
 
 <h2><?= $translate('Format') ?></h2>
 <p><?= $translate('Adapt the metadata') ?></p>
-<?= $this->formRow($settings->get('label')) ?>
 <?= $this->formRow($settings->get('formatter')) ?>
+<?php foreach ($formatterSubElements as $element): ?>
+<?= $this->formRow($element) ?>
+<?php endforeach; ?>
 
 <details class="map-form-section"<?= $activeAdvanced ? ' open="open"' : '' ?>>
     <summary><?= $translate('Advanced settings') ?><?= $activeAdvanced ? ' (' . $activeAdvanced . ')' : '' ?></summary>
-    <?php foreach ($advancedElements as $element): ?>
-    <?= $this->formRow($element) ?>
+    <?php
+    // Light group headings; any element not listed falls into the cleaning
+    // group, so a new setting is never lost.
+    $advancedByName = [];
+    foreach ($advancedElements as $element) {
+        $elementName = (string) $element->getName();
+        $elementName = preg_match('~\[([^\]]+)\]$~', $elementName, $matches) ? $matches[1] : $elementName;
+        $advancedByName[$elementName] = $element;
+    }
+    $advancedGroups = [
+        $translate('Extraction') => ['parts', 'resource_title_language', 'include_digital_object'],
+        $translate('Cleaning and normalization') => ['normalization', 'max_length', 'truncate_at', 'table', 'table_mode', 'table_index_original', 'table_check_strict', 'finalization'],
+        $translate('Display') => ['label'],
+        $translate('Query') => ['o:alias', 'boost'],
+    ];
+    $grouped = array_merge(...array_values($advancedGroups));
+    $advancedGroups[$translate('Cleaning and normalization')] = array_merge(
+        $advancedGroups[$translate('Cleaning and normalization')],
+        array_diff(array_keys($advancedByName), $grouped)
+    );
+    ?>
+    <?php foreach ($advancedGroups as $groupLabel => $groupNames): ?>
+    <?php $groupElements = array_intersect_key($advancedByName, array_flip($groupNames)); ?>
+    <?php if (!$groupElements) continue; ?>
+    <h4><?= $escape($groupLabel) ?></h4>
+    <?php foreach ($groupNames as $groupName): ?>
+    <?php if (isset($advancedByName[$groupName])): ?>
+    <?= $this->formRow($advancedByName[$groupName]) ?>
+    <?php endif; ?>
+    <?php endforeach; ?>
     <?php endforeach; ?>
 </details>
 

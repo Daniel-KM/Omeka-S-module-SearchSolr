@@ -488,9 +488,6 @@ class MapController extends AbstractActionController
     protected function cleanMapSettings(array $data): array
     {
         $formatter = $data['o:settings']['formatter'] ?? '';
-        if (empty($data['o:settings']['index_for_link'])) {
-            unset($data['o:settings']['index_for_link']);
-        }
         if ($formatter !== 'place') {
             unset(
                 $data['o:settings']['place_mode']
