@@ -92,6 +92,10 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Optimize index'), $solrCore->adminUrl('optimize'), [
                     'class' => 'link',
                     'title' => $translate('Rewrite all indexes in background to finalize a Solr version migration or reclaim deleted-document space.')]) ?></li>
+                <li><?= $hyperlink($translate('Check index parity'), $solrCore->adminUrl('check-parity') . '?full=1', [
+                    'class' => 'link',
+                    'target' => '_blank',
+                    'title' => $translate('Compare the resources of the api with the documents of the index: missing resources, documents without resource, and documents not reindexed after a change of their resource.')]) ?></li>
                 <li><?= $hyperlink($translate('Create core on server'), $solrCore->adminUrl('create-core-on-server'), [
                     'class' => 'link',
                     'title' => $translate('Create and initialize the core on Solr. The config set must exist in SOLR_HOME/configsets on the server.')]) ?></li>

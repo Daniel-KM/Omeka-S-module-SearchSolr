@@ -2797,6 +2797,7 @@ class SolariumQuerier extends AbstractQuerier
             // Standard sort keys.
             'created' => 'created',
             'modified' => 'modified',
+            'changed' => 'changed',
             'title' => 'o:title',
         ];
         if (isset($systemSources[$field])) {

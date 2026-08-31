@@ -407,30 +407,49 @@ class Module extends AbstractModule
             ]);
             if ($coreUrlUsage[$solrCore->clientUrlAdmin()] > 1) {
                 $urlHtml .= ' <span class="field-generic o-icon-warning" title="'
-                    . $escapeAttr($translate('This url is shared by another core. Two cores on the same physical core conflict on the schema and the reindex.'))
+                    . $escapeAttr($translate('This url is shared by another core. Two cores on the same physical core conflict on the schema and the reindex.')) // @translate
                     . '">' . $escape($translate('shared url')) . '</span>';
             }
             $actions = [
                 '<li>' . $solrCore->link('', 'edit', [
                     'class' => 'o-icon- fas fa-plug',
-                    'title' => $translate('Edit the Solr connection'),
+                    'title' => $translate('Edit the Solr connection'), // @translate
                 ]) . '</li>',
                 '<li>' . $hyperlink('', $solrCore->adminUrl(), [
                     'class' => 'o-icon- far fa-sun',
-                    'title' => $translate('Map Omeka metadata and Solr indices'),
+                    'title' => $translate('Map Omeka metadata and Solr indices'), // @translate
                 ]) . '</li>',
                 '<li>' . $solrCore->link('', 'show-indexing-stats', [
                     'class' => 'o-icon- far fa-chart-bar',
-                    'title' => $translate('View indexing statistics'),
+                    'title' => $translate('View indexing statistics'), // @translate
                 ]) . '</li>',
             ];
+            // The parity between the api and the index costs some hundreds of
+            // milliseconds, too much for each display of the search manager, so
+            // it is filled by javascript from the cached result.
+            $statusHtml = $escape((string) $solrCore->status(true)) . ' '
+                . sprintf('<span class="solr-parity" data-url="%1$s" data-label-ok="%2$s" data-label-mismatch="%3$s" data-label-error="%4$s" data-label-stale="%5$s" data-label-stale-only="%6$s" title="%7$s"></span>',
+                    $escapeAttr($solrCore->adminUrl('check-parity')),
+                    $escapeAttr($translate('index complete')), // @translate
+                    $escapeAttr($translate('index incomplete')), // @translate
+                    $escapeAttr($translate('index unreachable')), // @translate
+                    $escapeAttr($translate('outdated')), // @translate
+                    $escapeAttr($translate('index complete but outdated')), // @translate
+                    $escapeAttr($translate('Resources of the api compared with the documents of the index: total of the api / total of the index, and the documents that were not reindexed after a change of their resource. An indirect change, through a linked resource or an item set, is not detected: only a full reindexation fixes such documents.')) // @translate
+                );
             $details[$engineId] = [
                 'url' => $urlHtml,
-                'status' => $escape((string) $solrCore->status(true)),
+                'status' => $statusHtml,
                 'actions' => $actions,
             ];
         }
         $event->setParam('details', $details);
+
+        $view->headScript()->appendFile(
+            $view->assetUrl('js/search-solr-parity.js', 'SearchSolr'),
+            'text/javascript',
+            ['defer' => 'defer']
+        );
     }
 
     /**
@@ -494,6 +513,28 @@ class Module extends AbstractModule
     /**
      * Add Solr-specific fields to the suggester form.
      */
+    /**
+     * List the indices of the core of a search config, to fill a key picker.
+     *
+     * @return array Field names as keys, with an empty default value, since the
+     * multiplier is chosen by the user.
+     */
+    protected function listCoreFieldNames(
+        \AdvancedSearch\Api\Representation\SearchConfigRepresentation $searchConfig
+    ): array {
+        $solrCore = new \SearchSolr\Stdlib\SolrCore(
+            $searchConfig->searchEngine(),
+            $this->getServiceLocator()
+        );
+        $fieldNames = [];
+        foreach ($solrCore->maps() as $map) {
+            $fieldNames[] = $map->fieldName();
+        }
+        $fieldNames = array_unique(array_filter($fieldNames));
+        sort($fieldNames);
+        return array_fill_keys($fieldNames, '');
+    }
+
     public function handleSearchConfigFormAddElements(Event $event): void
     {
         /** @var \AdvancedSearch\Form\Admin\SearchConfigConfigureForm $form */
@@ -514,10 +555,20 @@ class Module extends AbstractModule
             ->setLabel('Solr') // @translate
             ->add([
                 'name' => 'field_boosts',
-                'type' => \Omeka\Form\Element\ArrayTextarea::class,
+                'type' => \Common\Form\Element\ArrayTextarea::class,
                 'options' => [
                     'label' => 'Boost multipliers by index', // @translate
                     'as_key_value' => true,
+                    // The indices of the core are listed in the picker, so the
+                    // name of an index does not need to be typed, but a free
+                    // key remains possible for an index managed outside.
+                    'pairs_editor' => [
+                        'key_label' => 'Index', // @translate
+                        'value_label' => 'Multiplier', // @translate
+                        'value_type' => 'number',
+                        'keys' => $this->listCoreFieldNames($searchConfig),
+                        'key_fill' => false,
+                    ],
                 ],
                 'attributes' => [
                     'id' => 'engine_field_boosts',

@@ -314,6 +314,8 @@ class MapController extends AbstractActionController
             'owner' => 'Owner', // @translate
             'created' => 'Created', // @translate
             'modified' => 'Modified', // @translate
+            'changed' => 'Changed', // @translate
+            'indexed_at' => 'Indexed at', // @translate
             'resource_class' => 'Resource class', // @translate
             'resource_template' => 'Resource template', // @translate
             'item_set' => 'Item set', // @translate

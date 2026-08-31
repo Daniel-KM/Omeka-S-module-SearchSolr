@@ -112,6 +112,8 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                     'group_id' => 'Groups (module Group)', // @translate
                     'created' => 'Created', // @translate
                     'modified' => 'Modified', // @translate
+                    'changed' => 'Changed (modified, else created)', // @translate
+                    'indexed_at' => 'Indexed at (date of the indexation itself)', // @translate
                     'resource_class' => 'Resource class', // @translate
                     'resource_template' => 'Resource template', // @translate
                     'asset' => 'Asset (attached thumbnail)', // @translate
@@ -252,6 +254,20 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
                 : [];
         }
 
+        // Date of the indexation itself, not a metadata of the resource: it is
+        // the only date Solr knows and the database does not, so it allows to
+        // find the documents that were not reindexed after a change of their
+        // resource. The date is taken for each document and not once for the
+        // whole batch, else a resource modified during a long job would look
+        // stale though it was indexed after the change.
+        if ($field === 'indexed_at') {
+            // The dates "created" and "modified" above are formatted from the
+            // local time of the server, so the date of indexation follows the
+            // same convention, else the comparison between them would be
+            // shifted by the offset of the time zone.
+            return [date('Y-m-d\TH:i:s\Z')];
+        }
+
         if ($field === 'modified') {
             if (!method_exists($resource, 'modified')) {
                 return [];
@@ -259,6 +275,24 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
             $modified = $resource->modified();
             return $modified
                 ? [$modified->format('Y-m-d\TH:i:s\Z')]
+                : [];
+        }
+
+        // Date of the last change, always filled: a resource is not modified
+        // until its first update, so "modified" is empty for it and a sort on
+        // that index would group all the never updated resources apart, and a
+        // range filter would skip them.
+        if ($field === 'changed') {
+            $changed = method_exists($resource, 'modified')
+                ? $resource->modified()
+                : null;
+            if (!$changed) {
+                $changed = method_exists($resource, 'created')
+                    ? $resource->created()
+                    : null;
+            }
+            return $changed
+                ? [$changed->format('Y-m-d\TH:i:s\Z')]
                 : [];
         }
 

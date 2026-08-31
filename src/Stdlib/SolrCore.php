@@ -678,6 +678,88 @@ class SolrCore
         return $result;
     }
 
+    /**
+     * Get all the resource ids indexed for a resource type.
+     *
+     * Only the id field is fetched, so the query stays cheap: about 80 ms for
+     * 15000 documents. On a shared core, the documents of the other indexes are
+     * excluded through the index name, like the indexer does.
+     *
+     * @param bool $withIndexedAt Return the date of indexation of each document
+     * instead of the sole ids, when the index has the field.
+     * @return array Ids, or ids as keys and dates of indexation as values, or
+     * null when the core cannot be queried.
+     */
+    public function queryIndexedIds(string $resourceName, bool $withIndexedAt = false): ?array
+    {
+        $client = $this->solariumClient();
+        if (!$client) {
+            return null;
+        }
+
+        $resourceTypeField = $this->mapsBySource('resource_name', 'generic');
+        $resourceTypeField = $resourceTypeField ? (reset($resourceTypeField))->fieldName() : null;
+        $resourceIdField = $this->mapsBySource('o:id', 'generic');
+        $resourceIdField = $resourceIdField ? (reset($resourceIdField))->fieldName() : null;
+        if (!$resourceTypeField || !$resourceIdField) {
+            return null;
+        }
+
+        // The date of indexation is available only when the map exists.
+        $indexedAtField = null;
+        if ($withIndexedAt) {
+            $indexedAtFields = $this->mapsBySource('indexed_at', 'generic');
+            $indexedAtField = $indexedAtFields ? (reset($indexedAtFields))->fieldName() : null;
+        }
+
+        /** @var \Solarium\QueryType\Select\Query\Query $query */
+        $query = $client->createSelect();
+        $query
+            ->addFilterQuery([
+                'key' => 'res_type',
+                'query' => "$resourceTypeField:$resourceName",
+            ])
+            ->setFields($indexedAtField ? [$resourceIdField, $indexedAtField] : [$resourceIdField])
+            // Rows is 10 by default and 0 or -1 are not working.
+            ->setRows(1000000000);
+
+        // Shared core: keep the documents of this index only.
+        $indexName = $this->searchEngine()->settingEngineAdapter('index_name');
+        $indexFields = $this->mapsBySource('search_index', 'generic');
+        $indexField = $indexFields ? (reset($indexFields))->fieldName() : null;
+        if ($indexName && $indexField) {
+            $query->addFilterQuery([
+                'key' => 'index_name',
+                'query' => "$indexField:$indexName",
+            ]);
+        }
+
+        try {
+            $resultSet = $client->select($query);
+        } catch (\Exception $e) {
+            return null;
+        }
+
+        $first = fn ($value) => is_array($value) ? reset($value) : $value;
+
+        $ids = [];
+        foreach ($resultSet->getData()['response']['docs'] ?? [] as $doc) {
+            if (!isset($doc[$resourceIdField])) {
+                continue;
+            }
+            // A multivalued field is returned as an array.
+            $id = (int) $first($doc[$resourceIdField]);
+            if ($indexedAtField) {
+                $ids[$id] = isset($doc[$indexedAtField])
+                    ? (string) $first($doc[$indexedAtField])
+                    : null;
+            } else {
+                $ids[] = $id;
+            }
+        }
+        return $ids;
+    }
+
     public function queryDocuments(string $resourceName, array $ids): array
     {
         $ids = array_map('intval', $ids);

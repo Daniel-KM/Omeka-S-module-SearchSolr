@@ -51,6 +51,16 @@ class CoreController extends AbstractActionController
     use TraitSolrController;
 
     /**
+     * Lifetime of the cached parity between the api and the index, in seconds.
+     */
+    const PARITY_CACHE_TTL = 3600;
+
+    /**
+     * Number of missing or orphan ids kept in the result of the full parity.
+     */
+    const PARITY_MAX_IDS = 100;
+
+    /**
      * The structure should be the same in import and export.
      *
      * @see self::importSolrMapping()
@@ -1186,6 +1196,203 @@ class CoreController extends AbstractActionController
         );
     }
 
+    /**
+     * Compare the resources of the api with the documents of the Solr index.
+     *
+     * The check compares the ids themselves and not only the totals, since a
+     * missing document and an orphan one cancel each other in a count, and it
+     * compares the date of indexation of each document with the date of change
+     * of its resource. It stays under a second up to about 100000 resources,
+     * but it is too slow for each display of the search manager, so the totals
+     * are cached and the lists of ids are computed on demand only.
+     */
+    public function checkParityAction()
+    {
+        $id = (int) $this->params('id');
+        $isFull = (bool) $this->params()->fromQuery('full');
+        $isRefresh = (bool) $this->params()->fromQuery('refresh');
+
+        $settings = $this->settings();
+        $cacheKey = 'searchsolr_parity_' . $id;
+        if (!$isRefresh && !$isFull) {
+            $cached = $settings->get($cacheKey);
+            if (is_array($cached)
+                && ($cached['checked_at'] ?? 0) > time() - self::PARITY_CACHE_TTL
+            ) {
+                $cached['cached'] = true;
+                return new JsonModel($cached);
+            }
+        }
+
+        $result = $this->checkParity($id, $isFull);
+        // The lists of ids are not cached, only the totals they come with.
+        if (!$isFull) {
+            $settings->set($cacheKey, $result);
+        }
+        $result['cached'] = false;
+
+        return new JsonModel($result);
+    }
+
+    /**
+     * Compare the api and the index for each resource type of the engine.
+     *
+     * @return array Result by resource type, with the totals and, when asked,
+     * the ids missing in the index and the documents without resource.
+     */
+    protected function checkParity(int $id, bool $isFull = false): array
+    {
+        /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
+        $solrCore = $this->solrCore($id);
+        $searchEngine = $solrCore->searchEngine();
+
+        $result = [
+            'engine_id' => $id,
+            'engine_name' => $searchEngine->name(),
+            'checked_at' => time(),
+            'status' => 'ok',
+            'warnings' => [],
+            'resource_types' => [],
+        ];
+
+        // The index is a subset by design with these settings, so the totals
+        // cannot match and the check is not meaningful.
+        if ($solrCore->setting('filter_resources')) {
+            $result['warnings'][] = 'The core filters the resources to index ("filter_resources"), so the index is a subset by design.'; // @translate
+        }
+        $visibility = $searchEngine->setting('visibility');
+        if ($visibility === 'private') {
+            $result['warnings'][] = 'The engine indexes the private resources only.'; // @translate
+        }
+        if (!filter_var($searchEngine->setting('is_indexing_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
+            $result['warnings'][] = 'The indexing is disabled for this engine, so the index no longer follows the resources.'; // @translate
+        }
+
+        $api = $this->api();
+        $resourceTypes = $searchEngine->setting('resource_types') ?: ['items'];
+        foreach ($resourceTypes as $resourceType) {
+            // The engine visibility is applied at indexing, so the api query
+            // must use the same scope to be comparable.
+            $query = [];
+            if ($visibility === 'public') {
+                $query['is_public'] = 1;
+            } elseif ($visibility === 'private') {
+                $query['is_public'] = 0;
+            }
+
+            // The dates are always fetched, so a stale document is reported by
+            // the indicator itself: an index announced as complete while some
+            // documents are outdated would be read as a guarantee it is not.
+            $indexed = $solrCore->queryIndexedIds($resourceType, true);
+            if ($indexed === null) {
+                $result['status'] = 'error';
+                $result['resource_types'][$resourceType] = [
+                    'total_api' => null,
+                    'total_index' => null,
+                    'message' => 'The index cannot be queried.', // @translate
+                ];
+                continue;
+            }
+
+            $indexedIds = array_keys($indexed);
+            $apiIds = $api->search($resourceType, $query, ['returnScalar' => 'id'])->getContent();
+            $apiIds = array_map('intval', array_values($apiIds));
+
+            $missing = array_values(array_diff($apiIds, $indexedIds));
+            $orphans = array_values(array_diff($indexedIds, $apiIds));
+            $stale = $this->staleIndexedIds($resourceType, $indexed);
+
+            $row = [
+                'total_api' => count($apiIds),
+                'total_index' => count($indexed),
+                'total_missing' => count($missing),
+                'total_orphan' => count($orphans),
+                'total_stale' => $stale === null ? null : count($stale),
+            ];
+
+            // The lists of ids are useful to fix an index, but useless in the
+            // indicator of the search manager, so they are kept for the full
+            // check only, and shortened: the first ids are enough to search.
+            if ($isFull) {
+                $row['missing'] = array_slice($missing, 0, self::PARITY_MAX_IDS);
+                $row['orphan'] = array_slice($orphans, 0, self::PARITY_MAX_IDS);
+                $row['stale'] = $stale === null
+                    ? null
+                    : array_slice($stale, 0, self::PARITY_MAX_IDS);
+            }
+
+            $row['is_equal'] = $row['total_api'] === $row['total_index']
+                && empty($row['total_missing'])
+                && empty($row['total_orphan'])
+                && empty($row['total_stale']);
+            if (!$row['is_equal'] && $result['status'] === 'ok') {
+                $result['status'] = 'mismatch';
+            }
+            $result['resource_types'][$resourceType] = $row;
+        }
+
+        return $result;
+    }
+
+    /**
+     * List the ids of the resources changed after their last indexation.
+     *
+     * The indexation always follows the change of a resource, so the date of
+     * indexation is normally greater than the date of change: a resource that
+     * breaks this rule was modified without being reindexed, for example when
+     * Solr was unreachable on save, when the document was rejected, or after a
+     * restore of the database. The date of change is read in the database, and
+     * not in the index, because a stale document carries a stale date too.
+     *
+     * A change may also be indirect (a linked resource, an item set, a media),
+     * and it does not update the date of the resource itself, so it cannot be
+     * detected here: only a full reindexation fixes such documents.
+     *
+     * @param array $indexed Dates of indexation by resource id.
+     * @return array|null Ids, or null when the index has no date of indexation.
+     */
+    protected function staleIndexedIds(string $resourceType, array $indexed): ?array
+    {
+        $indexed = array_filter($indexed);
+        if (!$indexed) {
+            return null;
+        }
+
+        $entityClass = $this->easyMeta()->entityClass($resourceType);
+        if (!$entityClass) {
+            return null;
+        }
+
+        $connection = $this->getEvent()->getApplication()
+            ->getServiceManager()->get('Omeka\Connection');
+        // A resource is never modified until the first update, so the date of
+        // creation is the date of the last change in that case.
+        $sql = <<<'SQL'
+            SELECT `id`, COALESCE(`modified`, `created`) AS `changed`
+            FROM `resource`
+            WHERE `resource_type` = :resource_type
+            SQL;
+        $changes = $connection->executeQuery($sql, ['resource_type' => $entityClass])
+            ->fetchAllKeyValue();
+
+        $stale = [];
+        foreach ($indexed as $id => $indexedAt) {
+            $changed = $changes[$id] ?? null;
+            if (!$changed) {
+                continue;
+            }
+            // The dates of the resources and the date of indexation are both
+            // formatted from the local time of the server, so they are compared
+            // as they are. An equal second means a save and an indexation
+            // inside the same second, so the document is not stale.
+            if (strtotime($changed) > strtotime(rtrim($indexedAt, 'Z'))) {
+                $stale[] = (int) $id;
+            }
+        }
+        sort($stale);
+        return $stale;
+    }
+
     public function createCoreOnServerAction()
     {
         $id = $this->params('id');
@@ -2075,6 +2282,9 @@ class CoreController extends AbstractActionController
             ['resources', 'title_s', 'o:title', ['label' => 'Title']],
             ['resources', 'created_dt', 'created', ['label' => 'Created']],
             ['resources', 'modified_dt', 'modified', ['label' => 'Modified']],
+            // Date of the indexation, used to find the documents that were not
+            // reindexed after a change of their resource.
+            ['generic', 'indexed_at_dt', 'indexed_at', ['label' => 'Indexed at']],
             ['resources', 'property_values_txt', 'property_values', ['label' => 'All property values']],
             ['resources', 'has_original_b', 'has_original', ['formatter' => 'boolean', 'label' => 'Has original file']],
             ['resources', 'has_thumbnails_b', 'has_thumbnails', ['formatter' => 'boolean', 'label' => 'Has thumbnails']],
