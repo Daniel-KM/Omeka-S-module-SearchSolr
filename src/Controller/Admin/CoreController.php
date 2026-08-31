@@ -2377,6 +2377,12 @@ class CoreController extends AbstractActionController
             $numericSuffixes = $numericType === 'decimal'
                 ? ['_s' => '_d', '_fold_s' => '_d', '_ss' => '_ds']
                 : ['_s' => '_i', '_fold_s' => '_i', '_ss' => '_is'];
+            // A numeric property gets a single-valued index too, so it can be
+            // sorted as a number even when no sort is configured yet: a string
+            // index would sort 10 before 9.
+            if ($numericType) {
+                $requiredSuffixes[$numericType === 'decimal' ? '_d' : '_i'] = true;
+            }
 
             foreach (array_keys($requiredSuffixes) as $suffix) {
                 // Skip _ss/_s for long-value properties.
