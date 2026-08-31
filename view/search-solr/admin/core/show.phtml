@@ -38,7 +38,9 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <?= $translate('Maintenance') ?>
             </a>
             <ul class="collapsible">
-                <li class="separator"><span><?= $translate('Maps') ?></span></li>
+                <li class="menu-group">
+                    <span class="menu-group-label" id="solr-menu-maps"><?= $translate('Maps') ?></span>
+                    <ul aria-labelledby="solr-menu-maps">
                 <li><?= $hyperlink($translate('Align the maps…'), '#', [
                     'data-sidebar-selector' => '#sidebar',
                     'class' => 'link sidebar-content',
@@ -52,7 +54,16 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     'class' => 'link sidebar-content',
                     'data-sidebar-content-url' => $solrCore->adminUrl('clean-maps'),
                     'title' => $translate('Remove the maps referenced by no facet, filter, sort, query, suggester or setting; the required, system, manual and customized maps are kept.')]) ?></li>
-                <li class="separator"><span><?= $translate('Schema and core') ?></span></li>
+                <li>
+                    <form method="post" action="<?= $escapeAttr($solrCore->adminUrl('unfreeze-maps')) ?>" onsubmit="return confirm('<?= $escapeAttr($translate('Give all the manual maps back to the automatic management? They will follow the alignment again, and the unused ones will become removable.')) ?>');">
+                        <button type="submit" class="link" title="<?= $escapeAttr($translate('Clear the "manual" flag of every map, so the alignment manages them again. Useful on a core where all the maps were built by hand.')) ?>"><?= $translate('Manage the manual maps automatically') ?></button>
+                    </form>
+                </li>
+                    </ul>
+                </li>
+                <li class="menu-group">
+                    <span class="menu-group-label" id="solr-menu-schema"><?= $translate('Schema and core') ?></span>
+                    <ul aria-labelledby="solr-menu-schema">
                 <li><?= $hyperlink($translate('Search configuration…'), '#', [
                     'data-sidebar-selector' => '#sidebar',
                     'class' => 'link sidebar-content',
@@ -100,11 +111,15 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     'class' => 'link',
                     'title' => $translate('Create and initialize the core on Solr. The config set must exist in SOLR_HOME/configsets on the server.')]) ?></li>
                 <li>
-                    <form method="post" action="<?= $escapeAttr($solrCore->adminUrl('delete-core-on-server')) ?>" style="display: inline;" onsubmit="return confirm('<?= $escapeAttr($translate('Delete this core on the Solr server? Its index and data are removed. The connection stays registered in Omeka.')) ?>');">
+                    <form method="post" action="<?= $escapeAttr($solrCore->adminUrl('delete-core-on-server')) ?>" onsubmit="return confirm('<?= $escapeAttr($translate('Delete this core on the Solr server? Its index and data are removed. The connection stays registered in Omeka.')) ?>');">
                         <button type="submit" class="link"><?= $translate('Delete core on server') ?></button>
                     </form>
                 </li>
-                <li class="separator"><span><?= $translate('Deprecated actions') ?></span></li>
+                    </ul>
+                </li>
+                <li class="menu-group">
+                    <span class="menu-group-label" id="solr-menu-deprecated"><?= $translate('Deprecated actions') ?></span>
+                    <ul aria-labelledby="solr-menu-deprecated">
                 <li><?= $hyperlink($translate('Recommended maps'), $solrCore->adminUrl('recommended-maps'), [
                     'class' => 'link',
                     'title' => $translate('Add indices (_txt, _ss, _s) to used properties, skipping _s/_ss for long values.')]) ?></li>
@@ -114,6 +129,8 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                 <li><?= $hyperlink($translate('Add value annotation maps'), $solrCore->adminUrl('add-annotation-maps'), [
                     'class' => 'link',
                     'title' => $translate('Create maps for value annotations.')]) ?></li>
+                    </ul>
+                </li>
             </ul>
         </div>
         <?php endif; ?>

@@ -1393,6 +1393,50 @@ class CoreController extends AbstractActionController
         return $stale;
     }
 
+    /**
+     * Give the manual maps back to the automatic management.
+     *
+     * A map created or edited by hand is flagged as manual, so the sync never
+     * removes it nor updates it. It is a protection, but on a core where every
+     * map was built by hand, it freezes the whole mapping: this action clears
+     * the flag, so the maps follow the sources of the sync again, and the
+     * unused ones become removable.
+     */
+    public function unfreezeMapsAction()
+    {
+        $id = (int) $this->params('id');
+        if (!$this->getRequest()->isPost()) {
+            return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+        }
+
+        $api = $this->api();
+        $solrCore = $this->solrCore($id);
+
+        $updated = [];
+        foreach ($solrCore->maps() as $map) {
+            if ($map->setting('origin') !== 'manual') {
+                continue;
+            }
+            $settings = $map->settings();
+            $settings['origin'] = 'sync';
+            $api->update('solr_maps', $map->id(), ['o:settings' => $settings], [], ['isPartial' => true]);
+            $updated[] = $map->fieldName();
+        }
+
+        if ($updated) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                '{count} maps are managed automatically again: {maps}. They now follow the sources of the alignment, and the unused ones can be removed.', // @translate
+                ['count' => count($updated), 'maps' => implode(', ', $updated)]
+            ));
+        } else {
+            $this->messenger()->addWarning(new PsrMessage(
+                'No map was set as manual.' // @translate
+            ));
+        }
+
+        return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+    }
+
     public function createCoreOnServerAction()
     {
         $id = $this->params('id');

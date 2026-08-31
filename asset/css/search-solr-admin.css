@@ -430,3 +430,74 @@
         width: 100%;
     }
 }
+
+/* Temporary copy of the rules of Common 3.4.91 for the groups of the page
+   action menu, so the menu keeps working with Common 3.4.90, where a nested
+   list inherits "display: none" from the pop-up menu and hides every entry of
+   a group. To remove once Common 3.4.91 is required.
+   @see Common/asset/css/common-page-action-menu.css */
+#page-actions .page-action-menu .collapsible ul {
+    display: block;
+    position: static;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: none;
+}
+
+#page-actions .page-action-menu .collapsible ul::before,
+#page-actions .page-action-menu .collapsible ul::after {
+    content: none;
+}
+
+#page-actions .page-action-menu .menu-group > .menu-group-label {
+    cursor: default;
+    font-size: 0.85em;
+    font-weight: bold;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #575757;
+    padding-top: 10px;
+    border-bottom: 0;
+}
+
+#page-actions .page-action-menu .menu-group:not(:first-child) .menu-group-label {
+    border-top: 1px solid #8f8f8f;
+    margin-top: 4px;
+}
+
+#page-actions .page-action-menu ul li:not(.separator):not(.menu-group):hover {
+    background-color: #f0f0f0;
+}
+
+#page-actions .page-action-menu ul li:not(.separator):not(.menu-group):hover::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #6b6b6b;
+}
+
+#page-actions .page-action-menu ul li form {
+    margin: 0;
+}
+
+/* Neutralize the descendant rule of Common 3.4.90, that draws a rule under the
+   last entry of a group, right above the rule of the next group. */
+#page-actions .page-action-menu ul li.menu-group a,
+#page-actions .page-action-menu ul li.menu-group span,
+#page-actions .page-action-menu ul li.menu-group button {
+    border-bottom: 0;
+}
+
+#page-actions .page-action-menu ul li:not(:last-child) > a,
+#page-actions .page-action-menu ul li:not(:last-child) > span,
+#page-actions .page-action-menu ul li:not(:last-child) > button,
+#page-actions .page-action-menu ul li:not(:last-child) > form > button {
+    border-bottom: 1px solid #dfdfdf;
+}
