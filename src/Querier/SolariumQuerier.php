@@ -1805,9 +1805,11 @@ class SolariumQuerier extends AbstractQuerier
             // An unknown arg without resolution nor index suffix is ignored
             // like the api ignores unknown args (a raw filter on a nonexistent
             // field would match nothing and silently diverge).
+            // A suffix is not enough: a field like "ct_s" would look like an
+            // index and Solr would reject the whole query, so check the schema.
             if ($resolved === null
                 && strpos($fieldName, ':') === false
-                && !preg_match('~_(txt|ss|s|is|i|b|dt|dts|ls|l|fold_s|link_ss|link_is)$~', $fieldName)
+                && !$this->isSchemaField($fieldName)
             ) {
                 $this->getLogger()->warn(
                     'Solr: unknown arg "{arg}" ignored.', // @translate
@@ -2252,9 +2254,22 @@ class SolariumQuerier extends AbstractQuerier
 
                 $subClauses = [];
                 foreach ($rowFields as $rowField) {
-                    $name = $requireInteger
-                        ? ($this->fieldToIndexNumeric($rowField) ?? $this->fieldToIndex($rowField) ?? $rowField)
-                        : ($this->fieldToIndex($rowField) ?? $rowField);
+                    $resolved = $requireInteger
+                        ? ($this->fieldToIndexNumeric($rowField) ?? $this->fieldToIndex($rowField))
+                        : $this->fieldToIndex($rowField);
+                    // An arg that is neither an alias nor a map is used only
+                    // when it is a real field of the schema: a query arg that
+                    // is not a field, like the tracking parameter of a mailing
+                    // ("?ct=EMAIL_CAMPAIGN"), would build a filter on an
+                    // undefined field and Solr would reject the whole query.
+                    if ($resolved === null && !$this->isSchemaField($rowField)) {
+                        $this->getLogger()->warn(
+                            'Solr: unknown arg "{arg}" ignored in the advanced filters.', // @translate
+                            ['arg' => $rowField]
+                        );
+                        continue;
+                    }
+                    $name = $resolved ?? $rowField;
                     // The year types target the year index of the field
                     // (suffix _year_is, formatter edtf_year), when mapped.
                     if ($isYearType) {
@@ -2762,8 +2777,40 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function resolveFieldOrNull(string $field): ?string
     {
-        $name = $this->fieldToIndex($field) ?? $field;
+        $name = $this->fieldToIndex($field);
+
+        // Not an alias and not a map: keep the argument only when it is a real
+        // field of the schema. Else a query argument that is not a field, like
+        // the tracking parameter of a mailing ("?ct=EMAIL_CAMPAIGN"), would
+        // build a filter on an undefined field and Solr would reject the whole
+        // query, so the page would fail.
+        if ($name === null) {
+            if (!$this->isSchemaField($field)) {
+                return null;
+            }
+            $name = $field;
+        }
+
         return strpos($name, ':') === false ? $name : null;
+    }
+
+    /**
+     * Check if a name is a field of the schema, static or dynamic.
+     *
+     * When the schema is not available, no field can be checked, so none is
+     * used: an invalid field would make the whole query fail anyway.
+     */
+    protected function isSchemaField(string $field): bool
+    {
+        if ($field === '' || strpos($field, ':') !== false) {
+            return false;
+        }
+
+        try {
+            return (bool) $this->getSchemaField($field);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
