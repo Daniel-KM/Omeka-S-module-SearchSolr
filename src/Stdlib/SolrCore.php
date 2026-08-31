@@ -935,6 +935,18 @@ class SolrCore
      * @param string $componentName Name of the single searchComponent.
      * @return bool|string True on success, error message on failure.
      */
+    /**
+     * The lookup implementations that store their index in a directory.
+     *
+     * They need a distinct "indexPath", else they share the same write lock.
+     *
+     * @link https://solr.apache.org/guide/solr/latest/query-guide/suggester.html
+     */
+    const SUGGESTER_LOOKUPS_WITH_INDEX = [
+        'AnalyzingInfixLookupFactory',
+        'BlendedInfixLookupFactory',
+    ];
+
     public function updateSuggestComponent(
         array $suggesters,
         string $componentName = 'omeka_suggest'
@@ -947,10 +959,10 @@ class SolrCore
         $suggesterDefs = [];
         foreach ($suggesters as $suggester) {
             $name = $suggester['name'];
-            $suggesterDefs[] = [
+            $lookupImpl = $suggester['lookupImpl'] ?? 'AnalyzingInfixLookupFactory';
+            $def = [
                 'name' => $name,
-                'lookupImpl' => $suggester['lookupImpl']
-                    ?? 'AnalyzingInfixLookupFactory',
+                'lookupImpl' => $lookupImpl,
                 'field' => $suggester['field'],
                 'suggestAnalyzerFieldType' => $suggester['suggestAnalyzerFieldType']
                     ?? 'text_suggest',
@@ -958,6 +970,16 @@ class SolrCore
                 'buildOnCommit' => !empty($suggester['buildOnCommit'])
                     ? 'true' : 'false',
             ];
+
+            // The lookups that store their index on disk use the same default
+            // directory, so they share the same write lock and all of them but
+            // one fail to build ("Lock held by this virtual machine"). So each
+            // suggester gets its own directory.
+            if (in_array($lookupImpl, self::SUGGESTER_LOOKUPS_WITH_INDEX, true)) {
+                $def['indexPath'] = $suggester['indexPath'] ?? ('suggester_' . $name);
+            }
+
+            $suggesterDefs[] = $def;
         }
 
         $component = [
