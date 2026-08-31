@@ -1,0 +1,36 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \SearchSolr\Stdlib\SolrCore $solrCore
+ * @var \Omeka\Form\ConfirmForm $form
+ * @var int $totalManual
+ *
+ * Confirmation of the return of the manual maps to the automatic management,
+ * loaded into the core page sidebar like the alignment of the maps.
+ */
+
+$plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$translate = $plugins->get('translate');
+$translatePlural = $plugins->get('translatePlural');
+
+?>
+
+<div id="sidebar-confirm">
+    <h3><?= $escape($translate('Manage the manual maps automatically')) ?></h3>
+
+    <?php if ($totalManual): ?>
+
+    <p class="explanation"><?= $escape(sprintf($translatePlural('%d map is set as manual on this core.', '%d maps are set as manual on this core.', $totalManual), $totalManual)) ?></p>
+    <p class="explanation"><?= $escape($translate('A map created or edited by hand is flagged as manual, so the alignment never removes it nor updates it. Clearing the flag gives these maps back to the alignment: they will follow its sources again, and the ones used by no config will be removable.')) ?></p>
+    <p class="explanation"><?= $escape($translate('The maps without any flag are not concerned: they are protected by their customized settings, not by the flag.')) ?></p>
+
+    <?php $form->setButtonLabel($translate('Manage them automatically')); // @translate ?>
+    <?= $this->form($form) ?>
+
+    <?php else: ?>
+
+    <p class="explanation"><?= $escape($translate('No map is set as manual on this core: there is nothing to do.')) ?></p>
+
+    <?php endif; ?>
+</div>

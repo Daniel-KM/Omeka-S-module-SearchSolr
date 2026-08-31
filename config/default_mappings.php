@@ -68,6 +68,17 @@ return [
         'pool' => [],
         'settings' => ['label' => 'Site'],
     ],
+    [
+        // The date of the indexation itself, the only date the index knows and
+        // the database does not: it allows to find the documents that were not
+        // reindexed after a change of their resource.
+        'resource_name' => 'generic',
+        'field_name' => 'indexed_at_dt',
+        'alias' => 'indexed_at',
+        'source' => 'indexed_at',
+        'pool' => [],
+        'settings' => ['label' => 'Indexed at'],
+    ],
 
     // Not required specific fields.
 

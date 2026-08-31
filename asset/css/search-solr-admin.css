@@ -232,6 +232,10 @@
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
         padding: 0.5em 0.75em;
         font-style: normal;
+        /* The tooltip is as wide as its content, up to a limit: beyond it, a
+           long sentence wraps on a second line instead of widening it. */
+        width: max-content;
+        max-width: 32em;
     }
     .solr-cores .by-source .map-tooltip dl {
         display: grid;
@@ -244,7 +248,10 @@
     }
     .solr-cores .by-source .map-tooltip dd {
         margin: 0;
-        white-space: nowrap;
+        /* A long value wraps on a second line rather than making the tooltip
+           too wide, but an index name is never cut inside a word. */
+        white-space: normal;
+        overflow-wrap: break-word;
     }
     .solr-cores .by-source td {
         vertical-align: top;

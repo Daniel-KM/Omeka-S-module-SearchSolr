@@ -54,11 +54,11 @@ $this->htmlElement('body')->appendAttribute('class', 'solr-cores show solr-core-
                     'class' => 'link sidebar-content',
                     'data-sidebar-content-url' => $solrCore->adminUrl('clean-maps'),
                     'title' => $translate('Remove the maps referenced by no facet, filter, sort, query, suggester or setting; the required, system, manual and customized maps are kept.')]) ?></li>
-                <li>
-                    <form method="post" action="<?= $escapeAttr($solrCore->adminUrl('unfreeze-maps')) ?>" onsubmit="return confirm('<?= $escapeAttr($translate('Give all the manual maps back to the automatic management? They will follow the alignment again, and the unused ones will become removable.')) ?>');">
-                        <button type="submit" class="link" title="<?= $escapeAttr($translate('Clear the "manual" flag of every map, so the alignment manages them again. Useful on a core where all the maps were built by hand.')) ?>"><?= $translate('Manage the manual maps automatically') ?></button>
-                    </form>
-                </li>
+                <li><?= $hyperlink($translate('Manage the manual maps automatically…'), '#', [
+                    'data-sidebar-selector' => '#sidebar',
+                    'class' => 'link sidebar-content',
+                    'data-sidebar-content-url' => $solrCore->adminUrl('unfreeze-maps'),
+                    'title' => $translate('Clear the "manual" flag of every map, so the alignment manages them again. Useful on a core where all the maps were built by hand.')]) ?></li>
                     </ul>
                 </li>
                 <li class="menu-group">
@@ -348,8 +348,16 @@ $usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $
                     <?php foreach ($sourceMaps as $map):
                         $mapSettings = $map->settings();
                         $fieldName = $map->fieldName();
+                        // The manual flag is not a usage of the index by a
+                        // config: it is a protection against the sync, so it
+                        // has its own line instead of being merged with them.
                         $usageSummary = [];
+                        $manualSummary = '';
                         foreach ($fieldUsages[$fieldName] ?? [] as $usage => $places) {
+                            if ($usage === 'manual') {
+                                $manualSummary = $usageTitle($usage, $places);
+                                continue;
+                            }
                             $usageSummary[] = $usageTitle($usage, $places);
                         }
                         $detailRows = array_filter([
@@ -357,8 +365,10 @@ $usageIconsHtml = function (string $fieldName) use ($fieldUsages, $usageIcons, $
                             $translate('Source') => $source,
                             $translate('Label') => !empty($mapSettings['label']) ? $translate($mapSettings['label']) : '',
                             $translate('Type') => $map->resourceName(),
-                            $translate('Origin') => (string) $map->setting('origin'),
                             $translate('Used by') => implode(' · ', $usageSummary),
+                            // The provenance is said by this line alone: the
+                            // raw origin above repeated it for a manual map.
+                            $usageLabels['manual'] => $manualSummary,
                         ]);
                     ?>
                     <span class="map-index-line" data-resource-type="<?= $escapeAttr($map->resourceName()) ?>">

@@ -1175,6 +1175,39 @@ class Module extends AbstractModule
      * context, applied by the querier, not of the engine. Idempotent, usable
      * both at install and upgrade.
      */
+    /**
+     * Settings of the search config used for the api searches.
+     *
+     * The config answers api queries, it is not a page: nothing should be
+     * displayed. Every part is set to "none" explicitly, and not left empty,
+     * because an empty setting takes the default of the template, that displays
+     * the block: the position of the facets defaults to "before", so an empty
+     * block of facets would take the place a theme reserves for it.
+     */
+    protected function apiSearchConfigSettings(): array
+    {
+        return [
+            'results' => [
+                'breadcrumbs' => false,
+                'search_filters' => 'none',
+                'active_facets' => 'none',
+                'total_results' => 'none',
+                'paginator' => 'none',
+                'per_page' => 'none',
+                'sort' => 'none',
+                'grid_list' => 'none',
+                'map_display' => false,
+            ],
+            'facet' => [
+                'facets' => [],
+                'position' => 'none',
+            ],
+            'form' => [
+                'filters' => [],
+            ],
+        ];
+    }
+
     protected function createDefaultSearchEngines(
         \Doctrine\DBAL\Connection $connection,
         int $engineId,
@@ -1197,8 +1230,8 @@ class Module extends AbstractModule
         );
         if (!$apiConfigId) {
             $connection->executeStatement(
-                "INSERT INTO `search_config` (`engine_id`, `name`, `slug`, `form_adapter`, `settings`, `created`) VALUES (?, 'Api', 'api', 'main', '{}', NOW());",
-                [$engineId]
+                "INSERT INTO `search_config` (`engine_id`, `name`, `slug`, `form_adapter`, `settings`, `created`) VALUES (?, 'Api', 'api', 'main', ?, NOW());",
+                [$engineId, json_encode($this->apiSearchConfigSettings(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]
             );
             $message = new \Omeka\Stdlib\Message(
                 'A search config "Api" bound to the Solr engine has been created. To speed up the admin api searches (for example the linked resources sidebar), select it in the %1$smain settings%2$s once the core is indexed.', // @translate

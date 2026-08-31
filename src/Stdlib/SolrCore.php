@@ -685,10 +685,11 @@ class SolrCore
      * 15000 documents. On a shared core, the documents of the other indexes are
      * excluded through the index name, like the indexer does.
      *
-     * @param bool $withIndexedAt Return the date of indexation of each document
-     * instead of the sole ids, when the index has the field.
-     * @return array Ids, or ids as keys and dates of indexation as values, or
-     * null when the core cannot be queried.
+     * @param bool $withIndexedAt Fetch the date of indexation of each document
+     * too, when the index has the field.
+     * @return array|null Dates of indexation by resource id, the date being
+     * null when it is not fetched or not indexed; null when the core cannot be
+     * queried.
      */
     public function queryIndexedIds(string $resourceName, bool $withIndexedAt = false): ?array
     {
@@ -749,13 +750,11 @@ class SolrCore
             }
             // A multivalued field is returned as an array.
             $id = (int) $first($doc[$resourceIdField]);
-            if ($indexedAtField) {
-                $ids[$id] = isset($doc[$indexedAtField])
-                    ? (string) $first($doc[$indexedAtField])
-                    : null;
-            } else {
-                $ids[] = $id;
-            }
+            // The ids are always the keys, even without the date, else the
+            // caller cannot tell a list of ids from a list of dates by id.
+            $ids[$id] = $indexedAtField && isset($doc[$indexedAtField])
+                ? (string) $first($doc[$indexedAtField])
+                : null;
         }
         return $ids;
     }

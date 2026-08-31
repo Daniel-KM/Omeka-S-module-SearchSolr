@@ -1269,6 +1269,7 @@ class CoreController extends AbstractActionController
         }
 
         $api = $this->api();
+        $staleUnknown = false;
         $resourceTypes = $searchEngine->setting('resource_types') ?: ['items'];
         foreach ($resourceTypes as $resourceType) {
             // The engine visibility is applied at indexing, so the api query
@@ -1319,6 +1320,14 @@ class CoreController extends AbstractActionController
                 $row['stale'] = $stale === null
                     ? null
                     : array_slice($stale, 0, self::PARITY_MAX_IDS);
+            }
+
+            // Without the map of the date of indexation, the outdated
+            // documents cannot be found, so the check is partial and it should
+            // not be read as a proof that the index is fresh.
+            if ($row['total_stale'] === null && !$staleUnknown) {
+                $staleUnknown = true;
+                $result['warnings'][] = 'The date of indexation is not indexed, so the outdated documents cannot be found: add the map "indexed_at" and reindex.'; // @translate
             }
 
             $row['is_equal'] = $row['total_api'] === $row['total_index']
@@ -1377,6 +1386,10 @@ class CoreController extends AbstractActionController
 
         $stale = [];
         foreach ($indexed as $id => $indexedAt) {
+            // A document indexed before the map of the date existed has none.
+            if (!is_string($indexedAt) || $indexedAt === '') {
+                continue;
+            }
             $changed = $changes[$id] ?? null;
             if (!$changed) {
                 continue;
@@ -1405,12 +1418,38 @@ class CoreController extends AbstractActionController
     public function unfreezeMapsAction()
     {
         $id = (int) $this->params('id');
+        $solrCore = $this->solrCore($id);
+
+        // On a plain access, show the confirmation in the sidebar, like the
+        // other actions on the maps. The action runs on submit only.
+        $form = $this->getForm(ConfirmForm::class);
+        $form->setAttribute('action', $solrCore->adminUrl('unfreeze-maps'));
         if (!$this->getRequest()->isPost()) {
+            if (!$this->getRequest()->isXmlHttpRequest()) {
+                return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+            }
+            $totalManual = 0;
+            foreach ($solrCore->maps() as $map) {
+                if ($map->setting('origin') === 'manual') {
+                    ++$totalManual;
+                }
+            }
+            return (new ViewModel([
+                'solrCore' => $solrCore,
+                'form' => $form,
+                'totalManual' => $totalManual,
+            ]))
+                ->setTerminal(true)
+                ->setTemplate('search-solr/admin/core/unfreeze-maps-sidebar');
+        }
+
+        $form->setData($this->getRequest()->getPost());
+        if (!$form->isValid()) {
+            $this->messenger()->addError('Invalid or missing CSRF token'); // @translate
             return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
         }
 
         $api = $this->api();
-        $solrCore = $this->solrCore($id);
 
         $updated = [];
         foreach ($solrCore->maps() as $map) {
