@@ -167,6 +167,7 @@ class SolrMapForm extends Form
                 'attributes' => [
                     'id' => 'filter_resources',
                     'required' => false,
+                    'placeholder' => 'item_set_id[]=12&resource_template_id[]=3',
                 ],
             ])
             ->add([
@@ -178,6 +179,7 @@ class SolrMapForm extends Form
                 'attributes' => [
                     'id' => 'filter_values',
                     'required' => false,
+                    'placeholder' => '~^\\d{4}~',
                 ],
             ])
             ->add([
@@ -189,6 +191,7 @@ class SolrMapForm extends Form
                 'attributes' => [
                     'id' => 'filter_uris',
                     'required' => false,
+                    'placeholder' => '~^https?://idref\\.fr/~',
                 ],
             ])
             ->add([
@@ -200,6 +203,7 @@ class SolrMapForm extends Form
                 'attributes' => [
                     'id' => 'filter_value_resources',
                     'required' => false,
+                    'placeholder' => 'resource_class_id[]=94',
                 ],
             ])
             ->add([
@@ -242,6 +246,7 @@ class SolrMapForm extends Form
                 'attributes' => [
                     'id' => 'filter_languages',
                     'required' => false,
+                    'placeholder' => 'fr en und',
                 ],
             ])
             ->add([
@@ -249,7 +254,6 @@ class SolrMapForm extends Form
                 'type' => Element\Checkbox::class,
                 'options' => [
                     'label' => 'Include values without language', // @translate
-                    'info' => 'Used only with the option above: a value without language is generally language neutral, so it is indexed in each language index.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'filter_languages_no_lang',
@@ -583,7 +587,6 @@ class SolrMapForm extends Form
                     ],
                     'attributes' => [
                         'id' => 'thesaurus_resources',
-                        'class' => 'chosen-select',
                         'required' => false,
                         'data-placeholder' => 'Select a type of resources', // @translate
                         'value' => '',

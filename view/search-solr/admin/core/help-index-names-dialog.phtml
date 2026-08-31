@@ -1,0 +1,31 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ *
+ * Dialog with the help about the index names, opened by a "?" button with class
+ * "button-dialog-common" and data-dialog-selector "#dialog-index-names".
+ */
+
+$plugins = $this->getHelperPluginManager();
+$partial = $plugins->get('partial');
+$translate = $plugins->get('translate');
+?>
+
+<dialog id="dialog-index-names" class="dialog-common">
+    <form method="dialog" class="dialog-background">
+        <div class="dialog-panel">
+            <div class="dialog-header">
+                <button type="button" class="dialog-header-close-button">
+                    <span class="dialog-close" aria-hidden="true">🗙</span>
+                    <span class="dialog-close-label"><?= $translate('Close') ?></span>
+                </button>
+            </div>
+            <div class="dialog-contents">
+                <div class="dialog-heading"><h2><?= $translate('About index names') ?></h2></div>
+                <div class="dialog-body">
+                    <?= $partial('search-solr/admin/core/help-index-names-content') ?>
+                </div>
+            </div>
+        </div>
+    </form>
+</dialog>

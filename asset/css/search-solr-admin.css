@@ -305,6 +305,21 @@
     details {
         margin-bottom: 12px;
     }
+    /* The help button of the map form sticks to the right of its heading. */
+    h2 > .maps-help-button {
+        float: right;
+    }
+
+    /* Folded sections of the map form (value filters, advanced settings). */
+    .map-form-section {
+        margin: 1em 0;
+    }
+    .map-form-section > summary {
+        cursor: pointer;
+        font-size: 1.17em;
+        font-weight: bold;
+        margin-bottom: 0.5em;
+    }
     details summary,
     .quick-help summary {
         display: list-item;

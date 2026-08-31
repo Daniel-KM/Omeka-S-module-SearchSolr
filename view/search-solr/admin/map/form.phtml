@@ -7,17 +7,21 @@
  */
 
 $plugins = $this->getHelperPluginManager();
+$escape = $plugins->get('escapeHtml');
+$escapeAttr = $plugins->get('escapeHtmlAttr');
 $partial = $plugins->get('partial');
 $assetUrl = $plugins->get('assetUrl');
 $translate = $plugins->get('translate');
 
 $this->headLink()
+    ->appendStylesheet($assetUrl('css/common-dialog-admin.css', 'Common'))
     ->appendStylesheet($assetUrl('css/search-solr-admin.css', 'SearchSolr'));
 $this->headScript()
     ->appendScript(
     'const schema = ' . json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';
 const sourceLabels = ' . json_encode($sourceLabels, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ';'
 )
+    ->appendFile($assetUrl('js/common-dialog.js', 'Common'), 'text/javascript', ['defer' => 'defer'])
     ->appendFile($assetUrl('js/search-solr-admin-map.js', 'SearchSolr'), 'text/javascript', ['defer' => 'defer']);
 
 $form->prepare();
@@ -28,6 +32,44 @@ $dataTypeManager = $this->api()->read('vocabularies', 1)->getContent()->getServi
 $form->remove('data_types');
 $form->get('o:pool')->get('data_types')->setDataTypeManager($dataTypeManager);
 $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeManager);
+?>
+
+<?php
+// Progressive disclosure: the common case needs a few fields only (resource
+// type, source, destination, label, formatter); the value filters and the
+// advanced settings are folded, opened when they carry a non-default value.
+$pool = $form->get('o:pool');
+$settings = $form->get('o:settings');
+$mainSettings = ['label', 'formatter'];
+$defaults = [
+    'parts' => ['full'],
+    'place_mode' => 'country_and_toponym',
+    'table_mode' => 'label',
+    'thesaurus_metadata' => 'skos:prefLabel',
+];
+$isActive = function ($element) use ($defaults) {
+    // The form is prepared, so the name is wrapped ("o:settings[parts]").
+    $name = $element->getName();
+    $name = preg_match('~\[([^\]]+)\]$~', (string) $name, $matches) ? $matches[1] : $name;
+    $value = $element->getValue();
+    $default = $defaults[$name] ?? null;
+    if (is_array($value)) {
+        $value = array_values(array_filter($value, fn ($v) => $v !== '' && $v !== null));
+        return $default !== null ? $value != $default : (bool) $value;
+    }
+    if ($default !== null) {
+        return (string) $value !== (string) $default;
+    }
+    return $value !== '' && $value !== null && $value !== '0' && $value !== 0 && $value !== false;
+};
+$activePool = count(array_filter(iterator_to_array($pool->getElements()), $isActive));
+$advancedElements = [$form->get('o:alias')];
+foreach ($settings->getElements() as $name => $element) {
+    if (!in_array($name, $mainSettings)) {
+        $advancedElements[] = $element;
+    }
+}
+$activeAdvanced = count(array_filter($advancedElements, $isActive));
 ?>
 
 <?= $this->form()->openTag($form) ?>
@@ -44,18 +86,44 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
 <h2><?= $translate('Source') ?></h2>
 <p><?= $translate('Metadata to extract from Omeka') ?></p>
 <?= $this->formRow($form->get('o:source')) ?>
-<?= $this->formCollection($form->get('o:pool')) ?>
 
-<h2><?= $translate('Destination') ?></h2>
-<?= $partial('search-solr/admin/core/help-index-names') ?>
+<details class="map-form-section"<?= $activePool ? ' open="open"' : '' ?>>
+    <summary><?= $translate('Index only some values from this source') ?><?= $activePool ? ' (' . $activePool . ')' : '' ?></summary>
+    <?php
+    // Light group headings to pace the filters.
+    $poolGroups = [
+        $translate('Resources') => ['filter_resources'],
+        $translate('Values') => ['filter_values', 'filter_uris', 'filter_value_resources', 'data_types', 'data_types_exclude'],
+        $translate('Languages') => ['filter_languages', 'filter_languages_no_lang'],
+        $translate('Visibility') => ['filter_visibility'],
+    ];
+    ?>
+    <?php foreach ($poolGroups as $groupLabel => $groupNames): ?>
+    <h4><?= $escape($groupLabel) ?></h4>
+    <?php foreach ($groupNames as $groupName): ?>
+    <?= $this->formRow($pool->get($groupName)) ?>
+    <?php endforeach; ?>
+    <?php endforeach; ?>
+</details>
+
+<h2><?= $translate('Destination') ?>
+    <button type="button" class="button button-dialog-common maps-help-button"
+        data-dialog-selector="#dialog-index-names"
+        aria-label="<?= $escapeAttr($translate('About index names')) ?>"
+        title="<?= $escapeAttr($translate('About index names')) ?>">?</button></h2>
 <?= $this->formRow($form->get('o:field_name')) ?>
-
-<h2><?= $translate('Alias') ?></h2>
-<?= $this->formRow($form->get('o:alias')) ?>
 
 <h2><?= $translate('Format') ?></h2>
 <p><?= $translate('Adapt the metadata') ?></p>
-<?= $this->formCollection($form->get('o:settings')) ?>
+<?= $this->formRow($settings->get('label')) ?>
+<?= $this->formRow($settings->get('formatter')) ?>
+
+<details class="map-form-section"<?= $activeAdvanced ? ' open="open"' : '' ?>>
+    <summary><?= $translate('Advanced settings') ?><?= $activeAdvanced ? ' (' . $activeAdvanced . ')' : '' ?></summary>
+    <?php foreach ($advancedElements as $element): ?>
+    <?= $this->formRow($element) ?>
+    <?php endforeach; ?>
+</details>
 
 <?= $this->formRow($form->get('csrf')) ?>
 
@@ -70,3 +138,5 @@ $form->get('o:pool')->get('data_types_exclude')->setDataTypeManager($dataTypeMan
 </div>
 
 <?php $this->trigger('view.add.after'); ?>
+
+<?= $partial('search-solr/admin/core/help-index-names-dialog') ?>
