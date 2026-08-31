@@ -37,8 +37,6 @@ return [
         'factories' => [
             Controller\Admin\CoreController::class => Service\Controller\CoreControllerFactory::class,
             Controller\Admin\MapController::class => Service\Controller\MapControllerFactory::class,
-            Controller\ApiController::class => Service\Controller\ApiControllerFactory::class,
-            Controller\ApiLocalController::class => Service\Controller\ApiLocalControllerFactory::class,
         ],
     ],
     'service_manager' => [
@@ -179,38 +177,6 @@ return [
                                         ],
                                     ],
                                 ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            'api' => [
-                'child_routes' => [
-                    'search_solr' => [
-                        'type' => \Laminas\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => '/:resource[/:id]',
-                            'constraints' => [
-                                'resource' => 'solr_cores|solr_maps',
-                            ],
-                            'defaults' => [
-                                'controller' => Controller\ApiController::class,
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-            'api-local' => [
-                'child_routes' => [
-                    'search_solr' => [
-                        'type' => \Laminas\Router\Http\Segment::class,
-                        'options' => [
-                            'route' => '/:resource[/:id]',
-                            'constraints' => [
-                                'resource' => 'solr_cores|solr_maps',
-                            ],
-                            'defaults' => [
-                                'controller' => Controller\ApiLocalController::class,
                             ],
                         ],
                     ],

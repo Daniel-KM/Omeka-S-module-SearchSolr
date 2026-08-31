@@ -118,10 +118,16 @@ class Module extends AbstractModule
 
         /** @var \Omeka\Permissions\Acl $acl */
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
+        // Only read and search: without privileges, any anonymous visitor is
+        // allowed to create, update and delete maps through the rest api.
         $acl
-            ->allow(null, [
-                \SearchSolr\Api\Adapter\SolrMapAdapter::class,
-            ]);
+            ->allow(
+                null,
+                [
+                    \SearchSolr\Api\Adapter\SolrMapAdapter::class,
+                ],
+                ['read', 'search']
+            );
     }
 
     protected function preInstall(): void
@@ -226,6 +232,33 @@ class Module extends AbstractModule
         }
     }
 
+    /**
+     * Forbid the rest api to non-admin users, but keep the internal api.
+     *
+     * The check is done on the adapter and not on the controller or the route,
+     * because only the adapter throws the exception inside the api action, so
+     * the error is rendered as a json 403 and not as a html 500.
+     */
+    public function denyRestApiToNonAdmin(Event $event): void
+    {
+        $services = $this->getServiceLocator();
+        if (!$services->get('Omeka\Status')->isApiRequest()) {
+            return;
+        }
+
+        $user = $services->get('Omeka\AuthenticationService')->getIdentity();
+        if ($user && $services->get('Omeka\Acl')->isAdminRole($user->getRole())) {
+            return;
+        }
+
+        throw new \Omeka\Api\Exception\PermissionDeniedException(
+            (string) new PsrMessage(
+                'The resource "{resource}" is not available through the rest api.', // @translate
+                ['resource' => $event->getTarget()->getResourceName()]
+            )
+        );
+    }
+
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
         // The url, the status and the actions of each core are displayed in the
@@ -236,13 +269,25 @@ class Module extends AbstractModule
             [$this, 'filterBrowseEngineDetails']
         );
 
-        // An engine is a real backend: forbid two solarium engines on the
-        // same solr core.
+        // An engine is a real backend: forbid two solarium engines on the same
+        // solr core.
         $sharedEventManager->attach(
             \AdvancedSearch\Api\Adapter\SearchEngineAdapter::class,
             'api.hydrate.post',
             [$this, 'validateSingleEnginePerCore']
         );
+
+        // The maps describe the internal structure of the solr index, so they
+        // are administrative resources and they are not published via the rest
+        // api, that is available to anonymous visitors by default. The internal
+        // api is not impacted.
+        foreach (['api.search.pre', 'api.read.pre'] as $event) {
+            $sharedEventManager->attach(
+                \SearchSolr\Api\Adapter\SolrMapAdapter::class,
+                $event,
+                [$this, 'denyRestApiToNonAdmin']
+            );
+        }
 
         // Handle suggester form for Solr engines.
         $sharedEventManager->attach(
