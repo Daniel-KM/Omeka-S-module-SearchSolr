@@ -1101,6 +1101,7 @@ TODO
 - [ ] Align all: Create automatically multiple index by property (text, string, lower, latin, for query, order, facets, etc.).
 - [ ] Align all: Create a a small form (with/without diacritic, with/without lang, from template or not, etc.).
 - [ ] Align all: Use the option "value_languages".
+- [ ] Align all: Index the geographic points of the module Mapping: they are stored in its own table, not as a value of a property, so they are not extracted.
 - [ ] For advanced filters: search in _txt for contains since _ss does not supports diacritics.
 - [ ] Use the search engine directly without search api.
 - [ ] Check lazy loading and use serialized php as response format for [performance](https://solarium.readthedocs.io/en/stable/solarium-concepts/).
