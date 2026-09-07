@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Solr\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-31 00:00+0000\n"
-"PO-Revision-Date: 2026-08-31 00:00+0000\n"
+"POT-Creation-Date: 2026-09-07 00:00+0000\n"
+"PO-Revision-Date: 2026-09-07 00:00+0000\n"
 "Last-Translator: Daniel Berthereau <Daniel.fr@Berthereau.net>\n"
 "Language-Team: French\n"
 "Language: fr\n"
@@ -1631,7 +1631,18 @@ msgstr ""
 "objet numérique (module Digital Object) est également indexé comme ayant un "
 "média."
 
-#: data/scripts/upgrade.php:1577
+#: data/scripts/upgrade.php:1568
+msgid ""
+"The Solr cores were merged into their search engines, but the maps attached "
+"to no core were kept aside ({count}), so the old table was not removed. "
+"Check the search engines and their maps."
+msgstr ""
+"Les cœurs solr ont été intégrés à leurs moteurs de recherche, mais les "
+"alignements attachés à aucun cœur ont été mis de conservés ({count}) et "
+"l’ancienne table n’a pas été supprimée. Vérifiez les moteurs de recherche et "
+"les index."
+
+#: data/scripts/upgrade.php:1603
 msgid ""
 "The Solr cores were merged into their search engines: the connection and the "
 "maps now belong to the engine directly."
@@ -1639,7 +1650,7 @@ msgstr ""
 "Les cœurs solr ont été intégrés à leurs moteurs de recherche : la connexion "
 "et les alignements relèvent désormais directement du moteur."
 
-#: data/scripts/upgrade.php:1744
+#: data/scripts/upgrade.php:1776
 msgid ""
 "A boolean visibility index \"is_public_b\" was added and indexing "
 "relaunched. The legacy \"is_public_i\" stays active until the reindex "
@@ -1651,7 +1662,7 @@ msgstr ""
 "la réindexation, puis il sera supprimé automatiquement lors d’une mise à "
 "jour ultérieure (sans interruption)."
 
-#: data/scripts/upgrade.php:1862
+#: data/scripts/upgrade.php:1903
 msgid ""
 "The visibility index switched to \"is_public_b\"; the legacy \"is_public_i\" "
 "was removed."
@@ -1659,7 +1670,7 @@ msgstr ""
 "L’index de visibilité a été remplacé par « is_public_b » et l’ancien "
 "« is_public_i » a été supprimé."
 
-#: data/scripts/upgrade.php:1919
+#: data/scripts/upgrade.php:1960
 msgid ""
 "The provenance was set on the historical maps: {sync} automatic, {manual} "
 "manual (customized, never removed), {system} system."
@@ -1667,7 +1678,7 @@ msgstr ""
 "La provenance a été définie sur les anciens index : {sync} automatique, "
 "{manual} manuel (personnalisé, jamais supprimé), {system} système."
 
-#: data/scripts/upgrade.php:1923
+#: data/scripts/upgrade.php:1964
 msgid ""
 "It is recommended to align the maps manually on each Solr core, then to "
 "reindex: the automatic maps not used by any config will be removed when the "
@@ -1677,7 +1688,7 @@ msgstr ""
 "puis de ré-indexer : les alignements automatiques qui ne sont utilisés par "
 "aucune configuration seront supprimés lors du nettoyage."
 
-#: data/scripts/upgrade.php:1976
+#: data/scripts/upgrade.php:2017
 msgid ""
 "The date of indexation is now indexed (\"indexed_at_dt\"), so the check of "
 "the parity can find the documents that were not reindexed after a change of "
@@ -1687,7 +1698,7 @@ msgstr ""
 "vérification de la parité permet de repérer les documents qui n’ont pas été "
 "ré-indexés après modification. Effectuez une réindexation pour mettre à jour."
 
-#: data/scripts/upgrade.php:2072
+#: data/scripts/upgrade.php:2113
 msgid ""
 "The sources of some maps matched no extractor, so their index stayed empty: "
 "{sources}. Reindex to fill them."
@@ -1695,7 +1706,7 @@ msgstr ""
 "Les sources de certains index ne correspondaient à aucun extracteur et leur "
 "index reste vide : {sources}. Ré-indexer pour les remplir."
 
-#: data/scripts/upgrade.php:2078
+#: data/scripts/upgrade.php:2119
 msgid ""
 "Some maps were removed, because the same index was already mapped to the "
 "same source: {maps}."
@@ -1703,7 +1714,7 @@ msgstr ""
 "Certains index ont été supprimés, car ils étaient déjà associés à la même "
 "source : {maps}."
 
-#: data/scripts/upgrade.php:2084
+#: data/scripts/upgrade.php:2125
 msgid ""
 "Some maps were removed, because they point to a property that no longer "
 "exists: {maps}."
@@ -1711,7 +1722,7 @@ msgstr ""
 "Certains index ont été supprimés, car ils renvoient à une propriété qui "
 "n’existe plus : {maps}."
 
-#: data/scripts/upgrade.php:2090
+#: data/scripts/upgrade.php:2131
 msgid ""
 "The alignment of the maps has new sources: the values of the media, indexed "
 "on their item, the numeric values, that get an integer or decimal index for "
@@ -1727,7 +1738,13 @@ msgstr ""
 "peuvent pas être parcourus. Voir l’encadré « Aligner les cartes » d’un cœur "
 "Solr."
 
-#: data/scripts/upgrade.php:2094
+#: data/scripts/upgrade.php:2135
+msgid "The geographic points were never indexed: reindex to get them."
+msgstr ""
+"Les points géographiques n’ont jamais été indexés : ré-indexer pour les "
+"obtenir."
+
+#: data/scripts/upgrade.php:2139
 msgid "A sync and a re-indexation are recommended."
 msgstr "Une synchronisation et une ré-indexation sont recommandées."
 
@@ -2051,7 +2068,7 @@ msgstr "Argument solr_core_id manquant."
 msgid "Solr core #{id} not found."
 msgstr "Cœur Solr #{id} inexistant."
 
-#: src/Job/ReduceSolrFields.php:69 src/Controller/Admin/CoreController.php:1718
+#: src/Job/ReduceSolrFields.php:69 src/Controller/Admin/CoreController.php:1706
 msgid "Unable to determine the Solr maxFields limit."
 msgstr "Impossible de déterminer la limite « maxFields » de Solr."
 
@@ -3508,7 +3525,7 @@ msgstr ""
 "Le champ attrape-tout \"_text_\" existe déjà dans le cœur \"{solr_core_name}"
 "\"."
 
-#: src/Controller/Admin/CoreController.php:1017
+#: src/Controller/Admin/CoreController.php:1013
 msgid ""
 "Catchall field \"_text_\" created in core \"{solr_core_name}\". Reindex "
 "required."
@@ -3516,34 +3533,34 @@ msgstr ""
 "Champ attrape-tout \"_text_\" créé dans le cœur \"{solr_core_name}\". Une "
 "réindexation est nécessaire."
 
-#: src/Controller/Admin/CoreController.php:1024
+#: src/Controller/Admin/CoreController.php:1020
 msgid "Failed to create catchall field: {error}"
 msgstr "Impossible de créer le champ attrape-tout : {error}"
 
-#: src/Controller/Admin/CoreController.php:1030
+#: src/Controller/Admin/CoreController.php:1026
 msgid "Error creating catchall field: {error}"
 msgstr "Erreur lors de la création du champ attrape-tout : {error}"
 
-#: src/Controller/Admin/CoreController.php:1054
+#: src/Controller/Admin/CoreController.php:1050
 msgid ""
 "The catchall field \"_text_\" does not exist in core \"{solr_core_name}\"."
 msgstr ""
 "Le champ attrape-tout \"_text_\" n’existe pas dans le cœur \"{solr_core_name}"
 "\"."
 
-#: src/Controller/Admin/CoreController.php:1086
+#: src/Controller/Admin/CoreController.php:1078
 msgid "Catchall field \"_text_\" deleted in core \"{solr_core_name}\"."
 msgstr "Champ attrape-tout \"_text_\" supprimé du cœur \"{solr_core_name}\"."
 
-#: src/Controller/Admin/CoreController.php:1093
+#: src/Controller/Admin/CoreController.php:1085
 msgid "Failed to delete catchall field: {error}"
 msgstr "Impossible de supprimer le champ attrape-tout : {error}"
 
-#: src/Controller/Admin/CoreController.php:1099
+#: src/Controller/Admin/CoreController.php:1091
 msgid "Error deleting catchall field: {error}"
 msgstr "Erreur lors de la suppression du champ attrape-tout : {error}"
 
-#: src/Controller/Admin/CoreController.php:1139
+#: src/Controller/Admin/CoreController.php:1127
 msgid ""
 "Data-driven schema disabled (update.autoCreateFields = false) on core "
 "\"{solr_core_name}\"."
@@ -3551,16 +3568,16 @@ msgstr ""
 "Le schéma conduit par les données a été désactivé (update.autoCreateFields = "
 "false) sur le cœur \"{solr_core_name}\"."
 
-#: src/Controller/Admin/CoreController.php:1146
+#: src/Controller/Admin/CoreController.php:1134
 msgid "Failed to disable data-driven schema: {error}"
 msgstr "Impossible de désactiver le schéma conduit par les données : {error}"
 
-#: src/Controller/Admin/CoreController.php:1152
+#: src/Controller/Admin/CoreController.php:1140
 msgid "Error disabling data-driven schema: {error}"
 msgstr ""
 "Erreur lors de la désactivation du schéma conduit par les données : {error}"
 
-#: src/Controller/Admin/CoreController.php:1174
+#: src/Controller/Admin/CoreController.php:1162
 msgid ""
 "Optimizing index in background (job {link_job}#{job_id}{link_end}, {link_log}"
 "logs{link_end})."
@@ -3568,7 +3585,7 @@ msgstr ""
 "Optimisation des index en arrière-plan (tâche {link_job}#{job_id}{link_end}, "
 "{link_log}journaux{link_end})."
 
-#: src/Controller/Admin/CoreController.php:1274
+#: src/Controller/Admin/CoreController.php:1262
 msgid ""
 "The core filters the resources to index (\"filter_resources\"), so the index "
 "is a subset by design."
@@ -3576,11 +3593,11 @@ msgstr ""
 "Le cœur filtre les ressources à indexer (« filter_resources ») de sorte que "
 "l’index en constitue un sous-ensemble par construction."
 
-#: src/Controller/Admin/CoreController.php:1278
+#: src/Controller/Admin/CoreController.php:1266
 msgid "The engine indexes the private resources only."
 msgstr "Le moteur indexe uniquement les ressources privées."
 
-#: src/Controller/Admin/CoreController.php:1281
+#: src/Controller/Admin/CoreController.php:1269
 msgid ""
 "The indexing is disabled for this engine, so the index no longer follows the "
 "resources."
@@ -3588,11 +3605,11 @@ msgstr ""
 "L’indexation est désactivée pour ce moteur et l’index ne suit donc plus les "
 "ressources."
 
-#: src/Controller/Admin/CoreController.php:1306
+#: src/Controller/Admin/CoreController.php:1294
 msgid "The index cannot be queried."
 msgstr "L’index ne peut pas faire l’objet d'une requête."
 
-#: src/Controller/Admin/CoreController.php:1343
+#: src/Controller/Admin/CoreController.php:1331
 msgid ""
 "The date of indexation is not indexed, so the outdated documents cannot be "
 "found: add the map \"indexed_at\" and reindex."
@@ -3601,7 +3618,7 @@ msgstr ""
 "documents obsolètes : ajoutez l’index « indexed_at » et relancez "
 "l’indexation."
 
-#: src/Controller/Admin/CoreController.php:1493
+#: src/Controller/Admin/CoreController.php:1481
 msgid ""
 "Solr core #{solr_core_id} (\"{solr_core_name}\"): {count} maps are managed "
 "automatically again: {maps}."
@@ -3609,7 +3626,7 @@ msgstr ""
 "Cœur solr #{solr_core_id} (« {solr_core_name} ») : {count} index sont à "
 "nouveau gérés automatiquement : {maps}."
 
-#: src/Controller/Admin/CoreController.php:1502
+#: src/Controller/Admin/CoreController.php:1490
 msgid ""
 "{count} maps are managed automatically again: {maps}. They now follow the "
 "sources of the alignment, and the unused ones can be removed."
@@ -3618,11 +3635,11 @@ msgstr ""
 "désormais les sources et ceux inutilisés peuvent être supprimés "
 "automatiquement."
 
-#: src/Controller/Admin/CoreController.php:1507
+#: src/Controller/Admin/CoreController.php:1495
 msgid "No map was set as manual."
 msgstr "Aucun index n’est manuel."
 
-#: src/Controller/Admin/CoreController.php:1529
+#: src/Controller/Admin/CoreController.php:1517
 msgid ""
 "The core \"{core}\" already exists on the server; it is used as is, nothing "
 "was created."
@@ -3630,7 +3647,7 @@ msgstr ""
 "Le cœur « {core} » existe déjà sur le serveur ; il est utilisé tel quel, "
 "rien a été créé."
 
-#: src/Controller/Admin/CoreController.php:1537
+#: src/Controller/Admin/CoreController.php:1525
 msgid ""
 "Failed to create the core \"{core}\" on the Solr server. Check the logs: the "
 "config set \"{config_set}\" must exist in SOLR_HOME/configsets on the server."
@@ -3639,7 +3656,7 @@ msgstr ""
 "journaux : le jeu de configuration « {config_set} » doit exister dans le "
 "répertoire SOLR_HOME/configsets sur le serveur."
 
-#: src/Controller/Admin/CoreController.php:1549
+#: src/Controller/Admin/CoreController.php:1537
 msgid ""
 "The core \"{core}\" was created on the Solr server and its schema "
 "initialized. Default maps are being created; reindex afterwards."
@@ -3648,7 +3665,7 @@ msgstr ""
 "initialisé. Les tables par défaut sont en cours de création. Il faudra le ré-"
 "indexer ensuite."
 
-#: src/Controller/Admin/CoreController.php:1573
+#: src/Controller/Admin/CoreController.php:1561
 msgid ""
 "The core \"{core}\" is shared (the engine sets index_name); deletion on the "
 "server is refused."
@@ -3656,7 +3673,7 @@ msgstr ""
 "Le cœur « {core} » est partagé (un moteur définit index_name) ; la "
 "suppression sur le serveur est refusée."
 
-#: src/Controller/Admin/CoreController.php:1583
+#: src/Controller/Admin/CoreController.php:1571
 msgid ""
 "The core \"{core}\" was deleted on the Solr server. The connection is still "
 "registered in Omeka."
@@ -3664,14 +3681,14 @@ msgstr ""
 "Le cœur « {core} » a été supprimé sur le serveur Solr. La connexion est "
 "toujours enregistrée dans Omeka."
 
-#: src/Controller/Admin/CoreController.php:1588
+#: src/Controller/Admin/CoreController.php:1576
 msgid ""
 "Failed to delete the core \"{core}\" on the Solr server. Check the logs."
 msgstr ""
 "Impossible de supprimer le cœur « {core} » sur le serveur Solr. Vérifiez les "
 "journaux."
 
-#: src/Controller/Admin/CoreController.php:1625
+#: src/Controller/Admin/CoreController.php:1613
 msgid ""
 "Map creation in background (job {link_job}#{job_id}{link_end}, {link_log}"
 "logs{link_end})."
@@ -3679,27 +3696,27 @@ msgstr ""
 "Création des alignements en arrière-plan (tâche {link_job}#{job_id}"
 "{link_end}, {link_log}journaux{link_end})."
 
-#: src/Controller/Admin/CoreController.php:1688
+#: src/Controller/Admin/CoreController.php:1676
 msgid "No unused map."
 msgstr "Aucun alignement inutilisé."
 
-#: src/Controller/Admin/CoreController.php:1700
+#: src/Controller/Admin/CoreController.php:1688
 msgid "{count} unused maps deleted: {list}."
 msgstr "{count} index inutilisés supprimés : {list}."
 
-#: src/Controller/Admin/CoreController.php:1731
+#: src/Controller/Admin/CoreController.php:1719
 msgid "Reduction job started. Check the logs."
 msgstr "Tâche de réduction lancée. Vérifier les journaux."
 
-#: src/Controller/Admin/CoreController.php:1818
+#: src/Controller/Admin/CoreController.php:1806
 msgid "{count} annotation maps created: {list}."
 msgstr "{count} index créés pour les annotations : {list}."
 
-#: src/Controller/Admin/CoreController.php:1826
+#: src/Controller/Admin/CoreController.php:1814
 msgid "All annotation maps already exist."
 msgstr "Tous les alignements des annotations existent déjà."
 
-#: src/Controller/Admin/CoreController.php:1985
+#: src/Controller/Admin/CoreController.php:1973
 msgid ""
 "This core is used by a shared engine (index_name is set). Sync is not "
 "supported for shared engines."
@@ -3707,7 +3724,7 @@ msgstr ""
 "Ce cœur est utilisé par un moteur partagé (index_name est défini). La "
 "synchronisation n’est pas prise en charge pour ces moteurs partagés."
 
-#: src/Controller/Admin/CoreController.php:2697
+#: src/Controller/Admin/CoreController.php:2703
 msgid ""
 "Audit (sources: {sources}, cleaning: {cleaning}), nothing was changed. "
 "Properties collected: {props}. Maps: {before}, that would be removed: "
@@ -3717,15 +3734,15 @@ msgstr ""
 "Propriétés collectées : {props}. Index : {before}, à supprimer : {deleted}, "
 "personnalisés à conserver : {kept}, créés : {created}."
 
-#: src/Controller/Admin/CoreController.php:2710
+#: src/Controller/Admin/CoreController.php:2716
 msgid "Maps that would be created: {list}."
 msgstr "Alignements qui seraient créés : {list}."
 
-#: src/Controller/Admin/CoreController.php:2716
+#: src/Controller/Admin/CoreController.php:2722
 msgid "Maps that would be removed: {list}."
 msgstr "Index qui seraient supprimés : {list}."
 
-#: src/Controller/Admin/CoreController.php:2732
+#: src/Controller/Admin/CoreController.php:2738
 msgid ""
 "Sync complete (sources: {sources}, cleaning: {cleaning}). Properties "
 "collected: {props}. Maps before: {before}, deleted: {deleted}, kept "
@@ -3735,31 +3752,31 @@ msgstr ""
 "Propriétés collectées : {props}. Index avant : {before}, supprimés : "
 "{deleted}, conservés (personnalisés) : {kept}, créés : {created}."
 
-#: src/Controller/Admin/CoreController.php:2746
+#: src/Controller/Admin/CoreController.php:2752
 msgid "Deleted: {list}."
 msgstr "Supprimés : {list}."
 
-#: src/Controller/Admin/CoreController.php:2752
+#: src/Controller/Admin/CoreController.php:2758
 msgid "Kept (customized, not in config): {list}."
 msgstr "Conservé (personnalisé, absent de la configuration) : {list}."
 
-#: src/Controller/Admin/CoreController.php:2758
+#: src/Controller/Admin/CoreController.php:2764
 msgid "Created: {list}."
 msgstr "Créé : {list}."
 
-#: src/Controller/Admin/CoreController.php:2764
+#: src/Controller/Admin/CoreController.php:2770
 msgid "All maps are in sync with search configs."
 msgstr ""
 "Les alignements sont synchronisés avec les configurations de recherche."
 
-#: src/Controller/Admin/CoreController.php:2781
+#: src/Controller/Admin/CoreController.php:2787
 msgid ""
 "Reindex required: the changed maps stay empty until then. Reindex: {links}."
 msgstr ""
 "Réindexation nécessaire, sinon les alignements modifiés restent vides. "
 "Réindexation : {links}."
 
-#: src/Controller/Admin/CoreController.php:2812
+#: src/Controller/Admin/CoreController.php:2818
 msgid ""
 "Fields used by a config but provided by no map: {list}. They cannot be "
 "created by the alignment, since they are neither a property nor an index "
@@ -3770,46 +3787,46 @@ msgstr ""
 "propriété ni un index construit à partir de celle-ci, et toute requête les "
 "concernant échoue car le champ n’est pas défini."
 
-#: src/Controller/Admin/CoreController.php:3060
+#: src/Controller/Admin/CoreController.php:3066
 msgid "{count} maps reset to \"follow engine\" visibility. Reindex required."
 msgstr ""
 "{count} index réinitialisés avec la visibilité « suivre le moteur ». "
 "Réindexation nécessaire."
 
-#: src/Controller/Admin/CoreController.php:3065
+#: src/Controller/Admin/CoreController.php:3071
 msgid "All maps already follow the engine visibility."
 msgstr "Tous les alignements respectent déjà la visibilité du moteur."
 
-#: src/Controller/Admin/CoreController.php:3087
-#: src/Controller/Admin/CoreController.php:3158
+#: src/Controller/Admin/CoreController.php:3093
+#: src/Controller/Admin/CoreController.php:3164
 msgid "Solr is unreachable: {status}"
 msgstr "Solr est inaccessible : {status}"
 
-#: src/Controller/Admin/CoreController.php:3124
+#: src/Controller/Admin/CoreController.php:3130
 msgid "Field \"suggest_txt\" recreated. Reindex required."
 msgstr "Le champ \"suggest_txt\" a été recréé. Réindexation nécessaire."
 
-#: src/Controller/Admin/CoreController.php:3125
+#: src/Controller/Admin/CoreController.php:3131
 msgid "Field \"suggest_txt\" created. Reindex required."
 msgstr "Champ \"suggest_txt_\" créé. Réindexation nécessaire."
 
-#: src/Controller/Admin/CoreController.php:3129
+#: src/Controller/Admin/CoreController.php:3135
 msgid "Error creating suggest field: {error}"
 msgstr "Erreur en créant le champ de suggestion : {error}"
 
-#: src/Controller/Admin/CoreController.php:3180
+#: src/Controller/Admin/CoreController.php:3186
 msgid "Catchall analyzer unchanged."
 msgstr "Analyseur catchall » conservé."
 
-#: src/Controller/Admin/CoreController.php:3228
+#: src/Controller/Admin/CoreController.php:3230
 msgid "Unsupported language: {lang}"
 msgstr "Langue non pris en charge : {lang}"
 
-#: src/Controller/Admin/CoreController.php:3284
+#: src/Controller/Admin/CoreController.php:3286
 msgid "Failed to create field type: {error}"
 msgstr "Impossible de créer le type de champ : {error}"
 
-#: src/Controller/Admin/CoreController.php:3311
+#: src/Controller/Admin/CoreController.php:3313
 msgid ""
 "Field \"_text_\" configured for Google-like search in core \"{solr_core_name}"
 "\". Reindex required."
@@ -3817,7 +3834,7 @@ msgstr ""
 "Le champ attrape-tout \"_text_\" a été configuré à-la-google dans le cœur "
 "\"{solr_core_name}\". Une réindexation est nécessaire."
 
-#: src/Controller/Admin/CoreController.php:3313
+#: src/Controller/Admin/CoreController.php:3315
 msgid ""
 "Field \"_text_\" configured for linguistic search ({type}) in core "
 "\"{solr_core_name}\". Reindex required."
@@ -3825,7 +3842,7 @@ msgstr ""
 "Le champ \"_text_\" a été configuré pour la recherche linguistique ({type}) "
 "dans cœur \"{solr_core_name}\". Réindexation nécessaire."
 
-#: src/Controller/Admin/CoreController.php:3315
+#: src/Controller/Admin/CoreController.php:3317
 msgid ""
 "Field \"_text_\" configured for strict matching in core \"{solr_core_name}"
 "\". Reindex required."
@@ -3833,32 +3850,32 @@ msgstr ""
 "Le champ attrape-tout \"_text_\" a été configuré pour la correspondance "
 "stricte dans le cœur \"{solr_core_name}\". Une réindexation est nécessaire."
 
-#: src/Controller/Admin/CoreController.php:3325
+#: src/Controller/Admin/CoreController.php:3327
 msgid "Failed to configure _text_ field: {error}"
 msgstr "Impossible de configurer le champ attrape-tout : {error}"
 
-#: src/Controller/Admin/CoreController.php:3331
+#: src/Controller/Admin/CoreController.php:3333
 msgid "Error configuring search: {error}"
 msgstr "Erreur lors de la configuration de la recherche : {error}"
 
-#: src/Controller/Admin/CoreController.php:3362
+#: src/Controller/Admin/CoreController.php:3364
 msgid "Solr issue: {msg}"
 msgstr "Problème solr : {msg}"
 
-#: src/Controller/Admin/CoreController.php:3439
-#: src/Controller/Admin/CoreController.php:3512
+#: src/Controller/Admin/CoreController.php:3441
+#: src/Controller/Admin/CoreController.php:3514
 msgid "Snapshot not found."
 msgstr "Sauvegarde inexistante."
 
-#: src/Controller/Admin/CoreController.php:3483
+#: src/Controller/Admin/CoreController.php:3485
 msgid "Restored {count} maps from snapshot of {datetime}."
 msgstr "{count} index restaurés à partir de la sauvegarde du {datetime}."
 
-#: src/Controller/Admin/CoreController.php:3490
+#: src/Controller/Admin/CoreController.php:3492
 msgid "Reindex required."
 msgstr "Réindexation nécessaire."
 
-#: src/Controller/Admin/CoreController.php:3524
+#: src/Controller/Admin/CoreController.php:3526
 msgid "Snapshot deleted."
 msgstr "Sauvegarde supprimée."
 
