@@ -1233,7 +1233,7 @@ Many UX and performance improvements were done for the digital library [Musee de
 [reference guide]: https://solr.apache.org/guide/enabling-ssl.html
 [guide]: https://solr.apache.org/guide/enabling-ssl.html#solr-in-sh
 [reference guide to copy a field]: https://solr.apache.org/guide/schema-api.html#add-a-new-copy-field-rule
-[module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr/-/issues
+[module issues]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr/-/work_items
 [CeCILL v2.1]: https://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html
 [GNU/GPL]: https://www.gnu.org/licenses/gpl-3.0.html
 [FSF]: https://www.fsf.org
