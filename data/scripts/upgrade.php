@@ -1467,41 +1467,59 @@ if (version_compare($oldVersion, '3.5.69', '<')) {
     ));
 }
 
-if (version_compare($oldVersion, '3.5.70', '<')) {
-    // An engine is a real backend: the solr_core table merges into the
-    // solarium engine. The connection and the core settings move to the
-    // engine settings under "solr" (snapshots included) and the maps belong
-    // to the engine directly. The mapping is 1:1; a core without engine gets
-    // one. This migration runs first, so the next steps work on the new
-    // model.
-    $hasSolrCoreTable = (bool) $connection->fetchOne("SHOW TABLES LIKE 'solr_core'");
-    if ($hasSolrCoreTable) {
-        // 1. Merge each core into its engine, creating the missing engines.
-        $coreToEngine = [];
-        $engines = $connection->fetchAllAssociative(
-            "SELECT `id`, `settings` FROM `search_engine` WHERE `adapter` = 'solarium' ORDER BY `id` ASC"
-        );
-        $cores = $connection->fetchAllAssociative(
-            'SELECT `id`, `name`, `settings`, `backup_maps` FROM `solr_core` ORDER BY `id` ASC'
-        );
-        foreach ($cores as $core) {
-            $coreId = (int) $core['id'];
-            $engineId = null;
-            $engineSettings = [];
-            foreach ($engines as $engine) {
-                $checkSettings = json_decode((string) $engine['settings'], true) ?: [];
-                if ((int) ($checkSettings['engine_adapter']['solr_core_id'] ?? 0) === $coreId) {
-                    $engineId = (int) $engine['id'];
-                    $engineSettings = $checkSettings;
-                    break;
-                }
+// Merge the Solr cores into the search engines: the connection and the core
+// settings move to the engine settings under "solr" (snapshots included) and
+// the maps belong to the engine directly. A core without engine gets one.
+//
+// A core may be shared by several engines, that all need the connection, but
+// the maps are not duplicated: they belong to the first engine of the core.
+//
+// Defined as a closure and not inlined in the version block below, because the
+// version is recorded before the upgrade: an upgrade interrupted here would
+// never migrate, since the version block does not run any more. So the repair
+// below calls it again on any later upgrade, as long as a core remains.
+$migrateSolrCoresToEngines = function () use ($connection, $messenger): void {
+    // The column identifies the owner of the map, so it is created right after
+    // the id, like in the schema of a new install. It is queried by the steps
+    // below, so it cannot wait for the version block that finalizes it.
+    $hasEngineColumn = (bool) $connection->fetchOne(
+        "SHOW COLUMNS FROM `solr_map` LIKE 'engine_id'"
+    );
+    if (!$hasEngineColumn) {
+        $connection->executeStatement('ALTER TABLE `solr_map` ADD `engine_id` INT DEFAULT NULL AFTER `id`;');
+    }
+
+
+    // 1. Merge each core into its engine, creating the missing engines.
+    $coreToEngine = [];
+    $engines = $connection->fetchAllAssociative(
+        "SELECT `id`, `settings` FROM `search_engine` WHERE `adapter` = 'solarium' ORDER BY `id` ASC"
+    );
+    $cores = $connection->fetchAllAssociative(
+        'SELECT `id`, `name`, `settings`, `backup_maps` FROM `solr_core` ORDER BY `id` ASC'
+    );
+    foreach ($cores as $core) {
+        $coreId = (int) $core['id'];
+        // A core may be shared by several engines: they all get the connection,
+        // and the first one owns the maps.
+        $engineIds = [];
+        $engineSettingsById = [];
+        foreach ($engines as $engine) {
+            $checkSettings = json_decode((string) $engine['settings'], true) ?: [];
+            if ((int) ($checkSettings['engine_adapter']['solr_core_id'] ?? 0) === $coreId) {
+                $engineIds[] = (int) $engine['id'];
+                $engineSettingsById[(int) $engine['id']] = $checkSettings;
             }
-            $solrSettings = json_decode((string) $core['settings'], true) ?: [];
-            $backups = json_decode((string) ($core['backup_maps'] ?? ''), true);
-            if (is_array($backups) && count($backups)) {
-                $solrSettings['backup_maps'] = $backups;
-            }
-            if ($engineId) {
+        }
+        $engineId = $engineIds ? reset($engineIds) : null;
+        $solrSettings = json_decode((string) $core['settings'], true) ?: [];
+        $backups = json_decode((string) ($core['backup_maps'] ?? ''), true);
+        if (is_array($backups) && count($backups)) {
+            $solrSettings['backup_maps'] = $backups;
+        }
+        if ($engineId) {
+            foreach ($engineIds as $engineIdCore) {
+                $engineSettings = $engineSettingsById[$engineIdCore];
                 $engineSettings['solr'] = $solrSettings;
                 // The index name for a shared core is a facet of the solr
                 // settings; the solarium engine has no more adapter settings.
@@ -1511,71 +1529,85 @@ if (version_compare($oldVersion, '3.5.70', '<')) {
                 unset($engineSettings['engine_adapter']);
                 $connection->executeStatement(
                     'UPDATE `search_engine` SET `settings` = ?, `modified` = NOW() WHERE `id` = ?;',
-                    [json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $engineId]
+                    [json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $engineIdCore]
                 );
-            } else {
-                $engineSettings = [
-                    'resource_types' => ['items', 'item_sets'],
-                    'solr' => $solrSettings,
-                ];
-                $connection->executeStatement(
-                    'INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`) VALUES (?, ?, ?, NOW(), NOW());',
-                    [$core['name'], 'solarium', json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]
-                );
-                $engineId = (int) $connection->lastInsertId();
             }
-            $coreToEngine[$coreId] = $engineId;
-        }
-
-        // 2. Move the maps to the engine.
-        $hasEngineColumn = (bool) $connection->fetchOne(
-            "SHOW COLUMNS FROM `solr_map` LIKE 'engine_id'"
-        );
-        if (!$hasEngineColumn) {
-            // The column identifies the owner of the map, so it is created
-            // right after the id, like in the schema of a new install.
-            $connection->executeStatement('ALTER TABLE `solr_map` ADD `engine_id` INT DEFAULT NULL AFTER `id`;');
-        }
-        foreach ($coreToEngine as $coreId => $engineId) {
+        } else {
+            $engineSettings = [
+                'resource_types' => ['items', 'item_sets'],
+                'solr' => $solrSettings,
+            ];
             $connection->executeStatement(
-                'UPDATE `solr_map` SET `engine_id` = ? WHERE `solr_core_id` = ?;',
-                [$engineId, $coreId]
+                'INSERT INTO `search_engine` (`name`, `adapter`, `settings`, `created`, `modified`) VALUES (?, ?, ?, NOW(), NOW());',
+                [$core['name'], 'solarium', json_encode($engineSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]
             );
+            $engineId = (int) $connection->lastInsertId();
         }
+        $coreToEngine[$coreId] = $engineId;
+    }
 
-        // 3. Drop the legacy column with its constraint and indexes, whose
-        // names may differ between installs, then finalize the new column.
-        $foreignKeys = $connection->fetchFirstColumn(
-            "SELECT DISTINCT `CONSTRAINT_NAME` FROM `information_schema`.`KEY_COLUMN_USAGE`
-            WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` = 'solr_map'
-                AND `COLUMN_NAME` = 'solr_core_id' AND `REFERENCED_TABLE_NAME` IS NOT NULL"
+    // 2. Move the maps to the engine of their core.
+    foreach ($coreToEngine as $coreId => $engineId) {
+        $connection->executeStatement(
+            'UPDATE `solr_map` SET `engine_id` = ? WHERE `solr_core_id` = ?;',
+            [$engineId, $coreId]
         );
-        foreach ($foreignKeys as $foreignKey) {
-            $connection->executeStatement("ALTER TABLE `solr_map` DROP FOREIGN KEY `$foreignKey`;");
-        }
-        $indexes = $connection->fetchFirstColumn(
-            "SELECT DISTINCT `INDEX_NAME` FROM `information_schema`.`STATISTICS`
-            WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` = 'solr_map'
-                AND `COLUMN_NAME` = 'solr_core_id' AND `INDEX_NAME` != 'PRIMARY'"
-        );
-        foreach ($indexes as $index) {
-            $connection->executeStatement("ALTER TABLE `solr_map` DROP INDEX `$index`;");
-        }
-        $connection->executeStatement('ALTER TABLE `solr_map` DROP COLUMN `solr_core_id`;');
-        $connection->executeStatement('ALTER TABLE `solr_map` MODIFY `engine_id` INT NOT NULL AFTER `id`;');
-        $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A (`engine_id`);');
-        $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A5103DEBC (`engine_id`, `resource_name`);');
-        $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A4DEF17BC (`engine_id`, `field_name`);');
-        $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0AE16C6B94 (`engine_id`, `alias`);');
-        $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A5F8A7F73 (`engine_id`, `source`);');
-        $connection->executeStatement('ALTER TABLE `solr_map` ADD CONSTRAINT FK_39A565C5E78C9C0A FOREIGN KEY (`engine_id`) REFERENCES `search_engine` (`id`) ON DELETE CASCADE;');
+    }
 
-        // 4. The core table is merged: drop it.
-        $connection->executeStatement('DROP TABLE `solr_core`;');
-
-        $messenger->addSuccess(new PsrMessage(
-            'The Solr cores were merged into their search engines: the connection and the maps now belong to the engine directly.' // @translate
+    // 3. Drop the legacy column with its constraint and indexes, whose
+    // names may differ between installs, then finalize the new column.
+    //
+    // Only when every map has an engine: a map whose core is missing cannot be
+    // attached, and the legacy column is the only way to recover it later, so
+    // it is kept, with the table of the cores, until the issue is fixed.
+    $mapsOrphan = (int) $connection->fetchOne(
+        'SELECT COUNT(`id`) FROM `solr_map` WHERE `engine_id` IS NULL'
+    );
+    if ($mapsOrphan) {
+        $messenger->addWarning(new PsrMessage(
+            'The Solr cores were merged into their search engines, but the maps attached to no core were kept aside ({count}), so the old table was not removed. Check the search engines and their maps.', // @translate
+            ['count' => $mapsOrphan]
         ));
+        return;
+    }
+
+    $foreignKeys = $connection->fetchFirstColumn(
+        "SELECT DISTINCT `CONSTRAINT_NAME` FROM `information_schema`.`KEY_COLUMN_USAGE`
+        WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` = 'solr_map'
+            AND `COLUMN_NAME` = 'solr_core_id' AND `REFERENCED_TABLE_NAME` IS NOT NULL"
+    );
+    foreach ($foreignKeys as $foreignKey) {
+        $connection->executeStatement("ALTER TABLE `solr_map` DROP FOREIGN KEY `$foreignKey`;");
+    }
+    $indexes = $connection->fetchFirstColumn(
+        "SELECT DISTINCT `INDEX_NAME` FROM `information_schema`.`STATISTICS`
+        WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` = 'solr_map'
+            AND `COLUMN_NAME` = 'solr_core_id' AND `INDEX_NAME` != 'PRIMARY'"
+    );
+    foreach ($indexes as $index) {
+        $connection->executeStatement("ALTER TABLE `solr_map` DROP INDEX `$index`;");
+    }
+    $connection->executeStatement('ALTER TABLE `solr_map` DROP COLUMN `solr_core_id`;');
+    $connection->executeStatement('ALTER TABLE `solr_map` MODIFY `engine_id` INT NOT NULL AFTER `id`;');
+    $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A (`engine_id`);');
+    $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A5103DEBC (`engine_id`, `resource_name`);');
+    $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A4DEF17BC (`engine_id`, `field_name`);');
+    $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0AE16C6B94 (`engine_id`, `alias`);');
+    $connection->executeStatement('ALTER TABLE `solr_map` ADD INDEX IDX_39A565C5E78C9C0A5F8A7F73 (`engine_id`, `source`);');
+    $connection->executeStatement('ALTER TABLE `solr_map` ADD CONSTRAINT FK_39A565C5E78C9C0A FOREIGN KEY (`engine_id`) REFERENCES `search_engine` (`id`) ON DELETE CASCADE;');
+
+    // 4. The core table is merged: drop it.
+    $connection->executeStatement('DROP TABLE `solr_core`;');
+
+    $messenger->addSuccess(new PsrMessage(
+        'The Solr cores were merged into their search engines: the connection and the maps now belong to the engine directly.' // @translate
+    ));
+};
+
+if (version_compare($oldVersion, '3.5.70', '<')) {
+    // The migration runs first, so the next steps work on the new model.
+    if ($connection->fetchOne("SHOW TABLES LIKE 'solr_core'")) {
+        $migrateSolrCoresToEngines();
     }
 
     // The query relevance settings (minimum match, tie breaker) are a facet of
@@ -1780,6 +1812,15 @@ if (version_compare($oldVersion, '3.5.70', '<')) {
     if ($firstEngineId) {
         $this->createDefaultSearchEngines($connection, $firstEngineId, $messenger, $url);
     }
+}
+
+// Repair an upgrade to 3.5.70 interrupted before the merge of the cores: the
+// version is recorded first, so its block does not run any more and the
+// connection, the settings and the maps stay in the legacy model, unusable.
+// The remaining table is the witness, so the migration is replayed here, on
+// any later upgrade. A no-op once the merge is done.
+if ($connection->fetchOne("SHOW TABLES LIKE 'solr_core'")) {
+    $migrateSolrCoresToEngines();
 }
 
 // Not version-gated on purpose: the finalization must retry on every later
