@@ -82,6 +82,14 @@ class CoreController extends AbstractActionController
     protected $configAliases = [];
 
     /**
+     * Property terms with at least one value, keyed by term, or null when not
+     * loaded: an alias groups many properties, often unused.
+     *
+     * @var array|null
+     */
+    protected $propertyTermsWithValues = null;
+
+    /**
      * The structure should be the same in import and export.
      *
      * @see self::importSolrMapping()
@@ -2011,6 +2019,14 @@ class CoreController extends AbstractActionController
                 continue;
             }
             $this->configAliases = $config->subSetting('index', 'aliases', []) ?: [];
+            if ($this->configAliases && $this->propertyTermsWithValues === null) {
+                $this->propertyTermsWithValues = array_flip($connection->fetchFirstColumn(
+                    'SELECT CONCAT(vo.prefix, ":", pr.local_name)
+                    FROM property pr
+                    INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
+                    WHERE EXISTS (SELECT 1 FROM value v WHERE v.property_id = pr.id)'
+                ));
+            }
             // Facets need _ss (or _i for ranges). For range facets with an
             // interval end ("field_end"), the field names already carry the
             // bound suffix (_min_i / _max_i): the regex in
@@ -2083,10 +2099,11 @@ class CoreController extends AbstractActionController
                     strpos((string) $fieldName, ':') === false ? [] : ['_txt']
                 );
             }
-            // Aliases need _txt (fulltext search).
+            // Aliases need _txt (fulltext search), only for the properties with
+            // values.
             foreach ($config->subSetting('index', 'aliases', []) as $alias) {
                 foreach ($alias['fields'] ?? [] as $v) {
-                    if (strpos($v, ':') !== false) {
+                    if (strpos($v, ':') !== false && $this->hasPropertyValues($v)) {
                         $usedFields[$v]['_txt'] = true;
                     }
                 }
@@ -2959,13 +2976,17 @@ class CoreController extends AbstractActionController
         bool $isFromConfig = false
     ): void {
         // An alias of the config groups several indexes, so its fields are the
-        // used ones. It is removed while resolving to avoid a loop.
+        // used ones, except the properties without values. It is removed while
+        // resolving to avoid a loop.
         $aliasFields = $this->configAliases[$value]['fields'] ?? null;
         if ($aliasFields) {
             $aliases = $this->configAliases;
             unset($this->configAliases[$value]);
             foreach ((array) $aliasFields as $aliasField) {
-                $this->collectFieldAsProperty((string) $aliasField, $usedFields, $suffixes, $isFromConfig);
+                $aliasField = (string) $aliasField;
+                if (strpos($aliasField, ':') === false || $this->hasPropertyValues($aliasField)) {
+                    $this->collectFieldAsProperty($aliasField, $usedFields, $suffixes, $isFromConfig);
+                }
             }
             $this->configAliases = $aliases;
             return;
@@ -3011,6 +3032,15 @@ class CoreController extends AbstractActionController
         foreach ($suffixes as $suffix) {
             $usedFields[$term][$suffix] = true;
         }
+    }
+
+    /**
+     * Check if a property term has values, or if the values were not loaded.
+     */
+    protected function hasPropertyValues(string $term): bool
+    {
+        return $this->propertyTermsWithValues === null
+            || isset($this->propertyTermsWithValues[$term]);
     }
 
     protected function collectBounceProperties(
