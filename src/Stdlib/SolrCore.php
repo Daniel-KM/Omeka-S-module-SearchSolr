@@ -1885,7 +1885,18 @@ class SolrCore
 
         $result = json_decode($response, true);
         if (isset($result['error'])) {
-            return $result['error']['msg'] ?? 'Unknown error';
+            // The schema api returns a generic message ("error processing
+            // commands") and the real reasons in the details, for example
+            // "Field type 'x' already exists", that the callers check to
+            // replace it.
+            $messages = [];
+            foreach ($result['error']['details'] ?? [] as $detail) {
+                foreach ((array) ($detail['errorMessages'] ?? []) as $message) {
+                    $messages[] = trim((string) $message);
+                }
+            }
+            $msg = $result['error']['msg'] ?? 'Unknown error';
+            return $messages ? $msg . ': ' . implode(' ', $messages) : $msg;
         }
 
         return true;
