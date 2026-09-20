@@ -2508,6 +2508,34 @@ class CoreController extends AbstractActionController
                 $existingFieldNames[] = $fieldName;
             }
 
+            // Language text indexes, with the analyzer of the language, so a
+            // search from a site matches the inflected forms of its language
+            // (stemming, stop words, elisions). The analyzer is set by the
+            // dynamic fields "*_txt_{suffix}" of the default schema.
+            if (isset($requiredSuffixes['_txt']) && !$numericType) {
+                foreach ($langsByTerm[$term] ?? [] as $lang => $langCodes) {
+                    $solrSuffix = \SearchSolr\Stdlib\LanguageCodes::toSolrSuffix((string) $lang);
+                    $fieldName = $base . '_txt_' . $solrSuffix;
+                    if ($solrSuffix === '' || in_array($fieldName, $existingFieldNames)) {
+                        continue;
+                    }
+                    $isAudit || $api->create('solr_maps', [
+                        'o:solr_core' => ['o:id' => $id],
+                        'o:resource_name' => 'resources',
+                        'o:field_name' => $fieldName,
+                        'o:source' => $term,
+                        'o:pool' => [
+                            'filter_languages' => $langCodes,
+                            'filter_languages_no_lang' => true,
+                        ],
+                        'o:settings' => ['formatter' => '']
+                            + ['label' => ($propertyLabels[$term] ?? $term) . ' (' . $lang . ')', 'origin' => 'sync'],
+                    ]);
+                    $created[] = $fieldName;
+                    $existingFieldNames[] = $fieldName;
+                }
+            }
+
             // Language indexes, for facets and filters by language, so a site
             // displays the values of its own locale. They are built on the
             // exact-value index, skipped for long values like the plain one.

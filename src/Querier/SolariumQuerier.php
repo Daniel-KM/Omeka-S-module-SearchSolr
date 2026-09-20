@@ -7,6 +7,7 @@ use AdvancedSearch\Querier\Exception\QuerierException;
 use AdvancedSearch\Query;
 use AdvancedSearch\Response;
 use AdvancedSearch\Stdlib\SearchResources;
+use SearchSolr\Stdlib\LanguageCodes;
 use SearchSolr\Stdlib\SolrCore as SolrCoreRepresentation;
 use Solarium\Client as SolariumClient;
 use Solarium\QueryType\Select\Query\Query as SelectQuery;
@@ -271,6 +272,57 @@ class SolariumQuerier extends AbstractQuerier
     }
 
     /**
+     * Get the text indexes of the language of the site, boosted.
+     *
+     * The alignment creates a text index by language ("{base}_txt_{suffix}")
+     * with the analyzer of the language, so a query matches the inflected forms
+     * of words. The neutral indexes are still queried, so the records without
+     * translation are found too, with a lower score.
+     */
+    protected function siteLanguageQueryFields(): array
+    {
+        if (!$this->query->getSiteId()) {
+            return [];
+        }
+        $suffix = LanguageCodes::toSolrSuffix(LanguageCodes::toIso1($this->resolveTranslatorLocale()));
+        if ($suffix === '') {
+            return [];
+        }
+        $fields = [];
+        foreach (array_keys($this->solrCore->mapsByFieldName()) as $fieldName) {
+            if (substr((string) $fieldName, -strlen('_txt_' . $suffix)) === '_txt_' . $suffix) {
+                $fields[] = $fieldName . '^2';
+            }
+        }
+        return $fields;
+    }
+
+    /**
+     * Get the language index of an exact-value field for the given languages.
+     *
+     * The alignment creates an index by language ("{base}_{lang}_ss") for the
+     * multilingual properties, that contains the values without language too.
+     * It is used only when the languages match a single one, the empty language
+     * being the values without language, and when the index is mapped: the
+     * dynamic field "*_ss" accepts any name, even an index that is not filled.
+     */
+    protected function languageField(string $field, array $languages): string
+    {
+        if (!$languages || substr($field, -3) !== '_ss') {
+            return $field;
+        }
+        $isoCodes = array_unique(array_filter(array_map(
+            fn ($language): string => LanguageCodes::toIso1((string) $language),
+            $languages
+        )));
+        if (count($isoCodes) !== 1) {
+            return $field;
+        }
+        $languageField = substr($field, 0, -3) . '_' . reset($isoCodes) . '_ss';
+        return $this->solrCore->mapsByFieldName($languageField) ? $languageField : $field;
+    }
+
+    /**
      * Build suggester names from settings.
      *
      * @return array|string Suggester name(s) to query.
@@ -422,6 +474,13 @@ class SolariumQuerier extends AbstractQuerier
                 }
                 return $f;
             }, $fields);
+
+            // A filter limited to the language of the site lists the values of
+            // the language index.
+            $languages = $this->query->getFieldsQueryArgs()[$field]['lang'] ?? [];
+            if ($languages) {
+                $fields = array_map(fn ($f) => $this->languageField($f, (array) $languages), $fields);
+            }
 
             $isPublicField = $this->solrCoreField('is_public');
             $sitesField = $this->solrCoreField('site/o:id');
@@ -866,15 +925,18 @@ class SolariumQuerier extends AbstractQuerier
 
         $dismax = $this->select->getDisMax();
 
+        // The text indexes of the language of the site are added to the other
+        // query fields, whatever they are.
+        $languageFields = $this->siteLanguageQueryFields();
+
         // Use catchall field _text_ if available.
         // Add only fields with custom boosts (≠1) for scoring priority.
         if ($this->solrCore->schema()->checkDefaultField()) {
-            $boostedFields = $this->getCustomBoostedFields();
-            if ($boostedFields) {
-                $dismax->setQueryFields('_text_ ' . implode(' ', $boostedFields));
-            } else {
-                $dismax->setQueryFields('_text_');
-            }
+            $dismax->setQueryFields(implode(' ', array_merge(
+                ['_text_'],
+                $this->getCustomBoostedFields(),
+                $languageFields
+            )));
             return $this;
         }
 
@@ -890,7 +952,7 @@ class SolariumQuerier extends AbstractQuerier
                 fn ($p) => isset($allowed[preg_replace('~\^.*$~', '', $p)])
             );
             if ($kept) {
-                $kept = array_slice($kept, 0, $maxFields);
+                $kept = array_slice(array_merge($languageFields, $kept), 0, $maxFields);
                 $dismax->setQueryFields(implode(' ', $kept));
             }
             return $this;
@@ -909,7 +971,7 @@ class SolariumQuerier extends AbstractQuerier
                     $rest[] = $field;
                 }
             }
-            $foldable = array_merge($priority, $rest);
+            $foldable = array_merge($languageFields, $priority, $rest);
             $foldable = array_slice($foldable, 0, $maxFields);
             $dismax->setQueryFields(implode(' ', $foldable));
         }
@@ -1143,6 +1205,12 @@ class SolariumQuerier extends AbstractQuerier
                 continue;
             }
             $data['field'] = $field;
+
+            // A facet limited to the language of the site lists the values of
+            // the language index, that contains the values without language.
+            if (!in_array($data['type'] ?? '', ['Range', 'RangeDouble', 'SelectRange'])) {
+                $data['field'] = $this->languageField($field, $data['languages'] ?? []);
+            }
 
             // Handle range facets.
             if (in_array($data['type'] ?? '', ['Range', 'RangeDouble', 'SelectRange'])) {
