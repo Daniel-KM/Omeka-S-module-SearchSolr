@@ -43,6 +43,7 @@ use SearchSolr\Api\Adapter\TraitArrayFilterRecursiveEmptyValue;
 use SearchSolr\Stdlib\SolrCore as SolrCoreRepresentation;
 use SearchSolr\Form\Admin\SolrCoreForm;
 use SearchSolr\Form\Admin\SolrCoreMappingImportForm;
+use SearchSolr\Querier\SolariumQuerier;
 use SearchSolr\ValueExtractor\Manager as ValueExtractorManager;
 
 class CoreController extends AbstractActionController
@@ -72,6 +73,13 @@ class CoreController extends AbstractActionController
      * @var array
      */
     protected $fieldsUnresolved = [];
+
+    /**
+     * Aliases of the config being collected, resolved like the querier does.
+     *
+     * @var array
+     */
+    protected $configAliases = [];
 
     /**
      * The structure should be the same in import and export.
@@ -2002,6 +2010,7 @@ class CoreController extends AbstractActionController
             ) {
                 continue;
             }
+            $this->configAliases = $config->subSetting('index', 'aliases', []) ?: [];
             // Facets need _ss (or _i for ranges). For range facets with an
             // interval end ("field_end"), the field names already carry the
             // bound suffix (_min_i / _max_i): the regex in
@@ -2104,6 +2113,8 @@ class CoreController extends AbstractActionController
                 }
             }
         }
+
+        $this->configAliases = [];
 
         // Boosts set on the core itself apply to every config using it, so they
         // are always collected: a boosted field must exist in the index, else
@@ -2754,13 +2765,13 @@ class CoreController extends AbstractActionController
             // The real value of the audit: a config may use a field that the
             // alignment cannot map, so it is never created and the search fails
             // on an undefined field, silently until then.
-            $this->messageFieldsDangling($existingFieldNames);
+            $this->messageFieldsDangling($solrCore, $existingFieldNames);
             return $this->redirect()->toRoute(
                 'admin/search-manager/solr/core-id', ['id' => $id]
             );
         }
 
-        $this->messageFieldsDangling($existingFieldNames);
+        $this->messageFieldsDangling($solrCore, $existingFieldNames);
 
         $this->messenger()->addSuccess(new PsrMessage(
             'Sync complete (sources: {sources}, cleaning: {cleaning}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
@@ -2831,14 +2842,18 @@ class CoreController extends AbstractActionController
      * be created by the alignment, that ignores it silently. It is a real issue
      * only when no map provides it: the field is then absent from the index and
      * Solr answers "undefined field" as soon as the facet or the filter is
-     * used. The system fields, that are mapped without being built on a
-     * property, are not concerned.
+     * used. The system fields, like "resource_class_id", are resolved to the
+     * source of their map, like the querier does.
      *
      * @param string[] $existingFieldNames
      */
-    protected function messageFieldsDangling(array $existingFieldNames): void
+    protected function messageFieldsDangling(SolrCoreRepresentation $solrCore, array $existingFieldNames): void
     {
-        $fieldsDangling = array_diff(array_keys($this->fieldsUnresolved), $existingFieldNames);
+        $fieldsDangling = array_filter(
+            array_diff(array_keys($this->fieldsUnresolved), $existingFieldNames),
+            fn ($field): bool => !isset(SolariumQuerier::SYSTEM_SOURCES[$field])
+                || !$solrCore->mapsBySource(SolariumQuerier::SYSTEM_SOURCES[$field])
+        );
         if (!$fieldsDangling) {
             return;
         }
@@ -2943,6 +2958,19 @@ class CoreController extends AbstractActionController
         array $suffixes = [],
         bool $isFromConfig = false
     ): void {
+        // An alias of the config groups several indexes, so its fields are the
+        // used ones. It is removed while resolving to avoid a loop.
+        $aliasFields = $this->configAliases[$value]['fields'] ?? null;
+        if ($aliasFields) {
+            $aliases = $this->configAliases;
+            unset($this->configAliases[$value]);
+            foreach ((array) $aliasFields as $aliasField) {
+                $this->collectFieldAsProperty((string) $aliasField, $usedFields, $suffixes, $isFromConfig);
+            }
+            $this->configAliases = $aliases;
+            return;
+        }
+
         $term = null;
         if (strpos($value, ':') !== false) {
             $term = $value;

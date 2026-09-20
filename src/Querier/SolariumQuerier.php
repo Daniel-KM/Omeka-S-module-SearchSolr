@@ -71,6 +71,42 @@ class SolariumQuerier extends AbstractQuerier
     protected array $solrCoreFieldCache = [];
 
     /**
+     * System field aliases, mapped to the source of their map.
+     *
+     * A config made for the internal engine uses keys like
+     * "resource_template_id"; they are mapped to the Solr field via the map
+     * source, so facets, filters and sorts still resolve after switching to
+     * Solr.
+     */
+    public const SYSTEM_SOURCES = [
+        'resource_type' => 'resource_name',
+        'resource_name' => 'resource_name',
+        'is_public' => 'is_public',
+        'id' => 'o:id',
+        'owner_id' => 'owner/o:id',
+        'site_id' => 'site/o:id',
+        'resource_class_id' => 'resource_class/o:term',
+        'resource_class_term' => 'resource_class/o:term',
+        'resource_template_id' => 'resource_template/o:label',
+        'item_set_id' => 'item_set/o:id',
+        'has_media' => 'has_media',
+        'has_original' => 'has_original',
+        'has_thumbnails' => 'has_thumbnails',
+        'media_type' => 'o:media_type',
+        'media_types' => 'media/o:media_type',
+        'item_id' => 'item/o:id',
+        'is_open' => 'is_open',
+        'asset_id' => 'asset',
+        // Pseudo-field for "any property" rows and the arg "search".
+        'property_values' => 'property_values',
+        // Standard sort keys.
+        'created' => 'created',
+        'modified' => 'modified',
+        'changed' => 'changed',
+        'title' => 'o:title',
+    ];
+
+    /**
      * Flag to track if aliases have been appended.
      */
     protected bool $aliasesAppended = false;
@@ -2846,38 +2882,8 @@ class SolariumQuerier extends AbstractQuerier
             return is_array($result) ? reset($result) : $result;
         }
 
-        // System field aliases: a config made for the internal engine uses keys
-        // like "resource_template_id"; map them to the Solr field via the map
-        // source, so facets/filters/sort still resolve after switching to Solr.
-        static $systemSources = [
-            'resource_type' => 'resource_name',
-            'resource_name' => 'resource_name',
-            'is_public' => 'is_public',
-            'id' => 'o:id',
-            'owner_id' => 'owner/o:id',
-            'site_id' => 'site/o:id',
-            'resource_class_id' => 'resource_class/o:term',
-            'resource_class_term' => 'resource_class/o:term',
-            'resource_template_id' => 'resource_template/o:label',
-            'item_set_id' => 'item_set/o:id',
-            'has_media' => 'has_media',
-            'has_original' => 'has_original',
-            'has_thumbnails' => 'has_thumbnails',
-            'media_type' => 'o:media_type',
-            'media_types' => 'media/o:media_type',
-            'item_id' => 'item/o:id',
-            'is_open' => 'is_open',
-            'asset_id' => 'asset',
-            // Pseudo-field for "any property" rows and the arg "search".
-            'property_values' => 'property_values',
-            // Standard sort keys.
-            'created' => 'created',
-            'modified' => 'modified',
-            'changed' => 'changed',
-            'title' => 'o:title',
-        ];
-        if (isset($systemSources[$field])) {
-            $maps = $this->solrCore->mapsBySource($systemSources[$field]);
+        if (isset(self::SYSTEM_SOURCES[$field])) {
+            $maps = $this->solrCore->mapsBySource(self::SYSTEM_SOURCES[$field]);
             if ($maps) {
                 return reset($maps)->fieldName();
             }
