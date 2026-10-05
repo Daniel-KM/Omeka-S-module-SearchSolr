@@ -642,7 +642,7 @@ abstract class AbstractResourceEntityValueExtractor implements ValueExtractorInt
      */
     protected function extractReservedGroupIds(AbstractEntityRepresentation $resource): array
     {
-        if (!class_exists(\Group\Entity\GroupResource::class)) {
+        if (!class_exists(\Group\Entity\GroupResource::class, false)) {
             return [];
         }
         $resourceId = (int) $resource->id();
