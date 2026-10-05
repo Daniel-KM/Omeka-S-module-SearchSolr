@@ -908,7 +908,7 @@ class SolrCore
      * place of each usage are kept, for display.
      *
      * @return array Field name => usage (facet, filter, sort, query,
-     * suggester, settings) => list of places.
+     * suggester, bounce) => list of places.
      */
     public function listFieldUsages(): array
     {
@@ -1005,7 +1005,7 @@ class SolrCore
         // site settings and from the pivot query types.
         foreach (array_keys($existingFields) as $fieldName) {
             if (substr($fieldName, -8) === '_link_ss') {
-                $usages[$fieldName]['settings']['bounce links'] = true;
+                $usages[$fieldName]['bounce']['bounce links'] = true;
             } elseif (substr($fieldName, -8) === '_link_is') {
                 $usages[$fieldName]['query']['resource query'] = true;
             }
@@ -1042,7 +1042,7 @@ class SolrCore
 
     /**
      * List the maps that serve nothing: referenced by no usage (facet, filter,
-     * sort, query, suggester, settings), neither required nor system, and not
+     * sort, query, suggester, bounce), neither required nor system, and not
      * manual nor customized. They can be removed safely.
      *
      * @return \SearchSolr\Api\Representation\SolrMapRepresentation[] By id.
