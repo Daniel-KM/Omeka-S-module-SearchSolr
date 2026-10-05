@@ -224,11 +224,11 @@ class Date extends AbstractValueFormatter
             }
         } else {
             // The edtf-php library is not installed: minimal fallback for the
-            // common patterns (year, year-month, year-month-day, negative
-            // years, interval with open bounds), so the year and date indexes
-            // keep working without the dependency. Full EDTF (seasons,
+            // common patterns (year, year-month, year-month-day, date time,
+            // negative years, interval with open bounds), so the year and date
+            // indexes keep working without the dependency. Full EDTF (seasons,
             // uncertainty…) needs the library.
-            $result = $this->boundsFallback($edtfString);
+            $result = $this->boundsFallback($edtfString, $dateOnly);
         }
 
         // Within a resource the same date repeats across maps (cache hit);
@@ -246,19 +246,26 @@ class Date extends AbstractValueFormatter
      *
      * @return array [min, max], as iso date strings or nulls.
      */
-    protected function boundsFallback(string $edtfString): array
+    protected function boundsFallback(string $edtfString, bool $dateOnly = false): array
     {
-        $parsePart = function (string $part, bool $isMax): ?string {
+        $parsePart = function (string $part, bool $isMax) use ($dateOnly): ?string {
             $part = trim($part);
             if ($part === '' || $part === '..') {
                 return null;
             }
-            if (!preg_match('~^(-?\d{1,6})(?:-(\d{2}))?(?:-(\d{2}))?$~', $part, $m)) {
+            if (!preg_match('~^(-?\d{1,6})(?:-(\d{2}))?(?:-(\d{2}))?(?:T(\d{2}):(\d{2})(?::(\d{2}))?Z?)?$~', $part, $m)) {
                 return null;
             }
             $year = (int) $m[1];
             $month = isset($m[2]) && $m[2] !== '' ? (int) $m[2] : null;
             $day = isset($m[3]) && $m[3] !== '' ? (int) $m[3] : null;
+            $hasTime = isset($m[4]) && $m[4] !== '';
+            $hour = $hasTime ? (int) $m[4] : null;
+            $minute = $hasTime ? (int) $m[5] : null;
+            $second = $hasTime && isset($m[6]) && $m[6] !== '' ? (int) $m[6] : 0;
+            if ($hasTime && ($day === null || $hour > 23 || $minute > 59 || $second > 59)) {
+                return null;
+            }
             if ($month !== null && ($month < 1 || $month > 12)) {
                 return null;
             }
@@ -270,7 +277,13 @@ class Date extends AbstractValueFormatter
             } elseif ($day < 1 || $day > 31) {
                 return null;
             }
-            return sprintf('%s%04d-%02d-%02d', $year < 0 ? '-' : '', abs($year), $month, $day);
+            return $this->formatIso(
+                $year, $month, $day,
+                $hasTime ? $hour : ($isMax ? 23 : 0),
+                $hasTime ? $minute : ($isMax ? 59 : 0),
+                $hasTime ? $second : ($isMax ? 59 : 0),
+                $dateOnly
+            );
         };
 
         $parts = explode('/', $edtfString, 2);
