@@ -1931,7 +1931,7 @@ class CoreController extends AbstractActionController
                     ->setTerminal(true)
                     ->setTemplate('search-solr/admin/core/sync-maps-sidebar');
             }
-            $sources = ['configs', 'settings', 'site_settings'];
+            $sources = ['configs', 'bounce'];
             if ($scopeQuery === 'templates') {
                 $sources[] = 'templates';
             } elseif ($scopeQuery === 'used') {
@@ -1960,18 +1960,20 @@ class CoreController extends AbstractActionController
                 return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
             }
             $data = $form->getData();
-            $sources = $data['sync_sources'] ?: ['configs'];
+            $sources = $data['sync_sources'] ?: ['configs', 'bounce'];
             $clean = (bool) ($data['clean'] ?? false);
             $multilingual = (bool) ($data['multilingual'] ?? false);
             $maxCardinality = (int) ($data['max_cardinality'] ?? 100);
             $isAudit = ($data['mode'] ?? 'sync') === 'audit';
         }
         if (in_array('all', $sources, true)) {
-            $sources = ['configs', 'settings', 'site_settings', 'templates', 'used', 'media', 'datatypes'];
+            $sources = ['configs', 'bounce', 'templates', 'used', 'media', 'datatypes'];
         }
         $wantConfigs = in_array('configs', $sources, true);
-        $wantSettings = in_array('settings', $sources, true);
-        $wantSiteSettings = in_array('site_settings', $sources, true);
+        // The bounce links are managed by the module Advanced Resource
+        // Template, from the main settings (admin) and the site settings.
+        $wantBounce = in_array('bounce', $sources, true)
+            && class_exists('AdvancedResourceTemplate\Module', false);
         $wantTemplates = in_array('templates', $sources, true);
         $wantUsed = in_array('used', $sources, true);
         // The text index of a numeric property is useless in most cases, but
@@ -2163,11 +2165,9 @@ class CoreController extends AbstractActionController
         }
 
         // 3. Bounce links from AdvancedResourceTemplate whitelist/blacklist,
-        // from the main settings and/or the site settings when checked.
-        $linkFields = ($wantSettings || $wantSiteSettings)
-            ? $this->collectBounceProperties(
-                $settings, $siteSettings, $connection, $wantSettings, $wantSiteSettings
-            )
+        // from the main settings and the site settings.
+        $linkFields = $wantBounce
+            ? $this->collectBounceProperties($settings, $siteSettings, $connection)
             : [];
         foreach ($linkFields as $term) {
             if (!isset($usedFields[$term])) {
@@ -3056,14 +3056,26 @@ class CoreController extends AbstractActionController
             // Compound interval suffixes (_min_i / _max_i / _min_l / _max_l)
             // are matched before the simple suffixes thanks to the alternation
             // order: longest alternatives first.
-            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|link_is|fold_s|txt|ss|s|dt|is|ls|i|l|b|ps)$/',
+            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|link_is|fold_s|txt_[a-z]{2,3}|txt|ss|s|dt|is|ls|i|l|b|ps)$/',
             $value,
             $m
         )) {
             $term = $m[1] . ':' . $m[2];
+            $suffix = '_' . $m[3];
+            // A language index ("_txt_fr", "_fr_ss") is built with the index of
+            // the property itself.
+            if (strncmp($suffix, '_txt_', 5) === 0) {
+                $suffix = '_txt';
+            } elseif ($suffix === '_ss'
+                && !$this->easyMeta()->propertyTerm($term)
+                && preg_match('/^(.+)_[a-z]{2}$/', $m[2], $matches)
+                && $this->easyMeta()->propertyTerm($m[1] . ':' . $matches[1])
+            ) {
+                $term = $m[1] . ':' . $matches[1];
+            }
             // The suffix is already known from the field name.
             if (empty($suffixes)) {
-                $suffixes = ['_' . $m[3]];
+                $suffixes = [$suffix];
             }
         }
         // The score of the engine is a sort key, not an index of the schema.
