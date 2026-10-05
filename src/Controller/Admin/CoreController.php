@@ -2783,12 +2783,14 @@ class CoreController extends AbstractActionController
             // alignment cannot map, so it is never created and the search fails
             // on an undefined field, silently until then.
             $this->messageFieldsDangling($solrCore, $existingFieldNames);
+            $this->messageVisibilityOfValues($solrCore);
             return $this->redirect()->toRoute(
                 'admin/search-manager/solr/core-id', ['id' => $id]
             );
         }
 
         $this->messageFieldsDangling($solrCore, $existingFieldNames);
+        $this->messageVisibilityOfValues($solrCore);
 
         $this->messenger()->addSuccess(new PsrMessage(
             'Sync complete (sources: {sources}, cleaning: {cleaning}). Properties collected: {props}. Maps before: {before}, deleted: {deleted}, kept (customized): {kept}, created: {created}.', // @translate
@@ -2877,6 +2879,61 @@ class CoreController extends AbstractActionController
         $this->messenger()->addError(new PsrMessage(
             'Fields used by a config but provided by no map: {list}. They cannot be created by the alignment, since they are neither a property nor an index built on one, and a query on them fails on an undefined field.', // @translate
             ['list' => implode(', ', $fieldsDangling)]
+        ));
+    }
+
+    /**
+     * Warn when the index contains private values and is used by a site.
+     *
+     * The query filters the resources by their visibility, but not the values:
+     * a private value indexed in a field of a public document, in particular
+     * the catchall of all the values, can be found through the public search,
+     * that returns a resource displaying nothing about the searched words.
+     */
+    protected function messageVisibilityOfValues(SolrCoreRepresentation $solrCore): void
+    {
+        $visibility = (string) $solrCore->searchEngine()->setting('visibility', 'all');
+        if ($visibility === 'public') {
+            return;
+        }
+
+        $searchConfigs = $solrCore->searchConfigs();
+        if (!$searchConfigs) {
+            return;
+        }
+
+        $services = $this->getEvent()->getApplication()->getServiceManager();
+
+        /** @var \Omeka\Settings\SiteSettings $siteSettings */
+        $siteSettings = $services->get('Omeka\Settings\Site');
+        $siteIds = $services->get('Omeka\Connection')
+            ->executeQuery('SELECT `id` FROM `site` ORDER BY `id` ASC')
+            ->fetchFirstColumn();
+
+        // A search page is public as soon as it is available in a site.
+        $configsInSites = [];
+        foreach ($siteIds as $siteId) {
+            $siteSettings->setTargetId((int) $siteId);
+            $available = $siteSettings->get('advancedsearch_configs', []) ?: [];
+            $available = array_map('intval', is_array($available) ? $available : [$available]);
+            $main = $siteSettings->get('advancedsearch_main_config');
+            if ($main) {
+                $available[] = (int) $main;
+            }
+            foreach ($searchConfigs as $searchConfig) {
+                if (in_array($searchConfig->id(), $available, true)) {
+                    $configsInSites[$searchConfig->id()] = $searchConfig->name() ?: $searchConfig->slug();
+                }
+            }
+        }
+
+        if (!$configsInSites) {
+            return;
+        }
+
+        $this->messenger()->addError(new PsrMessage(
+            'The engine indexes the private values (visibility "{visibility}"), but it is used by the search pages of a site: {names}. A private value can be found by any visitor, because the query filters the visibility of the resources, not the one of the values. Set the visibility of the engine to "public only" and reindex, or use another engine for the admin.', // @translate
+            ['visibility' => $visibility, 'names' => implode(', ', $configsInSites)]
         ));
     }
 
