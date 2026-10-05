@@ -239,7 +239,7 @@ $usageIcons = [
     'sort' => 'fas fa-sort-amount-down',
     'query' => 'fas fa-sliders-h',
     'suggester' => 'fas fa-keyboard',
-    'settings' => 'fas fa-cog',
+    'bounce' => 'fas fa-link',
 ];
 $usageLabels = [
     'required' => $translate('Required'),
@@ -251,7 +251,7 @@ $usageLabels = [
     'sort' => $translate('Sort'),
     'query' => $translate('Query'),
     'suggester' => $translate('Suggester'),
-    'settings' => $translate('Settings'),
+    'bounce' => $translate('Bounce links'),
 ];
 // One sentence by usage; the places are listed when there are some.
 $usageSentences = [
@@ -264,7 +264,7 @@ $usageSentences = [
     'sort' => $translate('Used in sorts: %s'),
     'query' => $translate('Used in queries: %s'),
     'suggester' => $translate('Used in suggesters: %s'),
-    'settings' => $translate('Used in settings: %s'),
+    'bounce' => $translate('Used by the bounce links (module Advanced Resource Template)'),
 ];
 $usageTitle = function (string $usage, array $places) use ($usageSentences): string {
     return strpos($usageSentences[$usage], '%s') === false

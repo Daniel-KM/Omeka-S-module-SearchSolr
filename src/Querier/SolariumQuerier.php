@@ -2428,7 +2428,9 @@ class SolariumQuerier extends AbstractQuerier
                 $subClauses = [];
                 foreach ($rowFields as $rowField) {
                     $resolved = $requireInteger
-                        ? ($this->fieldToIndexNumeric($rowField) ?? $this->fieldToIndex($rowField))
+                        ? ($this->fieldToIndexNumeric($rowField)
+                            ?? (in_array($type, ['res', 'nres'], true) ? $this->fieldToIndexLink($rowField) : null)
+                            ?? $this->fieldToIndex($rowField))
                         : $this->fieldToIndex($rowField);
                     // An arg that is neither an alias nor a map is used only
                     // when it is a real field of the schema: a query arg that
@@ -2991,11 +2993,14 @@ class SolariumQuerier extends AbstractQuerier
      */
     protected function fieldToIndexNumeric(string $field): ?string
     {
+        // An alias may target the string index of the values (titles), that
+        // cannot match ids, so it is used only when it is an integer index.
         $result = $this->query->getAliases()[$field]['fields'] ?? null;
         if ($result) {
-            return is_array($result)
-                ? reset($result)
-                : $result;
+            $result = is_array($result) ? reset($result) : $result;
+            if ($this->fieldIsInteger($result)) {
+                return $result;
+            }
         }
 
         // Handle special selection fields.
@@ -3027,6 +3032,34 @@ class SolariumQuerier extends AbstractQuerier
         }
 
         return $this->selectBestIndexNumeric($integerIndices);
+    }
+
+    /**
+     * Get the string index of the ids of the resources linked by a property.
+     *
+     * Used for the types res/nres when there is no integer index "_link_is":
+     * the index "_link_ss" stores the ids of the linked resources as strings,
+     * unlike "_ss" that stores their titles.
+     */
+    protected function fieldToIndexLink(string $field): ?string
+    {
+        $term = $this->easyMeta->propertyTerm($field);
+        if (!$term) {
+            return null;
+        }
+
+        $base = strtr($term, ':', '_');
+        $indices = $this->usedSolrFields(
+            [$base . '_'],
+            ['_' . $base],
+            []
+        );
+        foreach ($indices as $index) {
+            if (str_ends_with($index, '_link_ss')) {
+                return $index;
+            }
+        }
+        return null;
     }
 
     /**
