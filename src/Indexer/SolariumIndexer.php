@@ -153,6 +153,15 @@ class SolariumIndexer extends AbstractIndexer
     protected $valueFormatterCache = [];
 
     /**
+     * Ids of the resources sent to Solr during the job, by resource name.
+     *
+     * Used to purge the documents that were not reindexed after a full reindex.
+     *
+     * @var array
+     */
+    protected $processedResourceIds = [];
+
+    /**
      * Cached maps by resource name.
      *
      * @var array
@@ -331,6 +340,8 @@ class SolariumIndexer extends AbstractIndexer
         foreach ($resources as $resource) {
             $document = $this->prepareDocument($resource);
             if ($document) {
+                // Kept even if Solr rejects it: the old document remains valid.
+                $this->processedResourceIds[$resource->resourceName()][$resource->id()] = true;
                 try {
                     $this->buffer->addDocument($document);
                     ++$successCount;
@@ -483,6 +494,8 @@ class SolariumIndexer extends AbstractIndexer
      */
     public function onFullReindexed(): self
     {
+        $this->purgeUnprocessedDocuments();
+
         $solrCore = $this->getSolrCore();
 
         $isPublicI = null;
@@ -511,6 +524,74 @@ class SolariumIndexer extends AbstractIndexer
         );
 
         return $this;
+    }
+
+    /**
+     * Delete the documents of the index that were not processed by the job.
+     *
+     * A reindex without clearing only overwrites the processed documents, so
+     * the documents of resources made private or deleted outside of the api
+     * remain in the index. The purge is limited to the documents of the current
+     * server, index and indexed resource types.
+     */
+    protected function purgeUnprocessedDocuments(): void
+    {
+        if (!$this->processedResourceIds) {
+            return;
+        }
+
+        $this->getServerId();
+        $this->prepareIndexFieldAndName();
+
+        $resourceNames = array_filter(
+            $this->searchEngine->setting('resource_types', []),
+            [$this, 'canIndex']
+        );
+
+        $client = $this->getClient();
+        $total = 0;
+        foreach ($resourceNames as $resourceName) {
+            $processed = $this->processedResourceIds[$resourceName] ?? [];
+            // The document id ends with the resource id padded to 7 digits.
+            $prefix = substr($this->getDocumentId($resourceName, 0), 0, -7);
+            $prefixLength = strlen($prefix);
+
+            $select = $client->createSelect()
+                ->setQuery('{!prefix f=id}' . $prefix)
+                ->setFields(['id'])
+                ->setRows(10000)
+                ->addSort('id', 'asc')
+                ->setCursorMark('*');
+
+            $toDelete = [];
+            do {
+                $result = $client->select($select);
+                foreach ($result as $document) {
+                    $documentId = (string) $document->id;
+                    $resourceId = substr($documentId, $prefixLength);
+                    if (ctype_digit($resourceId) && !isset($processed[(int) $resourceId])) {
+                        $toDelete[] = $documentId;
+                    }
+                }
+                $cursorMark = $select->getCursorMark();
+                $nextCursorMark = $result->getNextCursorMark();
+                $select->setCursorMark((string) $nextCursorMark);
+            } while ($nextCursorMark && $nextCursorMark !== $cursorMark);
+
+            foreach (array_chunk($toDelete, 1000) as $documentIds) {
+                $client->update($client->createUpdate()->addDeleteByIds($documentIds));
+            }
+            $total += count($toDelete);
+        }
+
+        if ($total) {
+            $client->update($client->createUpdate()->addCommit());
+        }
+
+        $this->getLogger()->notice(
+            'Search index #{search_engine_id}: {count} documents not reindexed were removed from Solr.', // @translate
+            ['search_engine_id' => $this->searchEngine->id(), 'count' => $total]
+        );
     }
 
     public function deleteResource(string $resourceName, $resourceId): IndexerInterface
