@@ -2476,6 +2476,18 @@ class SolariumQuerier extends AbstractQuerier
                     if ($subClause) {
                         $subClauses[] = $subClause;
                     }
+                    // An exact filter on a uri (bounce link of a value with a
+                    // uri) must target the link index too: it stores the uris
+                    // while the value index stores the labels.
+                    if ($type === 'eq' && $this->isUriValue($val)) {
+                        $linkIndex = $this->fieldToIndexLink($rowField);
+                        if ($linkIndex && $linkIndex !== $name) {
+                            $subClause = $this->buildAdvancedFilterQuery($type, $val, $linkIndex, $wrap, $end);
+                            if ($subClause) {
+                                $subClauses[] = $subClause;
+                            }
+                        }
+                    }
                 }
 
                 if ($subClauses) {
@@ -3041,6 +3053,19 @@ class SolariumQuerier extends AbstractQuerier
      * the index "_link_ss" stores the ids of the linked resources as strings,
      * unlike "_ss" that stores their titles.
      */
+    /**
+     * Check if a filter value, or at least one of them, is a uri.
+     */
+    protected function isUriValue($val): bool
+    {
+        foreach (is_array($val) ? $val : [$val] as $v) {
+            if (is_string($v) && preg_match('~^https?://~i', $v)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected function fieldToIndexLink(string $field): ?string
     {
         $term = $this->easyMeta->propertyTerm($field);
