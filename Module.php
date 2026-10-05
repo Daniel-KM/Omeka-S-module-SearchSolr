@@ -166,19 +166,6 @@ class Module extends AbstractModule
             ))->setTranslator($translator);
         }
 
-        // The module Thesaurus, when installed, should be up to date, else the
-        // maps and the queries on thesaurus fields may not work. The check
-        // applies whether it is enabled or not, since its data remain, but not
-        // to a module only present on the disk.
-        if ($this->isModuleInstalled('Thesaurus')
-            && !$this->isModuleVersionAtLeast('Thesaurus', '3.4.26')
-        ) {
-            $errors[] = (string) (new PsrMessage(
-                'This module requires module "{module}" version "{version}" or greater.', // @translate
-                ['module' => 'Thesaurus', 'version' => '3.4.26']
-            ))->setTranslator($translator);
-        }
-
         if ($errors) {
             throw new ModuleCannotInstallException(implode("\n", $errors));
         }
