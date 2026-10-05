@@ -23,7 +23,8 @@ use Omeka\Module\Exception\ModuleCannotInstallException;
  * @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger
  */
 $plugins = $services->get('ControllerPluginManager');
-$url = $services->get('ViewHelperManager')->get('url');
+$helpers = $services->get('ViewHelperManager');
+$url = $helpers->get('url');
 $api = $plugins->get('api');
 $config = $services->get('Config');
 $logger = $services->get('Omeka\Logger');
@@ -43,6 +44,12 @@ if (!method_exists($this, 'checkModuleActiveVersion') || !$this->checkModuleActi
     $messenger->addError($message);
     throw new ModuleCannotInstallException((string) $translate('Missing requirement. Unable to upgrade.')); // @translate
 }
+
+// Common may be upgraded in the same process: its services are registered only
+// on the next request, so the cipher is built directly when missing.
+$cipher = $services->has('Omeka\Cipher')
+    ? $services->get('Omeka\Cipher')
+    : (new \Common\Service\Stdlib\CipherFactory())($services, 'Omeka\Cipher');
 
 $hasError = false;
 
@@ -1779,7 +1786,6 @@ if (version_compare($oldVersion, '3.5.70', '<')) {
 
     // The Solr passwords are now stored encrypted at rest via Omeka\Cipher.
     // encrypt() is idempotent and skips a value that is already encrypted.
-    $cipherAtRest = $services->get('Omeka\Cipher');
     foreach ($connection->fetchAllAssociative("SELECT `id`, `settings` FROM `search_engine` WHERE `adapter` = 'solarium'") as $engineRow) {
         $engineSettings = json_decode((string) $engineRow['settings'], true) ?: [];
         if (empty($engineSettings['solr']['client']) || !is_array($engineSettings['solr']['client'])) {
@@ -1791,7 +1797,7 @@ if (version_compare($oldVersion, '3.5.70', '<')) {
             if ($value === '') {
                 continue;
             }
-            $encrypted = $cipherAtRest->encrypt($value);
+            $encrypted = $cipher->encrypt($value);
             if ($encrypted !== $value) {
                 $engineSettings['solr']['client'][$key] = $encrypted;
                 $changed = true;
@@ -1834,7 +1840,6 @@ if ($connection->fetchOne("SHOW TABLES LIKE 'solr_core'")) {
 // the document count is queried on Solr from the connection stored in the
 // engine settings (passwords decrypted at rest).
 $finalized = false;
-$cipher = $services->get('Omeka\Cipher');
 $decryptPassword = function ($value) use ($cipher) {
     if ($value === null || $value === '') {
         return (string) $value;
