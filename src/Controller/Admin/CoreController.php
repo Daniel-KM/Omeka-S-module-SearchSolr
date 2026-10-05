@@ -2207,18 +2207,37 @@ class CoreController extends AbstractActionController
             }
         }
 
-        // 3c. Collected properties holding at least one linked resource get an
+        // 3c. A single pass on the values of the collected properties gives
+        // their links, lengths and number of distinct values: on a big base,
+        // each scan of the values costs some minutes. The values of the media
+        // are not restricted, since their properties are not collected. The
+        // distinct values are counted on a checksum, much cheaper to sort than
+        // the whole text, and exact enough for a threshold.
+        $propertyIds = $this->easyMeta()->propertyIds(array_keys($usedFields));
+        $rowsStats = $propertyIds || $wantMedia
+            ? $connection->executeQuery(
+                'SELECT CONCAT(vo.prefix, ":", pr.local_name) AS term,
+                    MAX(v.value_resource_id IS NOT NULL) AS has_link,
+                    MAX(LENGTH(v.value)) AS max_length,
+                    AVG(CHAR_LENGTH(v.value)) AS average_length,
+                    COUNT(DISTINCT CRC32(v.value)) AS distinct_values
+                FROM value v
+                INNER JOIN property pr ON pr.id = v.property_id
+                INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id'
+                . ($wantMedia ? '' : ' WHERE v.property_id IN (:ids)')
+                . ' GROUP BY v.property_id',
+                ['ids' => array_values($propertyIds)],
+                ['ids' => $connection::PARAM_INT_ARRAY]
+            )->fetchAllAssociative()
+            : [];
+
+        // Collected properties holding at least one linked resource get an
         // index of the linked resource ids, required by the query types
         // res/nres of the pivot.
-        $linkedTerms = $connection->fetchFirstColumn(
-            'SELECT DISTINCT CONCAT(vo.prefix, ":", pr.local_name)
-            FROM value v
-            INNER JOIN property pr ON pr.id = v.property_id
-            INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
-            WHERE v.value_resource_id IS NOT NULL'
-        );
-        foreach (array_intersect($linkedTerms, array_keys($usedFields)) as $term) {
-            $usedFields[$term]['_link_is'] = true;
+        foreach ($rowsStats as $rowStats) {
+            if ($rowStats['has_link'] && isset($usedFields[$rowStats['term']])) {
+                $usedFields[$rowStats['term']]['_link_is'] = true;
+            }
         }
 
         // 4. Get existing maps for this core.
@@ -2279,25 +2298,12 @@ class CoreController extends AbstractActionController
         $configModule = $services->get('Config')['searchsolr']['config'] ?? [];
         $textOnlyAverage = (int) ($configModule['searchsolr_text_only_average_length'] ?? 100);
         $stringMaxBytes = (int) ($configModule['searchsolr_string_value_max_bytes'] ?? 1000);
-        // The lengths and the number of distinct values are collected in a
-        // single pass: on a big base, a second scan of the values costs some
-        // minutes. The distinct values are counted on a checksum, much cheaper
-        // to sort than the whole text, and exact enough for a threshold.
+        // The lengths and the number of distinct values come from the pass of
+        // the step 3c.
         $longValueProperties = include dirname(__DIR__, 3)
             . '/config/metadata_text.php';
         $highCardinalityProperties = [];
-        $rowsLengths = $connection->fetchAllAssociative(
-            'SELECT CONCAT(vo.prefix, ":", pr.local_name) AS term,
-                MAX(LENGTH(v.value)) AS max_length,
-                AVG(CHAR_LENGTH(v.value)) AS average_length,
-                COUNT(DISTINCT CRC32(v.value)) AS distinct_values
-            FROM value v
-            INNER JOIN property pr ON pr.id = v.property_id
-            INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
-            WHERE v.value IS NOT NULL
-            GROUP BY v.property_id'
-        );
-        foreach ($rowsLengths as $rowLengths) {
+        foreach ($rowsStats as $rowLengths) {
             if ($rowLengths['max_length'] > $stringMaxBytes
                 || $rowLengths['average_length'] > $textOnlyAverage
             ) {
