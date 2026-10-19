@@ -62,10 +62,10 @@ if (PHP_VERSION_ID < 80100) {
     $hasError = true;
 }
 
-if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.63')) {
+if (!$this->checkModuleActiveVersion('AdvancedSearch', '3.4.66')) {
     $message = new PsrMessage(
         $translator->translate('This module requires module "{module}" version "{version}" or greater.'), // @translate
-        ['module' => 'Advanced Search', 'version' => '3.4.63']
+        ['module' => 'Advanced Search', 'version' => '3.4.66']
     );
     $messenger->addError($message);
     $hasError = true;
