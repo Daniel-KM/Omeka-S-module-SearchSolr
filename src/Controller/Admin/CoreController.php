@@ -66,7 +66,7 @@ class CoreController extends AbstractActionController
      */
     protected $fieldsFromConfigs = [];
 
-   /**
+    /**
      * Fields used by a config that cannot be mapped, filled during the
      * collection of the alignment and reported by the audit.
      *
@@ -2252,40 +2252,15 @@ class CoreController extends AbstractActionController
         // unwanted result. The last snapshots are kept per core.
         $isAudit || $this->snapshotMaps($solrCore, $existingMaps);
 
-        // 5. Delete the property maps that serve nothing, when asked: the
-        // same rule as the action "Remove unused maps", based on the real
-        // usages; the manual or customized maps are kept and listed.
-        $deleted = [];
-        $kept = [];
-        if ($clean) {
-            foreach ($solrCore->listUnusedMaps() as $map) {
-                $isAudit || $api->delete('solr_maps', $map->id());
-                $deleted[] = $map->fieldName();
-            }
-            foreach ($existingBySource as $source => $maps) {
-                if (in_array($source, $systemSources)
-                    || strpos($source, '/') !== false
-                    || strpos($source, ':') === false
-                    || isset($usedFields[$source])
-                ) {
-                    continue;
-                }
-                foreach ($maps as $map) {
-                    if (!in_array($map->fieldName(), $deleted, true)) {
-                        $kept[] = $map->fieldName();
-                    }
-                }
-            }
-        }
-
-        // Refresh after deletion.
+        // 5. The maps are created before the deletion of the unused ones, so a
+        // map required by this alignment is never removed, even when no config
+        // uses its exact name yet.
         $existingFieldNames = [];
-        if ($deleted) {
-            $solrCore = $this->solrCore((int) $id);
-        }
-        foreach ($solrCore->maps() as $map) {
+        foreach ($existingMaps as $map) {
             $existingFieldNames[] = $map->fieldName();
         }
+        // Field names required by the alignment.
+        $desiredFieldNames = [];
 
         // 6. Create missing maps for used properties.
         // Long-value properties should not get _ss/_s.
@@ -2510,6 +2485,7 @@ class CoreController extends AbstractActionController
                     $suffix = $numericSuffixes[$suffix];
                 }
                 $fieldName = $base . $suffix;
+                $desiredFieldNames[$fieldName] = true;
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
                 }
@@ -2550,7 +2526,11 @@ class CoreController extends AbstractActionController
                 foreach ($langsByTerm[$term] ?? [] as $lang => $langCodes) {
                     $solrSuffix = \SearchSolr\Stdlib\LanguageCodes::toSolrSuffix((string) $lang);
                     $fieldName = $base . '_txt_' . $solrSuffix;
-                    if ($solrSuffix === '' || in_array($fieldName, $existingFieldNames)) {
+                    if ($solrSuffix === '') {
+                        continue;
+                    }
+                    $desiredFieldNames[$fieldName] = true;
+                    if (in_array($fieldName, $existingFieldNames)) {
                         continue;
                     }
                     $isAudit || $api->create('solr_maps', [
@@ -2578,6 +2558,7 @@ class CoreController extends AbstractActionController
             }
             foreach ($langsByTerm[$term] ?? [] as $lang => $langCodes) {
                 $fieldName = $base . '_' . $lang . '_ss';
+                $desiredFieldNames[$fieldName] = true;
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
                 }
@@ -2622,6 +2603,7 @@ class CoreController extends AbstractActionController
                     continue;
                 }
                 $fieldName = 'media_' . strtr($term, ':', '_') . '_txt';
+                $desiredFieldNames[$fieldName] = true;
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
                 }
@@ -2639,6 +2621,40 @@ class CoreController extends AbstractActionController
                 $created[] = $fieldName;
                 $existingFieldNames[] = $fieldName;
             }
+        }
+
+        // 7c. Delete the property maps that serve nothing, when asked: the
+        // same rule as the action "Remove unused maps", based on the real
+        // usages, except the maps required by this alignment; the manual or
+        // customized maps are kept and listed.
+        $deleted = [];
+        $kept = [];
+        if ($clean) {
+            foreach ($solrCore->listUnusedMaps() as $map) {
+                if (isset($desiredFieldNames[$map->fieldName()])) {
+                    continue;
+                }
+                $isAudit || $api->delete('solr_maps', $map->id());
+                $deleted[] = $map->fieldName();
+            }
+            foreach ($existingBySource as $source => $maps) {
+                if (in_array($source, $systemSources)
+                    || strpos($source, '/') !== false
+                    || strpos($source, ':') === false
+                    || isset($usedFields[$source])
+                ) {
+                    continue;
+                }
+                foreach ($maps as $map) {
+                    if (!in_array($map->fieldName(), $deleted, true)) {
+                        $kept[] = $map->fieldName();
+                    }
+                }
+            }
+        }
+        if ($deleted) {
+            $solrCore = $this->solrCore((int) $id);
+            $existingFieldNames = array_values(array_diff($existingFieldNames, $deleted));
         }
 
         // 8. Ensure required system maps exist. These are the maps needed for
@@ -3055,34 +3071,10 @@ class CoreController extends AbstractActionController
             return;
         }
 
-        $term = null;
-        if (strpos($value, ':') !== false) {
-            $term = $value;
-        } elseif (preg_match(
-            // Compound interval suffixes (_min_i / _max_i / _min_l / _max_l)
-            // are matched before the simple suffixes thanks to the alternation
-            // order: longest alternatives first.
-            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|link_is|fold_s|txt_[a-z]{2,3}|txt|ss|s|dt|is|ls|i|l|b|ps)$/',
-            $value,
-            $m
-        )) {
-            $term = $m[1] . ':' . $m[2];
-            $suffix = '_' . $m[3];
-            // A language index ("_txt_fr", "_fr_ss") is built with the index of
-            // the property itself.
-            if (strncmp($suffix, '_txt_', 5) === 0) {
-                $suffix = '_txt';
-            } elseif ($suffix === '_ss'
-                && !$this->easyMeta()->propertyTerm($term)
-                && preg_match('/^(.+)_[a-z]{2}$/', $m[2], $matches)
-                && $this->easyMeta()->propertyTerm($m[1] . ':' . $matches[1])
-            ) {
-                $term = $m[1] . ':' . $matches[1];
-            }
-            // The suffix is already known from the field name.
-            if (empty($suffixes)) {
-                $suffixes = [$suffix];
-            }
+        $term = $this->fieldTerm($value, $fieldSuffix);
+        // The suffix is already known from the field name.
+        if ($fieldSuffix !== null && empty($suffixes)) {
+            $suffixes = [$fieldSuffix];
         }
         // The score of the engine is a sort key, not an index of the schema.
         if ($value === 'relevance' || $value === 'score') {
@@ -3107,6 +3099,42 @@ class CoreController extends AbstractActionController
         foreach ($suffixes as $suffix) {
             $usedFields[$term][$suffix] = true;
         }
+    }
+
+    /**
+     * Get the property term of a field: a term, or an index built on a term.
+     *
+     * The suffix of the index is returned too; a language index ("_txt_fr",
+     * "_fr_ss") is built with the index of the property itself.
+     */
+    protected function fieldTerm(string $value, ?string &$suffix = null): ?string
+    {
+        $suffix = null;
+        if (strpos($value, ':') !== false) {
+            return $value;
+        }
+        if (!preg_match(
+            // Compound interval suffixes (_min_i / _max_i / _min_l / _max_l)
+            // are matched before the simple suffixes thanks to the alternation
+            // order: longest alternatives first.
+            '/^([a-z]+)_(.+?)_(min_i|max_i|min_l|max_l|link_ss|link_is|fold_s|txt_[a-z]{2,3}|txt|ss|s|dt|is|ls|i|l|b|ps)$/',
+            $value,
+            $m
+        )) {
+            return null;
+        }
+        $term = $m[1] . ':' . $m[2];
+        $suffix = '_' . $m[3];
+        if (strncmp($suffix, '_txt_', 5) === 0) {
+            $suffix = '_txt';
+        } elseif ($suffix === '_ss'
+            && !$this->easyMeta()->propertyTerm($term)
+            && preg_match('/^(.+)_[a-z]{2}$/', $m[2], $matches)
+            && $this->easyMeta()->propertyTerm($m[1] . ':' . $matches[1])
+        ) {
+            $term = $m[1] . ':' . $matches[1];
+        }
+        return $term;
     }
 
     /**
