@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-05 00:00+0000\n"
+"POT-Creation-Date: 2026-10-19 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1728,7 +1728,7 @@ msgstr ""
 msgid "Solr core #{id} not found."
 msgstr ""
 
-#: src/Job/ReduceSolrFields.php:69 src/Controller/Admin/CoreController.php:1722
+#: src/Job/ReduceSolrFields.php:69 src/Controller/Admin/CoreController.php:1730
 msgid "Unable to determine the Solr maxFields limit."
 msgstr ""
 
@@ -2780,7 +2780,7 @@ msgid ""
 msgstr ""
 
 #: src/Indexer/SolariumIndexer.php:663
-#: src/Controller/Admin/CoreController.php:384
+#: src/Controller/Admin/CoreController.php:392
 msgid ""
 "The Solr core has {numFields} fields, approaching the configured limit of "
 "{maxFields} ({percentage}%). It is recommended either to reduce or to group "
@@ -2836,7 +2836,7 @@ msgstr ""
 
 #: src/Controller/Admin/MapController.php:146
 #: src/Controller/Admin/MapController.php:222
-#: src/Controller/Admin/CoreController.php:669
+#: src/Controller/Admin/CoreController.php:677
 msgid "There was an error during validation"
 msgstr ""
 
@@ -2885,341 +2885,357 @@ msgstr ""
 msgid "Digital object"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:191
+#: src/Controller/Admin/CoreController.php:199
 msgid "Solr core \"{solr_core_name}\" created."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:319
+#: src/Controller/Admin/CoreController.php:327
 msgid "Solr core \"{solr_core_name}\" updated."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:326
+#: src/Controller/Admin/CoreController.php:334
 msgid ""
 "Some required fields are missing or not available in the core: {list}. "
 "Update the generic or the resource mappings."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:336
+#: src/Controller/Admin/CoreController.php:344
 msgid ""
 "Some specific static or dynamic fields are missing or not available for "
 "\"{value}\" in the core: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:340
+#: src/Controller/Admin/CoreController.php:348
 msgid "Don’t forget to reindex this core with external indexers."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:342
+#: src/Controller/Admin/CoreController.php:350
 msgid ""
 "Don’t forget to reindex the resources and to check the mapping of the search "
 "pages that use this core."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:348
+#: src/Controller/Admin/CoreController.php:356
 msgid ""
 "The core \"{solr_core_name}\" has {count} maps. Some queries are not "
 "possible with more than 1024 indexes. You may remove indexes used to sort "
 "(\"_s\") or useless indexes, or group them."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:367
-#: src/Controller/Admin/CoreController.php:413
+#: src/Controller/Admin/CoreController.php:375
+#: src/Controller/Admin/CoreController.php:421
 msgid ""
 "Some required fields are missing or not available in the core: {fields}. "
 "Update the generic or the resource mappings."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:376
+#: src/Controller/Admin/CoreController.php:384
 msgid ""
 "The Solr core has {numFields} fields, exceeding the configured limit of "
 "{maxFields}. Indexing will be refused. To fix, either reduce or group field "
 "maps, or increase \"maxFields\" in solrconfig.xml and restart Solr."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:459
+#: src/Controller/Admin/CoreController.php:467
 msgid "Solr core successfully deleted"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:461
+#: src/Controller/Admin/CoreController.php:469
 msgid "Solr core could not be deleted"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:491
+#: src/Controller/Admin/CoreController.php:499
 msgid "Missing file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:498
+#: src/Controller/Admin/CoreController.php:506
 msgid "Wrong request for file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:505
+#: src/Controller/Admin/CoreController.php:513
 msgid "An error occurred when uploading the file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:508
+#: src/Controller/Admin/CoreController.php:516
 msgid "Wrong media type ({media_type}) for file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:512
+#: src/Controller/Admin/CoreController.php:520
 msgid "The file is empty."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:680
+#: src/Controller/Admin/CoreController.php:688
 msgid "The file does not contain any row."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:688
+#: src/Controller/Admin/CoreController.php:696
 msgid ""
 "The headers of the file are not the default ones. Or the delimiter is not "
 "the good one according to the media-type or extension."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:708
+#: src/Controller/Admin/CoreController.php:716
 msgid "The row #{index} does not contain required data."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:714
+#: src/Controller/Admin/CoreController.php:722
 msgid "The row #{index} does not manage resource \"{resource_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:767
+#: src/Controller/Admin/CoreController.php:775
 msgid "The file does not contain any valid data."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:779
+#: src/Controller/Admin/CoreController.php:787
 msgid ""
 "The existing mapping of core \"{solr_core_name}\" (#{solr_core_id}) has been "
 "deleted."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:787
+#: src/Controller/Admin/CoreController.php:795
 msgid ""
 "An error has occurred during import of the mapping for core "
 "\"{solr_core_name}\" (#{solr_core_id})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:794
+#: src/Controller/Admin/CoreController.php:802
 msgid ""
 "{count} fields have been mapped for core \"{solr_core_name}\" "
 "(#{solr_core_id})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1001
+#: src/Controller/Admin/CoreController.php:1009
 msgid ""
 "The catchall field \"_text_\" already exists in core \"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1029
+#: src/Controller/Admin/CoreController.php:1037
 msgid ""
 "Catchall field \"_text_\" created in core \"{solr_core_name}\". Reindex "
 "required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1036
+#: src/Controller/Admin/CoreController.php:1044
 msgid "Failed to create catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1042
+#: src/Controller/Admin/CoreController.php:1050
 msgid "Error creating catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1066
+#: src/Controller/Admin/CoreController.php:1074
 msgid ""
 "The catchall field \"_text_\" does not exist in core \"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1094
+#: src/Controller/Admin/CoreController.php:1102
 msgid "Catchall field \"_text_\" deleted in core \"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1101
+#: src/Controller/Admin/CoreController.php:1109
 msgid "Failed to delete catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1107
+#: src/Controller/Admin/CoreController.php:1115
 msgid "Error deleting catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1143
+#: src/Controller/Admin/CoreController.php:1151
 msgid ""
 "Data-driven schema disabled (update.autoCreateFields = false) on core "
 "\"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1150
+#: src/Controller/Admin/CoreController.php:1158
 msgid "Failed to disable data-driven schema: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1156
+#: src/Controller/Admin/CoreController.php:1164
 msgid "Error disabling data-driven schema: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1178
+#: src/Controller/Admin/CoreController.php:1186
 msgid ""
 "Optimizing index in background (job {link_job}#{job_id}{link_end}, {link_log}"
 "logs{link_end})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1278
+#: src/Controller/Admin/CoreController.php:1286
 msgid ""
 "The core filters the resources to index (\"filter_resources\"), so the index "
 "is a subset by design."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1282
+#: src/Controller/Admin/CoreController.php:1290
 msgid "The engine indexes the private resources only."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1285
+#: src/Controller/Admin/CoreController.php:1293
 msgid ""
 "The indexing is disabled for this engine, so the index no longer follows the "
 "resources."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1310
+#: src/Controller/Admin/CoreController.php:1318
 msgid "The index cannot be queried."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1347
+#: src/Controller/Admin/CoreController.php:1355
 msgid ""
 "The date of indexation is not indexed, so the outdated documents cannot be "
 "found: add the map \"indexed_at\" and reindex."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1497
+#: src/Controller/Admin/CoreController.php:1505
 msgid ""
 "Solr core #{solr_core_id} (\"{solr_core_name}\"): {count} maps are managed "
 "automatically again: {maps}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1506
+#: src/Controller/Admin/CoreController.php:1514
 msgid ""
 "{count} maps are managed automatically again: {maps}. They now follow the "
 "sources of the alignment, and the unused ones can be removed."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1511
+#: src/Controller/Admin/CoreController.php:1519
 msgid "No map was set as manual."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1533
+#: src/Controller/Admin/CoreController.php:1541
 msgid ""
 "The core \"{core}\" already exists on the server; it is used as is, nothing "
 "was created."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1541
+#: src/Controller/Admin/CoreController.php:1549
 msgid ""
 "Failed to create the core \"{core}\" on the Solr server. Check the logs: the "
 "config set \"{config_set}\" must exist in SOLR_HOME/configsets on the server."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1553
+#: src/Controller/Admin/CoreController.php:1561
 msgid ""
 "The core \"{core}\" was created on the Solr server and its schema "
 "initialized. Default maps are being created; reindex afterwards."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1577
+#: src/Controller/Admin/CoreController.php:1585
 msgid ""
 "The core \"{core}\" is shared (the engine sets index_name); deletion on the "
 "server is refused."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1587
+#: src/Controller/Admin/CoreController.php:1595
 msgid ""
 "The core \"{core}\" was deleted on the Solr server. The connection is still "
 "registered in Omeka."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1592
+#: src/Controller/Admin/CoreController.php:1600
 msgid ""
 "Failed to delete the core \"{core}\" on the Solr server. Check the logs."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1629
+#: src/Controller/Admin/CoreController.php:1637
 msgid ""
 "Map creation in background (job {link_job}#{job_id}{link_end}, {link_log}"
 "logs{link_end})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1692
+#: src/Controller/Admin/CoreController.php:1700
 msgid "No unused map."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1704
+#: src/Controller/Admin/CoreController.php:1712
 msgid "{count} unused maps deleted: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1735
+#: src/Controller/Admin/CoreController.php:1743
 msgid "Reduction job started. Check the logs."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1822
+#: src/Controller/Admin/CoreController.php:1830
 msgid "{count} annotation maps created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1830
+#: src/Controller/Admin/CoreController.php:1838
 msgid "All annotation maps already exist."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1991
+#: src/Controller/Admin/CoreController.php:2015
 msgid ""
 "This core is used by a shared engine (index_name is set). Sync is not "
 "supported for shared engines."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2765
+#: src/Controller/Admin/CoreController.php:2823
 msgid ""
 "Audit (sources: {sources}, cleaning: {cleaning}), nothing was changed. "
 "Properties collected: {props}. Maps: {before}, that would be removed: "
 "{deleted}, kept as customized: {kept}, created: {created}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2778
+#: src/Controller/Admin/CoreController.php:2836
 msgid "Maps that would be created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2784
+#: src/Controller/Admin/CoreController.php:2842
 msgid "Maps that would be removed: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2802
+#: src/Controller/Admin/CoreController.php:2848
+msgid ""
+"Search pages whose facets or filters would use the aligned index: {list}."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:2854
+#: src/Controller/Admin/CoreController.php:2910
+msgid ""
+"Search pages whose facets or filters will use the aligned index once it is "
+"indexed (reindex, then align again): {list}."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:2872
 msgid ""
 "Sync complete (sources: {sources}, cleaning: {cleaning}). Properties "
 "collected: {props}. Maps before: {before}, deleted: {deleted}, kept "
 "(customized): {kept}, created: {created}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2816
+#: src/Controller/Admin/CoreController.php:2886
 msgid "Deleted: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2822
+#: src/Controller/Admin/CoreController.php:2892
 msgid "Kept (customized, not in config): {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2828
+#: src/Controller/Admin/CoreController.php:2898
 msgid "Created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2834
+#: src/Controller/Admin/CoreController.php:2904
+msgid "Search pages whose facets or filters use now the aligned index: {list}."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:2916
 msgid "All maps are in sync with search configs."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2851
+#: src/Controller/Admin/CoreController.php:2933
 msgid ""
 "Reindex required: the changed maps stay empty until then. Reindex: {links}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2886
+#: src/Controller/Admin/CoreController.php:2968
 msgid ""
 "Fields used by a config but provided by no map: {list}. They cannot be "
 "created by the alignment, since they are neither a property nor an index "
 "built on one, and a query on them fails on an undefined field."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2941
+#: src/Controller/Admin/CoreController.php:3023
 msgid ""
 "The engine indexes the private values (visibility \"{visibility}\"), but it "
 "is used by the search pages of a site: {names}. A private value can be found "
@@ -3228,87 +3244,87 @@ msgid ""
 "only\" and reindex, or use another engine for the admin."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3227
+#: src/Controller/Admin/CoreController.php:3387
 msgid "{count} maps reset to \"follow engine\" visibility. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3232
+#: src/Controller/Admin/CoreController.php:3392
 msgid "All maps already follow the engine visibility."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3254
-#: src/Controller/Admin/CoreController.php:3325
+#: src/Controller/Admin/CoreController.php:3414
+#: src/Controller/Admin/CoreController.php:3485
 msgid "Solr is unreachable: {status}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3291
+#: src/Controller/Admin/CoreController.php:3451
 msgid "Field \"suggest_txt\" recreated. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3292
+#: src/Controller/Admin/CoreController.php:3452
 msgid "Field \"suggest_txt\" created. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3296
+#: src/Controller/Admin/CoreController.php:3456
 msgid "Error creating suggest field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3347
+#: src/Controller/Admin/CoreController.php:3507
 msgid "Catchall analyzer unchanged."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3391
+#: src/Controller/Admin/CoreController.php:3551
 msgid "Unsupported language: {lang}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3447
+#: src/Controller/Admin/CoreController.php:3607
 msgid "Failed to create field type: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3474
+#: src/Controller/Admin/CoreController.php:3634
 msgid ""
 "Field \"_text_\" configured for Google-like search in core \"{solr_core_name}"
 "\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3476
+#: src/Controller/Admin/CoreController.php:3636
 msgid ""
 "Field \"_text_\" configured for linguistic search ({type}) in core "
 "\"{solr_core_name}\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3478
+#: src/Controller/Admin/CoreController.php:3638
 msgid ""
 "Field \"_text_\" configured for strict matching in core \"{solr_core_name}"
 "\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3488
+#: src/Controller/Admin/CoreController.php:3648
 msgid "Failed to configure _text_ field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3494
+#: src/Controller/Admin/CoreController.php:3654
 msgid "Error configuring search: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3525
+#: src/Controller/Admin/CoreController.php:3685
 msgid "Solr issue: {msg}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3602
-#: src/Controller/Admin/CoreController.php:3675
+#: src/Controller/Admin/CoreController.php:3762
+#: src/Controller/Admin/CoreController.php:3835
 msgid "Snapshot not found."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3646
+#: src/Controller/Admin/CoreController.php:3806
 msgid "Restored {count} maps from snapshot of {datetime}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3653
+#: src/Controller/Admin/CoreController.php:3813
 msgid "Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3687
+#: src/Controller/Admin/CoreController.php:3847
 msgid "Snapshot deleted."
 msgstr ""
 
