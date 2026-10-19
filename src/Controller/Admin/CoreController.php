@@ -67,6 +67,14 @@ class CoreController extends AbstractActionController
     protected $fieldsFromConfigs = [];
 
     /**
+     * Fields of the facets and filters of the configs, with the index suffix
+     * their type requires, to point them to the aligned index.
+     *
+     * @var array
+     */
+    protected $configFieldRefs = [];
+
+    /**
      * Fields used by a config that cannot be mapped, filled during the
      * collection of the alignment and reported by the audit.
      *
@@ -2034,7 +2042,7 @@ class CoreController extends AbstractActionController
             // bound suffix (_min_i / _max_i): the regex in
             // collectFieldAsProperty extracts the suffix from the field name,
             // so passing an empty $suffixes is enough.
-            foreach ($config->subSetting('facet', 'facets', []) as $f) {
+            foreach ($config->subSetting('facet', 'facets', []) as $key => $f) {
                 $v = $f['field'] ?? null;
                 if (!$v) {
                     continue;
@@ -2049,12 +2057,13 @@ class CoreController extends AbstractActionController
                     $this->collectFieldAsProperty(
                         $v, $usedFields, [$isRange ? '_i' : '_ss'], true
                     );
+                    $this->configFieldRefs[] = [$config->id(), 'facet', 'facets', $key, $v, $isRange ? '_i' : '_ss'];
                 }
             }
             // Filters need _ss. Range filters with an interval end
             // ("field_end") use the suffix carried by the field name (_min_i /
             // _max_i).
-            foreach ($config->subSetting('form', 'filters', []) as $f) {
+            foreach ($config->subSetting('form', 'filters', []) as $key => $f) {
                 $v = $f['field'] ?? null;
                 if (!$v) {
                     continue;
@@ -2078,6 +2087,7 @@ class CoreController extends AbstractActionController
                     $this->collectFieldAsProperty(
                         $v, $usedFields, [$isRange ? '_i' : '_ss'], true
                     );
+                    $this->configFieldRefs[] = [$config->id(), 'form', 'filters', $key, $v, $isRange ? '_i' : '_ss'];
                 }
             }
             // Sorts need _s, plus the folded variant so the order follows
@@ -2259,8 +2269,10 @@ class CoreController extends AbstractActionController
         foreach ($existingMaps as $map) {
             $existingFieldNames[] = $map->fieldName();
         }
-        // Field names required by the alignment.
+        // Field names required by the alignment, and the index retained for a
+        // term and a suffix requested by a config.
         $desiredFieldNames = [];
+        $alignedFields = [];
 
         // 6. Create missing maps for used properties.
         // Long-value properties should not get _ss/_s.
@@ -2469,6 +2481,7 @@ class CoreController extends AbstractActionController
             }
 
             foreach (array_keys($requiredSuffixes) as $suffix) {
+                $requestedSuffix = $suffix;
                 // Skip _ss/_s for long-value properties.
                 if ($isLong
                     && in_array($suffix, ['_ss', '_s', '_fold_s', '_i'])
@@ -2486,6 +2499,7 @@ class CoreController extends AbstractActionController
                 }
                 $fieldName = $base . $suffix;
                 $desiredFieldNames[$fieldName] = true;
+                $alignedFields[$term][$requestedSuffix] = $fieldName;
                 if (in_array($fieldName, $existingFieldNames)) {
                     continue;
                 }
@@ -2657,6 +2671,11 @@ class CoreController extends AbstractActionController
             $existingFieldNames = array_values(array_diff($existingFieldNames, $deleted));
         }
 
+        // 7d. Point the facets and the filters to the aligned index, when they
+        // use a property, a link index or a string index for a range: else
+        // the config keeps an index unsuited to its type.
+        $updatedConfigs = $this->alignConfigFields($alignedFields, $existingFieldNames, $isAudit);
+
         // 8. Ensure required system maps exist. These are the maps needed for
         // Solr to function.
         $requiredMaps = [
@@ -2801,6 +2820,12 @@ class CoreController extends AbstractActionController
                     ['list' => implode(', ', $deleted)]
                 ));
             }
+            if ($updatedConfigs) {
+                $this->messenger()->addNotice(new PsrMessage(
+                    'Search pages whose facets or filters would use the aligned index: {list}.', // @translate
+                    ['list' => implode('; ', $updatedConfigs)]
+                ));
+            }
             // The real value of the audit: a config may use a field that the
             // alignment cannot map, so it is never created and the search fails
             // on an undefined field, silently until then.
@@ -2845,7 +2870,13 @@ class CoreController extends AbstractActionController
                 ['list' => implode(', ', $created)]
             ));
         }
-        if (!$deleted && !$created) {
+        if ($updatedConfigs) {
+            $this->messenger()->addSuccess(new PsrMessage(
+                'Search pages whose facets or filters use now the aligned index: {list}.', // @translate
+                ['list' => implode('; ', $updatedConfigs)]
+            ));
+        }
+        if (!$deleted && !$created && !$updatedConfigs) {
             $this->messenger()->addSuccess(
                 'All maps are in sync with search configs.' // @translate
             );
@@ -3135,6 +3166,59 @@ class CoreController extends AbstractActionController
             $term = $m[1] . ':' . $matches[1];
         }
         return $term;
+    }
+
+    /**
+     * Point the facets and the filters of the configs to the aligned index.
+     *
+     * Only the fields that cannot be right are updated: a property, a link
+     * index, or a string index used for a range. Other indexes are a choice,
+     * like a language index.
+     *
+     * @return array The list of the updated configs, as id => label.
+     */
+    protected function alignConfigFields(array $alignedFields, array $existingFieldNames, bool $isAudit): array
+    {
+        $updates = [];
+        foreach ($this->configFieldRefs as [$configId, $section, $group, $key, $value, $requiredSuffix]) {
+            $term = $this->fieldTerm((string) $value);
+            $target = $term ? ($alignedFields[$term][$requiredSuffix] ?? null) : null;
+            if (!$target
+                || $target === $value
+                || !in_array($target, $existingFieldNames, true)
+            ) {
+                continue;
+            }
+            $isRangeOnString = $requiredSuffix === '_i'
+                && !preg_match('/_(i|is|l|ls|d|ds|min_i|max_i|min_l|max_l)$/', (string) $value);
+            if (strpos((string) $value, ':') === false
+                && !preg_match('/_link_(ss|is)$/', (string) $value)
+                && !$isRangeOnString
+            ) {
+                continue;
+            }
+            $updates[$configId][] = [$section, $group, $key, $value, $target];
+        }
+
+        $result = [];
+        $api = $this->api();
+        foreach ($updates as $configId => $configUpdates) {
+            $config = $api->read('search_configs', $configId)->getContent();
+            $settings = $config->settings();
+            $changes = [];
+            foreach ($configUpdates as [$section, $group, $key, $value, $target]) {
+                if (($settings[$section][$group][$key]['field'] ?? null) === $value) {
+                    $settings[$section][$group][$key]['field'] = $target;
+                    $changes[] = $value . ' → ' . $target;
+                }
+            }
+            if (!$changes) {
+                continue;
+            }
+            $isAudit || $api->update('search_configs', $configId, ['o:settings' => $settings], [], ['isPartial' => true]);
+            $result[$configId] = $config->name() . ' (' . implode(', ', $changes) . ')';
+        }
+        return $result;
     }
 
     /**
