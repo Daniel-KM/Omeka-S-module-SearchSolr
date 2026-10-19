@@ -1932,6 +1932,14 @@ class CoreController extends AbstractActionController
                 if (!$this->getRequest()->isXmlHttpRequest()) {
                     return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
                 }
+                // The options of the last alignment are proposed again, so the
+                // same alignment does not create then remove the same maps.
+                $lastOptions = $this->settings()->get('searchsolr_sync_options', [])[$id] ?? [];
+                foreach (['sync_sources', 'clean', 'multilingual', 'max_cardinality'] as $name) {
+                    if (array_key_exists($name, $lastOptions)) {
+                        $form->get($name)->setValue($lastOptions[$name]);
+                    }
+                }
                 return (new ViewModel([
                     'solrCore' => $solrCore,
                     'form' => $form,
@@ -1973,6 +1981,14 @@ class CoreController extends AbstractActionController
             $multilingual = (bool) ($data['multilingual'] ?? false);
             $maxCardinality = (int) ($data['max_cardinality'] ?? 100);
             $isAudit = ($data['mode'] ?? 'sync') === 'audit';
+            $syncOptions = $this->settings()->get('searchsolr_sync_options', []) ?: [];
+            $syncOptions[$id] = [
+                'sync_sources' => $sources,
+                'clean' => $clean,
+                'multilingual' => $multilingual,
+                'max_cardinality' => $maxCardinality,
+            ];
+            $this->settings()->set('searchsolr_sync_options', $syncOptions);
         }
         if (in_array('all', $sources, true)) {
             $sources = ['configs', 'bounce', 'templates', 'used', 'media', 'datatypes'];

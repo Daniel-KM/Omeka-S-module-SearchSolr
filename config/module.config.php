@@ -234,6 +234,10 @@ return [
             // but an exact value has no use far below that limit.
             'searchsolr_string_value_max_bytes' => 1000,
         ],
+        'settings' => [
+            // Options of the last alignment of the maps, by engine.
+            'searchsolr_sync_options' => [],
+        ],
     ],
     'searchsolr_value_extractors' => [
         'factories' => [
