@@ -2689,8 +2689,15 @@ class CoreController extends AbstractActionController
 
         // 7d. Point the facets and the filters to the aligned index, when they
         // use a property, a link index or a string index for a range: else
-        // the config keeps an index unsuited to its type.
-        $updatedConfigs = $this->alignConfigFields($alignedFields, $existingFieldNames, $isAudit);
+        // the config keeps an index unsuited to its type. A new index is empty
+        // until the reindexing, so the config is updated only when the index
+        // has documents: else it is pending until a next alignment.
+        $docCounts = [];
+        $isPopulated = function (string $field) use ($solrCore, &$docCounts): bool {
+            $docCounts[$field] ??= $solrCore->fieldDocCount($field);
+            return $docCounts[$field] > 0;
+        };
+        [$updatedConfigs, $pendingConfigs] = $this->alignConfigFields($alignedFields, $existingFieldNames, $isAudit, $isPopulated);
 
         // 8. Ensure required system maps exist. These are the maps needed for
         // Solr to function.
@@ -2842,6 +2849,12 @@ class CoreController extends AbstractActionController
                     ['list' => implode('; ', $updatedConfigs)]
                 ));
             }
+            if ($pendingConfigs) {
+                $this->messenger()->addNotice(new PsrMessage(
+                    'Search pages whose facets or filters will use the aligned index once it is indexed (reindex, then align again): {list}.', // @translate
+                    ['list' => implode('; ', $pendingConfigs)]
+                ));
+            }
             // The real value of the audit: a config may use a field that the
             // alignment cannot map, so it is never created and the search fails
             // on an undefined field, silently until then.
@@ -2892,7 +2905,13 @@ class CoreController extends AbstractActionController
                 ['list' => implode('; ', $updatedConfigs)]
             ));
         }
-        if (!$deleted && !$created && !$updatedConfigs) {
+        if ($pendingConfigs) {
+            $this->messenger()->addWarning(new PsrMessage(
+                'Search pages whose facets or filters will use the aligned index once it is indexed (reindex, then align again): {list}.', // @translate
+                ['list' => implode('; ', $pendingConfigs)]
+            ));
+        }
+        if (!$deleted && !$created && !$updatedConfigs && !$pendingConfigs) {
             $this->messenger()->addSuccess(
                 'All maps are in sync with search configs.' // @translate
             );
@@ -3189,11 +3208,15 @@ class CoreController extends AbstractActionController
      *
      * Only the fields that cannot be right are updated: a property, a link
      * index, or a string index used for a range. Other indexes are a choice,
-     * like a language index.
+     * like a language index. A field is pointed to an index only when it has
+     * documents, else the facet or the filter would be empty until the
+     * reindexing: the update is then pending.
      *
-     * @return array The list of the updated configs, as id => label.
+     * @param callable $isPopulated Check if an index has documents.
+     * @return array The updated configs and the pending ones, as two lists of
+     *   id => label.
      */
-    protected function alignConfigFields(array $alignedFields, array $existingFieldNames, bool $isAudit): array
+    protected function alignConfigFields(array $alignedFields, array $existingFieldNames, bool $isAudit, callable $isPopulated): array
     {
         $updates = [];
         foreach ($this->configFieldRefs as [$configId, $section, $group, $key, $value, $requiredSuffix]) {
@@ -3216,25 +3239,34 @@ class CoreController extends AbstractActionController
             $updates[$configId][] = [$section, $group, $key, $value, $target];
         }
 
-        $result = [];
+        $updated = [];
+        $pending = [];
         $api = $this->api();
         foreach ($updates as $configId => $configUpdates) {
             $config = $api->read('search_configs', $configId)->getContent();
             $settings = $config->settings();
             $changes = [];
+            $waits = [];
             foreach ($configUpdates as [$section, $group, $key, $value, $target]) {
-                if (($settings[$section][$group][$key]['field'] ?? null) === $value) {
-                    $settings[$section][$group][$key]['field'] = $target;
-                    $changes[] = $value . ' → ' . $target;
+                if (($settings[$section][$group][$key]['field'] ?? null) !== $value) {
+                    continue;
                 }
+                if (!$isPopulated($target)) {
+                    $waits[] = $value . ' → ' . $target;
+                    continue;
+                }
+                $settings[$section][$group][$key]['field'] = $target;
+                $changes[] = $value . ' → ' . $target;
             }
-            if (!$changes) {
-                continue;
+            if ($waits) {
+                $pending[$configId] = $config->name() . ' (' . implode(', ', $waits) . ')';
             }
-            $isAudit || $api->update('search_configs', $configId, ['o:settings' => $settings], [], ['isPartial' => true]);
-            $result[$configId] = $config->name() . ' (' . implode(', ', $changes) . ')';
+            if ($changes) {
+                $isAudit || $api->update('search_configs', $configId, ['o:settings' => $settings], [], ['isPartial' => true]);
+                $updated[$configId] = $config->name() . ' (' . implode(', ', $changes) . ')';
+            }
         }
-        return $result;
+        return [$updated, $pending];
     }
 
     /**
