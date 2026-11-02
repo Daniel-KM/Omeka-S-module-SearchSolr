@@ -265,6 +265,18 @@ class Module extends AbstractModule
             'view.layout',
             [$this, 'handleCron']
         );
+        // A deleted resource leaves no date, so the deletion is flagged.
+        foreach ([
+            \Omeka\Api\Adapter\ItemAdapter::class,
+            \Omeka\Api\Adapter\ItemSetAdapter::class,
+            \Omeka\Api\Adapter\MediaAdapter::class,
+        ] as $adapter) {
+            $sharedEventManager->attach(
+                $adapter,
+                'api.delete.post',
+                [$this, 'flagResourceDeleted']
+            );
+        }
 
         // The url, the status and the actions of each core are displayed in the
         // table of the search engines of the search manager.
@@ -808,6 +820,14 @@ class Module extends AbstractModule
         $this->runCronSuggesters();
     }
 
+    public function flagResourceDeleted(Event $event): void
+    {
+        $settings = $this->getServiceLocator()->get('Omeka\Settings');
+        if (!$settings->get('searchsolr_cron_changed')) {
+            $settings->set('searchsolr_cron_changed', true);
+        }
+    }
+
     protected function isCronTaskEnabledElsewhere(\Omeka\Settings\Settings $settings): bool
     {
         if (class_exists('EasyAdmin\Module', false)) {
@@ -840,10 +860,13 @@ class Module extends AbstractModule
         $settings = $services->get('Omeka\Settings');
         $connection = $services->get('Omeka\Connection');
 
-        // Skip when no resource was created or modified since the last check.
+        // Skip when no resource was created, modified or deleted since the last
+        // check.
         $lastCron = (int) $settings->get('searchsolr_cron_last');
+        $isDeleted = (bool) $settings->get('searchsolr_cron_changed');
         $settings->set('searchsolr_cron_last', time());
-        if ($lastCron) {
+        $settings->delete('searchsolr_cron_changed');
+        if ($lastCron && !$isDeleted) {
             $lastDate = date('Y-m-d H:i:s', $lastCron);
             $isChanged = (bool) $connection->fetchOne(
                 'SELECT 1 FROM `resource` WHERE `created` > ? OR `modified` > ? LIMIT 1',

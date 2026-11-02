@@ -239,6 +239,8 @@ return [
             'searchsolr_sync_options' => [],
             // Hidden value, storing last processed cron time.
             'searchsolr_cron_last' => null,
+            // Hidden value, set when a resource is deleted.
+            'searchsolr_cron_changed' => false,
         ],
     ],
     'searchsolr_value_extractors' => [
