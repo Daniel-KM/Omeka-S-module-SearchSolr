@@ -135,6 +135,28 @@ it for the public search pages and suggesters: the shared core holds private
 data, and the public search (and the suggester, built from the same index) is
 otherwise protected only by the query filter.
 
+### Private values
+
+The query filters the visibility of the resources, not the one of the values: a
+private value of a public resource, for example the ocr of a document reserved
+by the module [Access], is indexed in the same fields than the public values,
+so the public search finds the resource through it, and the facets may list it.
+
+To avoid it, set the option "Private values" of the core to "Separate fields".
+The schema is updated on save, then a reindexation is required:
+
+- the private values of the property maps are indexed in the field of the map
+  with the suffix `_private` (dynamic field `*_private`, not stored);
+- the catchall `_text_` copies the public fields only, so the copy of all fields
+  (`*`) is replaced by the patterns of the dynamic fields and the static fields;
+- the private fields are copied in the catchall `_text_private_`, queried only
+  for the users who can view all resources.
+
+The facets, the sorts and the filters use the public values only. The option is
+useless for an engine indexing the public values only (visibility "public").
+It is designed for the engine used by the public sites: when a dedicated engine
+is used for the admin, it can keep the private values in the same fields.
+
 Indexation in Solr
 ------------------
 
@@ -984,6 +1006,15 @@ suggesters causes lock conflicts, slow builds in Solr and slow suggestions.
 The mode "auto" uses all indexes: even if it is filtered to avoid duplicate, it
 may be too much in some database with many various properties.
 
+By default, the dictionaries of the suggesters are not rebuilt each time a
+resource is saved, because Solr rebuilds the whole dictionary on each commit,
+that is costly on large indexes and during a reindexation. They are rebuilt by a
+scheduled task, once a day on any page when a resource was created, modified or
+deleted, or according to the frequency of the task "Rebuild Solr suggesters"
+when it is enabled in the module [EasyAdmin] or [Cron]. The option "Automatic
+reindex on resource save" of a suggester can be checked to get new values
+immediately on a small index.
+
 The recommended approach is copy all the wanted index with `_txt` in a single
 field, like the one used for the main search.
 
@@ -1119,7 +1150,7 @@ TODO
 - [ ] Rename "resource_name" by "resource_type" anywhere.
 - [x] Fix indexing of boolean values with "*_b".
 - [ ] Find a better way to exclude fields than searching in other ones (not supported by solr anyway).
-- [ ] Disable `buildOnCommit` for suggester during batch reindexation to avoid costly intermediate rebuilds, then re-enable and rebuild once at the end.
+- [x] Disable `buildOnCommit` for suggester during batch reindexation to avoid costly intermediate rebuilds, then re-enable and rebuild once at the end.
 - [ ] Create suggest_txt to regroup all suggesters into a single index for performance.
 - [ ] Create a single suggest field approach automatically.
 - [ ] Decide the automatic triggering of the maps sync and of the reindex.
@@ -1204,11 +1235,14 @@ Many UX and performance improvements were done for the digital library [Musee de
 [Solr]: https://gitlab.com/Daniel-KM/Omeka-S-module-Solr
 [Solr by BibLibre]: https://github.com/biblibre/omeka-s-module-Solr
 [Advanced Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-AdvancedSearch
+[Access]: https://gitlab.com/Daniel-KM/Omeka-S-module-Access
 [Search by BibLibre]: https://github.com/biblibre/omeka-s-module-search
 [Apache Solr]: https://solr.apache.org/
 [Solarium]: https://www.solarium-project.org/
 [full documentation]: https://solarium.readthedocs.io/en/stable/
 [Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
+[EasyAdmin]: https://gitlab.com/Daniel-KM/Omeka-S-module-EasyAdmin
+[Cron]: https://gitlab.com/Daniel-KM/Omeka-S-module-Cron
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
 [documentation]: https://solr.apache.org/guide/the-dismax-query-parser.html#q-alt-parameter
 [this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
