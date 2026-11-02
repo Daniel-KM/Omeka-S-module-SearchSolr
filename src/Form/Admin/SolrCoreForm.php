@@ -234,6 +234,23 @@ class SolrCoreForm extends Form
                 ],
             ])
             ->add([
+                'name' => 'private_values',
+                'type' => Element\Radio::class,
+                'options' => [
+                    'label' => 'Private values', // @translate
+                    'info' => 'In a public resource, a private value (for example the ocr of a reserved document) is indexed like the public values, so the public search finds the resource through it. When separated, the private values are searchable only by the users who can see them. This is useful for the engine used by the public sites only: a dedicated admin engine can keep them in the same fields. The schema is updated on save and a reindexation is required.', // @translate
+                    'value_options' => [
+                        '' => 'Same fields than public values', // @translate
+                        'separate' => 'Separate fields, not searchable by visitors', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'private_values',
+                    'value' => '',
+                    'required' => false,
+                ],
+            ])
+            ->add([
                 'name' => 'support',
                 'type' => Element\Radio::class,
                 'options' => [
@@ -338,6 +355,10 @@ class SolrCoreForm extends Form
         $inputFilter = $this->getInputFilter();
         $settingFilters = $inputFilter->get('o:settings');
         $settingFilters
+            ->add([
+                'name' => 'private_values',
+                'required' => false,
+            ])
             ->add([
                 'name' => 'support',
                 'required' => false,

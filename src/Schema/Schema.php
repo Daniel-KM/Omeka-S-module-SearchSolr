@@ -45,6 +45,11 @@ class Schema
      */
     protected $fields = [];
 
+    /**
+     * @var array|null
+     */
+    protected $dynamicFieldsMapBy;
+
     public function __construct(string $schemaUrl)
     {
         $this->schemaUrl = $schemaUrl;
@@ -245,21 +250,21 @@ class Schema
      */
     public function getDynamicFieldsMapByMainPart(?string $fieldNameType = null): array
     {
-        static $dynamicFieldsMapBy;
-        if (!isset($dynamicFieldsMapBy)) {
-            $dynamicFieldsMapBy = [];
+        if (!isset($this->dynamicFieldsMapBy)) {
             try {
                 $schema = $this->getSchema();
             } catch (\Throwable $e) {
                 return [];
             }
+            $this->dynamicFieldsMapBy = [];
             foreach ($schema['dynamicFields'] as $field) {
                 $name = $field['name'];
                 $isSuffix = $name[0] === '*';
                 $field['is_suffix'] = $isSuffix;
-                $dynamicFieldsMapBy[$isSuffix ? mb_substr($name, 1) : mb_substr($name, 0, -1)] = $field;
+                $this->dynamicFieldsMapBy[$isSuffix ? mb_substr($name, 1) : mb_substr($name, 0, -1)] = $field;
             }
         }
+        $dynamicFieldsMapBy = $this->dynamicFieldsMapBy;
 
         switch ($fieldNameType) {
             default:
@@ -308,7 +313,9 @@ class Schema
         $fieldsList = $this->getFieldsByName();
         if (!empty($fieldsList['_text_']['indexed']) && !empty($solrSchema['copyFields'])) {
             foreach ($solrSchema['copyFields'] as $copyField) {
-                if ($copyField['dest'] === '_text_' && $copyField['source'] === '*') {
+                // The source is "*", or the public fields only when the private
+                // values are separated.
+                if ($copyField['dest'] === '_text_') {
                     $hasDefaultField = true;
                     break;
                 }

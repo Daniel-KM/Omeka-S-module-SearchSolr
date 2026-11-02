@@ -328,6 +328,8 @@ class CoreController extends AbstractActionController
             ['solr_core_name' => $solrCore->name()]
         ));
 
+        $this->preparePrivateValuesSchema((int) $id);
+
         $missingMaps = $solrCore->missingRequiredMaps();
         if ($missingMaps) {
             $this->messenger()->addError(new PsrMessage(
@@ -994,6 +996,35 @@ class CoreController extends AbstractActionController
     }
 
     /**
+     * Prepare the schema when the private values are separated.
+     */
+    protected function preparePrivateValuesSchema(int $id): void
+    {
+        // The settings are updated via sql, so refresh the engine first.
+        $entityManager = $this->getEvent()->getApplication()->getServiceManager()->get('Omeka\EntityManager');
+        $engine = $entityManager->find(\AdvancedSearch\Entity\SearchEngine::class, $id);
+        if ($engine) {
+            $entityManager->refresh($engine);
+        }
+        $solrCore = $this->solrCore($id);
+        if (!$solrCore->isPrivateValuesSeparated() || $solrCore->hasPrivateValuesSchema()) {
+            return;
+        }
+        $result = $solrCore->ensurePrivateValuesSchema();
+        if ($result === true) {
+            $this->messenger()->addWarning(new PsrMessage(
+                'The schema of the core "{solr_core_name}" was updated to separate the private values. Reindex required.', // @translate
+                ['solr_core_name' => $solrCore->name()]
+            ));
+        } else {
+            $this->messenger()->addError(new PsrMessage(
+                'Unable to update the schema of the core "{solr_core_name}" to separate the private values: {error}', // @translate
+                ['solr_core_name' => $solrCore->name(), 'error' => $result]
+            ));
+        }
+    }
+
+    /**
      * Create the catchall copyField "_text_" in Solr for full-text search.
      */
     public function createCatchallAction()
@@ -1021,11 +1052,12 @@ class CoreController extends AbstractActionController
             $endpoint = $solariumClient->getEndpoint();
             $url = $endpoint->getBaseUri() . 'schema';
 
+            // Without the private fields when they are separated.
             $data = json_encode([
-                'add-copy-field' => [
-                    'source' => '*',
-                    'dest' => '_text_',
-                ],
+                'add-copy-field' => array_map(
+                    fn ($source) => ['source' => $source, 'dest' => '_text_'],
+                    $solrCore->catchallCopyFieldSources()
+                ),
             ]);
 
             $httpClient = $this->solrHttpClient($solrCore, $url);
@@ -1086,11 +1118,15 @@ class CoreController extends AbstractActionController
             $endpoint = $solariumClient->getEndpoint();
             $url = $endpoint->getBaseUri() . 'schema';
 
+            $copyFields = array_filter(
+                $schema->getSchema()['copyFields'] ?? [],
+                fn ($copyField) => $copyField['dest'] === '_text_'
+            );
             $data = json_encode([
-                'delete-copy-field' => [
-                    'source' => '*',
-                    'dest' => '_text_',
-                ],
+                'delete-copy-field' => array_values(array_map(
+                    fn ($copyField) => ['source' => $copyField['source'], 'dest' => '_text_'],
+                    $copyFields
+                )),
             ]);
 
             $httpClient = $this->solrHttpClient($solrCore, $url);
@@ -2985,6 +3021,15 @@ class CoreController extends AbstractActionController
             return;
         }
 
+        if ($solrCore->isPrivateValuesSeparated()) {
+            if (!$solrCore->hasPrivateValuesSchema()) {
+                $this->messenger()->addError(new PsrMessage(
+                    'The private values are set to be separated, but the schema of the core is not ready, so they are not indexed. Save the core to prepare the schema.' // @translate
+                ));
+            }
+            return;
+        }
+
         $searchConfigs = $solrCore->searchConfigs();
         if (!$searchConfigs) {
             return;
@@ -3020,7 +3065,7 @@ class CoreController extends AbstractActionController
         }
 
         $this->messenger()->addError(new PsrMessage(
-            'The engine indexes the private values (visibility "{visibility}"), but it is used by the search pages of a site: {names}. A private value can be found by any visitor, because the query filters the visibility of the resources, not the one of the values. Set the visibility of the engine to "public only" and reindex, or use another engine for the admin.', // @translate
+            'The engine indexes the private values (visibility "{visibility}"), but it is used by the search pages of a site: {names}. A private value can be found by any visitor, because the query filters the visibility of the resources, not the one of the values. Set the visibility of the engine to "public only" or separate the private values in the settings of the core and reindex, or use another engine for the admin.', // @translate
             ['visibility' => $visibility, 'names' => implode(', ', $configsInSites)]
         ));
     }

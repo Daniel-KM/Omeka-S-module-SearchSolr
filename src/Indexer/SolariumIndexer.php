@@ -190,6 +190,15 @@ class SolariumIndexer extends AbstractIndexer
      */
     protected $hardCommitThreshold = 10000;
 
+    /**
+     * Mode of the private values of the value maps: null to index them with the
+     * public values, "separate" to index them in the private fields, or "skip"
+     * when the schema is not ready to separate them.
+     *
+     * @var string|null
+     */
+    protected $privateValuesMode;
+
     public function canIndex(string $resourceName): bool
     {
         return $this->getServiceLocator()
@@ -644,6 +653,24 @@ class SolariumIndexer extends AbstractIndexer
 
         $this->mainLocale = $services->get('Omeka\Settings')->get('locale');
 
+        // An engine indexing public values only has nothing to separate.
+        $this->privateValuesMode = null;
+        if ($this->getSolrCore()->isPrivateValuesSeparated()
+            && $this->searchEngine->setting('visibility') !== 'public'
+        ) {
+            if ($this->getSolrCore()->hasPrivateValuesSchema()) {
+                $this->privateValuesMode = 'separate';
+            } else {
+                // Safer to skip the private values than to index them with
+                // the public ones.
+                $this->privateValuesMode = 'skip';
+                $this->getLogger()->warn(
+                    'The private values are set to be separated, but the schema of the Solr core "{solr_core}" is not ready, so they are not indexed. Save the core to prepare the schema.', // @translate
+                    ['solr_core' => $this->getSolrCore()->name()]
+                );
+            }
+        }
+
         // Check Solr field count against maxFields limit.
         $fieldStatus = $this->getSolrCore()->fieldLimitStatus();
         if ($fieldStatus) {
@@ -776,7 +803,20 @@ class SolariumIndexer extends AbstractIndexer
                 continue;
             }
 
+            $isSplitMap = $this->privateValuesMode && $this->isSplitMap($solrMap, $valueExtractor);
+            if ($isSplitMap) {
+                if ($this->privateValuesMode === 'separate') {
+                    $this->appendPrivateValues($resource, $document, $solrMap, $valueExtractor);
+                }
+                $valueExtractor->setEngineVisibility('public');
+            }
+
             $extractedValues = $valueExtractor->extractValue($resource, $solrMap);
+
+            if ($isSplitMap) {
+                $valueExtractor->setEngineVisibility($this->searchEngine->setting('visibility'));
+            }
+
             if (!count($extractedValues)) {
                 continue;
             }
@@ -841,6 +881,47 @@ class SolariumIndexer extends AbstractIndexer
         // because the resource is loaded in job.
 
         return $document;
+    }
+
+    /**
+     * Check if the public and private values of a map should be separated.
+     *
+     * Only the maps of property values without their own visibility filter are
+     * concerned: the other sources have no visibility.
+     */
+    protected function isSplitMap(
+        SolrMapRepresentation $solrMap,
+        \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor
+    ): bool {
+        if (!method_exists($valueExtractor, 'setEngineVisibility')
+            || $solrMap->pool('filter_visibility')
+        ) {
+            return false;
+        }
+        $firstSource = $solrMap->firstSource();
+        return $firstSource === 'value_annotations'
+            || (bool) $this->easyMeta->propertyId($firstSource);
+    }
+
+    /**
+     * Index the private values of a map in its private field.
+     */
+    protected function appendPrivateValues(
+        AbstractResourceRepresentation $resource,
+        SolariumInputDocument $document,
+        SolrMapRepresentation $solrMap,
+        \SearchSolr\ValueExtractor\ValueExtractorInterface $valueExtractor
+    ): void {
+        $valueExtractor->setEngineVisibility('private');
+        $extractedValues = $valueExtractor->extractValue($resource, $solrMap);
+        $valueExtractor->setEngineVisibility($this->searchEngine->setting('visibility'));
+        if (!count($extractedValues)) {
+            return;
+        }
+        $privateField = $this->solrCore->privateFieldName($solrMap->fieldName());
+        foreach ($this->formatValues($extractedValues, $solrMap) as $value) {
+            $document->addField($privateField, $value);
+        }
     }
 
     protected function formatValues(array $values, SolrMapRepresentation $solrMap)

@@ -688,6 +688,25 @@ class SolariumQuerier extends AbstractQuerier
      *
      * @return string The value of the param "uf": the fields, else "-*".
      */
+    /**
+     * Get the catchall of the private values for the users who can see them.
+     *
+     * A non-public query may be done by a user who can browse the admin but not
+     * see all the private values (researcher, author), so the right to view all
+     * resources is checked too.
+     *
+     * @return string[]
+     */
+    protected function privateQueryFields(): array
+    {
+        return !$this->query->getIsPublic()
+            && $this->services->get('Omeka\Acl')->userIsAllowed(\Omeka\Entity\Resource::class, 'view-all')
+            && $this->solrCore->isPrivateValuesSeparated()
+            && $this->solrCore->hasPrivateValuesSchema()
+            ? [\SearchSolr\Stdlib\SolrCore::PRIVATE_CATCHALL]
+            : [];
+    }
+
     protected function userFields(): string
     {
         $fields = [];
@@ -970,6 +989,7 @@ class SolariumQuerier extends AbstractQuerier
         if ($this->solrCore->schema()->checkDefaultField()) {
             $dismax->setQueryFields(implode(' ', array_merge(
                 ['_text_'],
+                $this->privateQueryFields(),
                 $this->getCustomBoostedFields(),
                 $languageFields
             )));

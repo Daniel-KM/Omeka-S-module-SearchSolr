@@ -56,6 +56,18 @@ class SolrCore
      *
      * @var string[]
      */
+    /**
+     * Suffix of the fields storing the private values, when they are separated
+     * from the public ones.
+     */
+    const PRIVATE_FIELD_SUFFIX = '_private';
+
+    /**
+     * Catchall of the private values, queried only by the users who can see
+     * them. The catchall "_text_" is then filled without the private fields.
+     */
+    const PRIVATE_CATCHALL = '_text_private_';
+
     const REQUIRED_SOURCES = [
         'resource_name',
         'o:id',
@@ -140,6 +152,14 @@ class SolrCore
      * @var Schema
      */
     protected $schema;
+
+    /**
+     * Memoized maps by method, by instance and not static, because a process
+     * may manage several engines.
+     *
+     * @var array
+     */
+    protected $mapsCache = [];
 
     public function __construct(SearchEngineRepresentation $engine, ServiceLocatorInterface $services)
     {
@@ -521,7 +541,7 @@ class SolrCore
      */
     public function maps(): array
     {
-        static $maps;
+        $maps = $this->mapsCache['maps'] ?? null;
 
         if ($maps === null) {
             $maps = [];
@@ -552,6 +572,7 @@ class SolrCore
                 }
             });
             $maps = array_replace($sort, $maps);
+            $this->mapsCache['maps'] = $maps;
         }
 
         return $maps;
@@ -566,16 +587,18 @@ class SolrCore
      */
     public function mapsOrderedByStructure(): array
     {
-        static $maps;
+        $maps = $this->mapsCache['structure'] ?? null;
 
         if ($maps === null) {
             $maps = $this->mapsByResourceName();
             foreach ($maps as &$mapss) {
                 usort($mapss, fn ($a, $b) => $a->fieldName() <=> $b->fieldName());
             }
+            unset($mapss);
             if ($maps) {
                 $maps = array_merge(...array_values($maps));
             }
+            $this->mapsCache['structure'] = $maps;
         }
 
         return $maps;
@@ -589,7 +612,7 @@ class SolrCore
      */
     public function mapsByResourceName($resourceName = null): array
     {
-        static $maps;
+        $maps = $this->mapsCache['by_resource_name'] ?? null;
 
         if ($maps === null) {
             $maps = [
@@ -602,6 +625,7 @@ class SolrCore
                 $maps[$mapEntity->getResourceName()][] = $mapAdapter->getRepresentation($mapEntity);
             }
             $maps = array_filter($maps);
+            $this->mapsCache['by_resource_name'] = $maps;
         }
 
         if (!$resourceName) {
@@ -2106,6 +2130,180 @@ class SolrCore
             ['error' => $result]
         );
         return false;
+    }
+
+    /**
+     * Check if the private values are indexed in separate fields.
+     *
+     * The public values of a map are indexed in its field and the private ones
+     * in the same field with the suffix "_private", that is not copied into the
+     * catchall "_text_", so the public search cannot find a resource through a
+     * private value. This is useful only for the engine used by the public
+     * sites: a dedicated admin engine indexes all values in the same fields.
+     */
+    public function isPrivateValuesSeparated(): bool
+    {
+        return $this->setting('private_values') === 'separate';
+    }
+
+    public function privateFieldName(string $fieldName): string
+    {
+        return $fieldName . self::PRIVATE_FIELD_SUFFIX;
+    }
+
+    /**
+     * Check if the schema can store the private values separately.
+     *
+     * The dynamic field "*_private" and the private catchall should exist, and
+     * the catchall "_text_", if any, should not copy all the fields ("*").
+     */
+    public function hasPrivateValuesSchema(): bool
+    {
+        $schema = $this->schema();
+        $schemaArray = $schema->getSchema();
+        $hasDynamicField = false;
+        foreach ($schemaArray['dynamicFields'] ?? [] as $dynamicField) {
+            if ($dynamicField['name'] === '*' . self::PRIVATE_FIELD_SUFFIX) {
+                $hasDynamicField = !empty($dynamicField['indexed']) || !isset($dynamicField['indexed']);
+                break;
+            }
+        }
+        if (!$hasDynamicField || !isset($schema->getFieldsByName()[self::PRIVATE_CATCHALL])) {
+            return false;
+        }
+        $hasPrivateCopy = false;
+        foreach ($schemaArray['copyFields'] ?? [] as $copyField) {
+            if ($copyField['dest'] === '_text_' && $copyField['source'] === '*') {
+                return false;
+            }
+            if ($copyField['dest'] === self::PRIVATE_CATCHALL
+                && $copyField['source'] === '*' . self::PRIVATE_FIELD_SUFFIX
+            ) {
+                $hasPrivateCopy = true;
+            }
+        }
+        return $hasPrivateCopy;
+    }
+
+    /**
+     * Sources of the copy fields of the catchall "_text_".
+     *
+     * Without separated private values, all fields ("*") are copied. Else, the
+     * suffix patterns of the dynamic fields and the static fields are copied,
+     * except the private ones, because a copy field cannot exclude a field.
+     *
+     * @return string[]
+     */
+    public function catchallCopyFieldSources(): array
+    {
+        if (!$this->isPrivateValuesSeparated()) {
+            return ['*'];
+        }
+        $schema = $this->schema();
+        $sources = [];
+        foreach ($schema->getSchema()['dynamicFields'] ?? [] as $dynamicField) {
+            $name = $dynamicField['name'];
+            // A prefix pattern (attr_*, ignored_*…) may match a private field.
+            if (substr($name, 0, 1) === '*'
+                && $name !== '*' . self::PRIVATE_FIELD_SUFFIX
+                && (!isset($dynamicField['indexed']) || $dynamicField['indexed'])
+            ) {
+                $sources[] = $name;
+            }
+        }
+        $copyDests = array_column($schema->getSchema()['copyFields'] ?? [], 'dest');
+        foreach (array_keys($schema->getFieldsByName()) as $name) {
+            // Skip the internal fields and the fields filled by copy only.
+            if (substr($name, 0, 1) !== '_' && !in_array($name, $copyDests, true)) {
+                $sources[] = $name;
+            }
+        }
+        return $sources;
+    }
+
+    /**
+     * Prepare the schema to store the private values separately.
+     *
+     * Create the dynamic field "*_private" and the private catchall, and replace
+     * the copy of all fields into "_text_" by the copy of the public ones. A
+     * reindexation is required.
+     *
+     * @return bool|string True on success, error message on failure.
+     */
+    public function ensurePrivateValuesSchema()
+    {
+        if (!$this->isPrivateValuesSeparated()) {
+            return 'The private values are not set to be separated.';
+        }
+
+        $schema = $this->schema();
+        $schemaArray = $schema->getSchema();
+        $fields = $schema->getFieldsByName();
+        $textType = $fields['_text_']['type'] ?? null;
+        if (!$textType) {
+            $dynamicTypes = array_column($schemaArray['dynamicFields'] ?? [], 'type', 'name');
+            $textType = $dynamicTypes['*_txt'] ?? 'text_general';
+        }
+
+        $commands = [];
+        $dynamicName = '*' . self::PRIVATE_FIELD_SUFFIX;
+        if (!in_array($dynamicName, array_column($schemaArray['dynamicFields'] ?? [], 'name'), true)) {
+            $commands['add-dynamic-field'] = [
+                'name' => $dynamicName,
+                'type' => $textType,
+                'indexed' => true,
+                'stored' => false,
+                'multiValued' => true,
+            ];
+        }
+        if (!isset($fields[self::PRIVATE_CATCHALL])) {
+            $commands['add-field'] = [
+                'name' => self::PRIVATE_CATCHALL,
+                'type' => $textType,
+                'indexed' => true,
+                'stored' => false,
+                'multiValued' => true,
+            ];
+        }
+        if ($commands) {
+            $result = $this->postToSolrConfig($this->clientUrl() . '/schema', json_encode($commands));
+            if ($result !== true) {
+                return is_string($result) ? $result : 'Unable to update the schema.';
+            }
+        }
+
+        $existingCopies = [];
+        foreach ($schemaArray['copyFields'] ?? [] as $copyField) {
+            $existingCopies[$copyField['source'] . ' ' . $copyField['dest']] = true;
+        }
+
+        $deletes = [];
+        $adds = [];
+        if (isset($existingCopies['* _text_'])) {
+            $deletes[] = ['source' => '*', 'dest' => '_text_'];
+            foreach ($this->catchallCopyFieldSources() as $source) {
+                if (!isset($existingCopies[$source . ' _text_'])) {
+                    $adds[] = ['source' => $source, 'dest' => '_text_'];
+                }
+            }
+        }
+        if (!isset($existingCopies[$dynamicName . ' ' . self::PRIVATE_CATCHALL])) {
+            $adds[] = ['source' => $dynamicName, 'dest' => self::PRIVATE_CATCHALL];
+        }
+
+        $commands = array_filter([
+            'delete-copy-field' => $deletes,
+            'add-copy-field' => $adds,
+        ]);
+        if ($commands) {
+            $result = $this->postToSolrConfig($this->clientUrl() . '/schema', json_encode($commands));
+            if ($result !== true) {
+                return is_string($result) ? $result : 'Unable to update the copy fields of the schema.';
+            }
+        }
+
+        $this->schema = null;
+        return true;
     }
 
     /**
