@@ -27,6 +27,6 @@ return [
         // Or specify fields: ['dcterms_title_txt', 'dcterms_creator_txt'].
         'solr_fields' => ['suggest_txt'],
         'solr_lookup_implementation' => 'AnalyzingInfixLookupFactory',
-        'solr_skip_build_on_commit' => false,
+        'solr_build_on_commit' => false,
     ],
 ];

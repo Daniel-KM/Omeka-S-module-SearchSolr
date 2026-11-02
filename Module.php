@@ -675,14 +675,14 @@ class Module extends AbstractModule
                 ],
             ])
             ->add([
-                'name' => 'solr_skip_build_on_commit',
+                'name' => 'solr_build_on_commit',
                 'type' => \Laminas\Form\Element\Checkbox::class,
                 'options' => [
-                    'label' => 'Skip automatic reindex on resource save', // @translate
-                    'info' => 'By default, the suggester dictionary is rebuilt each time documents are committed. Check to disable this on very large indexes.', // @translate
+                    'label' => 'Automatic reindex on resource save', // @translate
+                    'info' => 'By default, the suggester dictionary is rebuilt by a scheduled task, daily or according to the frequency set in the module EasyAdmin or Cron. Check to rebuild it each time documents are committed, that is costly on large indexes and during a reindexation.', // @translate
                 ],
                 'attributes' => [
-                    'id' => 'solr_skip_build_on_commit',
+                    'id' => 'solr_build_on_commit',
                 ],
             ])
         ;

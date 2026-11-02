@@ -7,6 +7,9 @@ use Omeka\Job\AbstractJob;
 /**
  * Create Solr suggesters and build their dictionaries.
  *
+ * The job processes one suggester ("search_suggester_id") or several ones
+ * ("search_suggester_ids"), for example from the scheduled task.
+ *
  * This job resolves the Solr fields from the suggester settings, creates a
  * single SuggestComponent with all suggesters, updates the /suggest handler,
  * and rebuilds each dictionary.
@@ -22,17 +25,34 @@ class CreateSolrSuggesters extends AbstractJob
     {
         $services = $this->getServiceLocator();
         $this->logger = $services->get('Omeka\Logger');
-        $api = $services->get('Omeka\ApiManager');
 
         $referenceIdProcessor = new \Laminas\Log\Processor\ReferenceId();
         $referenceIdProcessor->setReferenceId('searchsolr/suggester/job_' . $this->job->getId());
         $this->logger->addProcessor($referenceIdProcessor);
 
-        $suggesterId = (int) $this->getArg('search_suggester_id');
-        if (!$suggesterId) {
+        $suggesterIds = array_filter(array_map('intval', $this->getArg('search_suggester_ids') ?: [$this->getArg('search_suggester_id')]));
+        if (!$suggesterIds) {
             $this->logger->err('Missing search_suggester_id argument.'); // @translate
             return;
         }
+
+        // The suggesters are processed sequentially to avoid concurrent updates
+        // of the solr config.
+        foreach ($suggesterIds as $suggesterId) {
+            if ($this->shouldStop()) {
+                $this->logger->warn('Job stopped.'); // @translate
+                return;
+            }
+            $this->createSuggester($suggesterId);
+        }
+    }
+
+    /**
+     * Create and build the solr suggesters of a search suggester.
+     */
+    protected function createSuggester(int $suggesterId): void
+    {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
 
         /** @var \AdvancedSearch\Api\Representation\SearchSuggesterRepresentation $suggester */
         try {
@@ -102,7 +122,7 @@ class CreateSolrSuggesters extends AbstractJob
         }
 
         $lookupImpl = $settings['solr_lookup_implementation'] ?? 'AnalyzingInfixLookupFactory';
-        $buildOnCommit = empty($settings['solr_skip_build_on_commit']);
+        $buildOnCommit = !empty($settings['solr_build_on_commit']);
 
         $timeStart = microtime(true);
         $totalFields = count($solrFields);
