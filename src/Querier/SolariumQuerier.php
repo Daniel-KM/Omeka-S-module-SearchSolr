@@ -1332,10 +1332,9 @@ class SolariumQuerier extends AbstractQuerier
                     $facet->setOptions(['domain' => ['excludeTags' => [$excludeTag]]]);
                 }
 
-                if (isset($data['limit']) && $data['limit'] > 0) {
-                    $facet
-                        ->setLimit($data['limit']);
-                }
+                // Without limit, the json facets of Solr return 10 values only.
+                $facet
+                    ->setLimit(isset($data['limit']) && $data['limit'] > 0 ? (int) $data['limit'] : -1);
             }
 
             if (!empty($data['values'])) {
