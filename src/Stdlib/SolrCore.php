@@ -2302,6 +2302,8 @@ class SolrCore
             }
         }
 
+        // Each change of the schema reloads the core.
+        $this->waitForCoreReady(60, 2);
         $this->schema = null;
         return true;
     }
