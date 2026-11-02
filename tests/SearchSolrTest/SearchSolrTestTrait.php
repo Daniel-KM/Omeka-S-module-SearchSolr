@@ -95,6 +95,9 @@ trait SearchSolrTestTrait
                 if (isset($value['o:label'])) {
                     $valueData['o:label'] = $value['o:label'];
                 }
+                if (isset($value['is_public'])) {
+                    $valueData['is_public'] = $value['is_public'];
+                }
                 $itemData[$term][] = $valueData;
             }
         }

@@ -161,7 +161,7 @@ class SuggesterFormIntegrationTest extends TestCase
         $form = $this->getSolrSuggesterForm();
 
         $settings = $form->get('o:settings');
-        $this->assertTrue($settings->has('solr_skip_build_on_commit'));
+        $this->assertTrue($settings->has('solr_build_on_commit'));
     }
 
     /**
