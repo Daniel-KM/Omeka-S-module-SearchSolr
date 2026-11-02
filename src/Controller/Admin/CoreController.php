@@ -882,7 +882,7 @@ class CoreController extends AbstractActionController
 
     protected function appendTsvRow($stream, array $fields): void
     {
-        fputcsv($stream, $fields, "\t", "\0", "\0");
+        fputcsv($stream, $fields, "\t", "\0", '');
     }
 
     protected function extractRows(string $filepath, array $options = []): array
@@ -909,7 +909,7 @@ class CoreController extends AbstractActionController
         }
 
         $countHeaders = count($this->mappingHeaders);
-        $rows = array_map(fn ($v) => str_getcsv($v, $delimiter, $enclosure), array_map('trim', explode("\n", $content)));
+        $rows = array_map(fn ($v) => str_getcsv($v, $delimiter, $enclosure, ''), array_map('trim', explode("\n", $content)));
         foreach ($rows as $key => $row) {
             if (empty(array_filter($row))) {
                 unset($rows[$key]);
