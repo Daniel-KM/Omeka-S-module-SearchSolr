@@ -2129,3 +2129,27 @@ if (version_compare($oldVersion, '3.5.71', '<')) {
         'A sync and a re-indexation are recommended.' // @translate
     ));
 }
+
+if (version_compare($oldVersion, '3.5.76', '<')) {
+    // The option "solr_skip_build_on_commit" is inverted as
+    // "solr_build_on_commit" and the solr suggesters are no more rebuilt on
+    // each commit, but by a scheduled task. The solr config is updated on the
+    // next build.
+    $suggesterRows = $connection->fetchAllAssociative(
+        'SELECT `search_suggester`.`id`, `search_suggester`.`settings` FROM `search_suggester` JOIN `search_engine` ON `search_engine`.`id` = `search_suggester`.`engine_id` WHERE `search_engine`.`adapter` = ?',
+        ['solarium']
+    );
+    foreach ($suggesterRows as $suggesterRow) {
+        $suggesterSettings = json_decode((string) $suggesterRow['settings'], true) ?: [];
+        unset($suggesterSettings['solr_skip_build_on_commit']);
+        $suggesterSettings['solr_build_on_commit'] = false;
+        $connection->executeStatement(
+            'UPDATE `search_suggester` SET `settings` = ? WHERE `id` = ?',
+            [json_encode($suggesterSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $suggesterRow['id']]
+        );
+    }
+
+    $messenger->addSuccess(new PsrMessage(
+        'The Solr suggesters are no more rebuilt each time a resource is saved, but by a scheduled task, once a day when a resource changed, or according to the frequency set in the module EasyAdmin or Cron (task "Rebuild Solr suggesters"). The option can be checked in each suggester.' // @translate
+    ));
+}
