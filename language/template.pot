@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-19 00:00+0000\n"
+"POT-Creation-Date: 2026-11-02 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,53 +33,53 @@ msgid ""
 "This module requires module \"{module}\" version \"{version}\" or greater."
 msgstr ""
 
-#: Module.php:393
+#: Module.php:424
 msgid "Solr admin interface, if reachable"
 msgstr ""
 
-#: Module.php:397
+#: Module.php:428
 msgid ""
 "This url is shared by another core. Two cores on the same physical core "
 "conflict on the schema and the reindex."
 msgstr ""
 
-#: Module.php:398
+#: Module.php:429
 msgid "shared url"
 msgstr ""
 
-#: Module.php:403
+#: Module.php:434
 msgid "Edit the Solr connection"
 msgstr ""
 
-#: Module.php:407
+#: Module.php:438
 msgid "Map Omeka metadata and Solr indices"
 msgstr ""
 
-#: Module.php:411
+#: Module.php:442
 msgid "View indexing statistics"
 msgstr ""
 
-#: Module.php:420
+#: Module.php:451
 msgid "index complete"
 msgstr ""
 
-#: Module.php:421
+#: Module.php:452
 msgid "index incomplete"
 msgstr ""
 
-#: Module.php:422
+#: Module.php:453
 msgid "index unreachable"
 msgstr ""
 
-#: Module.php:423
+#: Module.php:454
 msgid "outdated"
 msgstr ""
 
-#: Module.php:424
+#: Module.php:455
 msgid "index complete but outdated"
 msgstr ""
 
-#: Module.php:425
+#: Module.php:456
 msgid ""
 "Documents of the index compared with the resources of the api: total of the "
 "index / total of the api, and the documents that were not reindexed after a "
@@ -87,11 +87,11 @@ msgid ""
 "an item set, is not detected: only a full reindexation fixes such documents."
 msgstr ""
 
-#: Module.php:426
+#: Module.php:457
 msgid "indexed"
 msgstr ""
 
-#: Module.php:952
+#: Module.php:1107
 msgid "Solr"
 msgstr ""
 
@@ -1465,7 +1465,15 @@ msgstr ""
 msgid "A sync and a re-indexation are recommended."
 msgstr ""
 
-#: Module.php:157 src/Stdlib/SolrCore.php:370
+#: data/scripts/upgrade.php:2153
+msgid ""
+"The Solr suggesters are no more rebuilt each time a resource is saved, but "
+"by a scheduled task, once a day when a resource changed, or according to the "
+"frequency set in the module EasyAdmin or Cron (task \"Rebuild Solr "
+"suggesters\"). The option can be checked in each suggester."
+msgstr ""
+
+#: Module.php:157 src/Stdlib/SolrCore.php:390
 msgid "The composer library \"{library}\" is not installed. See readme."
 msgstr ""
 
@@ -1473,129 +1481,135 @@ msgstr ""
 msgid "The resource \"{resource}\" is not available through the rest api."
 msgstr ""
 
-#: Module.php:472
+#: Module.php:503
 #, php-format
 msgid ""
 "The engine \"%s\" already uses this Solr endpoint. Give each engine its own "
 "physical Solr core (a distinct core name in the url)."
 msgstr ""
 
-#: Module.php:548
+#: Module.php:579
 msgid "Boost multipliers by index"
 msgstr ""
 
-#: Module.php:555
+#: Module.php:586
 msgid "Multiplier"
 msgstr ""
 
-#: Module.php:579
+#: Module.php:610
 msgid "Minimum match (or/and)"
 msgstr ""
 
-#: Module.php:580
+#: Module.php:611
 msgid ""
 "Integer \"1\" means \"OR\", \"100%\" means \"AND\". Complex expressions are "
 "possible, like \"3<80%\". If empty, the solrconfig.xml config is used."
 msgstr ""
 
-#: Module.php:592
+#: Module.php:623
 msgid "Tie breaker"
 msgstr ""
 
-#: Module.php:593
+#: Module.php:624
 msgid ""
 "Increase score according to the number of matched fields. If empty, the "
 "solrconfig.xml config is used."
 msgstr ""
 
-#: Module.php:624
+#: Module.php:655
 msgid "suggest_txt (unified field, recommended)"
 msgstr ""
 
-#: Module.php:625
+#: Module.php:656
 msgid "All text and string fields"
 msgstr ""
 
-#: Module.php:628 Module.php:629
+#: Module.php:659 Module.php:660
 msgid "options"
 msgstr ""
 
-#: Module.php:637
+#: Module.php:668
 msgid "Solr suggester name"
 msgstr ""
 
-#: Module.php:638
+#: Module.php:669
 msgid ""
 "Base name of the suggester component in Solr. If empty, will be auto-"
 "generated. When multiple fields are selected, a suffix is added for each "
 "field."
 msgstr ""
 
-#: Module.php:642
+#: Module.php:673
 msgid "omeka_suggester"
 msgstr ""
 
-#: Module.php:649
+#: Module.php:680
 msgid "Solr fields for suggestions"
 msgstr ""
 
-#: Module.php:650
+#: Module.php:681
 msgid ""
 "The unified field \"suggest_txt\" is the most efficient option: single "
 "suggester, short-value fields only. \"All fields\" creates one suggester per "
 "text/string field (including long values). Individual indexes can be grouped."
 msgstr ""
 
-#: Module.php:657
+#: Module.php:688
 msgid "Select fields…"
 msgstr ""
 
-#: Module.php:664
+#: Module.php:695
 msgid "Algorithm for suggestions"
 msgstr ""
 
-#: Module.php:666
+#: Module.php:697
 msgid "AnalyzingInfixLookup (matches anywhere)"
 msgstr ""
 
-#: Module.php:667
+#: Module.php:698
 msgid "BlendedInfixLookup (prefix weighted)"
 msgstr ""
 
-#: Module.php:668
+#: Module.php:699
 msgid "AnalyzingLookup (prefix only)"
 msgstr ""
 
-#: Module.php:669
+#: Module.php:700
 msgid "FuzzyLookup (fuzzy matching)"
 msgstr ""
 
-#: Module.php:681
-msgid "Skip automatic reindex on resource save"
+#: Module.php:712
+msgid "Automatic reindex on resource save"
 msgstr ""
 
-#: Module.php:682
+#: Module.php:713
 msgid ""
-"By default, the suggester dictionary is rebuilt each time documents are "
-"committed. Check to disable this on very large indexes."
+"By default, the suggester dictionary is rebuilt by a scheduled task, daily "
+"or according to the frequency set in the module EasyAdmin or Cron. Check to "
+"rebuild it each time documents are committed, that is costly on large "
+"indexes and during a reindexation."
 msgstr ""
 
-#: Module.php:729
+#: Module.php:760
 msgid "A suggester build job is already running (job #{job_id}). Skipping."
 msgstr ""
 
-#: Module.php:741
+#: Module.php:772
 msgid ""
 "Processing indexation of Solr suggestions in background (job {link_job}"
 "#{job_id}{link_end}, {link_log}logs{link_end})."
 msgstr ""
 
-#: Module.php:1144
+#: Module.php:912
+msgid "SearchSolr cron: unable to rebuild the suggesters: {message}"
+msgstr ""
+
+#: Module.php:1299
 #, php-format
 msgid "The default core can be configured in the %1$ssearch manager%2$s."
 msgstr ""
 
-#: Module.php:1225
+#: Module.php:1380
 #, php-format
 msgid ""
 "A search config \"Api\" bound to the Solr engine has been created. To speed "
@@ -1603,7 +1617,7 @@ msgid ""
 "it in the %1$smain settings%2$s once the core is indexed."
 msgstr ""
 
-#: Module.php:1240
+#: Module.php:1395
 msgid ""
 "The public search is protected by the query filter. For a strong protection "
 "against private metadata leak, you can create a second core indexed from "
@@ -1611,7 +1625,7 @@ msgid ""
 "pages and suggesters."
 msgstr ""
 
-#: Module.php:1278
+#: Module.php:1433
 msgid "A default Solr suggester has been created."
 msgstr ""
 
@@ -1697,22 +1711,22 @@ msgstr ""
 msgid "Solr [via Solarium]"
 msgstr ""
 
-#: src/Schema/Schema.php:108
+#: src/Schema/Schema.php:113
 msgid ""
 "Solr core is not available. Check config or certificate to get Solr core "
 "schema {url}."
 msgstr ""
 
-#: src/Schema/Schema.php:113
+#: src/Schema/Schema.php:118
 msgid "Solr core is not available. Check config to get Solr core schema {url}."
 msgstr ""
 
-#: src/Schema/Schema.php:127
+#: src/Schema/Schema.php:132
 msgid ""
 "Response is not valid. Check output of {url}, that should be valid json data."
 msgstr ""
 
-#: src/Schema/Schema.php:139
+#: src/Schema/Schema.php:144
 msgid ""
 "Response is not valid. Check output of {url}, that should be a json with a "
 "key \"schema\"."
@@ -1728,7 +1742,7 @@ msgstr ""
 msgid "Solr core #{id} not found."
 msgstr ""
 
-#: src/Job/ReduceSolrFields.php:69 src/Controller/Admin/CoreController.php:1730
+#: src/Job/ReduceSolrFields.php:69 src/Controller/Admin/CoreController.php:1766
 msgid "Unable to determine the Solr maxFields limit."
 msgstr ""
 
@@ -1801,59 +1815,63 @@ msgid ""
 "solrconfig.xml."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:33
+#: src/Job/CreateSolrSuggesters.php:35
 msgid "Missing search_suggester_id argument."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:42
+#: src/Job/CreateSolrSuggesters.php:43
+msgid "Job stopped."
+msgstr ""
+
+#: src/Job/CreateSolrSuggesters.php:62
 msgid "Suggester #{id} not found."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:52
+#: src/Job/CreateSolrSuggesters.php:72
 msgid "Suggester #{id} is not a Solr engine."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:61
+#: src/Job/CreateSolrSuggesters.php:81
 msgid "Solr core not found."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:82
+#: src/Job/CreateSolrSuggesters.php:102
 msgid "Cannot create suggest_txt: {error}"
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:95
+#: src/Job/CreateSolrSuggesters.php:115
 msgid "No solr fields provided."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:110
+#: src/Job/CreateSolrSuggesters.php:130
 msgid "Starting creating {total} suggesters for \"{name}\"."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:133
+#: src/Job/CreateSolrSuggesters.php:153
 msgid "Sending {count} suggesters to Solr component \"{component}\"."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:142
+#: src/Job/CreateSolrSuggesters.php:162
 msgid "Failed to create suggest component: {error}"
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:152
+#: src/Job/CreateSolrSuggesters.php:172
 msgid "Failed to update suggest handler: {error}"
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:162
+#: src/Job/CreateSolrSuggesters.php:182
 msgid "Stopped before build phase."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:167
+#: src/Job/CreateSolrSuggesters.php:187
 msgid "Building all {total} dictionaries."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:187
+#: src/Job/CreateSolrSuggesters.php:207
 msgid "All {total} dictionaries built. Duration: {duration} seconds."
 msgstr ""
 
-#: src/Job/CreateSolrSuggesters.php:195
+#: src/Job/CreateSolrSuggesters.php:215
 msgid "Failed to build dictionaries. Duration: {duration} seconds."
 msgstr ""
 
@@ -2086,24 +2104,46 @@ msgid ""
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:240
-msgid "Index specific fields"
+msgid "Private values"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:241
+msgid ""
+"In a public resource, a private value (for example the ocr of a reserved "
+"document) is indexed like the public values, so the public search finds the "
+"resource through it. When separated, the private values are searchable only "
+"by the users who can see them. This is useful for the engine used by the "
+"public sites only: a dedicated admin engine can keep them in the same "
+"fields. The schema is updated on save and a reindexation is required."
 msgstr ""
 
 #: src/Form/Admin/SolrCoreForm.php:243
+msgid "Same fields than public values"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:244
+msgid "Separate fields, not searchable by visitors"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:257
+msgid "Index specific fields"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreForm.php:260
 msgid "Drupal"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:245
+#: src/Form/Admin/SolrCoreForm.php:262
 msgid ""
 "Allow to store specific data needed to share a core with a third party. All "
 "field names should be manually adapted."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:257
+#: src/Form/Admin/SolrCoreForm.php:274
 msgid "Server id for shared core"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:258
+#: src/Form/Admin/SolrCoreForm.php:275
 #, php-format
 msgid ""
 "May be empty, or may be or may not be the same unique id than the third "
@@ -2111,56 +2151,56 @@ msgid ""
 "install is \"%s\"."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:270
+#: src/Form/Admin/SolrCoreForm.php:287
 msgid "Solr index name for shared core"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:271
+#: src/Form/Admin/SolrCoreForm.php:288
 msgid ""
 "May be empty, or may be or may not be the same index name than the third "
 "party, depending on its configuration."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:284
+#: src/Form/Admin/SolrCoreForm.php:301
 msgid "Resource languages 2-letters iso codes for shared core"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:285
+#: src/Form/Admin/SolrCoreForm.php:302
 msgid ""
 "A third party may need to know the languages of a resource, even if it has "
 "no meaning in Omeka. Use \"und\" for undetermined."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:290
+#: src/Form/Admin/SolrCoreForm.php:307
 msgid "fr de sp und"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:305
+#: src/Form/Admin/SolrCoreForm.php:322
 msgid "Query settings"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:316
+#: src/Form/Admin/SolrCoreForm.php:333
 msgid ""
 "The catchall copy field \"_text_\" is present and uses the type "
 "\"text_search\" (Google-like search with EdgeNGram). To change it, use the "
 "\"Search configuration\" section in the core show page."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:317
+#: src/Form/Admin/SolrCoreForm.php:334
 msgid ""
 "The catchall copy field \"_text_\" is present and uses a standard type "
 "(strict matching). To change it, use the \"Search configuration\" section in "
 "the core show page."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:319
+#: src/Form/Admin/SolrCoreForm.php:336
 msgid ""
 "The catchall copy field \"_text_\" is not configured. Without it, full-text "
 "search will not return results. Use the \"Create _text_\" button in the core "
 "show page to create it."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreForm.php:326
+#: src/Form/Admin/SolrCoreForm.php:343
 msgid "Catchall copy field"
 msgstr ""
 
@@ -2724,109 +2764,116 @@ msgid ""
 "\"{solr_core_name}\" is invalid: {regex}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:254
+#: src/Indexer/SolariumIndexer.php:263
 msgid "Solr clear is processing, waiting for completion…"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:288
+#: src/Indexer/SolariumIndexer.php:297
 msgid "Solr commit completed after ~{seconds} seconds of polling."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:301
+#: src/Indexer/SolariumIndexer.php:310
 msgid ""
 "Solr commit did not complete within {seconds} seconds. Check Solr admin."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:376
+#: src/Indexer/SolariumIndexer.php:385
 msgid "Solr flush timed out for {count} documents. Retrying…"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:385
+#: src/Indexer/SolariumIndexer.php:394
 msgid ""
 "Solr retry failed for {count} documents. They may be missing from the index."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:426
+#: src/Indexer/SolariumIndexer.php:435
 msgid "Document {id} rejected by Solr and skipped: {message}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:471
+#: src/Indexer/SolariumIndexer.php:480
 msgid "Solr commit is processing, waiting for completion…"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:523
+#: src/Indexer/SolariumIndexer.php:532
 msgid ""
 "SearchSolr: Visibility migration finalized: legacy map \"is_public_i\" "
 "removed after full reindex."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:592
+#: src/Indexer/SolariumIndexer.php:601
 msgid ""
 "Search index #{search_engine_id}: {count} documents not reindexed were "
 "removed from Solr."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:639
+#: src/Indexer/SolariumIndexer.php:648
 msgid ""
 "Unable to index resources in Solr core \"{solr_core}\". Some required fields "
 "are not mapped: {list}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:652
+#: src/Indexer/SolariumIndexer.php:668
+msgid ""
+"The private values are set to be separated, but the schema of the Solr core "
+"\"{solr_core}\" is not ready, so they are not indexed. Save the core to "
+"prepare the schema."
+msgstr ""
+
+#: src/Indexer/SolariumIndexer.php:679
 msgid ""
 "The Solr core has {numFields} fields, exceeding the configured limit of "
 "{maxFields}. Indexing is stopped. To fix, either reduce or group field maps, "
 "or increase \"maxFields\" in solrconfig.xml and restart Solr."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:663
-#: src/Controller/Admin/CoreController.php:392
+#: src/Indexer/SolariumIndexer.php:690
+#: src/Controller/Admin/CoreController.php:394
 msgid ""
 "The Solr core has {numFields} fields, approaching the configured limit of "
 "{maxFields} ({percentage}%). It is recommended either to reduce or to group "
 "field maps, or to increase \"maxFields\" in solrconfig.xml and restart Solr."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:956
+#: src/Indexer/SolariumIndexer.php:1037
 msgid ""
 "Solr HTTP error: HTTP request failed due to network, timeout, or certificate "
 "issue."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:962
+#: src/Indexer/SolariumIndexer.php:1043
 msgid ""
 "Indexing of {resource_name} #{id} failed: Invalid document (wrong field type "
 "or missing required field)."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:967
+#: src/Indexer/SolariumIndexer.php:1048
 msgid ""
 "Indexing of resource failed: Invalid document (wrong field type or missing "
 "required field)."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:972
+#: src/Indexer/SolariumIndexer.php:1053
 msgid "Indexing of {resource_name} #{id} failed: {message}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:977
+#: src/Indexer/SolariumIndexer.php:1058
 msgid "Indexing of the batch failed: {message}"
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:1022
+#: src/Indexer/SolariumIndexer.php:1103
 msgid ""
 "Indexing resource {resource_name} #{resource_id}: value of {bytes} bytes "
 "skipped for the field \"{field}\" (limit {max} bytes); the full text fields "
 "are kept."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:1115
+#: src/Indexer/SolariumIndexer.php:1196
 msgid ""
 "These fields are not in the schema of the Solr core, so they are not "
 "indexed: {fields}. Check the maps of the core."
 msgstr ""
 
-#: src/Indexer/SolariumIndexer.php:1314
+#: src/Indexer/SolariumIndexer.php:1395
 msgid "Solr core is not available."
 msgstr ""
 
@@ -2836,7 +2883,7 @@ msgstr ""
 
 #: src/Controller/Admin/MapController.php:146
 #: src/Controller/Admin/MapController.php:222
-#: src/Controller/Admin/CoreController.php:677
+#: src/Controller/Admin/CoreController.php:679
 msgid "There was an error during validation"
 msgstr ""
 
@@ -2893,438 +2940,457 @@ msgstr ""
 msgid "Solr core \"{solr_core_name}\" updated."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:334
+#: src/Controller/Admin/CoreController.php:336
 msgid ""
 "Some required fields are missing or not available in the core: {list}. "
 "Update the generic or the resource mappings."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:344
+#: src/Controller/Admin/CoreController.php:346
 msgid ""
 "Some specific static or dynamic fields are missing or not available for "
 "\"{value}\" in the core: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:348
+#: src/Controller/Admin/CoreController.php:350
 msgid "Don’t forget to reindex this core with external indexers."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:350
+#: src/Controller/Admin/CoreController.php:352
 msgid ""
 "Don’t forget to reindex the resources and to check the mapping of the search "
 "pages that use this core."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:356
+#: src/Controller/Admin/CoreController.php:358
 msgid ""
 "The core \"{solr_core_name}\" has {count} maps. Some queries are not "
 "possible with more than 1024 indexes. You may remove indexes used to sort "
 "(\"_s\") or useless indexes, or group them."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:375
-#: src/Controller/Admin/CoreController.php:421
+#: src/Controller/Admin/CoreController.php:377
+#: src/Controller/Admin/CoreController.php:423
 msgid ""
 "Some required fields are missing or not available in the core: {fields}. "
 "Update the generic or the resource mappings."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:384
+#: src/Controller/Admin/CoreController.php:386
 msgid ""
 "The Solr core has {numFields} fields, exceeding the configured limit of "
 "{maxFields}. Indexing will be refused. To fix, either reduce or group field "
 "maps, or increase \"maxFields\" in solrconfig.xml and restart Solr."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:467
+#: src/Controller/Admin/CoreController.php:469
 msgid "Solr core successfully deleted"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:469
+#: src/Controller/Admin/CoreController.php:471
 msgid "Solr core could not be deleted"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:499
+#: src/Controller/Admin/CoreController.php:501
 msgid "Missing file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:506
+#: src/Controller/Admin/CoreController.php:508
 msgid "Wrong request for file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:513
+#: src/Controller/Admin/CoreController.php:515
 msgid "An error occurred when uploading the file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:516
+#: src/Controller/Admin/CoreController.php:518
 msgid "Wrong media type ({media_type}) for file."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:520
+#: src/Controller/Admin/CoreController.php:522
 msgid "The file is empty."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:688
+#: src/Controller/Admin/CoreController.php:690
 msgid "The file does not contain any row."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:696
+#: src/Controller/Admin/CoreController.php:698
 msgid ""
 "The headers of the file are not the default ones. Or the delimiter is not "
 "the good one according to the media-type or extension."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:716
+#: src/Controller/Admin/CoreController.php:718
 msgid "The row #{index} does not contain required data."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:722
+#: src/Controller/Admin/CoreController.php:724
 msgid "The row #{index} does not manage resource \"{resource_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:775
+#: src/Controller/Admin/CoreController.php:777
 msgid "The file does not contain any valid data."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:787
+#: src/Controller/Admin/CoreController.php:789
 msgid ""
 "The existing mapping of core \"{solr_core_name}\" (#{solr_core_id}) has been "
 "deleted."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:795
+#: src/Controller/Admin/CoreController.php:797
 msgid ""
 "An error has occurred during import of the mapping for core "
 "\"{solr_core_name}\" (#{solr_core_id})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:802
+#: src/Controller/Admin/CoreController.php:804
 msgid ""
 "{count} fields have been mapped for core \"{solr_core_name}\" "
 "(#{solr_core_id})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1009
+#: src/Controller/Admin/CoreController.php:1016
+msgid ""
+"The schema of the core \"{solr_core_name}\" was updated to separate the "
+"private values. Reindex required."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:1021
+msgid ""
+"Unable to update the schema of the core \"{solr_core_name}\" to separate the "
+"private values: {error}"
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:1040
 msgid ""
 "The catchall field \"_text_\" already exists in core \"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1037
+#: src/Controller/Admin/CoreController.php:1069
 msgid ""
 "Catchall field \"_text_\" created in core \"{solr_core_name}\". Reindex "
 "required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1044
+#: src/Controller/Admin/CoreController.php:1076
 msgid "Failed to create catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1050
+#: src/Controller/Admin/CoreController.php:1082
 msgid "Error creating catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1074
+#: src/Controller/Admin/CoreController.php:1106
 msgid ""
 "The catchall field \"_text_\" does not exist in core \"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1102
+#: src/Controller/Admin/CoreController.php:1138
 msgid "Catchall field \"_text_\" deleted in core \"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1109
+#: src/Controller/Admin/CoreController.php:1145
 msgid "Failed to delete catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1115
+#: src/Controller/Admin/CoreController.php:1151
 msgid "Error deleting catchall field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1151
+#: src/Controller/Admin/CoreController.php:1187
 msgid ""
 "Data-driven schema disabled (update.autoCreateFields = false) on core "
 "\"{solr_core_name}\"."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1158
+#: src/Controller/Admin/CoreController.php:1194
 msgid "Failed to disable data-driven schema: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1164
+#: src/Controller/Admin/CoreController.php:1200
 msgid "Error disabling data-driven schema: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1186
+#: src/Controller/Admin/CoreController.php:1222
 msgid ""
 "Optimizing index in background (job {link_job}#{job_id}{link_end}, {link_log}"
 "logs{link_end})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1286
+#: src/Controller/Admin/CoreController.php:1322
 msgid ""
 "The core filters the resources to index (\"filter_resources\"), so the index "
 "is a subset by design."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1290
+#: src/Controller/Admin/CoreController.php:1326
 msgid "The engine indexes the private resources only."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1293
+#: src/Controller/Admin/CoreController.php:1329
 msgid ""
 "The indexing is disabled for this engine, so the index no longer follows the "
 "resources."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1318
+#: src/Controller/Admin/CoreController.php:1354
 msgid "The index cannot be queried."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1355
+#: src/Controller/Admin/CoreController.php:1391
 msgid ""
 "The date of indexation is not indexed, so the outdated documents cannot be "
 "found: add the map \"indexed_at\" and reindex."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1505
+#: src/Controller/Admin/CoreController.php:1541
 msgid ""
 "Solr core #{solr_core_id} (\"{solr_core_name}\"): {count} maps are managed "
 "automatically again: {maps}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1514
+#: src/Controller/Admin/CoreController.php:1550
 msgid ""
 "{count} maps are managed automatically again: {maps}. They now follow the "
 "sources of the alignment, and the unused ones can be removed."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1519
+#: src/Controller/Admin/CoreController.php:1555
 msgid "No map was set as manual."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1541
+#: src/Controller/Admin/CoreController.php:1577
 msgid ""
 "The core \"{core}\" already exists on the server; it is used as is, nothing "
 "was created."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1549
+#: src/Controller/Admin/CoreController.php:1585
 msgid ""
 "Failed to create the core \"{core}\" on the Solr server. Check the logs: the "
 "config set \"{config_set}\" must exist in SOLR_HOME/configsets on the server."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1561
+#: src/Controller/Admin/CoreController.php:1597
 msgid ""
 "The core \"{core}\" was created on the Solr server and its schema "
 "initialized. Default maps are being created; reindex afterwards."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1585
+#: src/Controller/Admin/CoreController.php:1621
 msgid ""
 "The core \"{core}\" is shared (the engine sets index_name); deletion on the "
 "server is refused."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1595
+#: src/Controller/Admin/CoreController.php:1631
 msgid ""
 "The core \"{core}\" was deleted on the Solr server. The connection is still "
 "registered in Omeka."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1600
+#: src/Controller/Admin/CoreController.php:1636
 msgid ""
 "Failed to delete the core \"{core}\" on the Solr server. Check the logs."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1637
+#: src/Controller/Admin/CoreController.php:1673
 msgid ""
 "Map creation in background (job {link_job}#{job_id}{link_end}, {link_log}"
 "logs{link_end})."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1700
+#: src/Controller/Admin/CoreController.php:1736
 msgid "No unused map."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1712
+#: src/Controller/Admin/CoreController.php:1748
 msgid "{count} unused maps deleted: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1743
+#: src/Controller/Admin/CoreController.php:1779
 msgid "Reduction job started. Check the logs."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1830
+#: src/Controller/Admin/CoreController.php:1866
 msgid "{count} annotation maps created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:1838
+#: src/Controller/Admin/CoreController.php:1874
 msgid "All annotation maps already exist."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2015
+#: src/Controller/Admin/CoreController.php:2051
 msgid ""
 "This core is used by a shared engine (index_name is set). Sync is not "
 "supported for shared engines."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2823
+#: src/Controller/Admin/CoreController.php:2859
 msgid ""
 "Audit (sources: {sources}, cleaning: {cleaning}), nothing was changed. "
 "Properties collected: {props}. Maps: {before}, that would be removed: "
 "{deleted}, kept as customized: {kept}, created: {created}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2836
+#: src/Controller/Admin/CoreController.php:2872
 msgid "Maps that would be created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2842
+#: src/Controller/Admin/CoreController.php:2878
 msgid "Maps that would be removed: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2848
+#: src/Controller/Admin/CoreController.php:2884
 msgid ""
 "Search pages whose facets or filters would use the aligned index: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2854
-#: src/Controller/Admin/CoreController.php:2910
+#: src/Controller/Admin/CoreController.php:2890
+#: src/Controller/Admin/CoreController.php:2946
 msgid ""
 "Search pages whose facets or filters will use the aligned index once it is "
 "indexed (reindex, then align again): {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2872
+#: src/Controller/Admin/CoreController.php:2908
 msgid ""
 "Sync complete (sources: {sources}, cleaning: {cleaning}). Properties "
 "collected: {props}. Maps before: {before}, deleted: {deleted}, kept "
 "(customized): {kept}, created: {created}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2886
+#: src/Controller/Admin/CoreController.php:2922
 msgid "Deleted: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2892
+#: src/Controller/Admin/CoreController.php:2928
 msgid "Kept (customized, not in config): {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2898
+#: src/Controller/Admin/CoreController.php:2934
 msgid "Created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2904
+#: src/Controller/Admin/CoreController.php:2940
 msgid "Search pages whose facets or filters use now the aligned index: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2916
+#: src/Controller/Admin/CoreController.php:2952
 msgid "All maps are in sync with search configs."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2933
+#: src/Controller/Admin/CoreController.php:2969
 msgid ""
 "Reindex required: the changed maps stay empty until then. Reindex: {links}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2968
+#: src/Controller/Admin/CoreController.php:3004
 msgid ""
 "Fields used by a config but provided by no map: {list}. They cannot be "
 "created by the alignment, since they are neither a property nor an index "
 "built on one, and a query on them fails on an undefined field."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3023
+#: src/Controller/Admin/CoreController.php:3027
+msgid ""
+"The private values are set to be separated, but the schema of the core is "
+"not ready, so they are not indexed. Save the core to prepare the schema."
+msgstr ""
+
+#: src/Controller/Admin/CoreController.php:3068
 msgid ""
 "The engine indexes the private values (visibility \"{visibility}\"), but it "
 "is used by the search pages of a site: {names}. A private value can be found "
 "by any visitor, because the query filters the visibility of the resources, "
 "not the one of the values. Set the visibility of the engine to \"public "
-"only\" and reindex, or use another engine for the admin."
+"only\" or separate the private values in the settings of the core and "
+"reindex, or use another engine for the admin."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3387
+#: src/Controller/Admin/CoreController.php:3432
 msgid "{count} maps reset to \"follow engine\" visibility. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3392
+#: src/Controller/Admin/CoreController.php:3437
 msgid "All maps already follow the engine visibility."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3414
-#: src/Controller/Admin/CoreController.php:3485
+#: src/Controller/Admin/CoreController.php:3459
+#: src/Controller/Admin/CoreController.php:3530
 msgid "Solr is unreachable: {status}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3451
+#: src/Controller/Admin/CoreController.php:3496
 msgid "Field \"suggest_txt\" recreated. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3452
+#: src/Controller/Admin/CoreController.php:3497
 msgid "Field \"suggest_txt\" created. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3456
+#: src/Controller/Admin/CoreController.php:3501
 msgid "Error creating suggest field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3507
+#: src/Controller/Admin/CoreController.php:3552
 msgid "Catchall analyzer unchanged."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3551
+#: src/Controller/Admin/CoreController.php:3596
 msgid "Unsupported language: {lang}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3607
+#: src/Controller/Admin/CoreController.php:3652
 msgid "Failed to create field type: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3634
+#: src/Controller/Admin/CoreController.php:3679
 msgid ""
 "Field \"_text_\" configured for Google-like search in core \"{solr_core_name}"
 "\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3636
+#: src/Controller/Admin/CoreController.php:3681
 msgid ""
 "Field \"_text_\" configured for linguistic search ({type}) in core "
 "\"{solr_core_name}\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3638
+#: src/Controller/Admin/CoreController.php:3683
 msgid ""
 "Field \"_text_\" configured for strict matching in core \"{solr_core_name}"
 "\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3648
+#: src/Controller/Admin/CoreController.php:3693
 msgid "Failed to configure _text_ field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3654
+#: src/Controller/Admin/CoreController.php:3699
 msgid "Error configuring search: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3685
+#: src/Controller/Admin/CoreController.php:3730
 msgid "Solr issue: {msg}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3762
-#: src/Controller/Admin/CoreController.php:3835
+#: src/Controller/Admin/CoreController.php:3807
+#: src/Controller/Admin/CoreController.php:3880
 msgid "Snapshot not found."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3806
+#: src/Controller/Admin/CoreController.php:3851
 msgid "Restored {count} maps from snapshot of {datetime}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3813
+#: src/Controller/Admin/CoreController.php:3858
 msgid "Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3847
+#: src/Controller/Admin/CoreController.php:3892
 msgid "Snapshot deleted."
 msgstr ""
 
@@ -3504,134 +3570,134 @@ msgstr ""
 msgid "Item: Has digital object"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:382
+#: src/Stdlib/SolrCore.php:402
 msgid "Solr core #{solr_core_id}: incorrect or incomplete configuration."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:396
+#: src/Stdlib/SolrCore.php:416
 msgid "Solr core not found. Check your url."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:401
+#: src/Stdlib/SolrCore.php:421
 msgid ""
 "Solr core not found or unauthorized. Check your url and your credentials."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:406 src/Stdlib/SolrCore.php:413
-#: src/Stdlib/SolrCore.php:433
+#: src/Stdlib/SolrCore.php:426 src/Stdlib/SolrCore.php:433
+#: src/Stdlib/SolrCore.php:453
 msgid "Solr core #{solr_core_id}: {message}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:426
+#: src/Stdlib/SolrCore.php:446
 msgid "Solr core #{solr_core_id} enpoint: {message}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:442
+#: src/Stdlib/SolrCore.php:462
 msgid "Solr: the config bypasses the check of the certificate."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:444
+#: src/Stdlib/SolrCore.php:464
 msgid "OK (warning: check of certificate disabled)"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:450
+#: src/Stdlib/SolrCore.php:470
 msgid "OK"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1366
+#: src/Stdlib/SolrCore.php:1390
 msgid "SearchSolr: Failed to create text_suggest field type."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1379
+#: src/Stdlib/SolrCore.php:1403
 msgid "SearchSolr: Core not ready after reload, continuing anyway."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1390
+#: src/Stdlib/SolrCore.php:1414
 msgid "SearchSolr: Failed to create suggest component: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1398
+#: src/Stdlib/SolrCore.php:1422
 msgid "SearchSolr: Core not ready after creating component."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1435
+#: src/Stdlib/SolrCore.php:1459
 msgid "SearchSolr: Deleting {count} old suggest components."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1478
+#: src/Stdlib/SolrCore.php:1502
 msgid "SearchSolr: Failed to create/update suggest handler: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1525
+#: src/Stdlib/SolrCore.php:1549
 msgid "SearchSolr: No response from suggest handler."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1532
+#: src/Stdlib/SolrCore.php:1556
 msgid "SearchSolr: Failed to build suggester: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1554
+#: src/Stdlib/SolrCore.php:1578
 msgid "SearchSolr: Cannot reload: no core name."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1573
+#: src/Stdlib/SolrCore.php:1597
 msgid "SearchSolr: Core reload failed: no response from {url}."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1581
+#: src/Stdlib/SolrCore.php:1605
 msgid "SearchSolr: Core reload error: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1587
+#: src/Stdlib/SolrCore.php:1611
 msgid "SearchSolr: Core \"{core}\" reloaded successfully."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1608
+#: src/Stdlib/SolrCore.php:1632
 msgid "SearchSolr: Cannot restart: no core name."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1633
+#: src/Stdlib/SolrCore.php:1657
 msgid "SearchSolr: Cannot get core status, falling back to reload."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1640
+#: src/Stdlib/SolrCore.php:1664
 msgid "SearchSolr: Cannot find instanceDir, falling back to reload."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1653
+#: src/Stdlib/SolrCore.php:1677
 msgid "SearchSolr: Core unload failed, falling back to reload."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1657
+#: src/Stdlib/SolrCore.php:1681
 msgid "SearchSolr: Core \"{core}\" unloaded."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1679
+#: src/Stdlib/SolrCore.php:1703
 msgid ""
 "SearchSolr: Core recreate failed after unload. Manual recovery may be needed."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1685
+#: src/Stdlib/SolrCore.php:1709
 msgid "SearchSolr: Core \"{core}\" restarted successfully."
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:1973
+#: src/Stdlib/SolrCore.php:1997
 msgid "SearchSolr: Cannot create text_suggest: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:2021
+#: src/Stdlib/SolrCore.php:2045
 msgid "SearchSolr: Cannot create string_folded: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:2069
+#: src/Stdlib/SolrCore.php:2093
 msgid "SearchSolr: Cannot create the dynamic field *_ps: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:2105
+#: src/Stdlib/SolrCore.php:2129
 msgid "SearchSolr: Cannot create the dynamic field *_fold_s: {error}"
 msgstr ""
 
-#: src/Stdlib/SolrCore.php:2167
+#: src/Stdlib/SolrCore.php:2367
 msgid "SearchSolr: Cannot create text_suggest_folded: {error}"
 msgstr ""
 
@@ -3647,75 +3713,75 @@ msgstr ""
 msgid "Solr suggester not configured."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:754
+#: src/Querier/SolariumQuerier.php:773
 msgid "Solr query failed to get the bounds of the fields {fields}: {message}"
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:842 src/Querier/SolariumQuerier.php:1797
+#: src/Querier/SolariumQuerier.php:861 src/Querier/SolariumQuerier.php:1816
 msgid "Could not fetch all resource ids: {message}"
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1238
+#: src/Querier/SolariumQuerier.php:1258
 msgid "Solr: skipped facet on unmapped field \"{field}\"."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1267
+#: src/Querier/SolariumQuerier.php:1287
 msgid ""
 "Facet \"{facet_name}\": the range from {min} to {max} has no step, so the "
 "step is set to {step} to limit the number of buckets. Set it in the search "
 "page."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1498
+#: src/Querier/SolariumQuerier.php:1517
 msgid "Solr: skipped sort on unmapped field \"{field}\"."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1943
+#: src/Querier/SolariumQuerier.php:1962
 msgid ""
 "Solr: the arg \"{arg}\" needs a map of the source \"{source}\"; the filter "
 "is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1953
+#: src/Querier/SolariumQuerier.php:1972
 msgid ""
 "Solr: the arg \"{arg}\" is not supported by the solr querier and is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1988
+#: src/Querier/SolariumQuerier.php:2007
 msgid "Solr: unknown arg \"{arg}\" ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1999
+#: src/Querier/SolariumQuerier.php:2018
 msgid "Solr: skipped filter on unmapped field \"{field}\"."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2149
+#: src/Querier/SolariumQuerier.php:2168
 msgid ""
 "Solr: the numeric timestamp filter needs a date map (suffix _dt) or a year "
 "map (suffix _year_is) of the property #{property}; the filter is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2163
+#: src/Querier/SolariumQuerier.php:2182
 msgid ""
 "Solr: the numeric integer filter needs an integer map (suffix _i) of the "
 "property #{property}; the filter is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2177
+#: src/Querier/SolariumQuerier.php:2196
 msgid ""
 "Solr: the numeric arg \"{arg}\" is not supported by the solr querier and is "
 "ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2442
+#: src/Querier/SolariumQuerier.php:2461
 msgid "Solr: unknown arg \"{arg}\" ignored in the advanced filters."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2467
+#: src/Querier/SolariumQuerier.php:2486
 msgid "Solr: no index for the field \"{field}\", filter adapted."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2751
+#: src/Querier/SolariumQuerier.php:2770
 msgid ""
 "Solr: the type res/nres on \"{field}\" compares ids as strings; run the maps "
 "sync to create the integer index of the linked resource ids (_link_is)."
@@ -3861,4 +3927,8 @@ msgstr ""
 
 #: config/module.config.php:202
 msgid "Dynamic field"
+msgstr ""
+
+#: config/module.config.php:270
+msgid "Rebuild Solr suggesters"
 msgstr ""
