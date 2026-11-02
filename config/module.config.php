@@ -237,6 +237,8 @@ return [
         'settings' => [
             // Options of the last alignment of the maps, by engine.
             'searchsolr_sync_options' => [],
+            // Hidden value, storing last processed cron time.
+            'searchsolr_cron_last' => null,
         ],
     ],
     'searchsolr_value_extractors' => [
@@ -258,6 +260,16 @@ return [
             'place' => ValueFormatter\Place::class,
             'point' => ValueFormatter\Point::class,
             'thesaurus' => ValueFormatter\Thesaurus::class,
+        ],
+    ],
+    // Cron tasks registered with the EasyAdmin/Cron module.
+    'cron_tasks' => [
+        'solr_suggesters' => [
+            'label' => 'Rebuild Solr suggesters', // @translate
+            'module' => 'SearchSolr',
+            'task_type' => 'job',
+            'frequencies' => ['hourly', 'daily', 'weekly'],
+            'default_frequency' => 'daily',
         ],
     ],
 ];

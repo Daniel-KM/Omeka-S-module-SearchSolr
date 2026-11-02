@@ -247,6 +247,25 @@ class Module extends AbstractModule
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager): void
     {
+        // The suggesters not built on commit are rebuilt by the task of the
+        // module EasyAdmin or Cron when enabled there, else once a day on any
+        // page when a resource changed.
+        $sharedEventManager->attach(
+            'EasyAdmin\Job\CronTasks',
+            'easyadmin.cron.execute',
+            [$this, 'handleCronExecute']
+        );
+        $sharedEventManager->attach(
+            'Cron\Job\CronTasks',
+            'cron.execute',
+            [$this, 'handleCronExecute']
+        );
+        $sharedEventManager->attach(
+            '*',
+            'view.layout',
+            [$this, 'handleCron']
+        );
+
         // The url, the status and the actions of each core are displayed in the
         // table of the search engines of the search manager.
         $sharedEventManager->attach(
@@ -758,6 +777,119 @@ class Module extends AbstractModule
     public function handleSuggesterIndex(Event $event): void
     {
         $this->handleSuggesterSave($event);
+    }
+
+    /**
+     * Handle the cron task from the module EasyAdmin or Cron.
+     */
+    public function handleCronExecute(Event $event): void
+    {
+        if ($event->getParam('task_id') !== 'solr_suggesters') {
+            return;
+        }
+        $this->runCronSuggesters();
+        $event->setParam('handled', true);
+    }
+
+    /**
+     * Rebuild the suggesters once a day when EasyAdmin or Cron does not do it.
+     *
+     * Any page is used, because the resources may be updated without admin
+     * page, for example by a contribution or a scheduled import.
+     */
+    public function handleCron(Event $event): void
+    {
+        /** @var \Omeka\Settings\Settings $settings */
+        $settings = $this->getServiceLocator()->get('Omeka\Settings');
+        $lastCron = (int) $settings->get('searchsolr_cron_last');
+        if ($lastCron + 86400 > time() || $this->isCronTaskEnabledElsewhere($settings)) {
+            return;
+        }
+        $this->runCronSuggesters();
+    }
+
+    protected function isCronTaskEnabledElsewhere(\Omeka\Settings\Settings $settings): bool
+    {
+        if (class_exists('EasyAdmin\Module', false)) {
+            $cronSettings = $settings->get('easyadmin_cron') ?: [];
+            if (!empty($cronSettings['tasks'])) {
+                return !empty($cronSettings['tasks']['solr_suggesters']['enabled']);
+            }
+            return in_array('solr_suggesters', $settings->get('easyadmin_cron_tasks') ?: [], true);
+        }
+        if (class_exists('Cron\Module', false)) {
+            $cronSettings = $settings->get('cron') ?: [];
+            return !empty($cronSettings['tasks']['solr_suggesters']['enabled']);
+        }
+        return false;
+    }
+
+    /**
+     * Rebuild in one job the solr suggesters that are not built on commit.
+     */
+    protected function runCronSuggesters(): void
+    {
+        $services = $this->getServiceLocator();
+        $api = $services->get('Omeka\ApiManager');
+        $logger = $services->get('Omeka\Logger');
+
+        /**
+         * @var \Omeka\Settings\Settings $settings
+         * @var \Doctrine\DBAL\Connection $connection
+         */
+        $settings = $services->get('Omeka\Settings');
+        $connection = $services->get('Omeka\Connection');
+
+        // Skip when no resource was created or modified since the last check.
+        $lastCron = (int) $settings->get('searchsolr_cron_last');
+        $settings->set('searchsolr_cron_last', time());
+        if ($lastCron) {
+            $lastDate = date('Y-m-d H:i:s', $lastCron);
+            $isChanged = (bool) $connection->fetchOne(
+                'SELECT 1 FROM `resource` WHERE `created` > ? OR `modified` > ? LIMIT 1',
+                [$lastDate, $lastDate]
+            );
+            if (!$isChanged) {
+                return;
+            }
+        }
+
+        $suggesterIds = [];
+        /** @var \AdvancedSearch\Api\Representation\SearchSuggesterRepresentation $suggester */
+        foreach ($api->search('search_suggesters')->getContent() as $suggester) {
+            if (empty($suggester->setting('solr_build_on_commit'))
+                && $suggester->engineAdapter() instanceof \SearchSolr\EngineAdapter\Solarium
+            ) {
+                $suggesterIds[] = $suggester->id();
+            }
+        }
+        if (!$suggesterIds) {
+            return;
+        }
+
+        $runningJob = $connection->fetchOne(
+            'SELECT id FROM job WHERE class = ? AND status IN (?, ?)',
+            [
+                \SearchSolr\Job\CreateSolrSuggesters::class,
+                \Omeka\Entity\Job::STATUS_STARTING,
+                \Omeka\Entity\Job::STATUS_IN_PROGRESS,
+            ]
+        );
+        if ($runningJob) {
+            return;
+        }
+
+        $dispatcher = $services->get(\Omeka\Job\Dispatcher::class);
+        try {
+            $dispatcher->dispatch(\SearchSolr\Job\CreateSolrSuggesters::class, [
+                'search_suggester_ids' => $suggesterIds,
+            ]);
+        } catch (\Throwable $e) {
+            $logger->err(
+                'SearchSolr cron: unable to rebuild the suggesters: {message}', // @translate
+                ['message' => $e->getMessage()]
+            );
+        }
     }
 
     /**
