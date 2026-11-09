@@ -65,6 +65,7 @@ class SolrCoreSyncForm extends Form
                 'type' => 'radio',
                 'options' => [
                     'label' => 'Mode', // @translate
+                    'info' => 'The audit lists the maps to create or to remove and the fields that cannot be mapped.', // @translate
                     'value_options' => [
                         'audit' => 'Audit to report what would change', // @translate
                         'sync' => 'Align the maps', // @translate
@@ -80,7 +81,7 @@ class SolrCoreSyncForm extends Form
                 'type' => 'radio',
                 'options' => [
                     'label' => 'Properties to map', // @translate
-                    'info' => 'The properties of the search pages (facets, filters, sorts, suggesters) and of the bounce links of the module Advanced Resource Template are always mapped. Each property gets a text index and an exact index.', // @translate
+                    'info' => 'Each property gets a text index and an exact index.', // @translate
                     'value_options' => [
                         'configs' => 'Search pages and bounce links', // @translate
                         'templates' => 'Plus the properties of the resource templates', // @translate
@@ -97,7 +98,7 @@ class SolrCoreSyncForm extends Form
                 'type' => 'radio',
                 'options' => [
                     'label' => 'Numeric values', // @translate
-                    'info' => 'An integer or decimal index is added to the properties whose values are numbers, for a real sort and range facets. Their text index is useless in most cases, but it keeps the numbers and the coordinates searchable in the main field.', // @translate
+                    'info' => 'A numeric index allows a real sort and range facets.', // @translate
                     'value_options' => [
                         'none' => 'No numeric index', // @translate
                         'datatypes' => 'Numeric index', // @translate
@@ -114,7 +115,7 @@ class SolrCoreSyncForm extends Form
                 'type' => 'radio',
                 'options' => [
                     'label' => 'Media values on their item', // @translate
-                    'info' => 'The values of the media are indexed on their item, so a search matching a media returns the item. The long values (ocr, transcription) copy the whole text of every media in the document of its item, so the index may become very large.', // @translate
+                    'info' => 'A search matching a media returns its item. The long values (ocr, transcription) may make the index very large.', // @translate
                     'value_options' => [
                         'none' => 'Not indexed', // @translate
                         'media' => 'Short values', // @translate
@@ -131,7 +132,7 @@ class SolrCoreSyncForm extends Form
                 'type' => Element\Number::class,
                 'options' => [
                     'label' => 'Maximum number of distinct values for an exact index', // @translate
-                    'info' => 'A property with more distinct values than this limit gets no exact index (_ss): such a facet or filter is unusable. A property used by a facet or a filter of a search page keeps its index anyway. Set 0 to skip this check.', // @translate
+                    'info' => 'Beyond this number of distinct values, a property gets no exact index, except when a search page uses it. Set 0 to skip.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'max_cardinality',
@@ -145,7 +146,7 @@ class SolrCoreSyncForm extends Form
                 'type' => 'checkbox',
                 'options' => [
                     'label' => 'Support of multilingual values', // @translate
-                    'info' => 'Add a language index by property and language, for example dcterms_subject_fr_ss and dcterms_subject_en_ss. Used only when the sites have at least two distinct locales and the property has values in at least two of these languages. The values without language are included in each language index.', // @translate
+                    'info' => 'Add an index by language, for example dcterms_subject_fr_ss, when the sites and the values use several languages.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'multilingual',
@@ -156,7 +157,7 @@ class SolrCoreSyncForm extends Form
                 'type' => 'checkbox',
                 'options' => [
                     'label' => 'Remove unused maps automatically', // @translate
-                    'info' => 'Remove the property maps not referenced by the selected options. Customized maps are kept.', // @translate
+                    'info' => 'The customized maps are kept.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'clean',
