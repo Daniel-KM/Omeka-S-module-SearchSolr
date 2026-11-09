@@ -1314,6 +1314,11 @@ class SolariumQuerier extends AbstractQuerier
                     // MinCount is used only with standard facet range.
                     // ->setMinCount(1)
                 ;
+                // With the option "all values", the buckets do not depend on
+                // the values selected in any facet.
+                if ($this->query->getOption('facet_list') === 'all' && $this->query->getActiveFacets()) {
+                    $facet->setOptions(['domain' => ['excludeTags' => array_map(fn ($activeName): string => strtoupper($activeName . '-facet'), array_keys($this->query->getActiveFacets()))]]);
+                }
             } else {
                 // Term facets.
                 // The domain option is used to exclude the tagged search filter
@@ -1377,45 +1382,32 @@ class SolariumQuerier extends AbstractQuerier
             if (count($values) <= 2 && ($firstKey === 'from' || $firstKey === 'to')) {
                 $hasFrom = isset($values['from']) && $values['from'] !== '';
                 $hasTo = isset($values['to']) && $values['to'] !== '';
-
-                if ($endField) {
+                $from = $hasFrom ? $this->escapePhrase($values['from']) : '*';
+                $to = $hasTo ? $this->escapePhrase($values['to']) : '*';
+                if (!$hasFrom && !$hasTo) {
+                    $rangeQuery = null;
+                } elseif ($endField) {
                     // Interval overlap on uncertain dates: start ≤ to AND end ≥
                     // from.
                     $clauses = [];
                     if ($hasTo) {
-                        $clauses[] = "$startField:[* TO " . $this->escapePhrase($values['to']) . ']';
+                        $clauses[] = "$startField:[* TO $to]";
                     }
                     if ($hasFrom) {
-                        $clauses[] = "$endField:[" . $this->escapePhrase($values['from']) . ' TO *]';
+                        $clauses[] = "$endField:[$from TO *]";
                     }
-                    if ($clauses) {
-                        $this->select->addFilterQuery([
-                            'key' => $fname . '-facet',
-                            'query' => implode(' AND ', $clauses),
-                            'tag' => 'exclude',
-                        ]);
-                    }
-                } elseif ($hasFrom && $hasTo) {
-                    $from = $this->escapePhrase($values['from']);
-                    $to = $this->escapePhrase($values['to']);
+                    $rangeQuery = implode(' AND ', $clauses);
+                } else {
+                    $rangeQuery = "$startField:[$from TO $to]";
+                }
+                // The tag is set in the query, like the term facets, so the
+                // facets listing all values can exclude this filter.
+                if ($rangeQuery !== null) {
+                    $key = $fname . '-facet';
+                    $tag = strtoupper($key);
                     $this->select->addFilterQuery([
-                        'key' => $fname . '-facet',
-                        'query' => "$startField:[$from TO $to]",
-                        'tag' => 'exclude',
-                    ]);
-                } elseif ($hasFrom) {
-                    $from = $this->escapePhrase($values['from']);
-                    $this->select->addFilterQuery([
-                        'key' => $fname . '-facet',
-                        'query' => "$startField:[$from TO *]",
-                        'tag' => 'exclude',
-                    ]);
-                } elseif ($hasTo) {
-                    $to = $this->escapePhrase($values['to']);
-                    $this->select->addFilterQuery([
-                        'key' => $fname . '-facet',
-                        'query' => "$startField:[* TO $to]",
-                        'tag' => 'exclude',
+                        'key' => $key,
+                        'query' => "{!tag=$tag}$rangeQuery",
                     ]);
                 }
             } else {
