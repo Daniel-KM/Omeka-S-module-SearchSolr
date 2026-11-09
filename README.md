@@ -1,4 +1,4 @@
-<!-- Advanced Search adapter for Solr (module for Omeka S) -->
+Advanced Search adapter for Solr (module for Omeka S)
 =====================================================
 
 > __New versions of this module and support for Omeka S version 3.0 and above
@@ -34,6 +34,9 @@ This module uses the modules [Advanced Search] (version 3.3.6 or above) and
 
 The module uses an external library, [Solarium], so use the release zip to
 install it, or use and init the source.
+
+With big bases or on shared hosts, it is recommended to install the optional
+module [Job Queue] to avoid to overload the server when indexing data.
 
 See general end user documentation for [installing a module].
 
@@ -99,10 +102,12 @@ connection and its maps are edited.
        point to the same Solr url.
 3. Align the maps, then reindex
     1. On the core page, the menu Maintenance > "Align the maps…" creates the
-       maps for the checked sources (search configs, settings, resource
-       templates, used properties), so any property searchable with the
-       internal engine is also queryable with Solr. A snapshot is taken before
-       each alignment and can be restored.
+       maps of the properties of the search pages and of the bounce links, plus,
+       optionally, the ones of the resource templates or all the used
+       properties, so any property searchable with the internal engine is also
+       queryable with Solr. Optionally too, a numeric index is added for the
+       numbers, and the values of the media are indexed on their item. A
+       snapshot is taken before each alignment and can be restored.
     2. Reindex the engine (the two arrows button in the search manager).
 4. Create a search page
     1. Add a search page with a name, a path, for example `search` or `find`,
@@ -311,18 +316,18 @@ java -version
 # If the certificate is obsolete on Apache server, add --no-check-certificate.
 # To install another version, just change all next version numbers below.
 # Current releases are on dlcdn; older ones move to archive.apache.org/dist/solr.
-wget https://dlcdn.apache.org/solr/solr/10.0.0/solr-10.0.0.tgz
+wget https://dlcdn.apache.org/solr/solr/10.1.0/solr-10.1.0.tgz
 # Extract the install script
-tar zxvf solr-10.0.0.tgz solr-10.0.0/bin/install_solr_service.sh --strip-components=2
+tar zxvf solr-10.1.0.tgz solr-10.1.0/bin/install_solr_service.sh --strip-components=2
 # Launch the install script (by default, Solr is installed in /opt; check other options if needed)
 # Since Solr 10, the script installs a systemd unit (no more init.d).
-sudo bash ./install_solr_service.sh solr-10.0.0.tgz
+sudo bash ./install_solr_service.sh solr-10.1.0.tgz
 # Add a symlink to simplify management (if not automatically created).
-#sudo ln -s /opt/solr-10.0.0 /opt/solr
+#sudo ln -s /opt/solr-10.1.0 /opt/solr
 # In some cases, there may be a issue on start due to missing log directory:
 #sudo mkdir /opt/solr/server/logs && sudo chown solr:adm /opt/solr/server/logs && sudo systemctl restart solr
 # Clean the sources.
-rm solr-10.0.0.tgz
+rm solr-10.1.0.tgz
 rm install_solr_service.sh
 ```
 
@@ -749,11 +754,11 @@ cd /tmp
 java -version
 #sudo apt install openjdk-21-jre-headless
 # Current releases are on dlcdn; older ones move to archive.apache.org/dist/solr.
-wget https://dlcdn.apache.org/solr/solr/10.0.0/solr-10.0.0.tgz
-tar zxvf solr-10.0.0.tgz solr-10.0.0/bin/install_solr_service.sh --strip-components=2
+wget https://dlcdn.apache.org/solr/solr/10.1.0/solr-10.1.0.tgz
+tar zxvf solr-10.1.0.tgz solr-10.1.0/bin/install_solr_service.sh --strip-components=2
 # The "-f" means "upgrade". The symlink /opt/solr is automatically updated.
-sudo bash ./install_solr_service.sh solr-10.0.0.tgz -f
-rm solr-10.0.0.tgz
+sudo bash ./install_solr_service.sh solr-10.1.0.tgz -f
+rm solr-10.1.0.tgz
 rm install_solr_service.sh
 # See below to upgrade the indexes.
 ```
@@ -810,7 +815,7 @@ sudo rm /etc/rc.d/init.d/solr
 sudo rm /etc/default/solr.in.sh
 sudo rm /etc/security/limits.d/200-solr.conf
 sudo rm -r /opt/solr
-sudo rm -r /opt/solr-10.0.0
+sudo rm -r /opt/solr-10.1.0
 # Only if you want to remove your indexes. WARNING: this will remove your configs too.
 # sudo rm -r /var/solr
 sudo deluser --remove-home solr
@@ -1236,20 +1241,18 @@ Many UX and performance improvements were done for the digital library [Musee de
 [Solr by BibLibre]: https://github.com/biblibre/omeka-s-module-Solr
 [Advanced Search]: https://gitlab.com/Daniel-KM/Omeka-S-module-AdvancedSearch
 [Access]: https://gitlab.com/Daniel-KM/Omeka-S-module-Access
-[Search by BibLibre]: https://github.com/biblibre/omeka-s-module-search
 [Apache Solr]: https://solr.apache.org/
 [Solarium]: https://www.solarium-project.org/
 [full documentation]: https://solarium.readthedocs.io/en/stable/
 [Common]: https://gitlab.com/Daniel-KM/Omeka-S-module-Common
 [EasyAdmin]: https://gitlab.com/Daniel-KM/Omeka-S-module-EasyAdmin
 [Cron]: https://gitlab.com/Daniel-KM/Omeka-S-module-Cron
+[SearchSolr.zip]: https://gitlab.com/Daniel-KM/Omeka-S-module-SearchSolr/-/releases
 [installing a module]: https://omeka.org/s/docs/user-manual/modules/#installing-modules
-[documentation]: https://solr.apache.org/guide/the-dismax-query-parser.html#q-alt-parameter
 [this issue on omeka.org]: https://forum.omeka.org/t/search-field-doesnt-return-results-with-solr/11650/12
 [Solr PHP extension]: https://pecl.php.net/package/solr
 [Debian 10/11]: https://github.com/Daniel-KM/Omeka-S-module-SearchSolr/releases/tag/3.5.44
 [docker image]: https://hub.docker.com/_/solr
-[below]: #manage-solr
 [below for Debian]: #solr-install
 [below "Solr management"]: #solr-management
 [Custom Vocab]: https://github.com/Omeka-S-modules/CustomVocab
@@ -1279,5 +1282,6 @@ Many UX and performance improvements were done for the digital library [Musee de
 [Greenstone]: http://www.greenstone.org
 [Musee de Bretagne]: https://www.collections.musee-bretagne.fr
 [BibLibre]: https://github.com/biblibre
+[Job Queue]: https://gitlab.com/Daniel-KM/Omeka-S-module-JobQueue
 [GitLab]: https://gitlab.com/Daniel-KM
 [Daniel-KM]: https://gitlab.com/Daniel-KM "Daniel Berthereau"
