@@ -1333,8 +1333,13 @@ class SolariumQuerier extends AbstractQuerier
                 $facet = $facetSet->createJsonFacetTerms($name)
                     ->setField($data['field'])
                     ->setSort($orders[$data['order'] ?? 'default'] ?? $orders['default']);
-                if (!$isAnd) {
-                    $facet->setOptions(['domain' => ['excludeTags' => [$excludeTag]]]);
+                // With the option "all values", the values of a facet do not
+                // depend on the values selected in any facet.
+                $excludeTags = $this->query->getOption('facet_list') === 'all'
+                    ? array_map(fn ($activeName): string => strtoupper($activeName . '-facet'), array_keys($this->query->getActiveFacets()))
+                    : ($isAnd ? [] : [$excludeTag]);
+                if ($excludeTags) {
+                    $facet->setOptions(['domain' => ['excludeTags' => $excludeTags]]);
                 }
 
                 // Without limit, the json facets of Solr return 10 values only.
