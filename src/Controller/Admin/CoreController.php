@@ -1971,7 +1971,10 @@ class CoreController extends AbstractActionController
                 // The options of the last alignment are proposed again, so the
                 // same alignment does not create then remove the same maps.
                 $lastOptions = $this->settings()->get('searchsolr_sync_options', [])[$id] ?? [];
-                foreach (['sync_sources', 'clean', 'multilingual', 'max_cardinality'] as $name) {
+                if (array_key_exists('sync_sources', $lastOptions)) {
+                    $lastOptions += \SearchSolr\Form\Admin\SolrCoreSyncForm::dataFromSources((array) $lastOptions['sync_sources']);
+                }
+                foreach (['sync_properties', 'sync_numeric', 'sync_media', 'clean', 'multilingual', 'max_cardinality'] as $name) {
                     if (array_key_exists($name, $lastOptions)) {
                         $form->get($name)->setValue($lastOptions[$name]);
                     }
@@ -1983,12 +1986,10 @@ class CoreController extends AbstractActionController
                     ->setTerminal(true)
                     ->setTemplate('search-solr/admin/core/sync-maps-sidebar');
             }
-            $sources = ['configs', 'bounce'];
-            if ($scopeQuery === 'templates') {
-                $sources[] = 'templates';
-            } elseif ($scopeQuery === 'used') {
-                $sources[] = 'used';
-            }
+            // The scopes are the same as the ones of the form, so "used"
+            // includes the properties of the templates.
+            $sources = \SearchSolr\Form\Admin\SolrCoreSyncForm::PROPERTIES[$scopeQuery]
+                ?? \SearchSolr\Form\Admin\SolrCoreSyncForm::PROPERTIES['configs'];
             if ($this->params()->fromQuery('media')) {
                 $sources[] = 'media';
             }
@@ -2012,7 +2013,7 @@ class CoreController extends AbstractActionController
                 return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
             }
             $data = $form->getData();
-            $sources = $data['sync_sources'] ?: ['configs', 'bounce'];
+            $sources = \SearchSolr\Form\Admin\SolrCoreSyncForm::sourcesFromData($data);
             $clean = (bool) ($data['clean'] ?? false);
             $multilingual = (bool) ($data['multilingual'] ?? false);
             $maxCardinality = (int) ($data['max_cardinality'] ?? 100);
