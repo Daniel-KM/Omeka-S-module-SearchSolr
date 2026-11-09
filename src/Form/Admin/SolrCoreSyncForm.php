@@ -6,27 +6,55 @@ use Laminas\Form\Element;
 use Laminas\Form\Form;
 
 /**
- * Select the sources to collect the properties from when syncing the maps.
+ * Select the properties and the additional indexes to map when syncing.
  *
- * The sync creates the maps for the union of the checked sources, so the admin
- * chooses the coverage (search configs, settings, resource templates, used
- * properties) in one place instead of a list of preset actions.
+ * The three choices are converted into the list of sources used by the sync,
+ * so the stored options and the query arguments keep the same format.
  */
 class SolrCoreSyncForm extends Form
 {
-    /**
-     * @var array
-     */
-    protected $sourceList = [
-        'configs' => 'Search configs (facets, filters, sorts, suggesters)', // @translate
-        'bounce' => 'Bounce links of the module Advanced Resource Template (main and site settings)', // @translate
-        'templates' => 'Resource templates: a text and an exact index for every property of the used templates', // @translate
-        'used' => 'Used properties: a text and an exact index for every property with a value', // @translate
-        'media' => 'Media values: a text index on the item for every property used by its media, so a search matching a media returns the item', // @translate
-        'datatypes' => 'Numeric values: an integer or decimal index for the properties whose values are numbers, for a real sort and range facets', // @translate
-        'datatypes_text' => 'Numeric values: keep a text index too, so the numbers and the coordinates remain searchable in the main field', // @translate
-        'media_long' => 'Media long values (ocr, transcription): include them in the index of the item. Warning: the whole text of every media is copied in the document of its item, so the index may become very large', // @translate
+    public const PROPERTIES = [
+        'configs' => ['configs', 'bounce'],
+        'templates' => ['configs', 'bounce', 'templates'],
+        'used' => ['configs', 'bounce', 'templates', 'used'],
     ];
+
+    public const NUMERIC = [
+        'none' => [],
+        'datatypes' => ['datatypes'],
+        'datatypes_text' => ['datatypes', 'datatypes_text'],
+    ];
+
+    public const MEDIA = [
+        'none' => [],
+        'media' => ['media'],
+        'media_long' => ['media', 'media_long'],
+    ];
+
+    /**
+     * Convert the choices of the form into the list of sources.
+     */
+    public static function sourcesFromData(array $data): array
+    {
+        return array_merge(
+            self::PROPERTIES[$data['sync_properties'] ?? ''] ?? self::PROPERTIES['configs'],
+            self::NUMERIC[$data['sync_numeric'] ?? ''] ?? [],
+            self::MEDIA[$data['sync_media'] ?? ''] ?? []
+        );
+    }
+
+    /**
+     * Convert a list of sources into the choices of the form.
+     */
+    public static function dataFromSources(array $sources): array
+    {
+        $has = fn (string $source): bool => in_array($source, $sources, true);
+        return [
+            'sync_properties' => $has('used') ? 'used' : ($has('templates') ? 'templates' : 'configs'),
+            'sync_numeric' => $has('datatypes_text') ? 'datatypes_text' : ($has('datatypes') ? 'datatypes' : 'none'),
+            'sync_media' => $has('media_long') ? 'media_long' : ($has('media') ? 'media' : 'none'),
+        ];
+    }
 
     public function init(): void
     {
@@ -38,25 +66,64 @@ class SolrCoreSyncForm extends Form
                 'options' => [
                     'label' => 'Mode', // @translate
                     'value_options' => [
+                        'audit' => 'Audit to report what would change', // @translate
                         'sync' => 'Align the maps', // @translate
-                        'audit' => 'Audit only: report what would change', // @translate
                     ],
                 ],
                 'attributes' => [
                     'id' => 'sync_mode',
-                    'value' => 'sync',
+                    'value' => 'audit',
                 ],
             ])
             ->add([
-                'name' => 'sync_sources',
-                'type' => 'multicheckbox',
+                'name' => 'sync_properties',
+                'type' => 'radio',
                 'options' => [
-                    'label' => 'Sources of the properties to map', // @translate
-                    'info' => 'The maps are created for the union of the checked sources.', // @translate
-                    'value_options' => $this->sourceList,
+                    'label' => 'Properties to map', // @translate
+                    'info' => 'The properties of the search pages (facets, filters, sorts, suggesters) and of the bounce links of the module Advanced Resource Template are always mapped. Each property gets a text index and an exact index.', // @translate
+                    'value_options' => [
+                        'configs' => 'Search pages and bounce links', // @translate
+                        'templates' => 'Plus the properties of the resource templates', // @translate
+                        'used' => 'Plus all the used properties', // @translate
+                    ],
                 ],
                 'attributes' => [
-                    'id' => 'sync_sources',
+                    'id' => 'sync_properties',
+                    'value' => 'configs',
+                ],
+            ])
+            ->add([
+                'name' => 'sync_numeric',
+                'type' => 'radio',
+                'options' => [
+                    'label' => 'Numeric values', // @translate
+                    'info' => 'An integer or decimal index is added to the properties whose values are numbers, for a real sort and range facets. Their text index is useless in most cases, but it keeps the numbers and the coordinates searchable in the main field.', // @translate
+                    'value_options' => [
+                        'none' => 'No numeric index', // @translate
+                        'datatypes' => 'Numeric index', // @translate
+                        'datatypes_text' => 'Numeric and text indexes', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'sync_numeric',
+                    'value' => 'none',
+                ],
+            ])
+            ->add([
+                'name' => 'sync_media',
+                'type' => 'radio',
+                'options' => [
+                    'label' => 'Media values on their item', // @translate
+                    'info' => 'The values of the media are indexed on their item, so a search matching a media returns the item. The long values (ocr, transcription) copy the whole text of every media in the document of its item, so the index may become very large.', // @translate
+                    'value_options' => [
+                        'none' => 'Not indexed', // @translate
+                        'media' => 'Short values', // @translate
+                        'media_long' => 'Short and long values', // @translate
+                    ],
+                ],
+                'attributes' => [
+                    'id' => 'sync_media',
+                    'value' => 'none',
                 ],
             ])
             ->add([
@@ -89,7 +156,7 @@ class SolrCoreSyncForm extends Form
                 'type' => 'checkbox',
                 'options' => [
                     'label' => 'Remove unused maps automatically', // @translate
-                    'info' => 'Remove the property maps not referenced by the checked sources. Customized maps are kept.', // @translate
+                    'info' => 'Remove the property maps not referenced by the selected options. Customized maps are kept.', // @translate
                 ],
                 'attributes' => [
                     'id' => 'clean',
@@ -104,11 +171,8 @@ class SolrCoreSyncForm extends Form
             ]);
 
         // Default: the maps follow the real usages (configs and bounce links)
-        // and the unused maps are removed. The exploratory sources (templates,
-        // used properties) index every property and stay an explicit choice. A
-        // multicheckbox reads its checked options from the element value, not
-        // from an attribute.
-        $this->get('sync_sources')->setValue(['configs', 'bounce']);
+        // and the unused maps are removed. The exploratory choices index every
+        // property and stay explicit.
         $this->get('multilingual')->setValue(true);
         $this->get('clean')->setValue(true);
     }

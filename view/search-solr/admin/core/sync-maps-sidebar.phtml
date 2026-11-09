@@ -18,8 +18,6 @@ $translate = $plugins->get('translate');
 $form->setAttribute('action', $solrCore->adminUrl('sync-maps'));
 $form->prepare();
 
-$sources = $form->get('sync_sources');
-$sourcesChecked = array_map('strval', (array) $sources->getValue());
 $clean = $form->get('clean');
 $mode = $form->get('mode');
 $multilingual = $form->get('multilingual');
@@ -43,18 +41,21 @@ $maxCardinality = $form->get('max_cardinality');
         </div>
     </fieldset>
 
+    <?php foreach (['sync_properties', 'sync_numeric', 'sync_media'] as $name): ?>
+    <?php $element = $form->get($name); ?>
     <fieldset>
-        <legend><?= $escape($translate('Sources of the properties to map')) ?></legend>
-        <p class="explanation"><?= $escape($translate('The maps are created for the union of the checked sources. System maps are always kept and a snapshot is taken before each alignment, so the previous configuration can be restored.')) ?></p>
+        <legend><?= $escape($translate($element->getLabel())) ?></legend>
+        <p class="explanation"><?= $escape($translate($element->getOption('info'))) ?></p>
         <div class="inputs">
-            <?php foreach ($sources->getValueOptions() as $value => $label): ?>
+            <?php foreach ($element->getValueOptions() as $value => $label): ?>
             <label>
-                <input type="checkbox" name="sync_sources[]" value="<?= $escapeAttr($value) ?>"<?= in_array((string) $value, $sourcesChecked, true) ? ' checked="checked"' : '' ?>>
+                <input type="radio" name="<?= $escapeAttr($name) ?>" value="<?= $escapeAttr($value) ?>"<?= (string) $element->getValue() === (string) $value ? ' checked="checked"' : '' ?>>
                 <?= $escape($translate($label)) ?>
             </label>
             <?php endforeach; ?>
         </div>
     </fieldset>
+    <?php endforeach; ?>
 
     <fieldset>
         <legend><?= $escape($translate('Exact indexes')) ?></legend>
@@ -81,7 +82,7 @@ $maxCardinality = $form->get('max_cardinality');
 
     <fieldset>
         <legend><?= $escape($translate('Unused maps')) ?></legend>
-        <p class="explanation"><?= $escape($translate('Remove the property maps not referenced by the checked sources. Customized maps are kept.')) ?></p>
+        <p class="explanation"><?= $escape($translate($clean->getOption('info'))) ?></p>
         <div class="inputs">
             <input type="hidden" name="clean" value="0">
             <label>
@@ -91,6 +92,7 @@ $maxCardinality = $form->get('max_cardinality');
         </div>
     </fieldset>
 
+    <p class="explanation"><?= $escape($translate('System maps are always kept and a snapshot is taken before each alignment, so the previous configuration can be restored.')) ?></p>
     <?= $this->formRow($form->get('csrf')) ?>
     <button type="submit" class="button"><?= $escape($translate('Align the maps')) ?></button>
     <?= $this->form()->closeTag() ?>
