@@ -84,7 +84,10 @@ abstract class SearchSolrControllerTestCase extends TestCase
 
     public function tearDown(): void
     {
-        // Re-authenticate in case test logged out.
+        // A fresh application, because the last dispatch may be a request of
+        // the rest api, that ignores the session, and re-authenticate in case
+        // the test logged out.
+        $this->reset();
         $this->loginAsAdmin();
 
         // The configs and the maps are deleted by a cascade of the database
