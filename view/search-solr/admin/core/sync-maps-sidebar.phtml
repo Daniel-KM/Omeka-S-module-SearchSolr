@@ -30,7 +30,7 @@ $maxCardinality = $form->get('max_cardinality');
 
     <fieldset>
         <legend><?= $escape($translate('Mode')) ?></legend>
-        <p class="explanation"><?= $escape($translate('The audit reports the maps that would be created or removed, and the fields used by a config that cannot be mapped, for example a name that is neither a property nor an index.')) ?></p>
+        <p class="explanation"><?= $escape($translate($mode->getOption('info'))) ?></p>
         <div class="inputs">
             <?php foreach ($mode->getValueOptions() as $value => $label): ?>
             <label>
@@ -59,7 +59,7 @@ $maxCardinality = $form->get('max_cardinality');
 
     <fieldset>
         <legend><?= $escape($translate('Exact indexes')) ?></legend>
-        <p class="explanation"><?= $escape($translate('A property with more distinct values than this limit gets no exact index (_ss): such a facet or filter is unusable. A property used by a facet or a filter of a search page keeps its index anyway. Set 0 to skip this check.')) ?></p>
+        <p class="explanation"><?= $escape($translate($maxCardinality->getOption('info'))) ?></p>
         <div class="inputs">
             <label>
                 <?= $escape($translate('Maximum number of distinct values')) ?>
@@ -70,7 +70,7 @@ $maxCardinality = $form->get('max_cardinality');
 
     <fieldset>
         <legend><?= $escape($translate('Multilingual values')) ?></legend>
-        <p class="explanation"><?= $escape($translate('Add a language index by property and language, for example dcterms_subject_fr_ss and dcterms_subject_en_ss. Used only when the sites have at least two distinct locales and the property has values in at least two of these languages. The values without language are included in each language index.')) ?></p>
+        <p class="explanation"><?= $escape($translate($multilingual->getOption('info'))) ?></p>
         <div class="inputs">
             <input type="hidden" name="multilingual" value="0">
             <label>
@@ -92,7 +92,7 @@ $maxCardinality = $form->get('max_cardinality');
         </div>
     </fieldset>
 
-    <p class="explanation"><?= $escape($translate('System maps are always kept and a snapshot is taken before each alignment, so the previous configuration can be restored.')) ?></p>
+    <p class="explanation"><?= $escape($translate('A snapshot is taken before each alignment.')) ?></p>
     <?= $this->formRow($form->get('csrf')) ?>
     <button type="submit" class="button"><?= $escape($translate('Align the maps')) ?></button>
     <?= $this->form()->closeTag() ?>
@@ -104,7 +104,7 @@ $maxCardinality = $form->get('max_cardinality');
     <?php if ($snapshots): ?>
     <?php $i18n = $plugins->get('i18n'); ?>
     <h4 class="map-snapshots-heading"><?= $escape(sprintf($translate('Map snapshots (%d)'), count($snapshots))) ?></h4>
-    <p class="explanation"><?= $escape($translate('A snapshot is taken before each maps alignment. Only the 20 most recent snapshots are kept on this core.')) ?></p>
+    <p class="explanation"><?= $escape($translate('Only the 20 most recent snapshots are kept.')) ?></p>
     <ul class="map-snapshots">
         <?php foreach ($snapshots as $i => $snap): ?>
         <?php
