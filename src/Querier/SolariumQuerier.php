@@ -1542,7 +1542,13 @@ class SolariumQuerier extends AbstractQuerier
                 }
             }
         } else {
-            // Without an explicit sort, the most recent resources come first.
+            // Without an explicit sort, the most relevant resources come first
+            // when there is a text query, else the most recent ones.
+            $hasText = trim((string) $this->query->getQuery()) !== ''
+                || trim((string) $this->query->getQueryRefine()) !== '';
+            if ($hasText) {
+                $this->select->addSort('score', SelectQuery::SORT_DESC);
+            }
             $idField = $this->fieldToIndex('id');
             if ($idField) {
                 $this->select->addSort($idField, SelectQuery::SORT_DESC);
