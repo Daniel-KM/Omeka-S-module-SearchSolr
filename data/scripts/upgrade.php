@@ -825,7 +825,10 @@ if (version_compare($oldVersion, '3.5.57', '<')) {
         WHERE field_name IN (:list);
         SQL;
     $list = (bool) $connection->executeQuery($sql, ['list' => array_keys($renameIndexes)], ['list' => \Doctrine\DBAL\Connection::PARAM_STR_ARRAY])->fetchAllKeyValue();
-    $logger->info('Updatable field names: {json}', ['json' => json_encode($list, 448)]);
+    $logger->info(
+        'Updatable field names: {json}', // @translate
+        ['json' => json_encode($list, 448)]
+    );
     $updateds = [];
     foreach ($renameIndexes as $oldIndex => $newIndex) {
         try {
