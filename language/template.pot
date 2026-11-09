@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 00:00+0000\n"
+"POT-Creation-Date: 2026-11-09 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -930,112 +930,74 @@ msgstr ""
 msgid "Create the suggest index"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:30
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:95
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:28
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:97
 msgid "Align the maps"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:34
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:32
 msgid "Mode"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:35
-msgid ""
-"The audit reports the maps that would be created or removed, and the fields "
-"used by a config that cannot be mapped, for example a name that is neither a "
-"property nor an index."
-msgstr ""
-
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:47
-msgid "Sources of the properties to map"
-msgstr ""
-
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:48
-msgid ""
-"The maps are created for the union of the checked sources. System maps are "
-"always kept and a snapshot is taken before each alignment, so the previous "
-"configuration can be restored."
-msgstr ""
-
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:60
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:61
 msgid "Exact indexes"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:61
-msgid ""
-"A property with more distinct values than this limit gets no exact index "
-"(_ss): such a facet or filter is unusable. A property used by a facet or a "
-"filter of a search page keeps its index anyway. Set 0 to skip this check."
-msgstr ""
-
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:64
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:65
 msgid "Maximum number of distinct values"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:71
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:72
 msgid "Multilingual values"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:72
-msgid ""
-"Add a language index by property and language, for example "
-"dcterms_subject_fr_ss and dcterms_subject_en_ss. Used only when the sites "
-"have at least two distinct locales and the property has values in at least "
-"two of these languages. The values without language are included in each "
-"language index."
-msgstr ""
-
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:77
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:78
 msgid "Support of multilingual values"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:83
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:84
 msgid "Unused maps"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:84
-msgid ""
-"Remove the property maps not referenced by the checked sources. Customized "
-"maps are kept."
-msgstr ""
-
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:89
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:90
 msgid "Remove unused maps automatically"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:104
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:95
+msgid "A snapshot is taken before each alignment."
+msgstr ""
+
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:106
 #, php-format
 msgid "Map snapshots (%d)"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:105
-msgid ""
-"A snapshot is taken before each maps alignment. Only the 20 most recent "
-"snapshots are kept on this core."
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:107
+msgid "Only the 20 most recent snapshots are kept."
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:120
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:122
 #, php-format
 msgid "%1$d maps · %2$s"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:125
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:127
 msgid ""
 "Restore this snapshot: the current maps are replaced (the current state is "
 "snapshotted first)."
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:126
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:128
 msgid ""
 "Restore this snapshot? Current maps will be replaced. The current state is "
 "itself snapshotted before restore."
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:131
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:133
 msgid "Delete this snapshot"
 msgstr ""
 
-#: view/search-solr/admin/core/sync-maps-sidebar.phtml:132
+#: view/search-solr/admin/core/sync-maps-sidebar.phtml:134
 msgid "Delete this snapshot?"
 msgstr ""
 
@@ -1114,7 +1076,7 @@ msgid "This version of module {module} requires a version of php ≥ {version}."
 msgstr ""
 
 #: data/scripts/upgrade.php:95 data/scripts/upgrade.php:668
-#: data/scripts/upgrade.php:1175
+#: data/scripts/upgrade.php:1178
 msgid "You should reindex your Solr cores."
 msgstr ""
 
@@ -1189,7 +1151,7 @@ msgid ""
 "Access has been added."
 msgstr ""
 
-#: data/scripts/upgrade.php:538 data/scripts/upgrade.php:906
+#: data/scripts/upgrade.php:538 data/scripts/upgrade.php:909
 msgid "A reindexing is needed."
 msgstr ""
 
@@ -1219,110 +1181,114 @@ msgid ""
 "The management of indices has been merged in a {link}single page{link_end}."
 msgstr ""
 
-#: data/scripts/upgrade.php:844
+#: data/scripts/upgrade.php:829
+msgid "Updatable field names: {json}"
+msgstr ""
+
+#: data/scripts/upgrade.php:847
 msgid "Some solr map fields were renamed: {json}."
 msgstr ""
 
-#: data/scripts/upgrade.php:896
+#: data/scripts/upgrade.php:899
 msgid ""
 "It is now possible to set a default alias for each omeka/solr map. Common "
 "aliases were added, for example \"id\" for \"o:id\" and \"item_set_id\" for "
 "\"item_set_id_is\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:901
+#: data/scripts/upgrade.php:904
 msgid ""
 "Property terms can be used as dynamic aliases when an index exists for them."
 msgstr ""
 
-#: data/scripts/upgrade.php:913
+#: data/scripts/upgrade.php:916
 msgid ""
 "A {link}config form{link_end} was added to specify the use of php-curl if "
 "wanted and the solarium timeout."
 msgstr ""
 
-#: data/scripts/upgrade.php:923
+#: data/scripts/upgrade.php:926
 msgid "The button {link}Map all{link_end} creates new indexes for languages."
 msgstr ""
 
-#: data/scripts/upgrade.php:986
+#: data/scripts/upgrade.php:989
 msgid ""
 "The default option \"auto\" for format of indexed values was replaced by "
 "\"main\". A new option \"full\" now include the uri and the linked resource "
 "id. You should check your indices, filters and facets."
 msgstr ""
 
-#: data/scripts/upgrade.php:991
+#: data/scripts/upgrade.php:994
 msgid "It is now possible to index the label of uri and linked resource."
 msgstr ""
 
-#: data/scripts/upgrade.php:996
+#: data/scripts/upgrade.php:999
 msgid "It is now possible to specify a boost for selected indexes."
 msgstr ""
 
-#: data/scripts/upgrade.php:1003
+#: data/scripts/upgrade.php:1006
 msgid "The statistics about index were moved to a specific page."
 msgstr ""
 
-#: data/scripts/upgrade.php:1008
+#: data/scripts/upgrade.php:1011
 msgid ""
 "The performance was improved for indexing and querying. Warning: It is no "
 "more possible to query with any diacritics on static fields like _ss."
 msgstr ""
 
-#: data/scripts/upgrade.php:1073
+#: data/scripts/upgrade.php:1076
 msgid "{count} invalid data in solr maps were fixed."
 msgstr ""
 
-#: data/scripts/upgrade.php:1113
+#: data/scripts/upgrade.php:1116
 msgid ""
 "{count} solr maps with normalization \"table\" referencing an empty table "
 "were cleaned."
 msgstr ""
 
-#: data/scripts/upgrade.php:1171
+#: data/scripts/upgrade.php:1174
 msgid "{count} required maps were created for existing solr cores."
 msgstr ""
 
-#: data/scripts/upgrade.php:1262
+#: data/scripts/upgrade.php:1265
 msgid ""
 "A default Solr suggester has been created. You can configure it in the {link}"
 "search manager{link_end}."
 msgstr ""
 
-#: data/scripts/upgrade.php:1270
+#: data/scripts/upgrade.php:1273
 msgid ""
 "{count} search configuration(s) have been updated to use the new Solr "
 "suggester."
 msgstr ""
 
-#: data/scripts/upgrade.php:1277
+#: data/scripts/upgrade.php:1280
 msgid ""
 "Note: The suggester uses the catchall copy field \"_text_\". If it does not "
 "exist, create it via the Solr core admin page or change the suggester field. "
 "Reindex your Solr core and build the suggester dictionary."
 msgstr ""
 
-#: data/scripts/upgrade.php:1330
+#: data/scripts/upgrade.php:1333
 msgid ""
 "Solr suggester #{suggester_id} uses \"_text_\" (not stored), which produces "
 "character-level suggestions. Update it to use stored fields (words). It is "
 "used in search config #{config_id}."
 msgstr ""
 
-#: data/scripts/upgrade.php:1338
+#: data/scripts/upgrade.php:1341
 msgid ""
 "Solr suggester #{suggester_id}: \"_text_\" replaced with \"auto\" (all "
 "stored fields). You should rebuild the suggester dictionary."
 msgstr ""
 
-#: data/scripts/upgrade.php:1355
+#: data/scripts/upgrade.php:1358
 msgid ""
 "The suggester now uses an optimized unified field \"suggest_txt\" by "
 "default. You can select it in the suggester settings."
 msgstr ""
 
-#: data/scripts/upgrade.php:1374
+#: data/scripts/upgrade.php:1377
 msgid ""
 "The visibility filter for Solr maps now defaults to \"follow engine "
 "setting\" instead of \"all\". Since at least one search engine is configured "
@@ -1332,21 +1298,21 @@ msgid ""
 "page, or set individual maps to \"All values\"."
 msgstr ""
 
-#: data/scripts/upgrade.php:1391
+#: data/scripts/upgrade.php:1394
 msgid ""
 "All existing Solr maps have been set to \"All values\" to preserve the "
 "current indexing behavior. Use the maintenance action \"Remove private "
 "values from maps\" to switch to the secure default."
 msgstr ""
 
-#: data/scripts/upgrade.php:1395
+#: data/scripts/upgrade.php:1398
 msgid ""
 "The visibility filter for Solr maps now defaults to \"follow engine "
 "setting\". Since no engine is configured as \"public\", this does not change "
 "the current behavior."
 msgstr ""
 
-#: data/scripts/upgrade.php:1400
+#: data/scripts/upgrade.php:1403
 msgid ""
 "A new maintenance action \"Sync maps from search configs\" is available on "
 "each Solr core page. It automatically creates the Solr maps needed by your "
@@ -1355,48 +1321,48 @@ msgid ""
 "reindex is required after sync."
 msgstr ""
 
-#: data/scripts/upgrade.php:1414
+#: data/scripts/upgrade.php:1417
 msgid ""
 "The maintenance action \"Sync maps from search configs\" now stores a backup "
 "of the previous map configuration on each run. The last snapshots are kept "
 "on each Solr core and can be restored from the core page."
 msgstr ""
 
-#: data/scripts/upgrade.php:1450
+#: data/scripts/upgrade.php:1453
 msgid ""
 "Autocompletion is now diacritics-insensitive by default. To apply, click "
 "\"Recreate suggest_txt\" in the \"Suggest configuration\" section on the "
 "core show page and reindex."
 msgstr ""
 
-#: data/scripts/upgrade.php:1454
+#: data/scripts/upgrade.php:1457
 msgid ""
 "The search now supports jokers \"*\" and \"?\" by default. They cannot be "
 "used as first character and the query should contains at least three "
 "characters."
 msgstr ""
 
-#: data/scripts/upgrade.php:1458
+#: data/scripts/upgrade.php:1461
 msgid ""
 "The map source \"Item: Has media\" has a new option \"Include digital "
 "objects\": when set, an item with no native media but linked to at least one "
 "digital object (module Digital Object) is also indexed as having media."
 msgstr ""
 
-#: data/scripts/upgrade.php:1560
+#: data/scripts/upgrade.php:1563
 msgid ""
 "The Solr cores were merged into their search engines, but the maps attached "
 "to no core were kept aside ({count}), so the old table was not removed. "
 "Check the search engines and their maps."
 msgstr ""
 
-#: data/scripts/upgrade.php:1595
+#: data/scripts/upgrade.php:1598
 msgid ""
 "The Solr cores were merged into their search engines: the connection and the "
 "maps now belong to the engine directly."
 msgstr ""
 
-#: data/scripts/upgrade.php:1768
+#: data/scripts/upgrade.php:1771
 msgid ""
 "A boolean visibility index \"is_public_b\" was added and indexing "
 "relaunched. The legacy \"is_public_i\" stays active until the reindex "
@@ -1404,51 +1370,51 @@ msgid ""
 "interruption)."
 msgstr ""
 
-#: data/scripts/upgrade.php:1893
+#: data/scripts/upgrade.php:1896
 msgid ""
 "The visibility index switched to \"is_public_b\"; the legacy \"is_public_i\" "
 "was removed."
 msgstr ""
 
-#: data/scripts/upgrade.php:1950
+#: data/scripts/upgrade.php:1953
 msgid ""
 "The provenance was set on the historical maps: {sync} automatic, {manual} "
 "manual (customized, never removed), {system} system."
 msgstr ""
 
-#: data/scripts/upgrade.php:1954
+#: data/scripts/upgrade.php:1957
 msgid ""
 "It is recommended to align the maps manually on each Solr core, then to "
 "reindex: the automatic maps not used by any config will be removed when the "
 "cleaning is checked."
 msgstr ""
 
-#: data/scripts/upgrade.php:2007
+#: data/scripts/upgrade.php:2010
 msgid ""
 "The date of indexation is now indexed (\"indexed_at_dt\"), so the check of "
 "the parity can find the documents that were not reindexed after a change of "
 "their resource. Reindex to fill it."
 msgstr ""
 
-#: data/scripts/upgrade.php:2103
+#: data/scripts/upgrade.php:2106
 msgid ""
 "The sources of some maps matched no extractor, so their index stayed empty: "
 "{sources}. Reindex to fill them."
 msgstr ""
 
-#: data/scripts/upgrade.php:2109
+#: data/scripts/upgrade.php:2112
 msgid ""
 "Some maps were removed, because the same index was already mapped to the "
 "same source: {maps}."
 msgstr ""
 
-#: data/scripts/upgrade.php:2115
+#: data/scripts/upgrade.php:2118
 msgid ""
 "Some maps were removed, because they point to a property that no longer "
 "exists: {maps}."
 msgstr ""
 
-#: data/scripts/upgrade.php:2121
+#: data/scripts/upgrade.php:2124
 msgid ""
 "The alignment of the maps has new sources: the values of the media, indexed "
 "on their item, the numeric values, that get an integer or decimal index for "
@@ -1457,15 +1423,15 @@ msgid ""
 "cannot be browsed. See the sidebar \"Align the maps\" of a Solr core."
 msgstr ""
 
-#: data/scripts/upgrade.php:2125
+#: data/scripts/upgrade.php:2128
 msgid "The geographic points were never indexed: reindex to get them."
 msgstr ""
 
-#: data/scripts/upgrade.php:2129
+#: data/scripts/upgrade.php:2132
 msgid "A sync and a re-indexation are recommended."
 msgstr ""
 
-#: data/scripts/upgrade.php:2153
+#: data/scripts/upgrade.php:2156
 msgid ""
 "The Solr suggesters are no more rebuilt each time a resource is saved, but "
 "by a scheduled task, once a day when a resource changed, or according to the "
@@ -1942,62 +1908,96 @@ msgstr ""
 msgid "Solarium timeout (seconds)"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreSyncForm.php:21
-msgid "Search configs (facets, filters, sorts, suggesters)"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreSyncForm.php:22
+#: src/Form/Admin/SolrCoreSyncForm.php:68
 msgid ""
-"Bounce links of the module Advanced Resource Template (main and site "
-"settings)"
+"The audit lists the maps to create or to remove and the fields that cannot "
+"be mapped."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreSyncForm.php:23
+#: src/Form/Admin/SolrCoreSyncForm.php:70
+msgid "Audit to report what would change"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:83
+msgid "Properties to map"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:84
+msgid "Each property gets a text index and an exact index."
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:86
+msgid "Search pages and bounce links"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:87
+msgid "Plus the properties of the resource templates"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:88
+msgid "Plus all the used properties"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:100
+msgid "Numeric values"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:101
+msgid "A numeric index allows a real sort and range facets."
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:103
+msgid "No numeric index"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:104
+msgid "Numeric index"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:105
+msgid "Numeric and text indexes"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:117
+msgid "Media values on their item"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:118
 msgid ""
-"Resource templates: a text and an exact index for every property of the used "
-"templates"
+"A search matching a media returns its item. The long values (ocr, "
+"transcription) may make the index very large."
 msgstr ""
 
-#: src/Form/Admin/SolrCoreSyncForm.php:24
-msgid ""
-"Used properties: a text and an exact index for every property with a value"
+#: src/Form/Admin/SolrCoreSyncForm.php:120
+msgid "Not indexed"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreSyncForm.php:25
-msgid ""
-"Media values: a text index on the item for every property used by its media, "
-"so a search matching a media returns the item"
+#: src/Form/Admin/SolrCoreSyncForm.php:121
+msgid "Short values"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreSyncForm.php:26
-msgid ""
-"Numeric values: an integer or decimal index for the properties whose values "
-"are numbers, for a real sort and range facets"
+#: src/Form/Admin/SolrCoreSyncForm.php:122
+msgid "Short and long values"
 msgstr ""
 
-#: src/Form/Admin/SolrCoreSyncForm.php:27
-msgid ""
-"Numeric values: keep a text index too, so the numbers and the coordinates "
-"remain searchable in the main field"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreSyncForm.php:28
-msgid ""
-"Media long values (ocr, transcription): include them in the index of the "
-"item. Warning: the whole text of every media is copied in the document of "
-"its item, so the index may become very large"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreSyncForm.php:42
-msgid "Audit only: report what would change"
-msgstr ""
-
-#: src/Form/Admin/SolrCoreSyncForm.php:55
-msgid "The maps are created for the union of the checked sources."
-msgstr ""
-
-#: src/Form/Admin/SolrCoreSyncForm.php:66
+#: src/Form/Admin/SolrCoreSyncForm.php:134
 msgid "Maximum number of distinct values for an exact index"
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:135
+msgid ""
+"Beyond this number of distinct values, a property gets no exact index, "
+"except when a search page uses it. Set 0 to skip."
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:149
+msgid ""
+"Add an index by language, for example dcterms_subject_fr_ss, when the sites "
+"and the values use several languages."
+msgstr ""
+
+#: src/Form/Admin/SolrCoreSyncForm.php:160
+msgid "The customized maps are kept."
 msgstr ""
 
 #: src/Form/Admin/SourceFieldset.php:26
@@ -3222,85 +3222,85 @@ msgstr ""
 msgid "All annotation maps already exist."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2051
+#: src/Controller/Admin/CoreController.php:2052
 msgid ""
 "This core is used by a shared engine (index_name is set). Sync is not "
 "supported for shared engines."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2859
+#: src/Controller/Admin/CoreController.php:2860
 msgid ""
 "Audit (sources: {sources}, cleaning: {cleaning}), nothing was changed. "
 "Properties collected: {props}. Maps: {before}, that would be removed: "
 "{deleted}, kept as customized: {kept}, created: {created}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2872
+#: src/Controller/Admin/CoreController.php:2873
 msgid "Maps that would be created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2878
+#: src/Controller/Admin/CoreController.php:2879
 msgid "Maps that would be removed: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2884
+#: src/Controller/Admin/CoreController.php:2885
 msgid ""
 "Search pages whose facets or filters would use the aligned index: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2890
-#: src/Controller/Admin/CoreController.php:2946
+#: src/Controller/Admin/CoreController.php:2891
+#: src/Controller/Admin/CoreController.php:2947
 msgid ""
 "Search pages whose facets or filters will use the aligned index once it is "
 "indexed (reindex, then align again): {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2908
+#: src/Controller/Admin/CoreController.php:2909
 msgid ""
 "Sync complete (sources: {sources}, cleaning: {cleaning}). Properties "
 "collected: {props}. Maps before: {before}, deleted: {deleted}, kept "
 "(customized): {kept}, created: {created}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2922
+#: src/Controller/Admin/CoreController.php:2923
 msgid "Deleted: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2928
+#: src/Controller/Admin/CoreController.php:2929
 msgid "Kept (customized, not in config): {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2934
+#: src/Controller/Admin/CoreController.php:2935
 msgid "Created: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2940
+#: src/Controller/Admin/CoreController.php:2941
 msgid "Search pages whose facets or filters use now the aligned index: {list}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2952
+#: src/Controller/Admin/CoreController.php:2953
 msgid "All maps are in sync with search configs."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:2969
+#: src/Controller/Admin/CoreController.php:2970
 msgid ""
 "Reindex required: the changed maps stay empty until then. Reindex: {links}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3004
+#: src/Controller/Admin/CoreController.php:3005
 msgid ""
 "Fields used by a config but provided by no map: {list}. They cannot be "
 "created by the alignment, since they are neither a property nor an index "
 "built on one, and a query on them fails on an undefined field."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3027
+#: src/Controller/Admin/CoreController.php:3028
 msgid ""
 "The private values are set to be separated, but the schema of the core is "
 "not ready, so they are not indexed. Save the core to prepare the schema."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3068
+#: src/Controller/Admin/CoreController.php:3069
 msgid ""
 "The engine indexes the private values (visibility \"{visibility}\"), but it "
 "is used by the search pages of a site: {names}. A private value can be found "
@@ -3310,87 +3310,87 @@ msgid ""
 "reindex, or use another engine for the admin."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3432
+#: src/Controller/Admin/CoreController.php:3433
 msgid "{count} maps reset to \"follow engine\" visibility. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3437
+#: src/Controller/Admin/CoreController.php:3438
 msgid "All maps already follow the engine visibility."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3459
-#: src/Controller/Admin/CoreController.php:3530
+#: src/Controller/Admin/CoreController.php:3460
+#: src/Controller/Admin/CoreController.php:3531
 msgid "Solr is unreachable: {status}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3496
+#: src/Controller/Admin/CoreController.php:3497
 msgid "Field \"suggest_txt\" recreated. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3497
+#: src/Controller/Admin/CoreController.php:3498
 msgid "Field \"suggest_txt\" created. Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3501
+#: src/Controller/Admin/CoreController.php:3502
 msgid "Error creating suggest field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3552
+#: src/Controller/Admin/CoreController.php:3553
 msgid "Catchall analyzer unchanged."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3596
+#: src/Controller/Admin/CoreController.php:3597
 msgid "Unsupported language: {lang}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3652
+#: src/Controller/Admin/CoreController.php:3653
 msgid "Failed to create field type: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3679
+#: src/Controller/Admin/CoreController.php:3680
 msgid ""
 "Field \"_text_\" configured for Google-like search in core \"{solr_core_name}"
 "\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3681
+#: src/Controller/Admin/CoreController.php:3682
 msgid ""
 "Field \"_text_\" configured for linguistic search ({type}) in core "
 "\"{solr_core_name}\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3683
+#: src/Controller/Admin/CoreController.php:3684
 msgid ""
 "Field \"_text_\" configured for strict matching in core \"{solr_core_name}"
 "\". Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3693
+#: src/Controller/Admin/CoreController.php:3694
 msgid "Failed to configure _text_ field: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3699
+#: src/Controller/Admin/CoreController.php:3700
 msgid "Error configuring search: {error}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3730
+#: src/Controller/Admin/CoreController.php:3731
 msgid "Solr issue: {msg}"
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3807
-#: src/Controller/Admin/CoreController.php:3880
+#: src/Controller/Admin/CoreController.php:3808
+#: src/Controller/Admin/CoreController.php:3881
 msgid "Snapshot not found."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3851
+#: src/Controller/Admin/CoreController.php:3852
 msgid "Restored {count} maps from snapshot of {datetime}."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3858
+#: src/Controller/Admin/CoreController.php:3859
 msgid "Reindex required."
 msgstr ""
 
-#: src/Controller/Admin/CoreController.php:3892
+#: src/Controller/Admin/CoreController.php:3893
 msgid "Snapshot deleted."
 msgstr ""
 
@@ -3717,7 +3717,7 @@ msgstr ""
 msgid "Solr query failed to get the bounds of the fields {fields}: {message}"
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:861 src/Querier/SolariumQuerier.php:1816
+#: src/Querier/SolariumQuerier.php:861 src/Querier/SolariumQuerier.php:1813
 msgid "Could not fetch all resource ids: {message}"
 msgstr ""
 
@@ -3732,56 +3732,56 @@ msgid ""
 "page."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1517
+#: src/Querier/SolariumQuerier.php:1514
 msgid "Solr: skipped sort on unmapped field \"{field}\"."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1962
+#: src/Querier/SolariumQuerier.php:1959
 msgid ""
 "Solr: the arg \"{arg}\" needs a map of the source \"{source}\"; the filter "
 "is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:1972
+#: src/Querier/SolariumQuerier.php:1969
 msgid ""
 "Solr: the arg \"{arg}\" is not supported by the solr querier and is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2007
+#: src/Querier/SolariumQuerier.php:2004
 msgid "Solr: unknown arg \"{arg}\" ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2018
+#: src/Querier/SolariumQuerier.php:2015
 msgid "Solr: skipped filter on unmapped field \"{field}\"."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2168
+#: src/Querier/SolariumQuerier.php:2165
 msgid ""
 "Solr: the numeric timestamp filter needs a date map (suffix _dt) or a year "
 "map (suffix _year_is) of the property #{property}; the filter is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2182
+#: src/Querier/SolariumQuerier.php:2179
 msgid ""
 "Solr: the numeric integer filter needs an integer map (suffix _i) of the "
 "property #{property}; the filter is ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2196
+#: src/Querier/SolariumQuerier.php:2193
 msgid ""
 "Solr: the numeric arg \"{arg}\" is not supported by the solr querier and is "
 "ignored."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2461
+#: src/Querier/SolariumQuerier.php:2458
 msgid "Solr: unknown arg \"{arg}\" ignored in the advanced filters."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2486
+#: src/Querier/SolariumQuerier.php:2483
 msgid "Solr: no index for the field \"{field}\", filter adapted."
 msgstr ""
 
-#: src/Querier/SolariumQuerier.php:2770
+#: src/Querier/SolariumQuerier.php:2767
 msgid ""
 "Solr: the type res/nres on \"{field}\" compares ids as strings; run the maps "
 "sync to create the integer index of the linked resource ids (_link_is)."
