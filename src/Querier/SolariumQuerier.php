@@ -1087,13 +1087,21 @@ class SolariumQuerier extends AbstractQuerier
             }
         }
 
-        // Use simple query with DisMax (configured in configureEDisMax).
-        // Escape each query separately, then combine with "+" (required) prefix
-        // for AND behavior between main and refine queries.
-        $mainEscaped = $mainQuery !== '' ? $this->escapeTermOrPhrase($mainQuery) : '';
-        $refineEscaped = $refineQuery !== '' ? $this->escapeTermOrPhrase($refineQuery) : '';
+        // Use simple query with DisMax (configured in configureEDisMax). A
+        // query without quotes requires all its words through the minimum
+        // match, not with a "+" prefix on each word: a stop word removed from
+        // some query fields only (for example "de" in "_text_") would then be
+        // required in the other ones. The option "mm.autoRelax" skips it.
+        $isAllWords = ($mainQuery === '' || $this->isAllWordsQuery($mainQuery))
+            && ($refineQuery === '' || $this->isAllWordsQuery($refineQuery));
+        $mainEscaped = $mainQuery !== '' ? $this->escapeTermOrPhrase($mainQuery, !$isAllWords) : '';
+        $refineEscaped = $refineQuery !== '' ? $this->escapeTermOrPhrase($refineQuery, !$isAllWords) : '';
 
-        if ($mainEscaped !== '' && $refineEscaped !== '') {
+        if ($isAllWords) {
+            $this->select->setQuery(trim($mainEscaped . ' ' . $refineEscaped));
+        } elseif ($mainEscaped !== '' && $refineEscaped !== '') {
+            // Escape each query separately, then combine with "+" (required)
+            // prefix for AND behavior between main and refine queries.
             $this->select->setQuery("+($mainEscaped) +($refineEscaped)");
         } elseif ($mainEscaped !== '') {
             $this->select->setQuery($mainEscaped);
@@ -1104,12 +1112,15 @@ class SolariumQuerier extends AbstractQuerier
         // The query relevance settings are a facet of the query context, so
         // they are set by search page in its config.
         // TODO These options and other DisMax ones can be passed directly as options. Even the query is an option.
-        $minimumMatch = $this->query->getMinimumMatch();
+        $minimumMatch = $isAllWords ? '100%' : $this->query->getMinimumMatch();
         $tieBreaker = $this->query->getTieBreaker();
         if ($minimumMatch !== '' || $tieBreaker !== '') {
             $dismax = $this->select->getDisMax();
             $minimumMatch === '' || $dismax->setMinimumMatch($minimumMatch);
             $tieBreaker === '' || $dismax->setTie((float) $tieBreaker);
+        }
+        if ($isAllWords) {
+            $this->select->addParam('mm.autoRelax', 'true');
         }
 
         return $this;
@@ -3494,23 +3505,33 @@ class SolariumQuerier extends AbstractQuerier
      */
     const WILDCARD_MAX_TERMS = 3;
 
-    protected function escapeTermOrPhrase(string $string): string
+    /**
+     * Check if a query is a list of words without phrase (no quoted part).
+     */
+    protected function isAllWordsQuery(string $string): bool
+    {
+        // substr_count() is unicode-safe.
+        $countQuotes = substr_count(trim($string), '"');
+        return $countQuotes < 2 || ($countQuotes % 2) === 1;
+    }
+
+    /**
+     * @param bool $requireWords Prefix each word with "+" to require it. When
+     *   false, all words are required by the minimum match.
+     */
+    protected function escapeTermOrPhrase(string $string, bool $requireWords = true): string
     {
         $string = trim($string);
 
-        // substr_count() is unicode-safe.
-        $countQuotes = substr_count($string, '"');
-
         // TODO Manage the escaping of query with an odd number of quotes. Check for escaped quote \".
-        if ($countQuotes < 2 || ($countQuotes % 2) === 1) {
-            // Google-like search: escape each word individually and prefix with
-            // "+" to require all terms (like refine behavior).
+        if ($this->isAllWordsQuery($string)) {
+            // Google-like search: escape each word individually.
             $words = preg_split('/\s+/', $string, -1, PREG_SPLIT_NO_EMPTY);
             $wildcardCount = 0;
             if (count($words) > 1) {
                 $escaped = [];
                 foreach ($words as $w) {
-                    $escaped[] = '+' . $this->escapeWord($w, $wildcardCount);
+                    $escaped[] = ($requireWords ? '+' : '') . $this->escapeWord($w, $wildcardCount);
                 }
                 return implode(' ', $escaped);
             }
