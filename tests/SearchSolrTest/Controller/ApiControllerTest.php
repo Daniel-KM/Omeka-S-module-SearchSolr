@@ -30,7 +30,7 @@ class ApiControllerTest extends SearchSolrControllerTestCase
 
     public function testApiSolrMapsIsAllowedToAdmin(): void
     {
-        $this->dispatch('/api/solr_maps');
+        $this->dispatchApi('/api/solr_maps');
         $this->assertResponseStatusCode(200);
     }
 
