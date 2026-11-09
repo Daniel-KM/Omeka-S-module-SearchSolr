@@ -2216,6 +2216,18 @@ class SolariumQuerier extends AbstractQuerier
 
     protected function convertStandardFilterValues(string $fieldName, string $solrField, array $values): array
     {
+        // A numeric Solr field, like "resource_template_id_i" or "owner_id_i",
+        // stores ids: a term or a label is converted into an id, and any other
+        // value is removed, else Solr rejects the whole query.
+        if ($this->fieldIsNumeric($solrField)) {
+            if ($fieldName === 'resource_class_id') {
+                $values = array_map(fn ($v) => is_numeric($v) ? $v : $this->easyMeta->resourceClassId($v), $values);
+            } elseif ($fieldName === 'resource_template_id') {
+                $values = array_map(fn ($v) => is_numeric($v) ? $v : $this->easyMeta->resourceTemplateId($v), $values);
+            }
+            // Like the api, an invalid id matches nothing (ids are positive).
+            return array_values(array_filter($values, 'is_numeric')) ?: ['-1'];
+        }
         if ($fieldName === 'resource_class_id') {
             return array_values(array_filter(
                 array_map(fn ($v) => $this->easyMeta->resourceClassTerm(is_numeric($v) ? (int) $v : $v), $values)
@@ -2585,6 +2597,11 @@ class SolariumQuerier extends AbstractQuerier
             // list/nlist are deprecated, since eq/neq supports array.
             case 'nlist':
             case 'list':
+                if ($this->fieldIsNumeric($field)) {
+                    // Solr rejects the whole query for a non-numeric value on a
+                    // numeric field; like the api, an invalid id matches nothing.
+                    $val = array_values(array_filter((array) $val, 'is_numeric')) ?: ['-1'];
+                }
                 if ($this->fieldIsString($field)) {
                     $val = $this->escape($val, '', '');
                 } else {
