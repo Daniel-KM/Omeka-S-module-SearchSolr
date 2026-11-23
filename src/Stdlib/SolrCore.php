@@ -1341,14 +1341,11 @@ class SolrCore
         'BlendedInfixLookupFactory',
     ];
 
-    public function updateSuggestComponent(
-        array $suggesters,
-        string $componentName = 'omeka_suggest'
-    ) {
-        $services = $this->getServiceLocator();
-        $logger = $services->get('Omeka\Logger');
-        $configUrl = $this->clientUrl() . '/config';
-
+    /**
+     * Get the definition of a suggest component with its suggesters.
+     */
+    protected function suggestComponent(array $suggesters, string $componentName): array
+    {
         // Normalize each suggester definition.
         $suggesterDefs = [];
         foreach ($suggesters as $suggester) {
@@ -1376,13 +1373,55 @@ class SolrCore
             $suggesterDefs[] = $def;
         }
 
-        $component = [
+        return [
             'name' => $componentName,
             'class' => 'solr.SuggestComponent',
             'suggester' => count($suggesterDefs) === 1
                 ? reset($suggesterDefs)
                 : $suggesterDefs,
         ];
+    }
+
+    /**
+     * Check if the suggest component and the /suggest handler are up to date.
+     *
+     * The update deletes the component and reloads the core, so it is skipped
+     * when nothing changed, else the build may fail on a busy core, whose
+     * previous instance still holds the write lock of the dictionary.
+     */
+    public function isSuggestComponentUpToDate(array $suggesters, string $componentName): bool
+    {
+        $overlay = $this->getSolrConfigOverlay();
+        $suggestComponents = array_filter(
+            $overlay['searchComponent'] ?? [],
+            fn ($component) => ($component['class'] ?? '') === 'solr.SuggestComponent'
+        );
+        if (array_keys($suggestComponents) !== [$componentName]
+            || ($overlay['requestHandler']['/suggest']['components'] ?? null) !== [$componentName]
+        ) {
+            return false;
+        }
+        $normalize = function ($value) use (&$normalize) {
+            if (!is_array($value)) {
+                return is_bool($value) ? ($value ? 'true' : 'false') : (string) $value;
+            }
+            $value = array_map($normalize, $value);
+            ksort($value);
+            return $value;
+        };
+        return $normalize($suggestComponents[$componentName])
+            === $normalize($this->suggestComponent($suggesters, $componentName));
+    }
+
+    public function updateSuggestComponent(
+        array $suggesters,
+        string $componentName = 'omeka_suggest'
+    ) {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $configUrl = $this->clientUrl() . '/config';
+
+        $component = $this->suggestComponent($suggesters, $componentName);
 
         // Ensure the text_suggest field type exists in schema.
         if (!$this->ensureSuggestFieldType()) {
@@ -1543,22 +1582,37 @@ class SolrCore
                 'ignore_errors' => true,
             ],
         ]);
-        $response = @file_get_contents($url, false, $context);
-        if ($response === false) {
-            $logger->err(
-                'SearchSolr: No response from suggest handler.' // @translate
-            );
-            return false;
-        }
-        $result = json_decode($response, true);
-        if (isset($result['error'])) {
+        // A previous instance of a reloaded core keeps the write lock of the
+        // dictionary until its pending requests end, so retry a while.
+        $attempts = 6;
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            $response = @file_get_contents($url, false, $context);
+            if ($response === false) {
+                $logger->err(
+                    'SearchSolr: No response from suggest handler.' // @translate
+                );
+                return false;
+            }
+            $result = json_decode($response, true);
+            if (!isset($result['error'])) {
+                return true;
+            }
+            $error = (string) ($result['error']['msg'] ?? 'unknown');
+            if ($attempt < $attempts && strpos($error, 'Lock held') !== false) {
+                $logger->warn(
+                    'SearchSolr: Dictionary locked, new attempt in {delay} seconds.', // @translate
+                    ['delay' => 20]
+                );
+                sleep(20);
+                continue;
+            }
             $logger->err(
                 'SearchSolr: Failed to build suggester: {error}', // @translate
-                ['error' => $result['error']['msg'] ?? 'unknown']
+                ['error' => $error]
             );
             return false;
         }
-        return true;
+        return false;
     }
 
     /**

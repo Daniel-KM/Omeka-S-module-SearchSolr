@@ -13,6 +13,8 @@ use Omeka\Job\AbstractJob;
  * This job resolves the Solr fields from the suggester settings, creates a
  * single SuggestComponent with all suggesters, updates the /suggest handler,
  * and rebuilds each dictionary.
+ *
+ * The job ends in error when a suggester cannot be created or built.
  */
 class CreateSolrSuggesters extends AbstractJob
 {
@@ -32,25 +34,34 @@ class CreateSolrSuggesters extends AbstractJob
 
         $suggesterIds = array_filter(array_map('intval', $this->getArg('search_suggester_ids') ?: [$this->getArg('search_suggester_id')]));
         if (!$suggesterIds) {
-            $this->logger->err('Missing search_suggester_id argument.'); // @translate
-            return;
+            throw new \Omeka\Job\Exception\InvalidArgumentException('Missing search_suggester_id argument.'); // @translate
         }
 
         // The suggesters are processed sequentially to avoid concurrent updates
         // of the solr config.
+        $failed = [];
         foreach ($suggesterIds as $suggesterId) {
             if ($this->shouldStop()) {
                 $this->logger->warn('Job stopped.'); // @translate
-                return;
+                break;
             }
-            $this->createSuggester($suggesterId);
+            if (!$this->createSuggester($suggesterId)) {
+                $failed[] = $suggesterId;
+            }
+        }
+
+        if ($failed) {
+            throw new \Omeka\Job\Exception\RuntimeException(sprintf(
+                'Failed to create or build the suggesters #%s.', // @translate
+                implode(', #', $failed)
+            ));
         }
     }
 
     /**
      * Create and build the solr suggesters of a search suggester.
      */
-    protected function createSuggester(int $suggesterId): void
+    protected function createSuggester(int $suggesterId): bool
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
 
@@ -62,7 +73,7 @@ class CreateSolrSuggesters extends AbstractJob
                 'Suggester #{id} not found.', // @translate
                 ['id' => $suggesterId]
             );
-            return;
+            return false;
         }
 
         $searchEngine = $suggester->searchEngine();
@@ -72,14 +83,14 @@ class CreateSolrSuggesters extends AbstractJob
                 'Suggester #{id} is not a Solr engine.', // @translate
                 ['id' => $suggesterId]
             );
-            return;
+            return false;
         }
 
         /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
         $solrCore = $engineAdapter->getSolrCore();
         if (!$solrCore) {
             $this->logger->err('Solr core not found.'); // @translate
-            return;
+            return false;
         }
 
         // Resolve fields and options from suggester settings.
@@ -102,7 +113,7 @@ class CreateSolrSuggesters extends AbstractJob
                     'Cannot create suggest_txt: {error}', // @translate
                     ['error' => is_string($result) ? $result : 'unknown']
                 );
-                return;
+                return false;
             }
         }
 
@@ -113,7 +124,7 @@ class CreateSolrSuggesters extends AbstractJob
 
         if (empty($solrFields)) {
             $this->logger->warn('No solr fields provided.'); // @translate
-            return;
+            return false;
         }
 
         $baseSuggesterName = $settings['solr_suggester_name'] ?? '';
@@ -148,31 +159,39 @@ class CreateSolrSuggesters extends AbstractJob
         // The component name groups all suggesters.
         $componentName = $baseSuggesterName . '_suggest';
 
-        // 2. Create/update a single searchComponent with all suggesters.
-        $this->logger->info(
-            'Sending {count} suggesters to Solr component "{component}".', // @translate
-            ['count' => count($suggesterDefs), 'component' => $componentName]
-        );
-        $result = $solrCore->updateSuggestComponent(
-            $suggesterDefs,
-            $componentName
-        );
-        if ($result !== true) {
-            $this->logger->err(
-                'Failed to create suggest component: {error}', // @translate
-                ['error' => is_string($result) ? $result : 'unknown']
+        // 2. Create/update a single searchComponent with all suggesters, only
+        // when it changed, since the update reloads the core.
+        if ($solrCore->isSuggestComponentUpToDate($suggesterDefs, $componentName)) {
+            $this->logger->info(
+                'Solr component "{component}" is up to date.', // @translate
+                ['component' => $componentName]
             );
-            return;
-        }
+        } else {
+            $this->logger->info(
+                'Sending {count} suggesters to Solr component "{component}".', // @translate
+                ['count' => count($suggesterDefs), 'component' => $componentName]
+            );
+            $result = $solrCore->updateSuggestComponent(
+                $suggesterDefs,
+                $componentName
+            );
+            if ($result !== true) {
+                $this->logger->err(
+                    'Failed to create suggest component: {error}', // @translate
+                    ['error' => is_string($result) ? $result : 'unknown']
+                );
+                return false;
+            }
 
-        // 3. Update the /suggest handler to reference this component.
-        $result = $solrCore->updateSuggestHandler($componentName);
-        if ($result !== true) {
-            $this->logger->err(
-                'Failed to update suggest handler: {error}', // @translate
-                ['error' => is_string($result) ? $result : 'unknown']
-            );
-            return;
+            // 3. Update the /suggest handler to reference this component.
+            $result = $solrCore->updateSuggestHandler($componentName);
+            if ($result !== true) {
+                $this->logger->err(
+                    'Failed to update suggest handler: {error}', // @translate
+                    ['error' => is_string($result) ? $result : 'unknown']
+                );
+                return false;
+            }
         }
 
         // 4. Build all dictionaries in a single Solr request.
@@ -180,7 +199,7 @@ class CreateSolrSuggesters extends AbstractJob
         // lock conflicts between suggesters.
         if ($this->shouldStop()) {
             $this->logger->warn('Stopped before build phase.'); // @translate
-            return;
+            return true;
         }
 
         $this->logger->info(
@@ -216,6 +235,8 @@ class CreateSolrSuggesters extends AbstractJob
                 ['duration' => $timeTotal]
             );
         }
+
+        return $success;
     }
 
     /**
