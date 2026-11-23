@@ -206,7 +206,7 @@
         }
     }
 
-    $(document).ready(function() {
+    $(function() {
 
         $('input[name="o:resource_name"]').on('change', function() {
             updateSourceData();
