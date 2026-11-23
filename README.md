@@ -108,6 +108,11 @@ connection and its maps are edited.
        queryable with Solr. Optionally too, a numeric index is added for the
        numbers, and the values of the media are indexed on their item. A
        snapshot is taken before each alignment and can be restored.
+       On a big database (more than 100 MB of values, for example with ocr), the
+       alignment runs in background, since each scan of the values may exceed
+       the timeout of the server: see the log of the job for the result. The
+       threshold is the key "searchsolr_sync_job_min_size" of the config of the
+       module.
     2. Reindex the engine (the two arrows button in the search manager).
 4. Create a search page
     1. Add a search page with a name, a path, for example `search` or `find`,
