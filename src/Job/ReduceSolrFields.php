@@ -2,6 +2,7 @@
 
 namespace SearchSolr\Job;
 
+use Common\Job\Exception\RuntimeException;
 use Common\Stdlib\PsrMessage;
 use Omeka\Job\AbstractJob;
 
@@ -46,29 +47,26 @@ class ReduceSolrFields extends AbstractJob
 
         $solrCoreId = (int) $this->getArg('solr_core_id');
         if (!$solrCoreId) {
-            $this->logger->err(
+            throw new RuntimeException(
                 'Missing solr_core_id argument.' // @translate
             );
-            return;
         }
 
         try {
             /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
             $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         } catch (\Throwable $e) {
-            $this->logger->err(
+            throw new RuntimeException(
                 'Solr core #{id} not found.', // @translate
                 ['id' => $solrCoreId]
             );
-            return;
         }
 
         $fieldStatus = $solrCore->fieldLimitStatus();
         if (!$fieldStatus || !$fieldStatus['maxFields']) {
-            $this->logger->err(
+            throw new RuntimeException(
                 'Unable to determine the Solr maxFields limit.' // @translate
             );
-            return;
         }
 
         $this->logger->warn(

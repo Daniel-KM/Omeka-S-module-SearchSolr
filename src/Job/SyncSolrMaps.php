@@ -2,6 +2,7 @@
 
 namespace SearchSolr\Job;
 
+use Common\Job\Exception\RuntimeException;
 use Laminas\Http\PhpEnvironment\Request;
 use Laminas\Http\PhpEnvironment\Response;
 use Laminas\Mvc\MvcEvent;
@@ -32,8 +33,9 @@ class SyncSolrMaps extends AbstractJob
 
         $solrCoreId = (int) $this->getArg('solr_core_id');
         if (!$solrCoreId) {
-            $logger->err('Missing solr_core_id argument.'); // @translate
-            return;
+            throw new RuntimeException(
+                'Missing solr_core_id argument.' // @translate
+            );
         }
 
         $request = new Request();
@@ -76,13 +78,11 @@ class SyncSolrMaps extends AbstractJob
             ['solr_core_id' => $solrCoreId]
         );
 
+        $exception = null;
         try {
             $controller->dispatch($request, $response);
         } catch (\Throwable $e) {
-            $logger->err(
-                'The alignment of the maps failed: {message}', // @translate
-                ['message' => $e->getMessage()]
-            );
+            $exception = $e;
         }
 
         /** @var \Omeka\Mvc\Controller\Plugin\Messenger $messenger */
@@ -104,6 +104,15 @@ class SyncSolrMaps extends AbstractJob
             }
         }
         $messenger->clear();
+
+        if ($exception) {
+            throw new RuntimeException(
+                'The alignment of the maps failed: {message}', // @translate
+                ['message' => $exception->getMessage()],
+                0,
+                $exception
+            );
+        }
 
         $logger->notice('End of the alignment of the maps.'); // @translate
     }

@@ -14,7 +14,8 @@ use Omeka\Job\AbstractJob;
  * single SuggestComponent with all suggesters, updates the /suggest handler,
  * and rebuilds each dictionary.
  *
- * The job ends in error when a suggester cannot be created or built.
+ * The job ends in error only when all the suggesters cannot be created or
+ * built. Partial failures are logged and the job is completed.
  */
 class CreateSolrSuggesters extends AbstractJob
 {
@@ -50,11 +51,11 @@ class CreateSolrSuggesters extends AbstractJob
             }
         }
 
-        if ($failed) {
-            throw new \Omeka\Job\Exception\RuntimeException(sprintf(
-                'Failed to create or build the suggesters #%s.', // @translate
-                implode(', #', $failed)
-            ));
+        if (count($failed) === count($suggesterIds)) {
+            throw new \Common\Job\Exception\RuntimeException(
+                'Failed to create or build the suggesters #{ids}.', // @translate
+                ['ids' => implode(', #', $failed)]
+            );
         }
     }
 

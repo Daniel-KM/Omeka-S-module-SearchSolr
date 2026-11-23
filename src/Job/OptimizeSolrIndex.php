@@ -2,6 +2,7 @@
 
 namespace SearchSolr\Job;
 
+use Common\Job\Exception\RuntimeException;
 use Common\Stdlib\PsrMessage;
 use Omeka\Job\AbstractJob;
 use Solarium\Core\Client\Adapter\TimeoutAwareInterface;
@@ -30,30 +31,27 @@ class OptimizeSolrIndex extends AbstractJob
 
         $solrCoreId = (int) $this->getArg('solr_core_id');
         if (!$solrCoreId) {
-            $logger->err(
+            throw new RuntimeException(
                 'Missing solr_core_id argument.' // @translate
             );
-            return;
         }
 
         try {
             /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
             $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         } catch (\Throwable $e) {
-            $logger->err(
+            throw new RuntimeException(
                 'Solr core #{id} not found.', // @translate
                 ['id' => $solrCoreId]
             );
-            return;
         }
 
         $client = $solrCore->solariumClient();
         if (!$client) {
-            $logger->err(
+            throw new RuntimeException(
                 'Unable to connect to the Solr core "{name}".', // @translate
                 ['name' => $solrCore->name()]
             );
-            return;
         }
 
         $maxSegments = (int) $this->getArg('max_segments', 1) ?: 1;
@@ -81,10 +79,12 @@ class OptimizeSolrIndex extends AbstractJob
                 ['name' => $solrCore->name()]
             ));
         } catch (\Throwable $e) {
-            $logger->err(new PsrMessage(
+            throw new RuntimeException(
                 'Solr optimization failed: {error}', // @translate
-                ['error' => $e->getMessage()]
-            ));
+                ['error' => $e->getMessage()],
+                0,
+                $e
+            );
         } finally {
             if ($previousTimeout !== null && $adapter instanceof TimeoutAwareInterface) {
                 $adapter->setTimeout($previousTimeout);

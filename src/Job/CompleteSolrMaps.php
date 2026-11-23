@@ -2,6 +2,7 @@
 
 namespace SearchSolr\Job;
 
+use Common\Job\Exception\RuntimeException;
 use Common\Stdlib\PsrMessage;
 use Omeka\Job\AbstractJob;
 use SearchSolr\Stdlib\LanguageCodes;
@@ -53,10 +54,9 @@ class CompleteSolrMaps extends AbstractJob
 
         $solrCoreId = (int) $this->getArg('solr_core_id');
         if (!$solrCoreId) {
-            $this->logger->err(
+            throw new RuntimeException(
                 'Missing solr_core_id argument.' // @translate
             );
-            return;
         }
 
         $resourceName = $this->getArg('resource_name', 'items');
@@ -65,11 +65,10 @@ class CompleteSolrMaps extends AbstractJob
             /** @var \SearchSolr\Stdlib\SolrCore $solrCore */
             $solrCore = new \SearchSolr\Stdlib\SolrCore($api->read('search_engines', $solrCoreId)->getContent(), $this->getServiceLocator());
         } catch (\Throwable $e) {
-            $this->logger->err(
+            throw new RuntimeException(
                 'Solr core #{id} not found.', // @translate
                 ['id' => $solrCoreId]
             );
-            return;
         }
 
         $this->logger->warn(
