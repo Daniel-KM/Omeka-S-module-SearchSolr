@@ -2328,7 +2328,11 @@ class CoreController extends AbstractActionController
         // are not restricted, since their properties are not collected. The
         // distinct values are counted on a checksum, much cheaper to sort than
         // the whole text, and exact enough for a threshold.
-        $propertyIds = $this->easyMeta()->propertyIds(array_keys($usedFields));
+        // The properties known to have long values (ocr, extracted text…) are
+        // not scanned: they are the main part of the values of a big base, and
+        // they get no exact or numeric index anyway.
+        $longValueIds = array_values($this->easyMeta()->propertyIds(include dirname(__DIR__, 3) . '/config/metadata_text.php')) ?: [0];
+        $propertyIds = array_diff($this->easyMeta()->propertyIds(array_keys($usedFields)), $longValueIds);
         $rowsStats = $propertyIds || $wantMedia
             ? $connection->executeQuery(
                 'SELECT CONCAT(vo.prefix, ":", pr.local_name) AS term,
@@ -2339,10 +2343,10 @@ class CoreController extends AbstractActionController
                 FROM value v
                 INNER JOIN property pr ON pr.id = v.property_id
                 INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id'
-                . ($wantMedia ? '' : ' WHERE v.property_id IN (:ids)')
+                . ($wantMedia ? ' WHERE v.property_id NOT IN (:long_ids)' : ' WHERE v.property_id IN (:ids)')
                 . ' GROUP BY v.property_id',
-                ['ids' => array_values($propertyIds)],
-                ['ids' => $connection::PARAM_INT_ARRAY]
+                ['ids' => array_values($propertyIds) ?: [0], 'long_ids' => $longValueIds],
+                ['ids' => $connection::PARAM_INT_ARRAY, 'long_ids' => $connection::PARAM_INT_ARRAY]
             )->fetchAllAssociative()
             : [];
 
@@ -2443,7 +2447,10 @@ class CoreController extends AbstractActionController
                 INNER JOIN property pr ON pr.id = v.property_id
                 INNER JOIN vocabulary vo ON vo.id = pr.vocabulary_id
                 WHERE v.value IS NOT NULL AND v.value != ""
-                GROUP BY v.property_id'
+                    AND v.property_id NOT IN (:long_ids)
+                GROUP BY v.property_id',
+                ['long_ids' => $longValueIds],
+                ['long_ids' => $connection::PARAM_INT_ARRAY]
             );
             foreach ($rows as $row) {
                 $total = (int) $row['total'];
