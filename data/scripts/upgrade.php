@@ -2156,3 +2156,44 @@ if (version_compare($oldVersion, '3.5.76', '<')) {
         'The Solr suggesters are no more rebuilt each time a resource is saved, but by a scheduled task, once a day when a resource changed, or according to the frequency set in the module EasyAdmin or Cron (task "Rebuild Solr suggesters"). The option can be checked in each suggester.' // @translate
     ));
 }
+
+if (version_compare($oldVersion, '3.5.78', '<')) {
+    // Solr keeps the dictionaries of the removed suggesters: remove them when
+    // possible, else list the command to clean each core.
+    $removed = 0;
+    $commands = [];
+    // The api of the suggesters is not available when the module Advanced
+    // Search is not active yet: the next build of the suggesters cleans them.
+    try {
+        $suggesters = $api->search('search_suggesters')->getContent();
+    } catch (\Throwable $e) {
+        $suggesters = [];
+    }
+    foreach ($suggesters as $suggester) {
+        $engineAdapter = $suggester->engineAdapter();
+        if (!$engineAdapter instanceof \SearchSolr\EngineAdapter\Solarium) {
+            continue;
+        }
+        $solrCore = $engineAdapter->getSolrCore();
+        if (!$solrCore) {
+            continue;
+        }
+        $cleaning = $solrCore->cleanSuggesterDirectories();
+        $removed += $cleaning['removed'];
+        if ($cleaning['command']) {
+            $commands[$cleaning['command']] = $cleaning['command'];
+        }
+    }
+    if ($removed) {
+        $messenger->addSuccess(new PsrMessage(
+            '{count} dictionaries of previous suggesters were removed.', // @translate
+            ['count' => $removed]
+        ));
+    }
+    if ($commands) {
+        $messenger->addWarning(new PsrMessage(
+            'The dictionaries of the previous suggesters may remain on the Solr server. To remove them, run these commands on it: {commands}', // @translate
+            ['commands' => implode(' ; ', $commands)]
+        ));
+    }
+}

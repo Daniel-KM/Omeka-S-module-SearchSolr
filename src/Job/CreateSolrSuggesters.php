@@ -162,7 +162,8 @@ class CreateSolrSuggesters extends AbstractJob
 
         // 2. Create/update a single searchComponent with all suggesters, only
         // when it changed, since the update reloads the core.
-        if ($solrCore->isSuggestComponentUpToDate($suggesterDefs, $componentName)) {
+        $isUpToDate = $solrCore->isSuggestComponentUpToDate($suggesterDefs, $componentName);
+        if ($isUpToDate) {
             $this->logger->info(
                 'Solr component "{component}" is up to date.', // @translate
                 ['component' => $componentName]
@@ -193,19 +194,21 @@ class CreateSolrSuggesters extends AbstractJob
                 );
                 return false;
             }
+        }
 
-            $cleaning = $solrCore->cleanSuggesterDirectories();
-            if ($cleaning['removed']) {
-                $this->logger->notice(
-                    '{count} dictionaries of previous suggesters were removed.', // @translate
-                    ['count' => $cleaning['removed']]
-                );
-            } elseif ($cleaning['command']) {
-                $this->logger->notice(
-                    'The dictionaries of the previous suggesters remain on the Solr server. To remove them, run this command on it: {command}', // @translate
-                    ['command' => $cleaning['command']]
-                );
-            }
+        // Remove the dictionaries of the previous suggesters when possible, else
+        // log the command once, when the component changes.
+        $cleaning = $solrCore->cleanSuggesterDirectories();
+        if ($cleaning['removed']) {
+            $this->logger->notice(
+                '{count} dictionaries of previous suggesters were removed.', // @translate
+                ['count' => $cleaning['removed']]
+            );
+        } elseif ($cleaning['command'] && !$isUpToDate) {
+            $this->logger->notice(
+                'The dictionaries of the previous suggesters remain on the Solr server. To remove them, run this command on it: {command}', // @translate
+                ['command' => $cleaning['command']]
+            );
         }
 
         // 4. Build all dictionaries in a single Solr request.
