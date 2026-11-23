@@ -193,6 +193,19 @@ class CreateSolrSuggesters extends AbstractJob
                 );
                 return false;
             }
+
+            $cleaning = $solrCore->cleanSuggesterDirectories();
+            if ($cleaning['removed']) {
+                $this->logger->notice(
+                    '{count} dictionaries of previous suggesters were removed.', // @translate
+                    ['count' => $cleaning['removed']]
+                );
+            } elseif ($cleaning['command']) {
+                $this->logger->notice(
+                    'The dictionaries of the previous suggesters remain on the Solr server. To remove them, run this command on it: {command}', // @translate
+                    ['command' => $cleaning['command']]
+                );
+            }
         }
 
         // 4. Build all dictionaries in a single Solr request.

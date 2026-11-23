@@ -1669,6 +1669,100 @@ class SolrCore
     }
 
     /**
+     * Remove the unused dictionaries of suggesters, or get the command to do it.
+     *
+     * Solr keeps the index directory of a removed suggester, but its api cannot
+     * delete files. So the directories are removed directly when the data dir
+     * of the core is writable by Omeka (same server or shared volume), else the
+     * shell command to run on the Solr server is returned.
+     *
+     * @return array{removed: int, command: ?string}
+     */
+    public function cleanSuggesterDirectories(): array
+    {
+        $result = ['removed' => 0, 'command' => null];
+
+        $settings = $this->clientSettings();
+        $coreName = $settings['core'] ?? null;
+        if (!$coreName) {
+            return $result;
+        }
+
+        $statusUrl = $settings['scheme'] . '://' . $settings['host'] . ':' . $settings['port']
+            . '/solr/admin/cores?action=STATUS&core=' . urlencode($coreName);
+        $authHeader = $this->basicAuthHeader();
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => $authHeader ? trim($authHeader) : null,
+                'timeout' => 10,
+                'ignore_errors' => true,
+            ],
+        ]);
+        $response = @file_get_contents($statusUrl, false, $context);
+        $dataDir = $response === false
+            ? null
+            : (json_decode($response, true)['status'][$coreName]['dataDir'] ?? null);
+        if (!$dataDir) {
+            return $result;
+        }
+        $dataDir = rtrim($dataDir, '/');
+
+        // Keep the directories of the declared suggesters.
+        $kept = [];
+        foreach ($this->getSolrConfigOverlay()['searchComponent'] ?? [] as $component) {
+            if (($component['class'] ?? '') !== 'solr.SuggestComponent') {
+                continue;
+            }
+            $suggesters = $component['suggester'] ?? [];
+            $suggesters = isset($suggesters['name']) ? [$suggesters] : $suggesters;
+            foreach ($suggesters as $suggester) {
+                if (!empty($suggester['indexPath'])) {
+                    $kept[] = basename((string) $suggester['indexPath']);
+                }
+            }
+        }
+        $kept = array_unique($kept);
+
+        if (is_dir($dataDir) && is_writable($dataDir)) {
+            $dirs = glob($dataDir . '/{suggester_*,analyzingInfixSuggesterIndexDir,blendedInfixSuggesterIndexDir}', GLOB_BRACE | GLOB_ONLYDIR) ?: [];
+            foreach ($dirs as $dir) {
+                if (!in_array(basename($dir), $kept, true) && $this->removeDirectory($dir)) {
+                    ++$result['removed'];
+                }
+            }
+            return $result;
+        }
+
+        $command = 'find ' . escapeshellarg($dataDir) . ' -mindepth 1 -maxdepth 1 -type d'
+            . " \\( -name 'suggester_*' -o -name 'analyzingInfixSuggesterIndexDir' -o -name 'blendedInfixSuggesterIndexDir' \\)";
+        foreach ($kept as $name) {
+            $command .= ' ! -name ' . escapeshellarg($name);
+        }
+        $result['command'] = $command . ' -exec rm -rf {} +';
+        return $result;
+    }
+
+    /**
+     * Remove a directory recursively, without following symlinks.
+     */
+    protected function removeDirectory(string $dir): bool
+    {
+        if (is_link($dir) || !is_dir($dir)) {
+            return false;
+        }
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iterator as $file) {
+            $path = $file->getPathname();
+            $file->isDir() && !$file->isLink() ? @rmdir($path) : @unlink($path);
+        }
+        return @rmdir($dir);
+    }
+
+    /**
      * Restart the core via UNLOAD + CREATE (Core Admin API).
      *
      * More thorough than reloadCore(): fully closes the core, releasing all
