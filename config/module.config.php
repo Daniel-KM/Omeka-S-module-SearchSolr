@@ -233,6 +233,9 @@ return [
             // Solr rejects the whole document beyond 32766 bytes (docValues),
             // but an exact value has no use far below that limit.
             'searchsolr_string_value_max_bytes' => 1000,
+            // Size in MB of the table of the values beyond which the alignment
+            // of the maps runs in background. Set 0 to always align directly.
+            'searchsolr_sync_job_min_size' => 100,
         ],
         'settings' => [
             // Options of the last alignment of the maps, by engine.

@@ -1949,6 +1949,25 @@ class CoreController extends AbstractActionController
             ->setTemplate('search-solr/admin/core/suggest-config-sidebar');
     }
 
+    /**
+     * Check if the values are too many to be scanned during a request.
+     *
+     * The size of the table is an estimation of the database engine, so it is
+     * cheap, and it takes the long texts (ocr…) into account, unlike a count.
+     */
+    protected function isBigDatabase(): bool
+    {
+        $minSize = (int) ($this->getEvent()->getApplication()->getServiceManager()
+            ->get('Config')['searchsolr']['config']['searchsolr_sync_job_min_size'] ?? 100);
+        if ($minSize <= 0) {
+            return false;
+        }
+        $size = (int) $this->getEvent()->getApplication()->getServiceManager()
+            ->get('Omeka\Connection')
+            ->fetchOne('SELECT `DATA_LENGTH` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = DATABASE() AND `TABLE_NAME` = "value"');
+        return $size > $minSize * 1048576;
+    }
+
     public function syncMapsAction()
     {
         $api = $this->api();
@@ -2002,6 +2021,11 @@ class CoreController extends AbstractActionController
             if ($this->params()->fromQuery('datatypes_text')) {
                 $sources[] = 'datatypes_text';
             }
+            // The background job passes the list of sources of the form.
+            $sourcesQuery = $this->params()->fromQuery('sources');
+            if (is_array($sourcesQuery)) {
+                $sources = array_values(array_intersect($sourcesQuery, ['configs', 'bounce', 'templates', 'used', 'media', 'media_long', 'datatypes', 'datatypes_text']));
+            }
             $clean = (bool) $this->params()->fromQuery('clean');
             $multilingual = (bool) $this->params()->fromQuery('multilingual', true);
             $maxCardinality = (int) $this->params()->fromQuery('max_cardinality', 100);
@@ -2026,6 +2050,34 @@ class CoreController extends AbstractActionController
                 'max_cardinality' => $maxCardinality,
             ];
             $this->settings()->set('searchsolr_sync_options', $syncOptions);
+
+            // On a big base, each scan of the values may exceed the timeout of
+            // the server, so the alignment runs in background.
+            if ($this->isBigDatabase()) {
+                $job = $this->jobDispatcher()->dispatch(\SearchSolr\Job\SyncSolrMaps::class, [
+                    'solr_core_id' => $id,
+                    'sources' => $sources,
+                    'clean' => $clean,
+                    'multilingual' => $multilingual,
+                    'max_cardinality' => $maxCardinality,
+                    'audit' => $isAudit,
+                ]);
+                $urlPlugin = $this->url();
+                $message = new PsrMessage(
+                    'The database is big, so the alignment of the maps runs in background (job {link_job}#{job_id}{link_end}, {link_log}logs{link_end}).', // @translate
+                    [
+                        'link_job' => sprintf('<a href="%s">', htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'id' => $job->getId()]))),
+                        'job_id' => $job->getId(),
+                        'link_end' => '</a>',
+                        'link_log' => class_exists('Log\Module', false)
+                            ? sprintf('<a href="%s">', htmlspecialchars($urlPlugin->fromRoute('admin/default', ['controller' => 'log'], ['query' => ['job_id' => $job->getId()]])))
+                            : sprintf('<a href="%s" target="_blank" rel="noopener noreferrer">', htmlspecialchars($urlPlugin->fromRoute('admin/id', ['controller' => 'job', 'action' => 'log', 'id' => $job->getId()]))),
+                    ]
+                );
+                $message->setEscapeHtml(false);
+                $this->messenger()->addSuccess($message);
+                return $this->redirect()->toRoute('admin/search-manager/solr/core-id', ['id' => $id]);
+            }
         }
         if (in_array('all', $sources, true)) {
             $sources = ['configs', 'bounce', 'templates', 'used', 'media', 'datatypes'];
@@ -3188,8 +3240,10 @@ class CoreController extends AbstractActionController
         if ($fieldSuffix !== null && empty($suffixes)) {
             $suffixes = [$fieldSuffix];
         }
-        // The score of the engine is a sort key, not an index of the schema.
-        if ($value === 'relevance' || $value === 'score') {
+        // The score of the engine is a sort key, not an index of the schema,
+        // and the filter "rft" (record or full text) is an option of the query,
+        // that uses the full text index.
+        if ($value === 'relevance' || $value === 'score' || $value === 'rft') {
             return;
         }
 
